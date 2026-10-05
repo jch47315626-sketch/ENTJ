@@ -4,7 +4,7 @@ import { BOSSES } from './data/bosses.js';
 import { STAGES, scaleStage } from './data/stages.js';
 import { UPGRADES, FALLBACKS } from './data/upgrades.js';
 import { SpatialGrid } from './core/grid.js';
-import { clamp, rand, TAU, dist2 } from './core/math.js';
+import { clamp, rand, TAU, dist2, angleDiff } from './core/math.js';
 import { updateWeapon } from './systems/weapons.js';
 import { SPECIALS } from './systems/specials.js';
 import { BEHAVIORS } from './systems/enemyAI.js';
@@ -51,6 +51,9 @@ class Player {
       momentumMul: 1 + 0.25 * u('momentum'),
       guard: u('guard'),
       caltrops: u('caltrops'),
+      specialMul: 1 + 0.3 * u('fury') + 0.25 * u('dharma'),
+      specialArea: 1 + 0.15 * u('dharma'),
+      specialStun: 0.2 * u('fury'),
     };
   }
 
@@ -75,6 +78,11 @@ export class Game {
     this.fx = [];
     this.texts = [];
     this.timers = [];
+    this.damageLog = {}; // damage taken by source, for tuning
+    this.zones = []; // ground areas: { team, kind, x, y, r, life, t, dps?, slow? }
+    this.shakeAmt = 0;
+    this.sfx = opts.onSfx ?? (() => {});
+    this.specialName = SPECIALS[hero.special].name;
     this.grid = new SpatialGrid(64);
     this.spawner = new Spawner(this.stage);
     this.time = 0;
@@ -101,6 +109,32 @@ export class Game {
 
   banner(text, size = 'normal') {
     this.opts.onBanner?.(text, size);
+  }
+
+  shake(amount) {
+    this.shakeAmt = Math.max(this.shakeAmt, amount);
+  }
+
+  /** What an enemy chases: a nearby decoy if one is luring, else the hero. */
+  targetFor(e) {
+    if (this.decoy && !this.decoy.dead && !e.isBoss) {
+      const d = this.decoy;
+      if ((e.x - d.x) ** 2 + (e.y - d.y) ** 2 < 420 * 420) return d;
+    }
+    return this.player;
+  }
+
+  spawnDecoy(life) {
+    const p = this.player;
+    // Run toward the side with the most enemies so the lure pulls them away.
+    let sx = 0, sy = 0;
+    for (const e of this.enemies) {
+      sx += e.x - p.x;
+      sy += e.y - p.y;
+    }
+    const a = sx || sy ? Math.atan2(sy, sx) : rand(0, TAU);
+    this.decoy = { kind: 'decoy', x: p.x, y: p.y, r: 14, life, maxLife: life, facing: a, cd: 0 };
+    this.allies.push(this.decoy);
   }
 
   nearestEnemy(x, y, maxR) {
@@ -167,6 +201,7 @@ export class Game {
     }
     this.enemies = [];
     this.projectiles = this.projectiles.filter((p) => p.team === 'player');
+    this.zones = this.zones.filter((z) => z.team === 'player');
 
     const p = this.player;
     this.arena = { x: p.x, y: p.y, r: 460 };
@@ -184,6 +219,8 @@ export class Game {
     });
     this.boss = b;
     this.bossIntro = 2.4;
+    this.shake(8);
+    this.sfx('boss');
     this.opts.onBoss?.(def);
   }
 
@@ -198,10 +235,27 @@ export class Game {
 
   // ----------------------------------------------------------------- combat
 
-  damageEnemy(e, amount, sx, sy, knockback = 0) {
+  damageEnemy(e, amount, sx, sy, knockback = 0, opts) {
     if (e.dead) return;
     if (e.isBoss && this.bossIntro > 0) return;
+    if (e.invulnUntil > this.time) {
+      if (Math.random() < 0.15) this.texts.push({ x: e.x, y: e.y - e.r, v: '막음', t: 0, life: 0.5 });
+      return;
+    }
+    // Shield bearers shrug off blows from the front.
+    const blk = e.def.params?.blockArc;
+    if (blk && !(opts?.stun)) {
+      const from = Math.atan2(sy - e.y, sx - e.x);
+      if (Math.abs(angleDiff(from, e.facing)) < (blk * Math.PI) / 360) {
+        amount *= e.def.params.blockMul;
+        knockback *= 0.4;
+        if (Math.random() < 0.3) this.fx.push({ type: 'spark', x: e.x + Math.cos(e.facing) * e.r, y: e.y + Math.sin(e.facing) * e.r, t: 0, life: 0.2 });
+      }
+    }
+    if (e.def.armor) amount = Math.max(1, amount - e.def.armor);
+    if (opts?.stun) e.stun = Math.max(e.stun ?? 0, opts.stun * (e.isBoss ? 0.25 : 1));
     e.hp -= amount;
+    this.sfx('hit');
     e.flash = 0.1;
     const dx = e.x - sx, dy = e.y - sy;
     const d = Math.hypot(dx, dy) || 1;
@@ -214,6 +268,7 @@ export class Game {
 
   killEnemy(e) {
     e.dead = true;
+    this.sfx(e.isBoss ? 'bossDown' : 'kill');
     this.fx.push({ type: 'ink', x: e.x, y: e.y, t: 0, life: 0.8, size: e.r * (e.isBoss ? 4 : 1.6), seed: Math.random() });
     if (e.def.behavior === 'static') {
       this.fx.push({ type: 'puff', x: e.x, y: e.y, t: 0, life: 0.6, size: 26, tone: 'mud' });
@@ -236,13 +291,16 @@ export class Game {
     this.pickups.push({ kind: 'coin', tier, value, x: x + rand(-4, 4), y: y + rand(-4, 4), magnet: false, t: 0 });
   }
 
-  hurtPlayer(amount) {
+  hurtPlayer(amount, source = 'unknown') {
     const p = this.player;
     if (p.invuln > 0 || this.state !== 'play') return;
     const dmg = Math.max(1, amount - p.stats.armor);
+    this.damageLog[source] = (this.damageLog[source] ?? 0) + dmg;
     p.hp -= dmg;
     p.invuln = INVULN_TIME;
     p.hurtFlash = 0.25;
+    this.shake(4);
+    this.sfx('hurt');
     this.texts.push({ x: p.x, y: p.y - 20, v: Math.round(dmg), t: 0, life: 0.7, hurt: true });
     if (p.hp <= 0) {
       p.hp = 0;
@@ -268,6 +326,7 @@ export class Game {
       p.xp -= XP_TO_NEXT(p.level);
       p.level++;
       this.pendingLevels++;
+      this.sfx('levelup');
     }
   }
 
@@ -276,7 +335,7 @@ export class Game {
   buildChoices() {
     const p = this.player;
     const lvl = (u) => p.upgrades[u.id] ?? 0;
-    const pool = UPGRADES.filter((u) => (u.available ? u.available(this) : lvl(u) < u.maxLevel));
+    const pool = UPGRADES.filter((u) => (!u.heroes || u.heroes.includes(p.hero.id)) && (u.available ? u.available(this) : lvl(u) < u.maxLevel));
     const choices = [];
     const evo = pool.find((u) => u.isEvolution?.(this));
     if (evo) choices.push(evo);
@@ -313,7 +372,10 @@ export class Game {
       this.player.upgrades[c.id] = (this.player.upgrades[c.id] ?? 0) + 1;
     }
     c.up.apply(this);
-    if (c.evolution) this.banner(`무기 진화 — ${c.name}`, 'big');
+    if (c.evolution) {
+      this.banner(`무기 진화 — ${c.name}`, 'big');
+      this.sfx('evolve');
+    }
     this.pendingLevels--;
     this.choices = null;
     this.setState('play');
@@ -321,6 +383,8 @@ export class Game {
 
   setState(s) {
     this.state = s;
+    if (s === 'clear') this.sfx('clear');
+    if (s === 'over') this.sfx('defeat');
     this.opts.onState?.(s, this);
   }
 
@@ -355,8 +419,12 @@ export class Game {
     // Player movement.
     p.moving = move.x !== 0 || move.y !== 0;
     if (p.moving) {
-      p.x += move.x * p.stats.speed * dt;
-      p.y += move.y * p.stats.speed * dt;
+      let spd = p.stats.speed;
+      for (const z of this.zones) {
+        if (z.team === 'enemy' && z.slow && dist2(z.x, z.y, p.x, p.y) < z.r * z.r) spd *= 1 - z.slow;
+      }
+      p.x += move.x * spd * dt;
+      p.y += move.y * spd * dt;
       p.facing = Math.atan2(move.y, move.x);
     }
     if (this.arena) {
@@ -369,6 +437,7 @@ export class Game {
     }
     p.invuln -= dt;
     p.hurtFlash -= dt;
+    this.shakeAmt = Math.max(0, this.shakeAmt - dt * 30);
 
     this.addMomentum(MOMENTUM.perSecond * dt);
     if (this.bossIntro > 0) this.bossIntro -= dt;
@@ -383,6 +452,7 @@ export class Game {
     updateAllies(this, dt);
     this.updateEnemies(dt);
     this.updateProjectiles(dt);
+    this.updateZones(dt);
     this.updatePickups(dt);
     this.updateFx(dt);
 
@@ -399,9 +469,17 @@ export class Game {
     const slow = 1 - 0.15 * p.stats.caltrops;
     for (const e of this.enemies) {
       if (e.dead) continue;
-      BEHAVIORS[e.def.behavior](this, e, dt);
+      if (e.stun > 0) {
+        e.stun -= dt;
+        e.vx = e.vy = 0;
+      } else {
+        BEHAVIORS[e.def.behavior](this, e, dt);
+      }
       let mul = 1;
       if (p.stats.caltrops && !e.isBoss && dist2(e.x, e.y, p.x, p.y) < slowR * slowR) mul = slow;
+      for (const z of this.zones) {
+        if (z.team === 'player' && z.slow && dist2(z.x, z.y, e.x, e.y) < z.r * z.r) mul *= e.isBoss ? 1 - z.slow * 0.4 : 1 - z.slow;
+      }
       e.x += (e.vx * mul + e.kx) * dt;
       e.y += (e.vy * mul + e.ky) * dt;
       const decay = Math.exp(-10 * dt);
@@ -439,7 +517,7 @@ export class Game {
       const dmg = e.contactDamage ?? e.damage;
       if (dmg > 0) {
         const rr = e.r + p.r - 2;
-        if (dist2(e.x, e.y, p.x, p.y) < rr * rr) this.hurtPlayer(dmg);
+        if (dist2(e.x, e.y, p.x, p.y) < rr * rr) this.hurtPlayer(dmg, e.isBoss ? 'boss' : e.def.id);
       }
     }
   }
@@ -454,7 +532,7 @@ export class Game {
       if (pr.team === 'enemy') {
         const rr = pr.r + p.r;
         if (dist2(pr.x, pr.y, p.x, p.y) < rr * rr) {
-          this.hurtPlayer(pr.damage);
+          this.hurtPlayer(pr.damage, pr.source ?? pr.kind);
           pr.life = 0;
         }
       } else {
@@ -463,7 +541,7 @@ export class Game {
           const rr = pr.r + e.r;
           if (dist2(pr.x, pr.y, e.x, e.y) < rr * rr) {
             pr.hit.add(e);
-            this.damageEnemy(e, pr.damage, pr.x - pr.vx * 0.05, pr.y - pr.vy * 0.05, pr.knockback);
+            this.damageEnemy(e, pr.damage, pr.x - pr.vx * 0.05, pr.y - pr.vy * 0.05, pr.knockback, pr.stun ? { stun: pr.stun } : undefined);
             pr.pierce -= 1;
             if (pr.pierce <= 0) pr.life = 0;
           }
@@ -471,6 +549,22 @@ export class Game {
       }
     }
     this.projectiles = this.projectiles.filter((pr) => pr.life > 0);
+  }
+
+  updateZones(dt) {
+    for (const z of this.zones) {
+      z.t += dt;
+      if (z.team === 'player' && z.dps) {
+        z.tick = (z.tick ?? 0) - dt;
+        if (z.tick <= 0) {
+          z.tick = 0.25;
+          this.grid.query(z.x, z.y, z.r + 30, (e) => {
+            if (!e.dead && dist2(z.x, z.y, e.x, e.y) < (z.r + e.r) ** 2) this.damageEnemy(e, z.dps * 0.25, z.x, z.y, 0);
+          });
+        }
+      }
+    }
+    this.zones = this.zones.filter((z) => z.t < z.life);
   }
 
   updatePickups(dt) {
@@ -488,9 +582,13 @@ export class Game {
         k.y += (dy / d) * s * dt;
         if (d < p.r + 6) {
           k.taken = true;
-          if (k.kind === 'coin') this.gainXp(k.value);
+          if (k.kind === 'coin') {
+            this.gainXp(k.value);
+            this.sfx('coin');
+          }
           else if (k.kind === 'rice') {
             p.heal(k.heal);
+            this.sfx('heal');
             this.texts.push({ x: p.x, y: p.y - 24, v: `+${k.heal}`, t: 0, life: 0.8, heal: true });
           }
         }

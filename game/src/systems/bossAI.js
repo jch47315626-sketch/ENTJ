@@ -58,11 +58,13 @@ export const BOSS_PATTERNS = {
     },
   },
 
-  hookFan: {
+  /** Telegraphed cone, then a fan of projectiles (`kind`: hook, arrow). */
+  fan: {
     start(g, b, P) {
       b.ps = 'windup';
       b.pt = P.windup * b.cooldownMul;
       b.aim = Math.atan2(g.player.y - b.y, g.player.x - b.x);
+      b.facing = b.aim;
       g.fx.push({ type: 'cone', x: b.x, y: b.y, angle: b.aim, arc: P.spread + 14, range: 320, t: 0, life: b.pt, follow: b });
     },
     update(g, b, P, dt) {
@@ -73,10 +75,39 @@ export const BOSS_PATTERNS = {
       for (let i = 0; i < P.count; i++) {
         const a = b.aim + ((-P.spread / 2 + step * i) * Math.PI) / 180;
         g.projectiles.push({
-          team: 'enemy', kind: 'hook', x: b.x, y: b.y,
+          team: 'enemy', kind: P.kind ?? 'hook', x: b.x, y: b.y,
           vx: Math.cos(a) * P.speed, vy: Math.sin(a) * P.speed,
-          r: 8, damage: P.damage, life: 1.6, angle: a, spin: 0,
+          r: P.kind === 'arrow' ? 6 : 8, damage: P.damage, source: 'boss', life: 1.6, angle: a, spin: P.kind === 'arrow' ? undefined : 0,
         });
+      }
+      g.sfx(P.kind === 'arrow' ? 'volley' : 'throw');
+      return true;
+    },
+  },
+
+  /** Telegraphed ring around the boss, then a full-circle slash. */
+  spin: {
+    start(g, b, P) {
+      b.ps = 'windup';
+      b.pt = P.windup * b.cooldownMul;
+      b.left = P.repeat ?? 1;
+      g.fx.push({ type: 'ringWarn', x: b.x, y: b.y, range: P.radius, t: 0, life: b.pt, follow: b });
+    },
+    update(g, b, P, dt) {
+      b.vx = b.vy = 0;
+      b.pt -= dt;
+      if (b.pt > 0) return false;
+      const rr = P.radius + g.player.r;
+      if ((g.player.x - b.x) ** 2 + (g.player.y - b.y) ** 2 < rr * rr) g.hurtPlayer(P.damage, 'boss');
+      g.fx.push({ type: 'bossSpin', x: b.x, y: b.y, range: P.radius, t: 0, life: 0.3 });
+      g.shake(5);
+      g.sfx('bossSpin');
+      b.left -= 1;
+      if (b.left > 0) {
+        b.ps = 'windup';
+        b.pt = P.windup * 0.6 * b.cooldownMul;
+        g.fx.push({ type: 'ringWarn', x: b.x, y: b.y, range: P.radius, t: 0, life: b.pt, follow: b });
+        return false;
       }
       return true;
     },
@@ -102,13 +133,20 @@ export function updateBoss(g, b, dt) {
       b.summoned.add(s);
       g.summonAround(s.enemy, s.count, b.x, b.y, 140);
       g.banner(s.banner);
+      g.sfx('horn');
     }
+  }
+  if (def.lastStand && !b.lastStood && b.hp / b.maxHp <= def.lastStand.below) {
+    b.lastStood = true;
+    b.invulnUntil = g.time + def.lastStand.time;
+    g.banner(def.lastStand.banner);
+    g.sfx('gong');
   }
   if (def.enrage && !b.enraged && b.hp / b.maxHp <= def.enrage.below) {
     b.enraged = true;
     b.speed *= def.enrage.speedMul;
     b.cooldownMul = def.enrage.cooldownMul;
-    g.banner(def.enrage.banner);
+    if (def.enrage.banner) g.banner(def.enrage.banner);
   }
 
   if (b.pi === undefined) {

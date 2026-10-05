@@ -1,6 +1,6 @@
 /**
- * Playable heroes. Only `available` heroes can be picked; the others are
- * placeholders so the select screen and data shape are ready for them.
+ * Playable heroes. `look` selects how render/sprites.js draws the hero;
+ * `special` is a key in systems/specials.js.
  */
 export const HEROES = {
   wanggeon: {
@@ -15,7 +15,7 @@ export const HEROES = {
     weapon: 'goryeoSword',
     special: 'tongsol',
     favoredCategory: '병법',
-    palette: { robe: '#2d3b5c', trim: '#c9a24a', plume: '#b3261e', skin: '#e8c9a0' },
+    look: { hat: 'hero', weapon: 'sword', robe: '#2d3b5c', trim: '#c9a24a', plume: '#b3261e', skin: '#e8c9a0' },
   },
   gyeonhwon: {
     id: 'gyeonhwon',
@@ -23,13 +23,13 @@ export const HEROES = {
     hanja: '甄萱',
     title: '후백제 대왕',
     role: '근접 강타형',
-    blurb: '대도로 내려찍고, 패왕의 일격으로 정면을 쓸어낸다.',
-    available: false,
-    stats: { maxHp: 150, speed: 140, might: 1.45, haste: 1.25, area: 0.8, pickup: 60, armor: 2 },
+    blurb: '대도로 내려찍고, 기세가 차면 패왕의 일격으로 정면을 쓸어낸다.',
+    available: true,
+    stats: { maxHp: 150, speed: 140, might: 1.45, haste: 1.1, area: 0.9, pickup: 60, armor: 2 },
     weapon: 'daedo',
     special: 'paewang',
     favoredCategory: '무예',
-    palette: { robe: '#6b2a22', trim: '#d8b46a', plume: '#1d1a17', skin: '#dcb58c' },
+    look: { hat: 'crown', weapon: 'greatsword', robe: '#6b2a22', trim: '#d8b46a', plume: '#1d1a17', skin: '#dcb58c' },
   },
   gungye: {
     id: 'gungye',
@@ -37,13 +37,13 @@ export const HEROES = {
     hanja: '弓裔',
     title: '태봉의 왕',
     role: '범위 제압형',
-    blurb: '철퇴를 휘돌리고, 미륵의 심판으로 땅을 불사른다.',
-    available: false,
-    stats: { maxHp: 100, speed: 145, might: 0.85, haste: 1.1, area: 1.35, pickup: 80, armor: 0 },
+    blurb: '철퇴를 휘돌리고, 기세가 차면 미륵의 심판으로 적진을 불사른다.',
+    available: true,
+    stats: { maxHp: 125, speed: 145, might: 0.95, haste: 1.05, area: 1.35, pickup: 80, armor: 0 },
     weapon: 'cheoltoe',
     special: 'mireuk',
     favoredCategory: '지세',
-    palette: { robe: '#4a2f5e', trim: '#e0b24c', plume: '#e0b24c', skin: '#e3c19a' },
+    look: { hat: 'monk', weapon: 'mace', robe: '#4a2f5e', trim: '#e0b24c', plume: '#e0b24c', skin: '#e3c19a' },
   },
 };
 

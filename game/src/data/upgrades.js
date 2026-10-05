@@ -33,8 +33,18 @@ export const UPGRADES = [
     apply: (g) => g.player.recalc(),
   },
   {
-    id: 'guard', name: '친위대', category: '병법', maxLevel: 5, weight: 10,
+    id: 'guard', name: '친위대', category: '병법', maxLevel: 5, weight: 10, heroes: ['wanggeon'],
     describe: () => '통솔로 부르는 창병 +1, 머무는 시간 +2초',
+    apply: (g) => g.player.recalc(),
+  },
+  {
+    id: 'fury', name: '패기', category: '무예', maxLevel: 4, weight: 9, heroes: ['gyeonhwon'],
+    describe: () => '패왕의 일격 피해 +30%, 기절 +0.2초',
+    apply: (g) => g.player.recalc(),
+  },
+  {
+    id: 'dharma', name: '법력', category: '지세', maxLevel: 4, weight: 9, heroes: ['gungye'],
+    describe: () => '미륵의 심판 피해 +25%, 범위 +15%',
     apply: (g) => g.player.recalc(),
   },
   {

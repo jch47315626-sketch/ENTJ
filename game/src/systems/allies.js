@@ -34,6 +34,15 @@ export function updateAllies(g, dt) {
         a.dead = true;
         g.fx.push({ type: 'puff', x: a.x, y: a.y, t: 0, life: 0.5, size: 16, tone: 'light' });
       }
+    } else if (a.kind === 'decoy') {
+      // 신숭겸 in the king's armour: runs off with the royal flag, drawing enemies away.
+      a.life -= dt;
+      a.x += Math.cos(a.facing) * 120 * dt;
+      a.y += Math.sin(a.facing) * 120 * dt;
+      if (a.life <= 0) {
+        a.dead = true;
+        g.fx.push({ type: 'ink', x: a.x, y: a.y, t: 0, life: 1, size: 22, seed: 0.7 });
+      }
     } else if (a.kind === 'archer') {
       // Archers trail the hero on a slowly turning ring.
       const ang = g.time * 0.6 + (archerIndex / archerCount) * TAU;

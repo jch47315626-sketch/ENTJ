@@ -13,7 +13,7 @@ export class Hud {
     this.root = $('hud');
     this.el = {
       xp: $('xpFill'), lv: $('lv'), name: $('heroName'),
-      hp: $('hpFill'), hpText: $('hpText'), mom: $('momFill'), momBar: $('momFill').parentElement,
+      hp: $('hpFill'), hpText: $('hpText'), mom: $('momFill'), momBar: $('momFill').parentElement, momLabel: $('momLabel'),
       timer: $('timer'), timerSub: $('timerSub'), kills: $('kills'),
       bossBar: $('bossBar'), bossName: $('bossName'), bossFill: $('bossFill'),
       owned: $('owned'), evo: $('evoHint'),
@@ -34,6 +34,7 @@ export class Hud {
     const h = g.hud();
     const e = this.el;
     e.name.textContent = g.player.hero.name;
+    e.momLabel.textContent = `기세 · ${g.specialName}`;
     e.lv.textContent = `Lv ${h.level}`;
     e.xp.style.width = `${(h.xp / h.xpNext) * 100}%`;
     e.hp.style.width = `${(h.hp / h.maxHp) * 100}%`;

@@ -1,5 +1,6 @@
 import { HEROES } from '../data/heroes.js';
-import { STAGES } from '../data/stages.js';
+import { STAGES, STAGE_ORDER } from '../data/stages.js';
+import { BOSSES } from '../data/bosses.js';
 
 const $ = (id) => document.getElementById(id);
 const SCREENS = ['title', 'intro', 'levelup', 'pause', 'result'];
@@ -8,8 +9,8 @@ export function showScreen(name) {
   for (const s of SCREENS) $(s).hidden = s !== name;
 }
 
-/** Hero slips and stage card on the title screen. */
-export function renderTitle(selected, onSelect) {
+/** Hero slips and stage cards on the title screen. */
+export function renderTitle(sel, onHero, onStage) {
   const list = $('heroList');
   list.innerHTML = '';
   for (const h of Object.values(HEROES)) {
@@ -17,23 +18,34 @@ export function renderTitle(selected, onSelect) {
     b.type = 'button';
     b.className = 'slip hero-card';
     b.disabled = !h.available;
-    b.setAttribute('aria-pressed', String(h.id === selected));
+    b.setAttribute('aria-pressed', String(h.id === sel.hero));
     b.innerHTML = `
       <span class="name">${h.name}</span>
       <span class="meta">${h.title} · ${h.role}</span>
       <span class="blurb">${h.blurb}</span>
       ${h.available ? '' : '<span class="lock">준비 중</span>'}`;
-    b.addEventListener('click', () => onSelect(h.id));
+    b.addEventListener('click', () => onHero(h.id));
     list.appendChild(b);
   }
-  const st = STAGES.seonamhae;
-  $('stageCard').innerHTML = `
-    <span class="no">一</span>
-    <span class="info">
-      <b>${st.name}</b>
-      <small>${st.year} · ${st.place}</small>
-      <small>${st.intro}</small>
-    </span>`;
+  const stages = $('stageList');
+  stages.innerHTML = '';
+  for (const id of STAGE_ORDER) {
+    const st = STAGES[id];
+    const bossId = st.bossAlt[sel.hero] ?? st.boss;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'stage-card';
+    b.setAttribute('aria-pressed', String(id === sel.stage));
+    b.innerHTML = `
+      <span class="no">${st.numeral}</span>
+      <span class="info">
+        <b>${st.name}</b>
+        <small>${st.year} · ${st.place} · 적장 ${BOSSES[bossId].name}</small>
+        <small>${st.intro}</small>
+      </span>`;
+    b.addEventListener('click', () => onStage(id));
+    stages.appendChild(b);
+  }
 }
 
 export function renderIntro(stage) {
@@ -83,8 +95,9 @@ export function renderResult(g, won) {
   const boss = g.boss?.def;
   $('resultTitle').textContent = won ? '평정 — 스테이지 클리어' : '패퇴';
   $('resultText').textContent = won
-    ? `${withObject(boss?.name ?? '적장')} 사로잡았다. 서남해의 뱃길이 고려에 열린다.`
-    : g.boss ? `${boss.name}의 진을 넘지 못했다. 책략을 바꿔 다시 도전하라.` : '갯벌에서 쓰러졌다. 이동 동선과 책략을 바꿔 다시 도전하라.';
+    ? `${withObject(boss?.name ?? '적장')} 꺾었다. ${g.stage.clearText}`
+    : g.boss ? `${boss.name}의 진을 넘지 못했다. 책략을 바꿔 다시 도전하라.` : `${g.stage.name}에서 쓰러졌다. 이동 동선과 책략을 바꿔 다시 도전하라.`;
+  $('nextBtn').hidden = !(won && g.stage.next);
   $('resultStats').innerHTML = `
     <div><dt>버틴 시간</dt><dd>${fmt(g.time)}</dd></div>
     <div><dt>레벨</dt><dd>${g.player.level}</dd></div>

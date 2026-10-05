@@ -34,6 +34,7 @@
     </div>
     <div class="hud-right">
       <span id="kills" class="kills">처치 0</span>
+      <button id="muteBtn" class="icon-btn" type="button" aria-pressed="false">소리</button>
       <button id="pauseBtn" class="icon-btn" type="button" aria-label="일시정지">멈춤</button>
     </div>
   </div>
@@ -44,15 +45,18 @@
     <div class="title-wrap">
       <p class="eyebrow">후삼국 생존 액션 · 시제품</p>
       <h1 class="game-title"><span class="hanja">三韓亂世</span><span class="hangul">삼한난세</span></h1>
-      <p class="lede">이동만 하세요. 칼은 스스로 움직입니다. 5분을 버티면 해적 두령이 나타납니다.</p>
+      <p class="lede">이동만 하세요. 무기는 스스로 움직입니다. 5분을 버티면 그 전장의 적장이 나타납니다.</p>
 
       <h2 class="section-label">영웅</h2>
       <div id="heroList" class="hero-list"></div>
 
       <h2 class="section-label">전장</h2>
-      <div id="stageCard" class="stage-card"></div>
+      <div id="stageList" class="stage-list"></div>
 
-      <label class="quick"><input id="quickMode" type="checkbox"> 빠른 시험 모드 (1분 뒤 보스 등장)</label>
+      <div class="options">
+        <label class="quick"><input id="quickMode" type="checkbox"> 빠른 시험 모드 (1분 뒤 보스 등장)</label>
+        <label class="quick"><input id="soundOn" type="checkbox" checked> 소리</label>
+      </div>
       <button id="startBtn" class="seal-btn" type="button">출진</button>
       <p class="controls">이동: WASD · 방향키 · 화면을 누른 채 끌기 &nbsp;|&nbsp; 일시정지: P · Esc &nbsp;|&nbsp; 책략 선택: 1 · 2 · 3</p>
     </div>
@@ -84,6 +88,7 @@
     <p id="resultText" class="result-text"></p>
     <dl id="resultStats" class="stats"></dl>
     <div class="row-btns">
+      <button id="nextBtn" class="seal-btn" type="button" hidden>다음 전장</button>
       <button id="retryBtn" class="seal-btn" type="button">다시 출진</button>
       <button id="homeBtn" class="plain-btn" type="button">처음으로</button>
     </div>

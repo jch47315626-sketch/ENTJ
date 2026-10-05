@@ -60,6 +60,7 @@ export class Spawner {
 
   fireEvent(g, ev) {
     const p = g.player;
+    ev = ev.altForHero?.[p.hero.id] ?? ev;
     if (ev.type === 'pack') {
       const a = rand(0, TAU);
       const d = g.spawnDistance();
@@ -74,7 +75,10 @@ export class Spawner {
         const a = (i / ev.count) * TAU;
         g.spawnEnemy(ev.enemy, p.x + Math.cos(a) * d, p.y + Math.sin(a) * d);
       }
+    } else if (ev.type === 'decoy') {
+      g.spawnDecoy(ev.life);
     }
     if (ev.banner) g.banner(ev.banner);
+    g.sfx('horn');
   }
 }

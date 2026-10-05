@@ -91,4 +91,68 @@ export const GROUNDS = {
       }
     }
   },
+
+  autumnHills(ctx, v, time) {
+    ctx.fillStyle = '#6e5a3c';
+    ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
+    const tx0 = Math.floor(v.x0 / TILE) - 1, tx1 = Math.floor(v.x1 / TILE) + 1;
+    const ty0 = Math.floor(v.y0 / TILE) - 1, ty1 = Math.floor(v.y1 / TILE) + 1;
+    const LEAVES = ['#a8442a', '#c7772e', '#d6a542', '#8a3324'];
+
+    // Pass 1: grass and earth patches, a winding footpath.
+    for (let tx = tx0; tx <= tx1; tx++) {
+      for (let ty = ty0; ty <= ty1; ty++) {
+        const ox = tx * TILE, oy = ty * TILE;
+        const h = hash2(tx, ty, 101);
+        ctx.fillStyle = h < 0.5 ? 'rgba(92, 96, 58, 0.45)' : 'rgba(132, 104, 64, 0.35)';
+        ctx.beginPath();
+        ctx.ellipse(ox + hash2(tx, ty, 102) * TILE, oy + hash2(tx, ty, 103) * TILE, 80 + h * 90, 50 + h * 50, h * 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    // Pass 2: fallen leaves, rocks, then pine/maple clumps (tree shadows).
+    for (let tx = tx0; tx <= tx1; tx++) {
+      for (let ty = ty0; ty <= ty1; ty++) {
+        const ox = tx * TILE, oy = ty * TILE;
+        for (let i = 0; i < 14; i++) {
+          const lx = ox + hash2(tx, ty, 110 + i) * TILE, ly = oy + hash2(tx, ty, 130 + i) * TILE;
+          ctx.fillStyle = LEAVES[i % 4];
+          ctx.beginPath();
+          ctx.ellipse(lx, ly, 3.5, 2, hash2(tx, ty, 150 + i) * 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        if (hash2(tx, ty, 170) < 0.35) {
+          const rx = ox + hash2(tx, ty, 171) * TILE, ry = oy + hash2(tx, ty, 172) * TILE;
+          ctx.fillStyle = '#857a68';
+          ctx.strokeStyle = 'rgba(29,26,23,0.6)';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.ellipse(rx, ry, 16, 11, 0.4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+        if (hash2(tx, ty, 180) < 0.3) {
+          const cx = ox + hash2(tx, ty, 181) * TILE, cy = oy + hash2(tx, ty, 182) * TILE;
+          const red = hash2(tx, ty, 183) < 0.5;
+          const sway = Math.sin(time * 0.8 + tx) * 2;
+          ctx.fillStyle = 'rgba(22, 19, 15, 0.3)';
+          ctx.beginPath();
+          ctx.ellipse(cx + 10, cy + 14, 44, 30, 0, 0, Math.PI * 2);
+          ctx.fill();
+          for (let k = 0; k < 5; k++) {
+            const a = (k / 5) * Math.PI * 2 + hash2(tx, ty, 184);
+            ctx.fillStyle = red ? (k % 2 ? '#9c3a24' : '#b8562c') : k % 2 ? '#2f3f2c' : '#3c4f34';
+            ctx.beginPath();
+            ctx.arc(cx + Math.cos(a) * 16 + sway, cy + Math.sin(a) * 14, 20, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.strokeStyle = 'rgba(29,26,23,0.45)';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(cx + sway, cy, 30, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
+    }
+  },
 };

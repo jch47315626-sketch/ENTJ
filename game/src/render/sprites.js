@@ -39,6 +39,7 @@ export function drawUnit(ctx, look, x, y, r, facing, o = {}) {
   ctx.strokeStyle = INK;
   ctx.lineCap = 'round';
 
+  if (look.mount) drawHorse(ctx, look.mount, r, o.flash);
   drawWeapon(ctx, look.weapon, r, look);
 
   // Shoulders / torso.
@@ -47,6 +48,20 @@ export function drawUnit(ctx, look, x, y, r, facing, o = {}) {
   ctx.ellipse(0, 0, r * 0.72, r, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
+  if (look.plates) {
+    ctx.strokeStyle = 'rgba(200, 204, 208, 0.55)';
+    for (const k of [-0.45, 0, 0.45]) {
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.55, k * r);
+      ctx.lineTo(r * 0.55, k * r);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = INK;
+  }
+  if (look.tassel) {
+    ctx.fillStyle = look.tassel;
+    ctx.fillRect(-r * 0.75, -r * 0.2, r * 0.3, r * 0.4);
+  }
   if (look.trim) {
     ctx.strokeStyle = look.trim;
     ctx.lineWidth = 2;
@@ -109,6 +124,61 @@ function drawWeapon(ctx, kind, r, look) {
       ctx.beginPath();
       ctx.arc(r * 1.5, r * 0.4, r * 0.3, Math.PI * 0.5, Math.PI * 1.9);
       ctx.stroke();
+      break;
+    case 'glaive':
+      ctx.strokeStyle = '#3a2c1c';
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.3, r * 0.65);
+      ctx.lineTo(r * 1.9, r * 0.65);
+      ctx.stroke();
+      ctx.fillStyle = '#9fa3a6';
+      ctx.beginPath();
+      ctx.moveTo(r * 1.7, r * 0.65);
+      ctx.quadraticCurveTo(r * 2.3, r * 0.2, r * 2.5, r * 0.75);
+      ctx.lineTo(r * 1.9, r * 0.85);
+      ctx.closePath();
+      ctx.fill();
+      break;
+    case 'shield':
+      ctx.fillStyle = '#7a3a24';
+      ctx.beginPath();
+      ctx.ellipse(r * 0.95, 0, r * 0.32, r * 1.05, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = '#d2ac58';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(r * 1.05, 0, r * 0.22, 0, Math.PI * 2);
+      ctx.stroke();
+      break;
+    case 'greatsword':
+      ctx.strokeStyle = '#d6d4cb';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(r * 0.5, r * 0.7);
+      ctx.lineTo(r * 2.25, r * 0.7);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(29,26,23,0.6)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.strokeStyle = look.trim ?? '#d8b46a';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.moveTo(r * 0.5, r * 0.38);
+      ctx.lineTo(r * 0.5, r * 1.02);
+      ctx.stroke();
+      break;
+    case 'mace':
+      ctx.strokeStyle = '#6b6258';
+      ctx.lineWidth = 1.6;
+      ctx.setLineDash([3, 2]);
+      ctx.beginPath();
+      ctx.moveTo(r * 0.4, r * 0.7);
+      ctx.lineTo(r * 1.5, r * 0.9);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      drawMaceHead(ctx, r * 1.6, r * 0.92, r * 0.36);
       break;
     case 'sword':
       ctx.strokeStyle = '#dcdbd2';
@@ -188,6 +258,56 @@ function drawHead(ctx, look, r, flash) {
       ctx.beginPath();
       ctx.arc(0, 0, r * 0.42, 0, Math.PI * 2);
       ctx.fill();
+      ctx.stroke();
+      break;
+    case 'heavyHelmet':
+      ctx.fillStyle = '#2f3133';
+      ctx.beginPath();
+      ctx.arc(-r * 0.02, 0, hr * 1.18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = '#8d9195';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-hr * 1.1, 0);
+      ctx.lineTo(hr * 1.1, 0);
+      ctx.stroke();
+      break;
+    case 'crown':
+      ctx.fillStyle = '#2a1a14';
+      ctx.beginPath();
+      ctx.arc(-r * 0.02, 0, hr * 1.05, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = look.trim ?? '#d8b46a';
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(a - 0.25) * hr * 0.75, Math.sin(a - 0.25) * hr * 0.75);
+        ctx.lineTo(Math.cos(a) * hr * 1.35, Math.sin(a) * hr * 1.35);
+        ctx.lineTo(Math.cos(a + 0.25) * hr * 0.75, Math.sin(a + 0.25) * hr * 0.75);
+        ctx.fill();
+      }
+      ctx.beginPath();
+      ctx.arc(-r * 0.02, 0, hr * 0.42, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    case 'monk':
+      // Shaved head with a golden halo ring and the famous eyepatch.
+      ctx.strokeStyle = look.trim ?? '#e0b24c';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(r * 0.05, 0, hr * 1.45, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = '#1d1a17';
+      ctx.beginPath();
+      ctx.ellipse(r * 0.38, -hr * 0.42, hr * 0.32, hr * 0.26, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#1d1a17';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(r * 0.38, -hr * 0.42);
+      ctx.lineTo(-hr * 0.7, hr * 0.6);
       ctx.stroke();
       break;
     case 'hero':
@@ -321,6 +441,20 @@ export function drawProjectile(ctx, p) {
     ctx.strokeStyle = '#1d1a17';
     ctx.lineWidth = 1;
     ctx.stroke();
+  } else if (p.kind === 'quake') {
+    const a = Math.min(1, p.life * 3);
+    ctx.fillStyle = `rgba(90, 60, 40, ${0.55 * a})`;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, p.r * 1.3, p.r, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = `rgba(29, 26, 23, ${0.8 * a})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-p.r * 2.4, 0);
+    ctx.lineTo(-p.r * 1.2, -p.r * 0.4);
+    ctx.lineTo(-p.r * 0.4, p.r * 0.3);
+    ctx.lineTo(p.r * 0.8, -p.r * 0.2);
+    ctx.stroke();
   } else if (p.kind === 'wave') {
     const a = Math.min(1, p.life * 3);
     ctx.fillStyle = `rgba(246, 226, 160, ${0.85 * a})`;
@@ -334,4 +468,38 @@ export function drawProjectile(ctx, p) {
     ctx.stroke();
   }
   ctx.restore();
+}
+
+function drawHorse(ctx, color, r, flash) {
+  ctx.fillStyle = flash ? HANJI : color;
+  ctx.beginPath();
+  ctx.ellipse(r * 0.15, 0, r * 1.55, r * 0.62, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.ellipse(r * 1.75, 0, r * 0.5, r * 0.3, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.strokeStyle = '#1d1a17';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(-r * 1.35, 0);
+  ctx.lineTo(-r * 1.9, r * 0.15);
+  ctx.stroke();
+  ctx.lineWidth = 1.6;
+}
+
+export function drawMaceHead(ctx, x, y, s) {
+  ctx.fillStyle = '#5c5650';
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  for (let i = 0; i < 16; i++) {
+    const a = (i / 16) * Math.PI * 2;
+    const rr = i % 2 ? s : s * 1.35;
+    ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
 }
