@@ -4,6 +4,7 @@ import { hitArc } from './weapons.js';
 /** Updates summoned soldiers and following archers. */
 export function updateAllies(g, dt) {
   const p = g.player;
+  updateOrders(g, dt);
   let archerIndex = 0;
   const archerCount = g.allies.filter((a) => a.kind === 'archer').length;
   let maguniIndex = 0;
@@ -37,6 +38,8 @@ export function updateAllies(g, dt) {
         a.dead = true;
         g.fx.push({ type: 'puff', x: a.x, y: a.y, t: 0, life: 0.5, size: 16, tone: 'light' });
       }
+    } else if (a.kind === 'retinue') {
+      updateRetinue(g, a, dt);
     } else if (a.kind === 'maguni') {
       updateMaguni(g, a, maguniIndex++, maguniCount, dt);
     } else if (a.kind === 'decoy') {
@@ -94,6 +97,162 @@ export function updateAllies(g, dt) {
     }
   }
   g.allies = g.allies.filter((a) => !a.dead);
+}
+
+// ------------------------------------------------------------------ 군세
+
+/**
+ * 군령: each kind of standing troop has its own cycle and its own move.
+ * 창병 돌격 (charge ahead) · 궁병 일제사격 (rapid volley) · 친위대 호위진 (ward ring).
+ */
+export const ORDERS = {
+  spear: { every: 6, name: '창병 돌격', sfx: 'horn' },
+  archer: { every: 4.5, name: '일제사격', sfx: 'volley' },
+  guard: { every: 8, name: '호위진', sfx: 'gong' },
+};
+const RET = {
+  spear: { damage: 12, cooldown: 0.6, reach: 170, charge: { speed: 540, distance: 250, damage: 26, knockback: 220 } },
+  archer: { damage: 6, cooldown: 0.45, range: 360, volley: { arrows: 6, gap: 0.07, damage: 9 } },
+  guard: { damage: 8, cooldown: 0.9, radius: 52, ward: { radius: 120, damage: 18, knockback: 280, time: 2 } },
+};
+const allyMul = (p) => p.stats.might * (1 + (p.meta.allyMul ?? 0));
+
+/** Order cycle length for one kind (보물 친위대의 방패 shortens every cycle). */
+export function orderEvery(g, role) {
+  return ORDERS[role].every * (1 - (g.player.meta.orderHaste ?? 0));
+}
+
+function updateOrders(g, dt) {
+  if (!g.orders) return;
+  const p = g.player;
+  for (const [role, o] of Object.entries(g.orders)) {
+    o.t -= dt;
+    if (o.t > 0) continue;
+    o.t = orderEvery(g, role);
+    const troops = g.allies.filter((a) => a.kind === 'retinue' && a.role === role);
+    for (const a of troops) fireOrder(g, a);
+    if (role === 'guard') {
+      // 호위진: one ring around the king, however many guards there are.
+      const W = RET.guard.ward;
+      hitArc(g, p.x, p.y, 0, W.radius, 360, W.damage * allyMul(p), W.knockback, 'royal');
+      p.wardUntil = g.time + W.time + (p.meta.wardDur ?? 0);
+      g.shake(4);
+    }
+    g.texts.push({ x: p.x, y: p.y - 46, v: `⚔️ 군령 — ${ORDERS[role].name}`, t: 0, life: 1.1, order: true });
+    g.sfx(ORDERS[role].sfx);
+  }
+}
+
+function fireOrder(g, a) {
+  const p = g.player;
+  if (a.role === 'spear') {
+    const t = g.nearestEnemy(p.x, p.y, 420);
+    const dir = t ? Math.atan2(t.y - a.y, t.x - a.x) : p.facing;
+    a.charge = { dir, left: RET.spear.charge.distance, hit: new Set() };
+    a.facing = dir;
+  } else if (a.role === 'archer') {
+    a.volley = RET.archer.volley.arrows + (p.meta.volleyBonus ?? 0);
+    a.volleyCd = 0;
+  }
+}
+
+/** Where each standing troop keeps station, relative to the king's facing. */
+function stationOf(p, a) {
+  const f = p.facing;
+  const [fwd, side] = a.role === 'spear' ? [34, a.idx % 2 ? 24 : -24]
+    : a.role === 'archer' ? [-38, (a.idx - 0.5) * 22]
+    : [6, a.idx % 2 ? -30 : 30];
+  return { x: p.x + Math.cos(f) * fwd - Math.sin(f) * side, y: p.y + Math.sin(f) * fwd + Math.cos(f) * side };
+}
+
+function updateRetinue(g, a, dt) {
+  const p = g.player;
+  const R = RET[a.role];
+  a.cd -= dt;
+  const home = stationOf(p, a);
+  const moveTo = (x, y, speed) => {
+    const dx = x - a.x, dy = y - a.y, d = Math.hypot(dx, dy);
+    if (d < 2) return d;
+    const step = Math.min(d, speed * dt);
+    a.x += (dx / d) * step;
+    a.y += (dy / d) * step;
+    return d;
+  };
+
+  if (a.role === 'spear') {
+    if (a.charge) {
+      // 전방 돌격: run straight through, striking each enemy once.
+      const C = R.charge;
+      const step = C.speed * dt;
+      a.x += Math.cos(a.charge.dir) * step;
+      a.y += Math.sin(a.charge.dir) * step;
+      a.charge.left -= step;
+      if (Math.random() < 0.5) g.fx.push({ type: 'puff', x: a.x, y: a.y, t: 0, life: 0.4, size: 12, tone: 'mud' });
+      g.grid.query(a.x, a.y, a.r + 30, (e) => {
+        if (e.dead || a.charge.hit.has(e) || g.isCharmed(e) || e.def.behavior === 'static') return;
+        if ((e.x - a.x) ** 2 + (e.y - a.y) ** 2 > (a.r + e.r + 6) ** 2) return;
+        a.charge.hit.add(e);
+        g.damageEnemy(e, C.damage * allyMul(p), a.x, a.y, C.knockback);
+      });
+      if (a.charge.left <= 0) a.charge = null;
+      return;
+    }
+    const t = g.nearestEnemy(a.x, a.y, 140);
+    if (t && (t.x - p.x) ** 2 + (t.y - p.y) ** 2 < R.reach * R.reach) {
+      a.facing = Math.atan2(t.y - a.y, t.x - a.x);
+      const d = moveTo(t.x, t.y, 210);
+      if (d < t.r + a.r + 16 && a.cd <= 0) {
+        a.cd = R.cooldown;
+        g.damageEnemy(t, R.damage * allyMul(p), a.x, a.y, 60);
+        g.fx.push({ type: 'thrust', x: a.x, y: a.y, angle: a.facing, t: 0, life: 0.15 });
+      }
+    } else {
+      moveTo(home.x, home.y, 240);
+      a.facing = p.facing;
+    }
+  } else if (a.role === 'archer') {
+    moveTo(home.x, home.y, 260);
+    const t = g.nearestEnemy(a.x, a.y, R.range);
+    if (t) a.facing = Math.atan2(t.y - a.y, t.x - a.x);
+    const shoot = (damage, spread) => {
+      const ang = a.facing + (Math.random() - 0.5) * spread;
+      g.projectiles.push({
+        team: 'player', kind: 'arrow', x: a.x, y: a.y, vx: Math.cos(ang) * 480, vy: Math.sin(ang) * 480,
+        r: 5, damage: damage * allyMul(p), knockback: 20, life: 0.9, pierce: 1, hit: new Set(), angle: ang,
+      });
+    };
+    if (a.volley > 0) {
+      // 연속 일제사격: a quick stream of arrows.
+      a.volleyCd -= dt;
+      if (a.volleyCd <= 0 && t) {
+        a.volleyCd = R.volley.gap;
+        a.volley--;
+        shoot(R.volley.damage, 0.25);
+        if (a.volley % 2 === 0) g.sfx('volley');
+      }
+      if (!t) a.volley = 0;
+    } else if (t && a.cd <= 0) {
+      a.cd = R.cooldown * p.stats.haste;
+      shoot(R.damage, 0.08);
+    }
+  } else {
+    // 친위대: keeps to the king's side and shoves back whoever comes close.
+    moveTo(home.x, home.y, 300);
+    a.facing = p.facing;
+    if (a.cd <= 0) {
+      let hit = false;
+      g.grid.query(a.x, a.y, R.radius + 20, (e) => {
+        if (e.dead || g.isCharmed(e) || e.def.behavior === 'static') return;
+        if ((e.x - a.x) ** 2 + (e.y - a.y) ** 2 > (R.radius + e.r) ** 2) return;
+        g.damageEnemy(e, R.damage * allyMul(p), p.x, p.y, 160);
+        hit = true;
+      });
+      if (hit) {
+        a.cd = R.cooldown;
+        g.fx.push({ type: 'slash', x: a.x, y: a.y, angle: Math.atan2(a.y - p.y, a.x - p.x), range: R.radius, arc: 140, t: 0, life: 0.18 });
+      }
+    }
+  }
 }
 
 /** 통솔 spearmen. */

@@ -11,6 +11,8 @@
  * `bonus` keys extend data/meta.js metaBonus(). Besides the shared stat keys
  * (maxHp, armor, might, haste, speed, momentum, area, xp…) the build keys are:
  *   allyMul       ally damage +x            guardBonus  extra 통솔 soldiers
+ *   retinueSpear/Archer/Guard  standing 군세 units   volleyBonus  extra arrows per 일제사격
+ *   wardDur       호위진 +s                  orderHaste  군령 cycles shorter by x
  *   tongsolLife   통솔 soldiers stay +s      shinHpMul   신숭겸 HP +x
  *   horseCd       말타기 cooldown −x         mountSpeed  extra speed mounted
  *   horseInvul    말타기 invulnerable +s     trailMul    hoofprint damage +x
@@ -29,11 +31,11 @@ export const SKILL_TREES = {
     root: { id: 'wg_root', name: '태조의 기틀', price: 120, bonus: { maxHp: 15 }, desc: '최대 체력 +15' },
     branches: [
       {
-        id: 'A', name: '통솔의 길', style: '아군을 이끌어 싸운다. 창병·궁수·신숭겸이 강해진다.',
+        id: 'A', name: '통솔의 길', style: '늘 곁을 지키는 군세를 이끈다. 군령이 차면 병종마다 제 몫의 특기를 터뜨린다.',
         nodes: [
-          { id: 'wg_a1', name: '친위 장교', price: 300, bonus: { guardBonus: 2, allyMul: 0.15 }, desc: '통솔로 부르는 창병 +2, 아군 피해 +15%' },
-          { id: 'wg_a2', name: '신숭겸의 맹세', price: 650, bonus: { shinHpMul: 0.6, allyMul: 0.15 }, grants: ['shin'], desc: '신숭겸을 부르며 출진, 신숭겸 체력 +60%, 아군 피해 +15%' },
-          { id: 'wg_a3', name: '삼한 통합군', price: 1300, bonus: { allyMul: 0.5, tongsolLife: 6, guardBonus: 2 }, desc: '아군 피해 +50%, 창병 +2, 머무는 시간 +6초' },
+          { id: 'wg_a1', name: '군세', price: 300, bonus: { retinueSpear: 2, allyMul: 0.1 }, desc: '창병 2명이 늘 따라다닌다. 군령: 전방 돌격' },
+          { id: 'wg_a2', name: '궁수대', price: 650, bonus: { retinueArcher: 1, allyMul: 0.15 }, desc: '궁병 1명 합류, 빠르게 연사한다. 군령: 연속 일제사격' },
+          { id: 'wg_a3', name: '친위대', price: 1300, bonus: { retinueGuard: 1, allyMul: 0.25 }, desc: '친위대 1명 합류, 왕건을 지키며 적을 밀어낸다. 군령: 호위진' },
         ],
       },
       {
@@ -97,8 +99,8 @@ export const SKILL_TREES = {
 export const TREASURES = {
   wanggeon: [
     { id: 'tr_wg_0', name: '고려 군기', price: 250, parent: null, branch: null, icon: ['banner', '#2d4a7a'], bonus: { allyMul: 0.15, maxHp: 10 }, desc: '아군 피해 +15%, 체력 +10' },
-    { id: 'tr_wg_a1', name: '태조의 군기', price: 800, parent: 'tr_wg_0', branch: 'A', icon: ['banner', '#c9a24a'], bonus: { allyMul: 0.35, tongsolLife: 4 }, desc: '아군 피해 +35%, 창병 머무는 시간 +4초' },
-    { id: 'tr_wg_a2', name: '삼한일통기', price: 2000, parent: 'tr_wg_a1', branch: 'A', icon: ['banner', '#b3261e'], bonus: { allyMul: 0.6, guardBonus: 2, tongsolLife: 4 }, desc: '아군 피해 +60%, 창병 +2, 머무는 시간 +4초' },
+    { id: 'tr_wg_a1', name: '궁수 깃발', price: 800, parent: 'tr_wg_0', branch: 'A', icon: ['banner', '#c9a24a'], bonus: { allyMul: 0.25, volleyBonus: 2 }, desc: '궁병 일제사격 +2발, 아군 피해 +25%' },
+    { id: 'tr_wg_a2', name: '친위대의 방패', price: 2000, parent: 'tr_wg_a1', branch: 'A', icon: ['mirror', '#b3261e'], bonus: { allyMul: 0.4, wardDur: 2, orderHaste: 0.2 }, desc: '호위진 +2초, 군령 주기 −20%, 아군 피해 +40%' },
     { id: 'tr_wg_b1', name: '천리마 등자', price: 800, parent: 'tr_wg_0', branch: 'B', icon: ['stirrup', '#c9ccd0'], bonus: { mountSpeed: 0.15, horseInvul: 0.4 }, desc: '말 위 이동 +15%, 말타기 무적 +0.4초' },
     { id: 'tr_wg_b2', name: '천마 금등자', price: 2000, parent: 'tr_wg_b1', branch: 'B', icon: ['stirrup', '#e2b84a'], bonus: { horseCd: 0.3, trailMul: 0.5, mountSpeed: 0.2 }, desc: '말타기 재사용 −30%, 발자국 피해 +50%, 말 위 이동 +20%' },
   ],

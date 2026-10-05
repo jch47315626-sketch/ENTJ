@@ -35,7 +35,7 @@ export const UPGRADES = [
     apply: (g) => g.player.recalc(),
   },
   {
-    id: 'guard', name: '친위대', category: '병법', maxLevel: 5, weight: 10, heroes: ['wanggeon'],
+    id: 'guard', name: '모병', category: '병법', maxLevel: 5, weight: 10, heroes: ['wanggeon'],
     describe: () => '통솔로 부르는 창병 +1, 머무는 시간 +2초',
     apply: (g) => g.player.recalc(),
   },

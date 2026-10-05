@@ -702,3 +702,7 @@ button.doll-slot:hover, button.doll-slot:focus-visible { border-color: var(--gol
   .grow-grid { grid-template-columns: 1fr 1fr; }
   .bottom-nav { left: 50%; right: auto; transform: translateX(-50%); width: min(640px, 100%); border-radius: 20px 20px 0 0; border: 1px solid rgba(255, 203, 107, 0.25); }
 }
+
+.bar.order i { background: linear-gradient(180deg, #9ec4ff, #3e6ab8); }
+.bar.order.full i { background: linear-gradient(180deg, #fff0a8, #ffcb6b); }
+.bar.order.full { box-shadow: 0 0 10px rgba(255, 203, 107, 0.8); }

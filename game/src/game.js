@@ -128,6 +128,7 @@ export class Game {
     this.endTimer = 0;
     this.view = { w: 1280, h: 720 }; // world-units visible; set by renderer
     this.applyStartPerks();
+    this.spawnRetinue();
   }
 
   // ---------------------------------------------------------------- helpers
@@ -315,6 +316,24 @@ export class Game {
     return { name, ratio: clamp(hp / max, 0, 1) };
   }
 
+  /**
+   * 군세 (왕건 통솔의 길): standing troops from the skill tree. They never leave;
+   * each kind has its own 군령 cycle (see systems/allies.js ORDERS).
+   */
+  spawnRetinue() {
+    const m = this.player.meta;
+    const roles = [
+      ...Array(m.retinueSpear ?? 0).fill('spear'),
+      ...Array(m.retinueArcher ?? 0).fill('archer'),
+      ...Array(m.retinueGuard ?? 0).fill('guard'),
+    ];
+    this.orders = {};
+    roles.forEach((role, i) => {
+      this.allies.push({ kind: 'retinue', role, idx: roles.filter((r, j) => r === role && j < i).length, x: this.player.x, y: this.player.y, r: 11, cd: 0, facing: 0 });
+      this.orders[role] ??= { t: 2 + Object.keys(this.orders).length * 1.3 };
+    });
+  }
+
   /** 마구니: one orbiting spirit per level of the upgrade. */
   syncMaguni() {
     const want = this.player.upgrades.maguni ?? 0;
@@ -407,7 +426,9 @@ export class Game {
     if (p.invuln > 0 || this.state !== 'play') return false;
     if (p.mount && this.time < p.mount.invulnUntil) return false;
     // Armour cuts 7% per point (max 50%), so it helps against big hits and small ones alike.
-    const dmg = Math.max(1, amount * (1 - Math.min(0.5, 0.07 * p.stats.armor)));
+    let dmg = Math.max(1, amount * (1 - Math.min(0.5, 0.07 * p.stats.armor)));
+    // 호위진: the bodyguards take a share of every blow.
+    if (p.wardUntil > this.time) dmg = Math.max(1, dmg * 0.6);
     this.damageLog[source] = (this.damageLog[source] ?? 0) + dmg;
     p.hp -= dmg;
     p.invuln = INVULN_TIME + (p.meta.invulBonus ?? 0);

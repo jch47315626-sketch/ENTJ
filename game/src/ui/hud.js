@@ -1,6 +1,7 @@
 import { UPGRADES, evolutionHint } from '../data/upgrades.js';
 import { currentWeaponLevel } from '../systems/weapons.js';
 import { WEAPONS } from '../data/weapons.js';
+import { ORDERS, orderEvery } from '../systems/allies.js';
 
 const $ = (id) => document.getElementById(id);
 const fmt = (s) => {
@@ -51,6 +52,16 @@ export class Hud {
       e.bossFill.style.width = `${h.boss.ratio * 100}%`;
     }
     e.status.innerHTML = heroStatus(g);
+    // 🏯 군령: fills toward the next order of any troop kind; flashes just before.
+    const orders = Object.entries(g.orders ?? {});
+    $('orderBar').hidden = !orders.length;
+    if (orders.length) {
+      const [role, o] = orders.reduce((a, b) => (b[1].t < a[1].t ? b : a));
+      const ratio = 1 - Math.max(0, o.t) / orderEvery(g, role);
+      $('orderFill').style.width = `${ratio * 100}%`;
+      $('orderBar').classList.toggle('full', o.t < 0.5);
+      $('orderLabel').textContent = o.t < 0.5 ? `⚔️ 군령 발동! ${ORDERS[role].name}` : `🏯 군령 · 다음 ${ORDERS[role].name}`;
+    }
     this.updateEvo(g);
   }
 
@@ -117,8 +128,9 @@ function heroStatus(g) {
   };
   const chips = [];
   if (p.hero.id === 'wanggeon') {
-    const army = allies('soldier') + allies('archer') + allies('shin');
+    const army = allies('retinue') + allies('soldier') + allies('archer') + allies('shin');
     chips.push(`🏯 군세 ${army}명`);
+    if (p.wardUntil > g.time) chips.push('🛡️ 호위진');
     if (ready('shin')) chips.push(`🛡️ 신숭겸 ${ready('shin')}`);
     if (ready('horse')) chips.push(p.mount ? '🐎 기마 중' : `🐎 말 ${ready('horse')}`);
   } else if (p.hero.id === 'gyeonhwon') {

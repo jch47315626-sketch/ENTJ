@@ -8,6 +8,12 @@ const ALLY_LOOKS = {
   decoy: { body: '#2d3b5c', trim: '#c9a24a', plume: '#b3261e', hat: 'hero', weapon: 'sword', skin: '#e3c39c' },
   shin: { body: '#2d3b5c', trim: '#c9a24a', plume: '#b3261e', hat: 'hero', weapon: 'sword', skin: '#e3c39c' },
 };
+/** 군세 (standing troops of 통솔의 길), by role. */
+const RETINUE_LOOKS = {
+  spear: { body: '#2d5a9c', accent: '#1e2a48', hat: 'helmetBlue', weapon: 'spear', trim: '#e8c060', skin: '#f0d0aa' },
+  archer: { body: '#3e6a8c', accent: '#1f2d3d', hat: 'hoodBlue', weapon: 'bow', trim: '#e8c060', skin: '#f0d0aa' },
+  guard: { body: '#1e3a78', accent: '#0e1424', hat: 'heavyHelmet', weapon: 'shield', trim: '#ffd76a', skin: '#f0d0aa', bulk: 1.15, brows: 'angry' },
+};
 
 /** 마구니: a little horned violet wisp with a flame tail; dim while recharging. */
 function drawMaguni(ctx, a) {
@@ -170,7 +176,8 @@ export class Renderer {
     drawUnit(ctx, { ...look, body: look.robe, mount: m ? '#f2ede0' : undefined },
       p.x, p.y, p.r, p.facing, {
         alpha: blink ? 0.45 : 1,
-        aura: shielded ? `rgba(240, 200, 110, ${0.35 + 0.15 * Math.sin(g.time * 20)})` : undefined,
+        aura: shielded ? `rgba(240, 200, 110, ${0.35 + 0.15 * Math.sin(g.time * 20)})`
+          : p.wardUntil > g.time ? `rgba(110, 160, 230, ${0.28 + 0.1 * Math.sin(g.time * 10)})` : undefined,
       });
     // Health strip under the hero.
     const w = 36, ratio = p.hp / p.stats.maxHp;
@@ -193,7 +200,8 @@ export class Renderer {
       ctx.stroke();
       ctx.setLineDash([]);
     }
-    drawUnit(ctx, ALLY_LOOKS[a.kind], a.x, a.y, a.r, a.facing, { alpha: fade, flash: a.hurtFlash > 0 });
+    const look = a.kind === 'retinue' ? RETINUE_LOOKS[a.role] : ALLY_LOOKS[a.kind];
+    drawUnit(ctx, look, a.x, a.y, a.r, a.facing, { alpha: fade, flash: a.hurtFlash > 0 });
     if (a.kind === 'shin') {
       const w = 38, ratio = clamp(a.hp / a.maxHp, 0, 1);
       ctx.fillStyle = 'rgba(29,26,23,0.75)';
@@ -657,10 +665,10 @@ export class Renderer {
     ctx.lineJoin = 'round';
     for (const t of g.texts) {
       const a = 1 - t.t / t.life;
-      ctx.font = `700 ${t.big ? 17 : t.hurt ? 16 : 13}px "Gowun Batang", serif`;
+      ctx.font = `700 ${t.order ? 15 : t.big ? 17 : t.hurt ? 16 : 13}px "Jua", "Gowun Dodum", sans-serif`;
       ctx.lineWidth = 3;
       ctx.strokeStyle = `rgba(29, 26, 23, ${a})`;
-      ctx.fillStyle = t.hurt ? `rgba(224, 72, 56, ${a})` : t.heal ? `rgba(160, 214, 140, ${a})` : `rgba(246, 239, 220, ${a})`;
+      ctx.fillStyle = t.order ? `rgba(255, 203, 107, ${a})` : t.hurt ? `rgba(224, 72, 56, ${a})` : t.heal ? `rgba(160, 214, 140, ${a})` : `rgba(246, 239, 220, ${a})`;
       ctx.strokeText(t.v, t.x, t.y);
       ctx.fillText(t.v, t.x, t.y);
     }
