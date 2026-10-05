@@ -64,7 +64,9 @@ export function afterSwing(g) {
   // 연참: a moment later, dash to a different foe and cut, then step out.
   if (m.rush && g.time >= (p.rushReadyAt ?? 0)) {
     const R = PAEGONG.rush;
-    p.rushReadyAt = g.time + R.cooldown;
+    const drill = p.upgrades.rushDrill ?? 0;
+    p.rushReadyAt = g.time + R.cooldown * Math.max(0.3, 1 - (m.rushCd ?? 0) - 0.12 * drill);
+    const rushMul = R.mul * (1 + 0.15 * drill);
     const first = g.nearestEnemy(p.x, p.y, R.range);
     g.later(R.delay, () => {
       if (g.state !== 'play') return;
@@ -75,21 +77,36 @@ export function afterSwing(g) {
       const d = Math.max(0, Math.hypot(t.x - p.x, t.y - p.y) - t.r - p.r - 14);
       p.invuln = Math.max(p.invuln, d / R.speed + 0.1);
       g.fx.push({ type: 'puff', x: p.x, y: p.y, t: 0, life: 0.4, size: 18, tone: 'mud' });
-      dash(p, ang, R.speed, d / R.speed, () => {
-        strike(g, R.mul, R.arc);
+      const cut = (angle, hops) => () => {
+        strike(g, rushMul, R.arc);
+        // 천하패왕인: the cut chains on to one more foe before stepping out.
+        if (hops > 0) {
+          const next = g.nearestEnemies(p.x, p.y, R.range, 4).find((e) => e !== t);
+          if (next) {
+            const a2 = Math.atan2(next.y - p.y, next.x - p.x);
+            const d2 = Math.max(0, Math.hypot(next.x - p.x, next.y - p.y) - next.r - p.r - 14);
+            p.invuln = Math.max(p.invuln, d2 / R.speed + 0.1);
+            dash(p, a2, R.speed, d2 / R.speed, cut(a2, hops - 1));
+            return;
+          }
+        }
+        finish(angle);
+      };
+      const finish = (angle) => {
         if (m.rushWave) {
           const W = PAEGONG.wave;
           g.projectiles.push({
             team: 'player', kind: 'wave', x: p.x, y: p.y,
-            vx: Math.cos(ang) * W.speed, vy: Math.sin(ang) * W.speed,
+            vx: Math.cos(angle) * W.speed, vy: Math.sin(angle) * W.speed,
             r: W.radius * p.stats.area, damage: weaponDamage(p) * W.mul * p.stats.might, knockback: 80,
-            life: W.life, pierce: Infinity, hit: new Set(), angle: ang,
+            life: W.life, pierce: Infinity, hit: new Set(), angle,
           });
         }
         g.sfx('chop');
         // 이탈: hop back out of the crowd.
-        dash(p, ang + Math.PI, R.backSpeed, R.back);
-      });
+        dash(p, angle + Math.PI, R.backSpeed, R.back);
+      };
+      dash(p, ang, R.speed, d / R.speed, cut(ang, m.rushChain ?? 0));
     });
   }
 }
@@ -99,12 +116,16 @@ export function onHurt(g) {
   const p = g.player;
   if (!p.meta.counter || g.time < (p.counterReadyAt ?? 0)) return;
   const C = BANGYEOK.counter;
-  p.counterReadyAt = g.time + C.cooldown;
+  const m = p.meta;
+  const drill = p.upgrades.counterDrill ?? 0;
+  p.counterReadyAt = g.time + C.cooldown * Math.max(0.3, 1 - (m.counterCd ?? 0));
+  const mul = C.mul * (1 + (m.counterMul ?? 0) + 0.25 * drill);
+  const radius = C.radius * (1 + (m.counterRadius ?? 0) + 0.1 * drill);
   p.countering = true;
   g.later(C.delay, () => {
     p.countering = false;
     if (g.state !== 'play') return;
-    hitArc(g, p.x, p.y, 0, C.radius * p.stats.area, 360, weaponDamage(p) * C.mul * p.stats.might, C.knockback, 'paewang', { stun: C.stun });
+    hitArc(g, p.x, p.y, 0, radius * p.stats.area, 360, weaponDamage(p) * mul * p.stats.might, C.knockback, 'paewang', { stun: C.stun });
     g.shake(6);
     g.sfx('quake');
     g.texts.push({ x: p.x, y: p.y - 44, v: '💥 반격!', t: 0, life: 0.8, order: true });
@@ -156,14 +177,17 @@ export function updateBuild(g, dt) {
 function updateFocus(g, dt) {
   const p = g.player;
   const F = BEOPRYEOK.focus;
-  p.focus = p.moving ? Math.max(0, (p.focus ?? 0) - dt * F.drain) : Math.min(1, (p.focus ?? 0) + dt / F.fill);
+  const drill = p.upgrades.focusDrill ?? 0;
+  const fill = F.fill / (1 + (p.meta.focusFill ?? 0) + 0.3 * drill);
+  p.focus = p.moving ? Math.max(0, (p.focus ?? 0) - dt * F.drain) : Math.min(1, (p.focus ?? 0) + dt / fill);
   if (!p.meta.bigOrb) return;
   const B = BEOPRYEOK.bigOrb;
-  p.orbTimer = p.focus >= 1 ? (p.orbTimer ?? B.every) - dt : B.every;
+  const every = B.every * Math.max(0.3, 1 - (p.meta.bigOrbCd ?? 0) - 0.1 * drill);
+  p.orbTimer = p.focus >= 1 ? Math.min(p.orbTimer ?? every, every) - dt : every;
   if (p.orbTimer > 0) return;
   const t = g.nearestEnemy(p.x, p.y, 520);
   if (!t) return;
-  p.orbTimer = B.every;
+  p.orbTimer = every;
   const ang = Math.atan2(t.y - p.y, t.x - p.x);
   const dmg = currentWeaponLevel(p).damage * B.mul * p.stats.might;
   g.projectiles.push({
@@ -180,24 +204,26 @@ function updateFocus(g, dt) {
 function updateChaos(g, dt) {
   const p = g.player;
   const H = HONRAN;
-  p.chaosTimer = (p.chaosTimer ?? H.every) - dt;
+  const drill = p.upgrades.chaosDrill ?? 0;
+  const every = H.every * Math.max(0.3, 1 - (p.meta.chaosCd ?? 0) - 0.12 * drill);
+  p.chaosTimer = Math.min(p.chaosTimer ?? every, every) - dt;
   if (p.chaosTimer > 0) return;
-  p.chaosTimer = H.every;
-  let pick = null, best = Infinity;
+  p.chaosTimer = every;
+  // 미륵하생경: sway the two nearest instead of one.
+  const picks = [];
   const maxTier = p.meta.gwansimAllTiers ? 99 : H.maxTier;
   g.grid.query(p.x, p.y, H.radius + 20, (e) => {
     if (e.dead || e.isBoss || e.def.behavior === 'static' || g.isCharmed(e)) return;
     if ((e.def.tier ?? 1) + (e.elite ? 1 : 0) > maxTier) return;
     const d = (e.x - p.x) ** 2 + (e.y - p.y) ** 2;
-    if (d < H.radius * H.radius && d < best) {
-      best = d;
-      pick = e;
-    }
+    if (d < H.radius * H.radius) picks.push({ e, d });
   });
-  if (!pick) return;
-  pick.charmUntil = g.time + H.time;
-  pick.charmPower = 1;
-  g.fx.push({ type: 'eye', x: pick.x, y: pick.y - pick.r - 6, t: 0, life: 0.8, follow: pick, size: 9 });
+  picks.sort((a, b) => a.d - b.d);
+  for (const { e } of picks.slice(0, 1 + (p.meta.chaosCount ?? 0))) {
+    e.charmUntil = g.time + H.time + drill;
+    e.charmPower = 1;
+    g.fx.push({ type: 'eye', x: e.x, y: e.y - e.r - 6, t: 0, life: 0.8, follow: e, size: 9 });
+  }
 }
 
 /** Short status for the HUD chips. */

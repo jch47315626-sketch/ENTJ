@@ -106,17 +106,17 @@ export const TREASURES = {
   ],
   gyeonhwon: [
     { id: 'tr_gh_0', name: '후백제 인장', price: 250, parent: null, branch: null, icon: ['seal', '#8e2a1e'], bonus: { might: 0.06 }, desc: '모든 공격 피해 +6%' },
-    { id: 'tr_gh_a1', name: '패왕의 인장', price: 800, parent: 'tr_gh_0', branch: 'A', icon: ['seal', '#c9a24a'], bonus: { specialMul: 0.4, momentum: 0.15 }, desc: '패왕의 일격 피해 +40%, 기세 +15%' },
-    { id: 'tr_gh_a2', name: '천하패왕인', price: 2000, parent: 'tr_gh_a1', branch: 'A', icon: ['seal', '#1d1a17'], bonus: { specialMul: 0.8, specialArea: 0.2, momentum: 0.25 }, desc: '패왕의 일격 피해 +80%, 범위 +20%, 기세 +25%' },
-    { id: 'tr_gh_b1', name: '청동 호심경', price: 800, parent: 'tr_gh_0', branch: 'B', icon: ['mirror', '#b07a48'], bonus: { armor: 2, maxHp: 20 }, desc: '가슴을 지키는 청동 거울. 갑주 +2, 체력 +20' },
-    { id: 'tr_gh_b2', name: '흑철 호심경', price: 2000, parent: 'tr_gh_b1', branch: 'B', icon: ['mirror', '#4a4d52'], bonus: { armor: 3, maxHp: 40, thorns: 15 }, desc: '갑주 +3, 체력 +40, 근접 반격 피해 +15' },
+    { id: 'tr_gh_a1', name: '질풍 인장', price: 800, parent: 'tr_gh_0', branch: 'A', icon: ['seal', '#c9a24a'], bonus: { rushCd: 0.3, might: 0.06 }, desc: '연참 재사용 −30%, 피해 +6%' },
+    { id: 'tr_gh_a2', name: '천하패왕인', price: 2000, parent: 'tr_gh_a1', branch: 'A', icon: ['seal', '#1d1a17'], bonus: { rushChain: 1, might: 0.1, specialMul: 0.3 }, desc: '연참이 두 적을 연달아 벤다, 피해 +10%, 패왕의 일격 +30%' },
+    { id: 'tr_gh_b1', name: '청동 호심경', price: 800, parent: 'tr_gh_0', branch: 'B', icon: ['mirror', '#b07a48'], bonus: { armor: 1, maxHp: 20, counterMul: 0.3 }, desc: '가슴을 지키는 청동 거울. 반격 피해 +30%, 갑주 +1, 체력 +20' },
+    { id: 'tr_gh_b2', name: '흑철 호심경', price: 2000, parent: 'tr_gh_b1', branch: 'B', icon: ['mirror', '#4a4d52'], bonus: { armor: 2, maxHp: 40, counterCd: 0.3, counterRadius: 0.25 }, desc: '반격 재사용 −30%, 반격 범위 +25%, 갑주 +2, 체력 +40' },
   ],
   gungye: [
     { id: 'tr_gy_0', name: '수정 염주', price: 250, parent: null, branch: null, icon: ['beads', '#cfe3ea'], bonus: { area: 0.05, xp: 0.05 }, desc: '공격 범위 +5%, 공훈 +5%' },
     { id: 'tr_gy_a1', name: '금강 염주', price: 800, parent: 'tr_gy_0', branch: 'A', icon: ['beads', '#e2b84a'], bonus: { mainDamage: 0.2, vajraCd: 0.15 }, desc: '석장 피해 +20%, 금강저 재사용 −15%' },
-    { id: 'tr_gy_a2', name: '천안 보주', price: 2000, parent: 'tr_gy_a1', branch: 'A', icon: ['beads', '#4a8ad0'], bonus: { mainDamage: 0.4, pierce: 1, rangeMul: 0.15 }, desc: '석장 피해 +40%, 관통 +1, 사거리 +15%' },
-    { id: 'tr_gy_b1', name: '관심경', price: 800, parent: 'tr_gy_0', branch: 'B', icon: ['scroll', '#e8dfc6'], bonus: { gwansimDur: 2, momentum: 0.15 }, desc: '관심법 지속 +2초, 기세 +15%' },
-    { id: 'tr_gy_b2', name: '미륵하생경', price: 2000, parent: 'tr_gy_b1', branch: 'B', icon: ['scroll', '#e2b84a'], bonus: { gwansimDur: 3, gwansimCount: 3, momentum: 0.25 }, desc: '관심법 지속 +3초, 홀리는 적 +3, 기세 +25%' },
+    { id: 'tr_gy_a2', name: '천안 보주', price: 2000, parent: 'tr_gy_a1', branch: 'A', icon: ['beads', '#4a8ad0'], bonus: { mainDamage: 0.25, focusFill: 0.5, bigOrbCd: 0.3 }, desc: '법력이 50% 빨리 모이고, 천안통 주기 −30%, 석장 피해 +25%' },
+    { id: 'tr_gy_b1', name: '관심경', price: 800, parent: 'tr_gy_0', branch: 'B', icon: ['scroll', '#e8dfc6'], bonus: { chaosCd: 0.3, gwansimDur: 2 }, desc: '혼란의 기운 주기 −30%, 관심법 지속 +2초' },
+    { id: 'tr_gy_b2', name: '미륵하생경', price: 2000, parent: 'tr_gy_b1', branch: 'B', icon: ['scroll', '#e2b84a'], bonus: { chaosCount: 1, gwansimCount: 3, momentum: 0.2 }, desc: '혼란의 기운이 한 번에 둘을 홀린다, 관심법 홀리는 적 +3, 기세 +20%' },
   ],
 };
 

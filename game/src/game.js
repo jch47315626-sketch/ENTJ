@@ -479,7 +479,7 @@ export class Game {
   buildChoices() {
     const p = this.player;
     const lvl = (u) => p.upgrades[u.id] ?? 0;
-    const pool = UPGRADES.filter((u) => (!u.heroes || u.heroes.includes(p.hero.id)) && (u.available ? u.available(this) : lvl(u) < u.maxLevel));
+    const pool = UPGRADES.filter((u) => (!u.heroes || u.heroes.includes(p.hero.id)) && (!u.needs || p.meta[u.needs]) && (u.available ? u.available(this) : lvl(u) < u.maxLevel));
     const choices = [];
     const evo = pool.find((u) => u.isEvolution?.(this));
     if (evo) choices.push(evo);

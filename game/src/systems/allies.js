@@ -119,7 +119,8 @@ const allyMul = (p) => p.stats.might * (1 + (p.meta.allyMul ?? 0));
 
 /** Order cycle length for one kind (보물 친위대의 방패 shortens every cycle). */
 export function orderEvery(g, role) {
-  return ORDERS[role].every * (1 - (g.player.meta.orderHaste ?? 0));
+  const p = g.player;
+  return ORDERS[role].every * Math.max(0.4, 1 - (p.meta.orderHaste ?? 0) - 0.1 * (p.upgrades.orderDrill ?? 0));
 }
 
 function updateOrders(g, dt) {
