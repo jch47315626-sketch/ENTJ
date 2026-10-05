@@ -191,24 +191,12 @@ const act = {
     save.secrets.push(sc.id);
     done();
   },
-  buyNode(node, branchId) {
+  // Skills from either path can be learned; the style follows what is learned.
+  buyNode(node) {
     const t = treeOf(save, sel.hero);
     if (t.nodes.includes(node.id) || save.money < node.price) return;
-    if (branchId && t.branch && t.branch !== branchId) return;
     save.money -= node.price;
     t.nodes.push(node.id);
-    if (branchId) t.branch = branchId;
-    done();
-  },
-  // 길 바꾸기: drop the chosen branch for 90% of what it cost.
-  respec() {
-    const t = treeOf(save, sel.hero);
-    const br = SKILL_TREES[sel.hero].branches.find((b) => b.id === t.branch);
-    if (!br) return;
-    const bought = br.nodes.filter((n) => t.nodes.includes(n.id));
-    save.money += Math.floor(0.9 * bought.reduce((a, n) => a + n.price, 0));
-    t.nodes = t.nodes.filter((id) => !bought.some((n) => n.id === id));
-    t.branch = null;
     done();
   },
   buyTreasure(item) {

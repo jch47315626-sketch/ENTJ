@@ -782,3 +782,7 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
   .hud-bottom .bar span { font-size: 18px; line-height: 28px; }
   .hero-status span { font-size: 15px; }
 }
+.style-card .style-now { color: var(--gold); font-weight: 400; font-family: var(--font-brush); font-size: 15px; }
+.bp-btn.chosen small { color: var(--gold); }
+/* done-tag had a fixed grid slot from the old shop layout; let new cards place it naturally */
+.step .done-tag, .item-card .done-tag, .grow-row .done-tag, .ic-ctrl .done-tag { grid-column: auto; grid-row: auto; text-align: center; }

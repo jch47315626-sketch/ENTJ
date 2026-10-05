@@ -47,11 +47,22 @@ const TRAIN_UI = {
 // Remembered between renders: which tab or card is open on each screen.
 const ui = { heroTab: 'gear', slot: 'head', view: {}, codexTab: 'hero', mapStage: null };
 
-/** Current build of a hero: { branch, name, icon, style } or null. */
+/**
+ * The hero's style is not chosen; it follows the skills learned.
+ * Returns { name, counts: {A, B}, main } or null when nothing is learned.
+ */
 function buildOf(save, heroId) {
-  const t = save.trees?.[heroId];
-  const br = t?.branch && SKILL_TREES[heroId].branches.find((b) => b.id === t.branch);
-  return br ? { ...br, icon: BUILD_ICON[heroId][br.id] } : null;
+  const nodes = save.trees?.[heroId]?.nodes ?? [];
+  const tree = SKILL_TREES[heroId];
+  const counts = Object.fromEntries(tree.branches.map((b) => [b.id, b.nodes.filter((n) => nodes.includes(n.id)).length]));
+  const learned = tree.branches.filter((b) => counts[b.id] > 0).sort((a, b) => counts[b.id] - counts[a.id]);
+  if (!learned.length) return null;
+  const tag = (b) => `${BUILD_ICON[heroId][b.id]} ${b.name.replace(/의 길$/, '')}`;
+  const [main, second] = learned;
+  const name = !second ? `${tag(main)}의 길`
+    : counts[main.id] === counts[second.id] ? `${tag(main)} + ${tag(second)} 혼합`
+    : `${tag(main)} 중심 + ${tag(second)}`;
+  return { name, counts, main: main.id };
 }
 
 function el(tag, cls, html) {
@@ -137,7 +148,7 @@ export function renderHome(save, sel, act) {
   hero.append(portrait(h, 120));
   const txt = el('div', 'hh-text');
   txt.append(el('div', 'hh-name', h.name));
-  txt.append(el('div', 'hh-build', build ? `${build.icon} ${build.name}` : '빌드 미선택 — 영웅에서 길을 고르세요'));
+  txt.append(el('div', 'hh-build', build ? build.name : '스타일 없음 — 스킬을 배우면 정해져요'));
   txt.append(gearRow(save, h.id));
   hero.append(txt);
   body.append(hero);
@@ -176,16 +187,16 @@ export function renderHeroes(save, sel, act) {
 
   const h = HEROES[sel.hero];
   const tree = SKILL_TREES[h.id];
-  const state = save.trees?.[h.id] ?? { nodes: [], branch: null };
-  const view = ui.view[h.id] ?? state.branch ?? 'A';
+  const build = buildOf(save, h.id);
+  const view = ui.view[h.id] ?? build?.main ?? 'A';
   const br = tree.branches.find((b) => b.id === view);
 
-  // The two builds: how this hero fights.
+  // The two paths: tabs to look at, not a choice. Learning skills sets the style.
   const builds = el('div', 'build-pick');
   for (const b of tree.branches) {
-    const chosen = state.branch === b.id;
-    const btn = button(`<span class="bp-icon">${BUILD_ICON[h.id][b.id]}</span><b>${b.name.replace(/의 길$/, '')}</b>${chosen ? '<small>●</small>' : '<small>○</small>'}`,
-      `bp-btn${b.id === view ? ' on' : ''}${chosen ? ' chosen' : ''}`, () => {
+    const n = build?.counts[b.id] ?? 0;
+    const btn = button(`<span class="bp-icon">${BUILD_ICON[h.id][b.id]}</span><b>${b.name.replace(/의 길$/, '')}</b><small>${n}/${b.nodes.length}</small>`,
+      `bp-btn${b.id === view ? ' on' : ''}${n ? ' chosen' : ''}`, () => {
         ui.view[h.id] = b.id;
         renderHeroes(save, sel, act);
       });
@@ -193,8 +204,8 @@ export function renderHeroes(save, sel, act) {
   }
   body.append(builds);
   const styleCard = el('div', 'style-card');
-  styleCard.innerHTML = `<small>${state.branch === view ? '현재 전투 스타일' : state.branch ? '다른 길 미리보기' : '아직 길을 고르지 않았어요'}</small>
-    <p>${br.style}</p>
+  styleCard.innerHTML = `<small>지금 스타일 · <b class="style-now">${build ? build.name : '없음 — 스킬을 배우면 자연스럽게 정해져요'}</b></small>
+    <p>${BUILD_ICON[h.id][view]} ${br.style}</p>
     <small class="kit">고유기 <b>${SPECIALS[h.special].name}</b> · 무기 ${WEAPONS[h.weapon].levels.map((w) => w.name).join(' → ')}</small>`;
   body.append(styleCard);
 
@@ -274,30 +285,24 @@ function itemCard(save, h, item, act) {
 /** Root node, then the viewed build's three steps. */
 function skillPanel(save, h, view, act) {
   const tree = SKILL_TREES[h.id];
-  const state = save.trees?.[h.id] ?? { nodes: [], branch: null };
+  const state = save.trees?.[h.id] ?? { nodes: [] };
   const has = (id) => state.nodes.includes(id);
   const box = el('div', 'skill-panel');
   const br = tree.branches.find((b) => b.id === view);
-  const blocked = state.branch && state.branch !== view;
+  box.append(el('p', 'hint', '두 길 모두 배울 수 있어요. 많이 배운 쪽이 지금 스타일이 되고, 섞으면 혼합 스타일이 돼요.'));
 
   const steps = [{ n: tree.root, branch: null, lv: '기본' }, ...br.nodes.map((n, i) => ({ n, branch: br.id, lv: `Lv.${i + 1}` }))];
   steps.forEach(({ n, branch, lv }, i) => {
     const prevOk = i === 0 || has(steps[i - 1].n.id);
     const got = has(n.id);
-    const st = got ? 'got' : branch && blocked ? 'locked' : prevOk ? 'open' : 'locked';
+    const st = got ? 'got' : prevOk ? 'open' : 'locked';
     const card = el('div', `step ${st}`);
     card.innerHTML = `<span class="st-lv">${lv}</span><div class="st-text"><b>${n.name}</b><span>${n.desc}</span></div>`;
     if (got) card.append(tag('✓ 습득'));
     else if (st === 'open') card.append(priceBtn(n.price, save.money, () => act.buyNode(n, branch)));
-    else card.append(tag(blocked && branch ? '다른 길' : '🔒', 'locked'));
+    else card.append(tag('🔒', 'locked'));
     box.append(card);
   });
-  if (blocked) {
-    const other = tree.branches.find((b) => b.id === state.branch);
-    const refund = Math.floor(0.9 * other.nodes.filter((n) => has(n.id)).reduce((a, n) => a + n.price, 0));
-    box.append(el('p', 'hint', `지금은 ${BUILD_ICON[h.id][other.id]} ${other.name}을 걷고 있어요. 길을 바꾸면 그 길에 쓴 냥의 90%를 돌려받아요.`));
-    box.append(button(`길 바꾸기 (+${fmt(refund)}냥)`, 'plain-btn', act.respec));
-  }
   return box;
 }
 
@@ -434,7 +439,7 @@ export function renderPrep(save, sel, act) {
   top.append(portrait(h, 96));
   const t = el('div', 'hh-text');
   t.append(el('div', 'hh-name', h.name));
-  t.append(el('div', 'hh-build', build ? `${build.icon} ${build.name}` : '빌드 미선택'));
+  t.append(el('div', 'hh-build', build ? build.name : '스타일 없음'));
   top.append(t);
   card.append(top);
 
