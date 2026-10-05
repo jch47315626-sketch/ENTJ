@@ -355,6 +355,51 @@ window.addEventListener('beforeunload', (e) => {
   e.returnValue = '';
 });
 
+// ------------------------------------------------------------ 📲 app install
+
+/** Installed and opened from the home screen. */
+const standalone = () => window.matchMedia?.('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true;
+// Inside another page (e.g. the claude.ai preview) the app cannot be installed.
+const topLevel = (() => {
+  try {
+    return window.self === window.top;
+  } catch {
+    return false;
+  }
+})();
+const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+if (topLevel && 'serviceWorker' in navigator && location.protocol !== 'file:') {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+let installPrompt = null;
+const installBtn = $('installBtn');
+// Android / desktop Chrome: the browser offers installation; keep it for our button.
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  installPrompt = e;
+  installBtn.hidden = standalone();
+});
+window.addEventListener('appinstalled', () => {
+  installPrompt = null;
+  installBtn.hidden = true;
+  toast('📲 설치 완료! 홈 화면에서 삼한난세를 눌러 보세요');
+});
+// iPhone: no install prompt exists, so the button shows the Safari steps instead.
+if (topLevel && isIos && !standalone()) installBtn.hidden = false;
+installBtn.addEventListener('click', async () => {
+  if (installPrompt) {
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') installBtn.hidden = true;
+    installPrompt = null;
+    return;
+  }
+  $('iosGuide').hidden = false;
+});
+$('iosGuideClose').addEventListener('click', () => ($('iosGuide').hidden = true));
+
 let last = performance.now();
 function frame(now) {
   const dt = Math.min(1 / 30, (now - last) / 1000);

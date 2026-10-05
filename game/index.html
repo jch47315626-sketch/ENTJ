@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>삼한난세</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#1f1a30">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="삼한난세">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Jua&family=Nanum+Brush+Script&display=swap">
@@ -66,6 +74,10 @@
       </div>
       <h1 class="game-title home-title"><span class="hanja">三韓亂世</span><span class="hangul">삼한난세</span></h1>
       <div id="homeBody"></div>
+      <button id="installBtn" class="install-card" type="button" hidden>
+        <img src="icons/icon-192.png" alt="" width="52" height="52">
+        <span><b>📲 앱으로 설치하기</b><small>홈 화면에서 바로 실행 · 인터넷 없이도 OK</small></span>
+      </button>
       <section class="howto" aria-label="조작법">
         <h3 class="howto-title"><span>🎮</span> 튜토리얼</h3>
         <button id="tutorReplay" class="plain-btn small replay-btn" type="button">▶ 첫 판 튜토리얼 다시 보기</button>
@@ -126,6 +138,19 @@
       <div class="tutor-text"><b id="tutorTitle"></b><p id="tutorText"></p></div>
     </div>
     <div class="tutor-foot"><span id="tutorDots" class="tutor-dots"></span><button id="tutorSkip" class="tutor-skip" type="button">건너뛰기</button></div>
+  </div>
+
+  <div id="iosGuide" class="confirm-back" hidden>
+    <div class="confirm-card ios-guide" role="dialog" aria-labelledby="iosGuideTitle">
+      <p id="iosGuideTitle" class="confirm-text">📲 아이폰에 설치하기</p>
+      <ol>
+        <li>Safari 아래쪽의 <b>공유 버튼</b> <span class="ios-share" aria-hidden="true">⬆︎</span> 누르기</li>
+        <li>목록을 내려 <b>홈 화면에 추가</b> 누르기</li>
+        <li>오른쪽 위 <b>추가</b> 누르면 끝!</li>
+      </ol>
+      <small>Safari에서만 돼요. 다른 앱 안의 브라우저라면 Safari로 열어 주세요.</small>
+      <div class="row-btns"><button id="iosGuideClose" class="seal-btn" type="button">알겠어요</button></div>
+    </div>
   </div>
 
   <div id="confirmBox" class="confirm-back" hidden>
