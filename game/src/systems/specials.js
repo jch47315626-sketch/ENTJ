@@ -12,11 +12,13 @@ export const SPECIALS = {
     name: '통솔',
     fire(g) {
       const p = g.player;
-      const count = 2 + p.stats.guard + (p.meta.guardBonus ?? 0);
+      // Twice the spearmen they used to be.
+      const count = 2 * (2 + p.stats.guard + (p.meta.guardBonus ?? 0));
       const life = 12 + 2 * p.stats.guard + (p.meta.tongsolLife ?? 0);
       for (let i = 0; i < count; i++) {
         const a = (i / count) * TAU + rand(-0.2, 0.2);
-        const x = p.x + Math.cos(a) * 40, y = p.y + Math.sin(a) * 40;
+        const ring = 40 + (i % 2) * 22;
+        const x = p.x + Math.cos(a) * ring, y = p.y + Math.sin(a) * ring;
         g.allies.push({ kind: 'soldier', x, y, r: 11, life, maxLife: life, cd: rand(0, 0.4), facing: a });
         g.fx.push({ type: 'puff', x, y, t: 0, life: 0.5, size: 18, tone: 'light' });
       }

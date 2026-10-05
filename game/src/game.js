@@ -314,6 +314,16 @@ export class Game {
     return { name, ratio: clamp(hp / max, 0, 1) };
   }
 
+  /** 마구니: one orbiting spirit per level of the upgrade. */
+  syncMaguni() {
+    const want = this.player.upgrades.maguni ?? 0;
+    let have = this.allies.filter((a) => a.kind === 'maguni').length;
+    while (have < want) {
+      this.allies.push({ kind: 'maguni', x: this.player.x, y: this.player.y, r: 10, facing: 0, rest: 0, hitAt: new WeakMap() });
+      have++;
+    }
+  }
+
   syncArcherAllies() {
     const want = this.player.upgrades.archers ?? 0;
     let have = this.allies.filter((a) => a.kind === 'archer' && !a.maxLife).length; // event archers don't count

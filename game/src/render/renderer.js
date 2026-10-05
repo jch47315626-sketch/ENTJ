@@ -9,6 +9,62 @@ const ALLY_LOOKS = {
   shin: { body: '#2d3b5c', trim: '#c9a24a', plume: '#b3261e', hat: 'hero', weapon: 'sword', skin: '#e3c39c' },
 };
 
+/** 마구니: a little horned violet wisp with a flame tail; dim while recharging. */
+function drawMaguni(ctx, a) {
+  const ready = a.rest <= 0;
+  const t = performance.now() / 1000;
+  ctx.save();
+  ctx.translate(a.x, a.y);
+  ctx.globalAlpha = ready ? 1 : 0.45;
+  // Flame tail trailing behind the orbit.
+  ctx.rotate(a.facing + Math.PI);
+  ctx.fillStyle = 'rgba(150, 90, 210, 0.45)';
+  ctx.beginPath();
+  ctx.moveTo(0, -a.r * 0.8);
+  ctx.quadraticCurveTo(a.r * 2.2, Math.sin(t * 12) * 4, 0, a.r * 0.8);
+  ctx.fill();
+  ctx.rotate(-(a.facing + Math.PI));
+  const bob = Math.sin(t * 8 + a.x * 0.1) * 2;
+  ctx.translate(0, bob);
+  // Horns.
+  ctx.fillStyle = '#2e1a40';
+  for (const k of [-1, 1]) {
+    ctx.beginPath();
+    ctx.moveTo(k * a.r * 0.35, -a.r * 0.7);
+    ctx.lineTo(k * a.r * 0.75, -a.r * 1.35);
+    ctx.lineTo(k * a.r * 0.75, -a.r * 0.55);
+    ctx.fill();
+  }
+  // Body.
+  const g = ctx.createRadialGradient(-2, -3, 1, 0, 0, a.r);
+  g.addColorStop(0, '#c8a0f0');
+  g.addColorStop(1, '#5a2e8a');
+  ctx.fillStyle = g;
+  ctx.strokeStyle = '#1d1a17';
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.arc(0, 0, a.r, 0, TAU);
+  ctx.fill();
+  ctx.stroke();
+  // Mischievous eyes and grin.
+  ctx.fillStyle = '#fff';
+  for (const k of [-1, 1]) {
+    ctx.beginPath();
+    ctx.ellipse(k * a.r * 0.35, -a.r * 0.1, a.r * 0.22, a.r * 0.28, 0, 0, TAU);
+    ctx.fill();
+  }
+  ctx.fillStyle = '#1d1a17';
+  for (const k of [-1, 1]) {
+    ctx.beginPath();
+    ctx.arc(k * a.r * 0.35, -a.r * 0.05, a.r * 0.11, 0, TAU);
+    ctx.fill();
+  }
+  ctx.beginPath();
+  ctx.arc(0, a.r * 0.25, a.r * 0.3, 0.15, Math.PI - 0.15);
+  ctx.stroke();
+  ctx.restore();
+}
+
 /** Fill / edge colours for arc-shaped attack effects. */
 const ARC_STYLE = {
   slash: { fill: [244, 236, 216, 0.5], edge: [29, 26, 23, 0.55], width: 2 },
@@ -125,6 +181,7 @@ export class Renderer {
   }
 
   drawAlly(ctx, a) {
+    if (a.kind === 'maguni') return drawMaguni(ctx, a);
     const fade = a.maxLife ? clamp(a.life / 1.2, 0, 1) : 1;
     if (a.kind === 'shin') {
       // Faint ring showing how far his banner draws the enemy.

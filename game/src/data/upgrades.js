@@ -59,9 +59,15 @@ export const UPGRADES = [
     apply: (g) => g.player.recalc(),
   },
   {
-    id: 'archers', name: '궁수대', category: '병법', maxLevel: 3, weight: 8,
+    id: 'archers', name: '궁수대', category: '병법', maxLevel: 3, weight: 8, heroes: ['wanggeon', 'gyeonhwon'],
     describe: () => '곁을 따르며 활을 쏘는 아군 궁수 +1',
     apply: (g) => g.syncArcherAllies(),
+  },
+  {
+    // 궁예 대신: 몸 주위를 도는 마구니가 날아오는 화살을 막고 닿는 적을 할퀸다.
+    id: 'maguni', name: '마구니', category: '병법', maxLevel: 4, weight: 9, heroes: ['gungye'],
+    describe: () => '주위를 도는 마구니 +1 — 날아오는 화살·투사체를 막고, 닿은 적에게 약한 피해',
+    apply: (g) => g.syncMaguni(),
   },
   {
     id: 'momentum', name: '기세', category: '병법', maxLevel: 3, weight: 7,

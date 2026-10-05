@@ -6,6 +6,8 @@ export function updateAllies(g, dt) {
   const p = g.player;
   let archerIndex = 0;
   const archerCount = g.allies.filter((a) => a.kind === 'archer').length;
+  let maguniIndex = 0;
+  const maguniCount = g.allies.filter((a) => a.kind === 'maguni').length;
 
   for (const a of g.allies) {
     if (a.kind === 'soldier') {
@@ -22,19 +24,21 @@ export function updateAllies(g, dt) {
       const d = Math.hypot(dx, dy) || 1;
       const reach = target ? target.r + a.r + 6 : 8;
       if (d > reach) {
-        a.x += (dx / d) * 175 * dt;
-        a.y += (dy / d) * 175 * dt;
+        a.x += (dx / d) * SOLDIER.speed * dt;
+        a.y += (dy / d) * SOLDIER.speed * dt;
       }
       if (target) a.facing = Math.atan2(dy, dx);
       if (target && d <= reach + 14 && a.cd <= 0) {
-        a.cd = 0.7;
-        g.damageEnemy(target, 9 * p.stats.might * (1 + (p.meta.allyMul ?? 0)), a.x, a.y, 50);
+        a.cd = SOLDIER.cooldown;
+        g.damageEnemy(target, SOLDIER.damage * p.stats.might * (1 + (p.meta.allyMul ?? 0)), a.x, a.y, 60);
         g.fx.push({ type: 'thrust', x: a.x, y: a.y, angle: a.facing, t: 0, life: 0.15 });
       }
       if (a.life <= 0) {
         a.dead = true;
         g.fx.push({ type: 'puff', x: a.x, y: a.y, t: 0, life: 0.5, size: 16, tone: 'light' });
       }
+    } else if (a.kind === 'maguni') {
+      updateMaguni(g, a, maguniIndex++, maguniCount, dt);
     } else if (a.kind === 'decoy') {
       // 신숭겸 in the king's armour: runs off with the royal flag, drawing enemies away.
       a.life -= dt;
@@ -90,6 +94,43 @@ export function updateAllies(g, dt) {
     }
   }
   g.allies = g.allies.filter((a) => !a.dead);
+}
+
+/** 통솔 spearmen. */
+const SOLDIER = { damage: 16, cooldown: 0.5, speed: 195 };
+
+/** 마구니: tuning. Blocks recharge so a dense volley can still get through. */
+const MAGUNI = { orbit: 64, spin: 2.6, damage: 5, hitEvery: 0.45, rest: 0.7 };
+
+/** One orbiting spirit: catches enemy shots and nips enemies it brushes. */
+function updateMaguni(g, a, i, n, dt) {
+  const p = g.player;
+  const ang = g.time * MAGUNI.spin + (i / n) * TAU;
+  const orbit = MAGUNI.orbit + n * 4;
+  a.x = p.x + Math.cos(ang) * orbit;
+  a.y = p.y + Math.sin(ang) * orbit * 0.8;
+  a.facing = ang + Math.PI / 2;
+  a.rest -= dt;
+  if (a.rest <= 0) {
+    for (const pr of g.projectiles) {
+      if (pr.team !== 'enemy' || pr.life <= 0) continue;
+      const rr = pr.r + a.r + 6;
+      if ((pr.x - a.x) ** 2 + (pr.y - a.y) ** 2 < rr * rr) {
+        pr.life = 0;
+        a.rest = MAGUNI.rest;
+        g.fx.push({ type: 'spark', x: pr.x, y: pr.y, t: 0, life: 0.25 });
+        break;
+      }
+    }
+  }
+  g.grid.query(a.x, a.y, a.r + 30, (e) => {
+    if (e.dead || g.isCharmed(e) || e.def.behavior === 'static') return;
+    const rr = a.r + e.r;
+    if ((e.x - a.x) ** 2 + (e.y - a.y) ** 2 > rr * rr) return;
+    if ((a.hitAt.get(e) ?? -1) > g.time) return;
+    a.hitAt.set(e, g.time + MAGUNI.hitEvery);
+    g.damageEnemy(e, MAGUNI.damage * p.stats.might, a.x, a.y, 20);
+  });
 }
 
 /** 신숭겸 falls; at the last tier his fall is an explosion. */
