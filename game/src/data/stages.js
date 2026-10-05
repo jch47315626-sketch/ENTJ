@@ -133,7 +133,7 @@ export const STAGES = {
     year: '936',
     intro: '936년 가을, 일리천. 고려군 8만 7천이 강가 벌판에 진을 친다. 아들에게 쫓겨난 늙은 견훤이 고려 편에서 옛 부하들을 바라본다. 삼한의 마지막 싸움이다.',
     ground: 'riverPlain',
-    difficulty: { label: '극악', stars: 5, enemyHp: 3.0, enemyDamage: 2.75, spawnRate: 1.35, eliteBonus: 0.22, bossHp: 1.9, bossDamage: 2.0, xpScale: 0.3 },
+    difficulty: { label: '극악', stars: 5, enemyHp: 3.6, enemyDamage: 3.0, spawnRate: 1.35, eliteBonus: 0.22, bossHp: 1.9, bossDamage: 2.0, xpScale: 0.3 },
     require: { grade: 5, count: 2 }, // gear needed to march here
     clearText: '후백제가 무너지고 삼한이 하나가 된다.',
     ending: {

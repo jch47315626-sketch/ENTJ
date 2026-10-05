@@ -257,10 +257,10 @@ function updateRetinue(g, a, dt) {
 }
 
 /** 통솔 spearmen. */
-const SOLDIER = { damage: 16, cooldown: 0.5, speed: 195 };
+const SOLDIER = { damage: 14, cooldown: 0.5, speed: 195 };
 
 /** 마구니: tuning. Blocks recharge so a dense volley can still get through. */
-const MAGUNI = { orbit: 64, spin: 2.6, damage: 5, hitEvery: 0.45, rest: 0.7 };
+const MAGUNI = { orbit: 64, spin: 2.6, damage: 7, hitEvery: 0.45, rest: 0.5 };
 
 /** One orbiting spirit: catches enemy shots and nips enemies it brushes. */
 function updateMaguni(g, a, i, n, dt) {

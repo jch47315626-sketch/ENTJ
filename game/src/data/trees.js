@@ -83,9 +83,9 @@ export const SKILL_TREES = {
       {
         id: 'B', name: '혼란의 길', style: '적 무리 속을 누비며 홀린다. 적끼리 베게 하고, 그 틈으로 빠져나간다.',
         nodes: [
-          { id: 'gy_b1', name: '혼란의 기운', price: 300, bonus: { chaosAura: 1, momentum: 0.2 }, desc: '1.8초마다 곁(130)의 병사 하나가 잠시 홀려 제 편을 벤다. 기세 +20%' },
+          { id: 'gy_b1', name: '혼란의 기운', price: 300, bonus: { chaosAura: 1, momentum: 0.2, mainDamage: 0.15 }, desc: '1.5초마다 곁의 병사 하나가 3초간 홀려 제 편을 세게 벤다. 기세 +20%, 석장 피해 +15%' },
           { id: 'gy_b2', name: '관심 수련', price: 650, bonus: { gwansimDur: 3, gwansimCount: 2 }, grants: ['gwansim'], desc: '관심법 Lv2로 출진, 홀리는 적 +2, 지속 +3초' },
-          { id: 'gy_b3', name: '미륵의 대계', price: 1300, bonus: { gwansimAllTiers: 1, charmBlast: 40 }, desc: '관심법이 모든 병사를 홀린다(적장 제외). 홀린 적이 쓰러지면 터진다' },
+          { id: 'gy_b3', name: '미륵의 대계', price: 1300, bonus: { gwansimAllTiers: 1, charmBlast: 40, mainDamage: 0.2 }, desc: '관심법·혼란이 모든 병사를 홀린다(적장 제외). 홀린 적이 쓰러지면 터진다, 석장 피해 +20%' },
         ],
       },
     ],

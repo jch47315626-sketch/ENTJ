@@ -175,7 +175,7 @@ export class Renderer {
       ctx.setLineDash([8, 10]);
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 130, g.time * 0.5, g.time * 0.5 + TAU);
+      ctx.arc(p.x, p.y, 150, g.time * 0.5, g.time * 0.5 + TAU);
       ctx.stroke();
       ctx.setLineDash([]);
     }

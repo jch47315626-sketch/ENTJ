@@ -28,7 +28,7 @@ const BEOPRYEOK = {
   focus: { fill: 1.5, drain: 2.5, mul: 0.5 },
   bigOrb: { every: 3.5, speed: 380, size: 24, mul: 4, burst: { radius: 80, mul: 1.2 } },
 };
-const HONRAN = { every: 1.8, radius: 130, time: 3, maxTier: 2 };
+const HONRAN = { every: 1.5, radius: 150, time: 3, maxTier: 2, power: 2 };
 
 const weaponDamage = (p) => Math.max(currentWeaponLevel(p).damage, 30);
 
@@ -221,7 +221,7 @@ function updateChaos(g, dt) {
   picks.sort((a, b) => a.d - b.d);
   for (const { e } of picks.slice(0, 1 + (p.meta.chaosCount ?? 0))) {
     e.charmUntil = g.time + H.time + drill;
-    e.charmPower = 1;
+    e.charmPower = H.power;
     g.fx.push({ type: 'eye', x: e.x, y: e.y - e.r - 6, t: 0, life: 0.8, follow: e, size: 9 });
   }
 }
