@@ -85,6 +85,34 @@ export const BOSS_PATTERNS = {
     },
   },
 
+  /** Fire pots lobbed around the hero: warning rings, then burning ground. */
+  firePots: {
+    start(g, b, P) {
+      b.ps = 'windup';
+      b.pt = P.windup * b.cooldownMul;
+      b.pots = [];
+      const p = g.player;
+      for (let i = 0; i < P.count; i++) {
+        // First pot lands on the hero; the rest scatter around them.
+        const a = Math.random() * Math.PI * 2, d = i === 0 ? 0 : P.spread * (0.4 + 0.6 * Math.random());
+        const pot = { x: p.x + Math.cos(a) * d, y: p.y + Math.sin(a) * d };
+        b.pots.push(pot);
+        g.fx.push({ type: 'ringWarn', x: pot.x, y: pot.y, range: P.radius, t: 0, life: b.pt });
+      }
+    },
+    update(g, b, P, dt) {
+      b.vx = b.vy = 0;
+      b.pt -= dt;
+      if (b.pt > 0) return false;
+      for (const pot of b.pots) {
+        g.zones.push({ team: 'enemy', kind: 'fire', x: pot.x, y: pot.y, r: P.radius, dps: P.dps * b.damageMul, life: P.life, t: 0 });
+        g.fx.push({ type: 'puff', x: pot.x, y: pot.y, t: 0, life: 0.5, size: 30, tone: 'mud' });
+      }
+      g.sfx('firePot');
+      return true;
+    },
+  },
+
   /** Telegraphed ring around the boss, then a full-circle slash. */
   spin: {
     start(g, b, P) {

@@ -60,6 +60,15 @@ export function updateAllies(g, dt) {
       }
       if (a.hp <= 0 || a.life <= 0) fallShin(g, a);
     } else if (a.kind === 'archer') {
+      // Temporary archers (stage events) leave when their time is up.
+      if (a.maxLife) {
+        a.life -= dt;
+        if (a.life <= 0) {
+          a.dead = true;
+          g.fx.push({ type: 'puff', x: a.x, y: a.y, t: 0, life: 0.5, size: 16, tone: 'light' });
+          continue;
+        }
+      }
       // Archers trail the hero on a slowly turning ring.
       const ang = g.time * 0.6 + (archerIndex / archerCount) * TAU;
       archerIndex++;

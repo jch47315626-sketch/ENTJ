@@ -204,6 +204,10 @@ const EFFECTS = {
     for (let i = 0; i < 6; i++) s.tone(1800 + Math.random() * 900, 0.05, { type: 'square', gain: 0.025, at: i * 0.035 });
     s.burst(0.25, { freq: 2500, slide: 900, q: 3, gain: 0.08 });
   },
+  firePot: (s) => {
+    s.burst(0.15, { filter: 'highpass', freq: 2000, gain: 0.12 });
+    s.burst(0.9, { filter: 'lowpass', freq: 800, slide: 200, gain: 0.25, at: 0.05 });
+  },
   hit: (s) => s.tone(190, 0.05, { type: 'square', gain: 0.035, slide: 90 }),
   kill: (s) => {
     s.burst(0.09, { filter: 'lowpass', freq: 700, gain: 0.1 });

@@ -76,6 +76,8 @@ export class Spawner {
         const a = (i / ev.count) * TAU;
         g.spawnEnemy(ev.enemy, p.x + Math.cos(a) * d, p.y + Math.sin(a) * d);
       }
+    } else if (ev.type === 'allies') {
+      g.spawnAllies(ev.ally, ev.count, ev.life);
     } else if (ev.type === 'decoy') {
       g.spawnDecoy(ev.life);
     }

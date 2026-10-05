@@ -155,4 +155,79 @@ export const GROUNDS = {
       }
     }
   },
+
+  winterRiver(ctx, v, time) {
+    ctx.fillStyle = '#c9cfd2';
+    ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
+    const tx0 = Math.floor(v.x0 / TILE) - 1, tx1 = Math.floor(v.x1 / TILE) + 1;
+    const ty0 = Math.floor(v.y0 / TILE) - 1, ty1 = Math.floor(v.y1 / TILE) + 1;
+
+    // A frozen river meanders across the field (horizontal band, wobbling).
+    ctx.fillStyle = 'rgba(150, 178, 196, 0.55)';
+    ctx.beginPath();
+    for (let x = v.x0 - 20; x <= v.x1 + 20; x += 20) {
+      const y = Math.sin(x / 260) * 90 + Math.sin(x / 97) * 18 - 60;
+      if (x === v.x0 - 20) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    for (let x = v.x1 + 20; x >= v.x0 - 20; x -= 20) ctx.lineTo(x, Math.sin(x / 260) * 90 + Math.sin(x / 83) * 16 + 70);
+    ctx.closePath();
+    ctx.fill();
+
+    for (let tx = tx0; tx <= tx1; tx++) {
+      for (let ty = ty0; ty <= ty1; ty++) {
+        const ox = tx * TILE, oy = ty * TILE;
+        // Snow drifts and bare earth showing through.
+        const h = hash2(tx, ty, 201);
+        ctx.fillStyle = h < 0.5 ? 'rgba(245, 247, 248, 0.7)' : 'rgba(120, 110, 96, 0.22)';
+        ctx.beginPath();
+        ctx.ellipse(ox + hash2(tx, ty, 202) * TILE, oy + hash2(tx, ty, 203) * TILE, 60 + h * 80, 26 + h * 30, h * 3, 0, Math.PI * 2);
+        ctx.fill();
+        // Ice cracks.
+        if (hash2(tx, ty, 204) < 0.35) {
+          const cx = ox + hash2(tx, ty, 205) * TILE, cy = oy + hash2(tx, ty, 206) * TILE;
+          ctx.strokeStyle = 'rgba(90, 120, 140, 0.35)';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          for (let k = 0; k < 4; k++) {
+            const a = hash2(tx, ty, 210 + k) * Math.PI * 2;
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + Math.cos(a) * 30, cy + Math.sin(a) * 30);
+          }
+          ctx.stroke();
+        }
+        // Bare winter trees: ink branches with a snow cap.
+        if (hash2(tx, ty, 220) < 0.22) {
+          const cx = ox + hash2(tx, ty, 221) * TILE, cy = oy + hash2(tx, ty, 222) * TILE;
+          ctx.fillStyle = 'rgba(22, 19, 15, 0.18)';
+          ctx.beginPath();
+          ctx.ellipse(cx + 8, cy + 10, 30, 18, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#2a2420';
+          ctx.lineCap = 'round';
+          for (let k = 0; k < 6; k++) {
+            const a = (k / 6) * Math.PI * 2 + hash2(tx, ty, 223);
+            ctx.lineWidth = 3 - k * 0.3;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + Math.cos(a) * 26, cy + Math.sin(a) * 22);
+            ctx.stroke();
+          }
+          ctx.fillStyle = '#f7f8f8';
+          ctx.beginPath();
+          ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // Falling snow flecks drift slowly.
+        for (let k = 0; k < 3; k++) {
+          const sx = ox + ((hash2(tx, ty, 230 + k) * TILE + time * 8) % TILE);
+          const sy = oy + ((hash2(tx, ty, 240 + k) * TILE + time * 22) % TILE);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+          ctx.beginPath();
+          ctx.arc(sx, sy, 1.6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+  },
 };

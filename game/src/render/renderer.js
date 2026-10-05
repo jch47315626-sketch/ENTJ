@@ -186,6 +186,21 @@ export class Renderer {
         ctx.beginPath();
         ctx.arc(z.x, z.y, z.r * 0.35, z.angle + 0.6, z.angle + TAU - 0.6);
         ctx.stroke();
+      } else if (z.kind === 'fire') {
+        // Burning pitch from a fire pot, flickering.
+        const flick = 0.85 + 0.15 * Math.sin(g.time * 18 + z.x);
+        ctx.fillStyle = `rgba(200, 70, 20, ${0.35 * a * flick})`;
+        ctx.beginPath();
+        ctx.arc(z.x, z.y, z.r, 0, TAU);
+        ctx.fill();
+        for (let k = 0; k < 7; k++) {
+          const ang = k * 0.9 + g.time * 2;
+          const rr = z.r * (0.25 + 0.55 * ((k * 37) % 10) / 10);
+          ctx.fillStyle = `rgba(250, ${150 + k * 12}, 60, ${0.55 * a})`;
+          ctx.beginPath();
+          ctx.arc(z.x + Math.cos(ang) * rr, z.y + Math.sin(ang) * rr - 4 * Math.sin(g.time * 9 + k), 6 + (k % 3) * 2, 0, TAU);
+          ctx.fill();
+        }
       } else if (z.kind === 'dust') {
         ctx.fillStyle = `rgba(150, 126, 90, ${0.35 * a})`;
         ctx.beginPath();

@@ -163,6 +163,16 @@ export class Game {
     return this.player;
   }
 
+  /** Friendly troops joining for a while (e.g. local lords' archers). */
+  spawnAllies(kind, count, life) {
+    const p = this.player;
+    for (let i = 0; i < count; i++) {
+      const a = (i / count) * TAU;
+      this.allies.push({ kind, x: p.x + Math.cos(a) * 60, y: p.y + Math.sin(a) * 60, r: 10, cd: 0.5, facing: a, life, maxLife: life });
+      this.fx.push({ type: 'puff', x: p.x + Math.cos(a) * 60, y: p.y + Math.sin(a) * 60, t: 0, life: 0.5, size: 18, tone: 'light' });
+    }
+  }
+
   spawnDecoy(life) {
     const p = this.player;
     // Run toward the side with the most enemies so the lure pulls them away.
@@ -216,7 +226,8 @@ export class Game {
       speed: def.speed * rand(0.92, 1.08),
       damage: def.damage * dmgScale * (v ? v.damageMul : 1),
       damageMul: dmgScale * (v ? v.damageMul : 1),
-      xp: def.xp * (v ? v.xpMul : 1),
+      // Tougher stages give more 공훈 per kill so levelling keeps pace.
+      xp: def.xp * (v ? v.xpMul : 1) * (1 + (diff.enemyHp - 1) * 0.6),
       vx: 0, vy: 0, kx: 0, ky: 0,
       facing: 0, flash: 0, seed: Math.random(),
     };
@@ -267,7 +278,7 @@ export class Game {
 
   syncArcherAllies() {
     const want = this.player.upgrades.archers ?? 0;
-    let have = this.allies.filter((a) => a.kind === 'archer').length;
+    let have = this.allies.filter((a) => a.kind === 'archer' && !a.maxLife).length; // event archers don't count
     while (have < want) {
       this.allies.push({ kind: 'archer', x: this.player.x, y: this.player.y, r: 10, cd: 0.5, facing: 0 });
       have++;
@@ -338,7 +349,8 @@ export class Game {
     const p = this.player;
     if (p.invuln > 0 || this.state !== 'play') return;
     if (p.mount && this.time < p.mount.invulnUntil) return;
-    const dmg = Math.max(1, amount - p.stats.armor);
+    // Armour cuts 7% per point (max 50%), so it helps against big hits and small ones alike.
+    const dmg = Math.max(1, amount * (1 - Math.min(0.5, 0.07 * p.stats.armor)));
     this.damageLog[source] = (this.damageLog[source] ?? 0) + dmg;
     p.hp -= dmg;
     p.invuln = INVULN_TIME;
@@ -742,8 +754,16 @@ export class Game {
   }
 
   updateZones(dt) {
+    const p = this.player;
     for (const z of this.zones) {
       z.t += dt;
+      if (z.team === 'enemy' && z.dps && dist2(z.x, z.y, p.x, p.y) < (z.r + p.r * 0.5) ** 2) {
+        z.tick = (z.tick ?? 0) - dt;
+        if (z.tick <= 0) {
+          z.tick = 0.5;
+          this.hurtPlayer(z.dps * 0.5, 'boss');
+        }
+      }
       if (z.team === 'player' && z.dps) {
         z.tick = (z.tick ?? 0) - dt;
         if (z.tick <= 0) {
