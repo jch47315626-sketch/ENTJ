@@ -14,6 +14,7 @@ import { BEHAVIORS } from './systems/enemyAI.js';
 import { updateAllies } from './systems/allies.js';
 import { updateTraps } from './systems/traps.js';
 import { planCrows, updateCrows, callCrow, CROW } from './systems/crows.js';
+import { applyDaily } from './data/daily.js';
 import { Spawner } from './systems/spawner.js';
 import { updateSkills } from './systems/skills.js';
 
@@ -51,11 +52,11 @@ class Player {
     const m = this.meta;
     const u = (id) => this.upgrades[id] ?? 0;
     // 패왕의 분노: below half health the hero hits harder and faster.
-    const maxHp = b.maxHp + 25 * u('vitality') + (m.maxHp ?? 0);
+    const maxHp = (b.maxHp + 25 * u('vitality') + (m.maxHp ?? 0)) * (m.hpMul ?? 1);
     this.enraged = !!m.berserk && this.hp !== undefined && this.hp < maxHp * 0.5;
     const rage = this.enraged ? m.berserk : 0;
     this.stats = {
-      maxHp: b.maxHp + 25 * u('vitality') + (m.maxHp ?? 0),
+      maxHp,
       speed: b.speed * (1 + 0.08 * u('swift') + (m.speed ?? 0)),
       might: b.might * (1 + 0.15 * u('might') + (m.might ?? 0) + rage),
       haste: b.haste * (1 - 0.1 * u('haste') - (m.haste ?? 0) - (rage ? 0.2 : 0)),
@@ -99,7 +100,9 @@ export class Game {
   constructor(opts) {
     this.opts = opts;
     const hero = HEROES[opts.heroId];
-    this.stage = scaleStage(STAGES[opts.stageId], opts.quick ? 0.2 : 1);
+    // 오늘의 전장: the day's rules are folded into the stage's difficulty.
+    const base = opts.daily ? applyDaily(STAGES[opts.stageId], opts.daily) : STAGES[opts.stageId];
+    this.stage = scaleStage(base, opts.quick ? 0.2 : 1);
     this.player = new Player(hero, opts.meta);
     this.enemies = [];
     this.projectiles = [];
@@ -242,11 +245,11 @@ export class Game {
       def, x, y, elite,
       r: def.radius * (v ? v.sizeMul : 1),
       hp, maxHp: hp,
-      speed: def.speed * rand(0.92, 1.08),
+      speed: def.speed * rand(0.92, 1.08) * (diff.enemySpeed ?? 1),
       damage: def.damage * dmgScale * (v ? v.damageMul : 1),
       damageMul: dmgScale * (v ? v.damageMul : 1),
       // Tougher stages give more 공훈 per kill so levelling keeps pace.
-      xp: def.xp * (v ? v.xpMul : 1) * (1 + (diff.enemyHp - 1) * (diff.xpScale ?? 0.6)),
+      xp: def.xp * (v ? v.xpMul : 1) * (1 + (diff.enemyHp - 1) * (diff.xpScale ?? 0.6)) * (diff.xpMul ?? 1),
       vx: 0, vy: 0, kx: 0, ky: 0,
       facing: 0, flash: 0, seed: Math.random(),
     };
@@ -540,14 +543,14 @@ export class Game {
   /** 냥 earned so far this run, before any victory bonus (shown in the HUD). */
   liveReward() {
     const base = baseReward({ kills: this.kills, seconds: this.time, won: false, bossKilled: false });
-    return Math.round(base * REWARD_BY_STARS[this.stage.difficulty.stars] * (1 + (this.opts.meta?.reward ?? 0)));
+    return Math.round(base * REWARD_BY_STARS[this.stage.difficulty.stars] * (1 + (this.opts.meta?.reward ?? 0)) * (this.stage.difficulty.rewardMul ?? 1));
   }
 
   /** 냥 for this run: base by performance, scaled by stage stars and 재물운. */
   computeReward(won) {
     const stars = this.stage.difficulty.stars;
     const base = baseReward({ kills: this.kills, seconds: this.time, won, bossKilled: won });
-    const mul = REWARD_BY_STARS[stars] * (1 + (this.opts.meta?.reward ?? 0));
+    const mul = REWARD_BY_STARS[stars] * (1 + (this.opts.meta?.reward ?? 0)) * (this.stage.difficulty.rewardMul ?? 1);
     return { base, mul, total: Math.round(base * mul), stars, bossBonus: won ? Math.round(BOSS_REWARD * mul) : 0 };
   }
 
@@ -627,7 +630,7 @@ export class Game {
     }
     p.invuln -= dt;
     // Natural recovery: 1% of max HP every 10 seconds.
-    if (p.hp < p.stats.maxHp) p.hp = Math.min(p.stats.maxHp, p.hp + p.stats.maxHp * HP_REGEN * dt);
+    if (!this.stage.difficulty.noRegen && p.hp < p.stats.maxHp) p.hp = Math.min(p.stats.maxHp, p.hp + p.stats.maxHp * HP_REGEN * dt);
     p.hurtFlash -= dt;
     this.updateMount(dt);
     this.shakeAmt = Math.max(0, this.shakeAmt - dt * 30);

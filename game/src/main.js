@@ -10,6 +10,7 @@ import { loadSave, writeSave, outfitOf, treeOf, encodeSave, decodeSave } from '.
 import { SKILL_TREES } from './data/trees.js';
 import { runFacts, recordRun, checkAchievements, claimAchievement, readyCount } from './core/achieve.js';
 import { ACHIEVEMENTS } from './data/achievements.js';
+import { dailyFor, dailyHeroBonus, todayKey } from './data/daily.js';
 import { metaBonus, FORGE, forgeCost, gradeOpen, entryCheck } from './data/meta.js';
 import { STAGES } from './data/stages.js';
 import { HEROES } from './data/heroes.js';
@@ -27,34 +28,47 @@ const sel = { hero: 'wanggeon', stage: 'seonamhae' };
 const save = loadSave();
 writeSave(save); // persist any format migration right away
 let introTimer = 0;
+/** The 오늘의 전장 being played (so 다시 출진 replays it), or null. */
+let runDaily = null;
 
-function newGame() {
+/** Starts a battle: the chosen hero and field, or a daily challenge. */
+function newGame(daily = null) {
+  runDaily = daily?.rules ? daily : null;
+  const heroId = runDaily?.heroId ?? sel.hero;
+  const stageId = runDaily?.stageId ?? sel.stage;
   // Gear gate: send the player back to the menu, where the reason is shown.
-  if (!entryCheck(save, sel.hero, STAGES[sel.stage]).ok) {
+  if (!runDaily && !entryCheck(save, sel.hero, STAGES[sel.stage]).ok) {
     toMenu('prep');
     return;
   }
   // Remember the choice so the next visit opens on the same hero and field.
-  save.sel = { hero: sel.hero, stage: sel.stage };
+  if (!runDaily) save.sel = { hero: sel.hero, stage: sel.stage };
   writeSave(save);
+  const meta = metaBonus(save, heroId);
+  if (runDaily) {
+    const hb = dailyHeroBonus(runDaily);
+    if (hb.might) meta.might = (meta.might ?? 0) + hb.might;
+    if (hb.hpMul) meta.hpMul = hb.hpMul;
+  }
   sound.unlock();
   input.reset();
   hud.clearBanner();
   game = new Game({
-    heroId: sel.hero,
-    stageId: sel.stage,
-    quick: $('quickMode').checked,
+    heroId,
+    stageId,
+    daily: runDaily,
+    quick: !runDaily && $('quickMode').checked,
     onBanner: (t, size) => hud.banner(t, size),
     onState,
     onBoss: (def) => hud.bossIntro(def),
     onSfx: (name) => sound.sfx(name),
-    meta: metaBonus(save, sel.hero),
+    meta,
   });
   window.__game = game; // handy for debugging from the console
   renderer.render(game, input, 0);
   hud.show(true);
   hud.update(game, 0, true);
-  renderIntro(STAGES[sel.stage]);
+  renderIntro(STAGES[stageId], runDaily);
   showScreen('intro');
   introTimer = 2.6;
   // First battle ever: guided steps. After that, no hints — the player knows the controls.
@@ -97,11 +111,24 @@ function onState(state, g) {
       for (const [id, n] of Object.entries(g.killsBy)) c.kills[id] = (c.kills[id] ?? 0) + n;
       const run = runFacts(g, state === 'clear', save);
       recordRun(save, run);
+      // 오늘의 전장: the first win of that day pays its bonus once.
+      let dailyBonus = 0;
+      const dd = g.stage.daily;
+      if (dd && state === 'clear') {
+        if (save.daily?.date !== dd.date) save.daily = { date: dd.date, cleared: false };
+        if (!save.daily.cleared) {
+          save.daily.cleared = true;
+          dailyBonus = dd.reward;
+          save.money += dailyBonus;
+          c.earned += dailyBonus;
+          save.stats.dailyWins = (save.stats.dailyWins ?? 0) + 1;
+        }
+      }
       const unlocked = checkAchievements(save, run);
       writeSave(save);
       updateBadge();
       // What this run added to the 도감, for the result card.
-      g.resultExtra = { unlocks: unlocked.map((a) => `${a.icon} ${a.name}`), newFoes: Object.keys(g.killsBy).filter((id) => !known.has(id)).length };
+      g.resultExtra = { dailyBonus, unlocks: unlocked.map((a) => `${a.icon} ${a.name}`), newFoes: Object.keys(g.killsBy).filter((id) => !known.has(id)).length };
     }
     renderResult(g, state === 'clear', g.resultExtra);
     showScreen('result');
@@ -179,7 +206,8 @@ const act = {
   go,
   refresh,
   toast,
-  start: newGame,
+  start: () => newGame(),
+  startDaily: () => newGame(dailyFor(todayKey())),
   pickHero(id) {
     sel.hero = id;
     refresh();
@@ -313,7 +341,7 @@ input.on('key', (k) => {
   if (k === 'p' || k === 'escape') game.togglePause();
   if (k === 'm') setMuted(!sound.muted);
   if (game.state === 'levelup' && ['1', '2', '3'].includes(k)) game.choose(Number(k) - 1);
-  if ((game.state === 'over' || game.state === 'clear') && k === 'enter') newGame();
+  if ((game.state === 'over' || game.state === 'clear') && k === 'enter') newGame(runDaily);
 });
 
 for (const b of $('bottomNav').querySelectorAll('button')) b.addEventListener('click', () => go(b.dataset.go));
@@ -331,7 +359,7 @@ $('homeSave').addEventListener('click', () => {
 $('pauseBtn').addEventListener('click', () => game?.togglePause());
 $('resumeBtn').addEventListener('click', () => game?.togglePause());
 $('quitBtn').addEventListener('click', () => askLeave(() => toMenu('home')));
-$('retryBtn').addEventListener('click', newGame);
+$('retryBtn').addEventListener('click', () => newGame(runDaily));
 $('homeBtn').addEventListener('click', () => toMenu('home'));
 $('toMapBtn').addEventListener('click', () => toMenu('map'));
 $('nextBtn').addEventListener('click', () => {

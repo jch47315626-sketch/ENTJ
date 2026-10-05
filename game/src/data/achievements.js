@@ -57,6 +57,10 @@ export const ACHIEVEMENTS = [
   { id: 'crow50', group: 'field', icon: '🪙', name: '까마귀 대박', desc: '까마귀 한 번에 엽전 50개를 모은다', reward: 800, check: (s) => (s.stats.crowBest ?? 0) >= 50 },
   { id: 'crow20', group: 'field', icon: '🌳', name: '감나무 지기', desc: '까마귀를 모두 합쳐 20번 부른다', reward: 800, goal: (s) => [s.stats.crowCalls ?? 0, 20] },
 
+  // 오늘의 전장
+  { id: 'daily1', group: 'field', icon: '📅', name: '오늘의 승자', desc: '오늘의 전장에서 처음 승리한다', reward: 300, check: (s) => (s.stats.dailyWins ?? 0) >= 1 },
+  { id: 'daily7', group: 'field', icon: '🗓️', name: '하루도 빠짐없이', desc: '오늘의 전장을 7번 (서로 다른 날) 이긴다', reward: 3000, goal: (s) => [s.stats.dailyWins ?? 0, 7] },
+
   // 군영
   { id: 'fullSet', group: 'camp', icon: '🧥', name: '완전 무장', desc: '한 영웅이 장비 6부위를 모두 찬다', reward: 500,
     check: (s) => Object.values(s.equipped ?? {}).some((o) => SLOTS.every((sl) => o?.[sl.id])) },

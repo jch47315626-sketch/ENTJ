@@ -9,6 +9,7 @@ import {
 } from '../data/meta.js';
 import { SKILL_TREES, TREASURES } from '../data/trees.js';
 import { ACHIEVEMENTS, ACH_GROUPS, progressOf } from '../data/achievements.js';
+import { dailyFor, todayKey, untilTomorrow } from '../data/daily.js';
 import { SPECIALS } from '../systems/specials.js';
 import { drawUnit } from '../render/sprites.js';
 import { iconCanvas } from '../render/icons.js';
@@ -166,6 +167,31 @@ export function renderHome(save, sel, act) {
   const cta = button('⚔️ 출진하기', 'seal-btn cta', () => act.go('prep'));
   card.append(cta);
   body.append(card);
+  body.append(dailyCard(save, act));
+}
+
+/** 📅 오늘의 전장: today's hero, field and rules, and whether its bonus is taken. */
+function dailyCard(save, act) {
+  const d = dailyFor(todayKey());
+  const st = STAGES[d.stageId];
+  const h = HEROES[d.heroId];
+  const done = save.daily?.date === d.date && save.daily.cleared;
+  const [, mm, dd] = d.date.split('-').map(Number);
+  const card = el('div', `daily-card${done ? ' done' : ''}`);
+  card.append(el('div', 'dc-head', `<b>📅 오늘의 전장</b><span>${mm}월 ${dd}일 · 새 도전까지 ${untilTomorrow()}</span>`));
+  const who = el('div', 'dc-who');
+  who.append(portrait(h, 56));
+  who.append(el('div', 'dc-where', `<b>${h.name}로 출진</b><span>${starText(st.difficulty.stars)} ${st.numeral} ${st.name}</span>`));
+  card.append(who);
+  const [hard, boon] = d.rules;
+  card.append(el('div', 'dc-rules', `
+    <span class="dc-rule hard">${hard.icon} <b>${hard.name}</b> ${hard.desc}</span>
+    <span class="dc-rule boon">${boon.icon} <b>${boon.name}</b> ${boon.desc}</span>`));
+  card.append(el('p', 'dc-reward', done
+    ? '✅ 오늘 보상을 받았어요 — 다시 도전은 언제든 자유!'
+    : `첫 승리 보상 <b>🪙 ${fmt(d.reward)}</b> <small>(판 보상과 별도)</small>`));
+  card.append(button(done ? '🔁 다시 도전하기' : '📅 도전하기', 'daily-btn', () => act.startDaily()));
+  return card;
 }
 
 // =================================================================== 영웅

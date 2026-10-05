@@ -12,7 +12,7 @@ export const CROW = {
 
 /** When the branches drop: 2–3 times, spread over the run before the boss. */
 export function planCrows(g) {
-  const n = Math.random() < 0.5 ? 2 : 3;
+  const n = g.stage.difficulty.crowCount ?? (Math.random() < 0.5 ? 2 : 3);
   const end = Math.max(90, (g.stage.bossAt ?? 300) - 15);
   const span = (end - 35) / n;
   g.crowPlan = Array.from({ length: n }, (_, i) => 35 + span * i + rand(0, span * 0.6));
