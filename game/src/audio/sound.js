@@ -11,8 +11,11 @@ export class Sound {
   constructor() {
     this.ctx = null;
     this.muted = false;
+    this.volume = 0.8;
     try {
       this.muted = localStorage.getItem('samhan-muted') === '1';
+      const v = parseFloat(localStorage.getItem('samhan-volume'));
+      if (v >= 0 && v <= 1) this.volume = v;
     } catch {}
     this.last = {};
     this.music = { on: false, step: 0, next: 0, intensity: 0, timer: null };
@@ -25,7 +28,7 @@ export class Sound {
       if (!AC) return;
       this.ctx = new AC();
       this.master = this.ctx.createGain();
-      this.master.gain.value = this.muted ? 0 : 0.8;
+      this.master.gain.value = this.muted ? 0 : this.volume;
       this.master.connect(this.ctx.destination);
       this.sfxBus = this.ctx.createGain();
       this.sfxBus.gain.value = 0.9;
@@ -41,12 +44,21 @@ export class Sound {
     if (this.ctx.state === 'suspended') this.ctx.resume();
   }
 
+  /** Master volume 0–1 (remembered in this browser). */
+  setVolume(v) {
+    this.volume = Math.max(0, Math.min(1, v));
+    try {
+      localStorage.setItem('samhan-volume', String(this.volume));
+    } catch {}
+    if (this.master && !this.muted) this.master.gain.setTargetAtTime(this.volume, this.ctx.currentTime, 0.05);
+  }
+
   setMuted(m) {
     this.muted = m;
     try {
       localStorage.setItem('samhan-muted', m ? '1' : '0');
     } catch {}
-    if (this.master) this.master.gain.setTargetAtTime(m ? 0 : 0.8, this.ctx.currentTime, 0.05);
+    if (this.master) this.master.gain.setTargetAtTime(m ? 0 : this.volume, this.ctx.currentTime, 0.05);
   }
 
   // ------------------------------------------------------------ primitives

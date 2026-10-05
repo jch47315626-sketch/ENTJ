@@ -27,9 +27,13 @@
           <div class="bar boss"><i id="bossFill"></i></div>
         </div>
       </div>
-      <div class="hud-right">
-        <button id="muteBtn" class="icon-btn" type="button" aria-pressed="false" aria-label="소리">🔊</button>
-        <button id="pauseBtn" class="icon-btn" type="button" aria-label="일시정지">⏸</button>
+    </div>
+    <div class="hud-corner">
+      <button id="muteBtn" class="icon-btn" type="button" aria-expanded="false" aria-label="소리 조절">🔊</button>
+      <button id="pauseBtn" class="icon-btn" type="button" aria-label="일시정지">⏸</button>
+      <div id="soundPanel" class="sound-panel" hidden>
+        <label>🔉 <input id="volume" type="range" min="0" max="100" step="5" aria-label="소리 크기"> <b id="volumeText">80</b></label>
+        <button id="muteToggle" class="plain-btn small" type="button">소리 끄기</button>
       </div>
     </div>
     <div class="hud-bottom">

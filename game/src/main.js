@@ -248,8 +248,15 @@ const act = {
 function setMuted(m) {
   sound.setMuted(m);
   $('soundOn').checked = !m;
-  $('muteBtn').setAttribute('aria-pressed', String(m));
   $('muteBtn').textContent = m ? '🔇' : '🔊';
+  $('muteToggle').textContent = m ? '소리 켜기' : '소리 끄기';
+}
+
+function setVolume(pct) {
+  sound.setVolume(pct / 100);
+  $('volume').value = String(pct);
+  $('volumeText').textContent = String(pct);
+  if (pct > 0 && sound.muted) setMuted(false);
 }
 
 input.on('key', (k) => {
@@ -281,7 +288,20 @@ $('nextBtn').addEventListener('click', () => {
   sel.stage = next;
   newGame();
 });
-$('muteBtn').addEventListener('click', () => setMuted(!sound.muted));
+// 🔊 opens a small volume panel under the corner buttons.
+$('muteBtn').addEventListener('click', () => {
+  const panel = $('soundPanel');
+  panel.hidden = !panel.hidden;
+  $('muteBtn').setAttribute('aria-expanded', String(!panel.hidden));
+});
+$('volume').addEventListener('input', (e) => setVolume(Number(e.target.value)));
+// Tapping anywhere outside the corner closes the volume panel.
+document.addEventListener('pointerdown', (e) => {
+  if ($('soundPanel').hidden || e.target.closest('.hud-corner')) return;
+  $('soundPanel').hidden = true;
+  $('muteBtn').setAttribute('aria-expanded', 'false');
+});
+$('muteToggle').addEventListener('click', () => setMuted(!sound.muted));
 $('soundOn').addEventListener('change', (e) => setMuted(!e.target.checked));
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && game?.state === 'play') game.togglePause();
@@ -308,5 +328,6 @@ function frame(now) {
 // Open on the hero and field chosen last time.
 if (save.sel && HEROES[save.sel.hero] && STAGES[save.sel.stage]) Object.assign(sel, save.sel);
 setMuted(sound.muted);
+setVolume(Math.round(sound.volume * 100));
 toMenu('home');
 requestAnimationFrame(frame);
