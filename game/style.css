@@ -730,3 +730,18 @@ button.doll-slot:hover, button.doll-slot:focus-visible { border-color: var(--gol
   .banner, .banner.small { top: calc(env(safe-area-inset-top, 0px) + 168px); font-size: clamp(18px, 5vw, 26px); }
   .banner.big { top: calc(env(safe-area-inset-top, 0px) + 160px); font-size: clamp(32px, 9vw, 52px); }
 }
+/* Bottom bars (공훈 · 기세 · 군령): bigger, bolder, easier to read mid-fight */
+.hud-bottom { width: min(600px, calc(100% - 24px)); gap: 6px; bottom: max(14px, env(safe-area-inset-bottom)); }
+.hud-bottom .bar { height: 26px; border: 2px solid rgba(0, 0, 0, 0.55); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); }
+.hud-bottom .bar span { font-family: var(--font-brush); font-size: 16px; line-height: 22px; padding-left: 12px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9); letter-spacing: 0.02em; }
+.hero-status span { font-size: 14px; padding: 4px 12px; }
+.hud-vitals .bar.hp { height: 22px; }
+.hud-vitals .bar.hp span { font-size: 13px; line-height: 20px; padding-left: 8px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9); }
+@media (max-width: 640px) {
+  .hud-bottom .bar { height: 24px; }
+  .hud-bottom .bar span { font-size: 15px; line-height: 20px; }
+}
+.hud-bottom .bar span, .hud-vitals .bar.hp span {
+  color: #fff;
+  text-shadow: -1px -1px 0 #1a1420, 1px -1px 0 #1a1420, -1px 1px 0 #1a1420, 1px 1px 0 #1a1420, 0 0 4px rgba(0, 0, 0, 0.9);
+}
