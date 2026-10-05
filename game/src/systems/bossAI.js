@@ -81,7 +81,7 @@ export const BOSS_PATTERNS = {
         g.projectiles.push({
           team: 'enemy', kind: P.kind ?? 'hook', x: b.x, y: b.y,
           vx: Math.cos(a) * P.speed, vy: Math.sin(a) * P.speed,
-          r: P.kind === 'arrow' ? 6 : 8, damage: P.damage * b.damageMul, source: 'boss', life: 1.6, angle: a, spin: P.kind === 'arrow' ? undefined : 0,
+          r: P.kind === 'arrow' ? 6 : P.kind === 'wave' ? 14 : 8, damage: P.damage * b.damageMul, source: 'boss', life: 1.6, angle: a, spin: P.kind === 'arrow' ? undefined : 0,
         });
       }
       g.sfx(P.kind === 'arrow' ? 'volley' : 'throw');
@@ -153,6 +153,20 @@ const PRED = (g, lead) => {
 };
 
 Object.assign(BOSS_PATTERNS, {
+  /** Calls a squad in a ring around the boss (capped so it cannot snowball). */
+  summon: {
+    start(g, b, P) {
+      const alive = g.enemies.filter((e) => !e.dead && !e.isBoss).length;
+      if (alive > 14) return;
+      g.summonAround(P.enemy, P.count, b.x, b.y, 130);
+      if (P.banner) g.banner(P.banner, 'small');
+      g.sfx('horn');
+    },
+    update() {
+      return true;
+    },
+  },
+
   /**
    * 관심법 낙뢰: reads where the hero is going and marks it; the first bolt
    * lands on that predicted spot, the rest scatter around it.
@@ -306,15 +320,33 @@ export function updateBoss(g, b, dt) {
     if (def.enrage.banner) g.banner(def.enrage.banner);
   }
 
+  // Two-phase bosses: new look, new pattern cycle and a short breather.
+  const P2 = def.phase2;
+  if (P2 && !b.phase2 && b.hp / b.maxHp <= P2.below) {
+    b.phase2 = true;
+    b.patterns = P2.patterns;
+    b.pi = undefined;
+    b.halo = null;
+    b.contactDamage = null;
+    b.speed *= P2.speedMul ?? 1;
+    if (P2.look) b.def = { ...b.def, look: P2.look };
+    b.invulnUntil = g.time + (P2.invuln ?? 0);
+    g.banner(P2.banner);
+    g.shake(10);
+    g.sfx('gong');
+    g.fx.push({ type: 'bossSpin', x: b.x, y: b.y, range: 120, t: 0, life: 0.5 });
+  }
+
+  const patterns = b.patterns ?? def.patterns;
   if (b.pi === undefined) {
     b.pi = 0;
-    BOSS_PATTERNS[def.patterns[0].type].start(g, b, def.patterns[0]);
+    BOSS_PATTERNS[patterns[0].type].start(g, b, patterns[0]);
   }
-  const P = def.patterns[b.pi];
+  const P = patterns[b.pi];
   const done = BOSS_PATTERNS[P.type].update(g, b, P, dt);
   if (done) {
-    b.pi = (b.pi + 1) % def.patterns.length;
-    const N = def.patterns[b.pi];
+    b.pi = (b.pi + 1) % patterns.length;
+    const N = patterns[b.pi];
     BOSS_PATTERNS[N.type].start(g, b, N);
   }
 }

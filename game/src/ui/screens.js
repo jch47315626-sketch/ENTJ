@@ -334,6 +334,14 @@ export function renderResult(g, won) {
   $('resultText').textContent = won
     ? `${withObject(boss?.name ?? '적장')} 꺾었다. ${g.stage.clearText}`
     : g.boss ? `${boss.name}의 진을 넘지 못했다. 책략을 바꿔 다시 도전하라.` : `${g.stage.name}에서 쓰러졌다. 이동 동선과 책략을 바꿔 다시 도전하라.`;
+  // The last battlefield closes the story with its own ending.
+  const end = won && g.stage.ending;
+  seal.classList.toggle('ending', !!end);
+  if (end) {
+    seal.textContent = end.seal;
+    $('resultTitle').textContent = end.title;
+    $('resultText').textContent = end.alt?.[g.player.hero.id] ?? end.text;
+  }
   $('nextBtn').hidden = !(won && g.stage.next);
   const r = g.reward;
   $('resultReward').innerHTML = r

@@ -80,6 +80,35 @@ export class Spawner {
       g.spawnAllies(ev.ally, ev.count, ev.life);
     } else if (ev.type === 'decoy') {
       g.spawnDecoy(ev.life);
+    } else if (ev.type === 'charge') {
+      // 대규모 기병 돌격: a wall of riders sweeps straight across the field.
+      const dir = rand(0, TAU);
+      const back = dir + Math.PI, side = dir + Math.PI / 2;
+      const d = g.spawnDistance() + 60;
+      const cx = p.x + Math.cos(back) * d, cy = p.y + Math.sin(back) * d;
+      g.fx.push({ type: 'dashLine', x: cx, y: cy, angle: dir, length: d * 2, width: ev.width ?? 360, t: 0, life: ev.warn ?? 1.4 });
+      for (let i = 0; i < ev.count; i++) {
+        const off = (i / (ev.count - 1) - 0.5) * (ev.width ?? 360);
+        const e = g.spawnEnemy(ev.enemy, cx + Math.cos(side) * off + rand(-20, 20), cy + Math.sin(side) * off + rand(-20, 20), { elite: !!ev.elite });
+        if (!e) continue;
+        // Start already lined up: a short wind-up, then a long straight run.
+        e.state = 'windup';
+        e.t = (ev.warn ?? 1.4) + rand(0, 0.25);
+        e.dashDir = dir;
+        e.facing = dir;
+        e.longRun = d * 2;
+      }
+    } else if (ev.type === 'defect') {
+      // 항복: nearby soldiers lay down their arms and turn on their old side.
+      const picks = g.enemies.filter((e) => !e.dead && !e.isBoss && e.def.behavior !== 'static' && !g.isCharmed(e))
+        .sort((a, b) => ((a.x - p.x) ** 2 + (a.y - p.y) ** 2) - ((b.x - p.x) ** 2 + (b.y - p.y) ** 2))
+        .slice(0, ev.count);
+      for (const e of picks) {
+        e.charmUntil = g.time + ev.life;
+        e.charmPower = ev.power ?? 1;
+        e.hp = e.maxHp;
+        g.fx.push({ type: 'eye', x: e.x, y: e.y - e.r - 6, t: 0, life: 1, follow: e, size: 9 });
+      }
     } else if (ev.type === 'night') {
       // 관심법의 밤: sight shrinks; an assassin squad slips in under it.
       g.darkTotal = ev.life;

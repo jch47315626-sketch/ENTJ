@@ -326,4 +326,82 @@ export const GROUNDS = {
       }
     }
   },
+  /** 일리천: a broad late-summer plain cut by a shallow river, reeds on its banks. */
+  riverPlain(ctx, v, time) {
+    ctx.fillStyle = '#8f9460';
+    ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
+    const tx0 = Math.floor(v.x0 / TILE) - 1, tx1 = Math.floor(v.x1 / TILE) + 1;
+    const ty0 = Math.floor(v.y0 / TILE) - 1, ty1 = Math.floor(v.y1 / TILE) + 1;
+    const riverX = (y) => Math.sin(y / 340) * 160 + Math.sin(y / 113) * 30 + 260;
+
+    // Grass tones and trampled earth.
+    for (let tx = tx0; tx <= tx1; tx++) {
+      for (let ty = ty0; ty <= ty1; ty++) {
+        const ox = tx * TILE, oy = ty * TILE;
+        const h = hash2(tx, ty, 401);
+        ctx.fillStyle = h < 0.55 ? 'rgba(170, 170, 96, 0.35)' : 'rgba(110, 96, 64, 0.22)';
+        ctx.beginPath();
+        ctx.ellipse(ox + hash2(tx, ty, 402) * TILE, oy + hash2(tx, ty, 403) * TILE, 70 + h * 70, 30 + h * 26, h * 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // The river (vertical band, wobbling) with lighter shallows and moving glints.
+    ctx.fillStyle = 'rgba(96, 128, 136, 0.85)';
+    ctx.beginPath();
+    for (let y = v.y0 - 20; y <= v.y1 + 20; y += 20) {
+      const x = riverX(y) - 70;
+      if (y === v.y0 - 20) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    for (let y = v.y1 + 20; y >= v.y0 - 20; y -= 20) ctx.lineTo(riverX(y) + 70 + Math.sin(y / 71) * 10, y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = 'rgba(160, 186, 186, 0.35)';
+    for (let y = Math.floor(v.y0 / 40) * 40; y <= v.y1; y += 40) {
+      const k = hash2(0, y / 40, 410);
+      const gx = riverX(y) + (k - 0.5) * 90 + Math.sin(time * 1.5 + k * 9) * 6;
+      ctx.fillRect(gx, y + ((time * 30) % 40), 14 + k * 16, 2);
+    }
+
+    // Reeds along the banks, swaying; stones and lost arrows in the grass.
+    for (let tx = tx0; tx <= tx1; tx++) {
+      for (let ty = ty0; ty <= ty1; ty++) {
+        const ox = tx * TILE, oy = ty * TILE;
+        for (let k = 0; k < 5; k++) {
+          const y = oy + hash2(tx, ty, 420 + k) * TILE;
+          const bank = riverX(y) + (hash2(tx, ty, 430 + k) < 0.5 ? -82 : 82);
+          if (bank < ox || bank > ox + TILE) continue;
+          const sway = Math.sin(time * 2 + y * 0.05) * 3;
+          ctx.strokeStyle = '#5e5a2c';
+          ctx.lineWidth = 1.6;
+          for (let r = 0; r < 4; r++) {
+            ctx.beginPath();
+            ctx.moveTo(bank + r * 4 - 6, y);
+            ctx.lineTo(bank + r * 4 - 6 + sway, y - 18 - r * 3);
+            ctx.stroke();
+          }
+          ctx.fillStyle = '#7a5a34';
+          ctx.fillRect(bank + sway - 2, y - 24, 3, 7);
+        }
+        if (hash2(tx, ty, 440) < 0.3) {
+          const cx = ox + hash2(tx, ty, 441) * TILE, cy = oy + hash2(tx, ty, 442) * TILE;
+          ctx.fillStyle = '#6e6a5a';
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, 10, 6, 0.3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        if (hash2(tx, ty, 450) < 0.35) {
+          const cx = ox + hash2(tx, ty, 451) * TILE, cy = oy + hash2(tx, ty, 452) * TILE;
+          const a = hash2(tx, ty, 453) * Math.PI;
+          ctx.strokeStyle = 'rgba(40, 30, 20, 0.7)';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + Math.cos(a) * 16, cy - Math.abs(Math.sin(a)) * 14 - 4);
+          ctx.stroke();
+        }
+      }
+    }
+  },
 };

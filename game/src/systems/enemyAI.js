@@ -115,7 +115,9 @@ export const BEHAVIORS = {
       e.t -= dt;
       if (e.t <= 0) {
         e.state = 'charge';
-        e.travel = 0;
+        // Event charges (기병 돌격) run much farther than a normal pass.
+        e.travel = -(e.longRun ?? 0);
+        e.longRun = 0;
       }
     } else if (e.state === 'charge') {
       e.vx = Math.cos(e.dashDir) * P.chargeSpeed;

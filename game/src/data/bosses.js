@@ -195,4 +195,77 @@ export const BOSSES = {
       { type: 'firePots', windup: 0.9, count: 3, spread: 120, radius: 58, dps: 18, life: 3 },
     ],
   },
+
+  // 일리천 (★5) — 아버지를 가두고 왕위를 빼앗은 후백제의 마지막 왕
+  singeom: {
+    id: 'singeom',
+    name: '신검',
+    hanja: '神劍',
+    epithet: '후백제의 마지막 왕',
+    hp: 8000, speed: 92, radius: 32, damage: 17, knockResist: 0.96, xp: 0,
+    look: { body: '#5a1e1a', accent: '#24100c', hat: 'crown', weapon: 'spear', trim: '#d8b46a', skin: '#dcb58c', mount: '#2d241c' },
+    // 1단계: 말 위에서 기병을 지휘한다.
+    patterns: [
+      { type: 'chase', time: 1.6 },
+      { type: 'dash', windup: 0.65, speed: 620, distance: 480, damage: 24, repeat: 2 },
+      { type: 'summon', enemy: 'eliteCavalry', count: 4, banner: '신검이 기병을 부른다!' },
+      { type: 'chase', time: 1.2 },
+      { type: 'fan', windup: 0.55, count: 7, spread: 60, speed: 340, damage: 13, kind: 'arrow' },
+      { type: 'dash', windup: 0.55, speed: 640, distance: 440, damage: 24, repeat: 3 },
+    ],
+    // 2단계: 말에서 내려 미친 듯이 휘두른다.
+    phase2: {
+      below: 0.5, speedMul: 1.25, invuln: 1.6,
+      banner: '찬탈자의 광기 — 신검이 말에서 뛰어내린다!',
+      look: { body: '#7a1e16', accent: '#24100c', hat: 'crown', weapon: 'greatsword', trim: '#ffd76a', skin: '#dcb58c' },
+      patterns: [
+        { type: 'chase', time: 1.0 },
+        { type: 'spin', windup: 0.6, radius: 160, damage: 26, repeat: 2 },
+        { type: 'firePots', windup: 0.7, count: 5, spread: 170, radius: 60, dps: 22, life: 3 },
+        { type: 'chase', time: 0.9 },
+        { type: 'dash', windup: 0.5, speed: 600, distance: 420, damage: 26, repeat: 3 },
+        { type: 'fan', windup: 0.5, count: 11, spread: 140, speed: 320, damage: 13, kind: 'arrow' },
+      ],
+    },
+    summons: [
+      { atHpRatio: 0.75, enemy: 'ironclad', count: 6, banner: '후백제 철갑병이 왕을 감싼다!' },
+      { atHpRatio: 0.25, enemy: 'eliteArcher', count: 6, banner: '마지막 궁수대가 활을 든다!' },
+    ],
+    enrage: { below: 0.2, speedMul: 1.15, cooldownMul: 0.75, banner: '신검 — "이 나라는 내 것이다!"' },
+  },
+
+  // 견훤·궁예로 출진하면: 삼한을 하나로 묶으려는 왕건과의 가상 결전.
+  wanggeonBoss: {
+    id: 'wanggeonBoss',
+    name: '왕건',
+    hanja: '王建',
+    epithet: '고려 태조 · 삼한을 하나로',
+    hp: 8000, speed: 88, radius: 30, damage: 16, knockResist: 0.96, xp: 0,
+    look: { body: '#2d3b5c', accent: '#151c2c', hat: 'hero', weapon: 'sword', trim: '#c9a24a', plume: '#b3261e', skin: '#e8c9a0' },
+    patterns: [
+      { type: 'chase', time: 1.6 },
+      { type: 'spin', windup: 0.75, radius: 150, damage: 24 },
+      { type: 'summon', enemy: 'shield', count: 5, banner: '통솔 — 고려 방패병이 왕을 지킨다!' },
+      { type: 'chase', time: 1.2 },
+      { type: 'fan', windup: 0.6, count: 5, spread: 50, speed: 360, damage: 16, kind: 'wave' },
+      { type: 'dash', windup: 0.6, speed: 560, distance: 420, damage: 24 },
+    ],
+    phase2: {
+      below: 0.5, speedMul: 1.15, invuln: 1.6,
+      banner: '태조의 검 — 왕건이 검을 뽑아 든다!',
+      look: { body: '#1e2a48', accent: '#0e1424', hat: 'crown', weapon: 'sword', trim: '#ffd76a', plume: '#ffd76a', skin: '#e8c9a0', mount: '#6b4a2e' },
+      patterns: [
+        { type: 'chase', time: 1.0 },
+        { type: 'spin', windup: 0.6, radius: 165, damage: 26, repeat: 2 },
+        { type: 'fan', windup: 0.55, count: 12, spread: 330, speed: 320, damage: 15, kind: 'wave' },
+        { type: 'summon', enemy: 'eliteCavalry', count: 4, banner: '고려 기병대가 돌진한다!' },
+        { type: 'dash', windup: 0.5, speed: 620, distance: 440, damage: 26, repeat: 2 },
+        { type: 'fan', windup: 0.5, count: 7, spread: 70, speed: 380, damage: 16, kind: 'wave' },
+      ],
+    },
+    summons: [
+      { atHpRatio: 0.7, enemy: 'ironclad', count: 6, banner: '고려 철갑병이 가세한다!' },
+    ],
+    enrage: { below: 0.2, speedMul: 1.15, cooldownMul: 0.75, banner: '왕건 — "삼한은 하나가 되어야 한다!"' },
+  },
 };
