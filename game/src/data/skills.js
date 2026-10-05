@@ -48,3 +48,22 @@ export const HORSE = [
     requires: { upgrade: 'swift', level: 2 },
     desc: '무적 2초. 부딪힌 적을 짓밟아 날려 버린다.' },
 ];
+
+/**
+ * 철쇄 (견훤's chain-hook skill, gained from level-ups). On cooldown he
+ * hurls iron chains at ranged soldiers and drags them to his feet, stunned.
+ * `targets` lists which enemy ids can be hooked; the last tier slams the
+ * ground where they land.
+ */
+export const CHAIN = [
+  { name: '철쇄', cooldown: 9, count: 2, range: 520, stun: 0.6, targets: ['archer'],
+    desc: '쇠사슬로 멀리 있는 궁수 둘을 발밑으로 끌어온다. 끌려온 적은 잠시 기절한다.' },
+  { name: '쌍철쇄', cooldown: 8, count: 3, range: 560, stun: 0.8, targets: ['archer'],
+    desc: '더 자주, 더 멀리서 궁수 셋을 끌어온다.' },
+  { name: '천근쇄', cooldown: 7, count: 4, range: 600, stun: 1.0, targets: ['archer', 'eliteArcher'],
+    desc: '정예 궁수까지 끌어온다. 넷까지, 기절 1초.' },
+  { name: '패왕쇄', cooldown: 6, count: 5, range: 640, stun: 1.2, targets: ['archer', 'eliteArcher'], evolution: true,
+    slam: { radius: 80, damage: 45 },
+    requires: { upgrade: 'fury', level: 2 },
+    desc: '다섯을 끌어와 땅에 내리꽂는다. 떨어진 자리 주변 적까지 피해를 입는다.' },
+];

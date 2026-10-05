@@ -199,6 +199,11 @@ const EFFECTS = {
     EFFECTS.horn(s);
     for (let i = 0; i < 6; i++) s.drum(i % 3 === 2 ? 70 : 110, 0.09, 0.14, 0.15 + i * 0.09 + (i >= 3 ? 0.08 : 0));
   },
+  chain: (s) => {
+    // Rattling chain: a burst of short metallic clinks.
+    for (let i = 0; i < 6; i++) s.tone(1800 + Math.random() * 900, 0.05, { type: 'square', gain: 0.025, at: i * 0.035 });
+    s.burst(0.25, { freq: 2500, slide: 900, q: 3, gain: 0.08 });
+  },
   hit: (s) => s.tone(190, 0.05, { type: 'square', gain: 0.035, slide: 90 }),
   kill: (s) => {
     s.burst(0.09, { filter: 'lowpass', freq: 700, gain: 0.1 });

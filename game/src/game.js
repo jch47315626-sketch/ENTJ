@@ -555,6 +555,10 @@ export class Game {
         this.fx.push({ type: 'puff', x: e.x, y: e.y, t: 0, life: 0.5, size: 16, tone: 'light' });
       }
       e.atkCd = (e.atkCd ?? 0) - dt;
+      if (e.pull) {
+        this.updatePull(e, dt);
+        continue;
+      }
       if (e.stun > 0) {
         e.stun -= dt;
         e.vx = e.vy = 0;
@@ -680,6 +684,31 @@ export class Game {
       }
     }
     this.projectiles = this.projectiles.filter((pr) => pr.life > 0);
+  }
+
+  /** 철쇄: drag a hooked enemy to a spot just in front of the hero. */
+  updatePull(e, dt) {
+    const p = this.player;
+    const a = Math.atan2(e.y - p.y, e.x - p.x);
+    const tx = p.x + Math.cos(a) * (p.r + e.r + 26), ty = p.y + Math.sin(a) * (p.r + e.r + 26);
+    const dx = tx - e.x, dy = ty - e.y, d = Math.hypot(dx, dy);
+    const step = 900 * dt;
+    e.facing = Math.atan2(-dy, -dx);
+    if (d > step) {
+      e.x += (dx / d) * step;
+      e.y += (dy / d) * step;
+      return;
+    }
+    e.x = tx;
+    e.y = ty;
+    e.kx = e.ky = 0;
+    e.stun = Math.max(e.stun ?? 0, e.pull.stun);
+    if (e.pull.slam) {
+      hitArc(this, e.x, e.y, 0, e.pull.slam.radius, 360, e.pull.slam.damage * p.stats.might, 0, 'chop'); // no knockback: keep them at his feet
+      this.shake(4);
+    }
+    this.fx.push({ type: 'puff', x: e.x, y: e.y, t: 0, life: 0.4, size: 18, tone: 'mud' });
+    e.pull = null;
   }
 
   /** 말타기: hoofprints that hurt enemies, and trampling at the top tier. */

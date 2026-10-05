@@ -1,4 +1,4 @@
-import { SHIN, HORSE } from '../data/skills.js';
+import { SHIN, HORSE, CHAIN } from '../data/skills.js';
 import { enemyHpScale } from '../data/balance.js';
 import { rand } from '../core/math.js';
 
@@ -37,6 +37,21 @@ export const ACTIVE_SKILLS = {
   },
 };
 
+// 견훤 — 철쇄: ranged soldiers are hooked and dragged to his feet.
+ACTIVE_SKILLS.chain = {
+  levels: CHAIN,
+  fire(g, L) {
+    const p = g.player;
+    const pool = g.enemies.filter((e) => !e.dead && !e.isBoss && !e.pull && !g.isCharmed(e) && L.targets.includes(e.def.id)
+      && (e.x - p.x) ** 2 + (e.y - p.y) ** 2 < L.range * L.range);
+    // Nothing to hook: look again shortly instead of wasting the cooldown.
+    if (!pool.length) return 1;
+    pool.sort((a, b) => ((b.x - p.x) ** 2 + (b.y - p.y) ** 2) - ((a.x - p.x) ** 2 + (a.y - p.y) ** 2));
+    for (const e of pool.slice(0, L.count)) e.pull = { stun: L.stun, slam: L.slam };
+    g.sfx('chain');
+  },
+};
+
 /** Counts down each owned skill and casts it when ready. */
 export function updateSkills(g, dt) {
   const p = g.player;
@@ -48,7 +63,9 @@ export function updateSkills(g, dt) {
     p.skillTimers[id] = (p.skillTimers[id] ?? L.cooldown) - dt;
     if (p.skillTimers[id] <= 0) {
       p.skillTimers[id] = L.cooldown;
-      skill.fire(g, L);
+      // A skill may return a shorter wait (e.g. no valid target yet).
+      const wait = skill.fire(g, L);
+      if (typeof wait === 'number') p.skillTimers[id] = wait;
     }
   }
 }

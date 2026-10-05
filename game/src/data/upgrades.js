@@ -1,5 +1,5 @@
 import { WEAPONS } from './weapons.js';
-import { GWANSIM, TIER_NAMES, SHIN, HORSE } from './skills.js';
+import { GWANSIM, TIER_NAMES, SHIN, HORSE, CHAIN } from './skills.js';
 
 /**
  * Level-up choices (책략). `apply` runs after the level has been increased,
@@ -41,6 +41,7 @@ export const UPGRADES = [
   },
   skillUpgrade('shin', SHIN, ['wanggeon'], '병법', 14),
   skillUpgrade('horse', HORSE, ['wanggeon'], '지세', 13),
+  skillUpgrade('chain', CHAIN, ['gyeonhwon'], '무예', 14),
   {
     id: 'fury', name: '패기', category: '무예', maxLevel: 4, weight: 9, heroes: ['gyeonhwon'],
     describe: () => '패왕의 일격 피해 +30%, 기절 +0.2초',
@@ -163,6 +164,7 @@ export function evolutionHint(g) {
   check(nextWeaponLevel(g));
   if (p.upgrades.shin) check(SHIN[p.upgrades.shin]);
   if (p.upgrades.horse) check(HORSE[p.upgrades.horse]);
+  if (p.upgrades.chain) check(CHAIN[p.upgrades.chain]);
   for (const id of p.hero.subWeapons ?? []) {
     const lv = p.upgrades[id] ?? 0;
     if (lv > 0) check(WEAPONS[id].levels[lv]);

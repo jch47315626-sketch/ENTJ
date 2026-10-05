@@ -206,6 +206,21 @@ export class Renderer {
     const charmed = g.isCharmed(e);
     if (charmed) aura = `rgba(150, 100, 210, ${0.3 + 0.12 * Math.sin(g.time * 6 + e.seed * 6)})`;
     drawUnit(ctx, e.def.look, e.x, e.y, e.r, e.facing, { flash: e.flash > 0, elite: e.elite, shake: windup, aura });
+    if (e.pull) {
+      // 철쇄: the iron chain from 견훤's hand to the hooked soldier.
+      const p = g.player;
+      ctx.strokeStyle = 'rgba(29, 26, 23, 0.9)';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(e.x, e.y);
+      ctx.stroke();
+      ctx.strokeStyle = '#a7aab0';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
     if (charmed) {
       // Small violet eye over swayed soldiers, fading as the spell runs out.
       const left = Math.min(1, (e.charmUntil - g.time) / 2);
