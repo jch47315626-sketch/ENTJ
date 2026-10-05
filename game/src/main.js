@@ -7,7 +7,7 @@ import { showScreen, renderIntro, renderChoices, renderResult } from './ui/scree
 import { renderHome, renderHeroes, renderGrow, renderMap, renderPrep, renderCodex, setCodexTab } from './ui/menu.js';
 import { loadSave, writeSave, outfitOf, treeOf, encodeSave, decodeSave } from './core/save.js';
 import { SKILL_TREES } from './data/trees.js';
-import { metaBonus, FORGE, forgeCost, gradeOpen, entryCheck, clearedStars, GRADES } from './data/meta.js';
+import { metaBonus, FORGE, forgeCost, gradeOpen, entryCheck } from './data/meta.js';
 import { STAGES } from './data/stages.js';
 import { HEROES } from './data/heroes.js';
 
@@ -74,7 +74,6 @@ function onState(state, g) {
     // Bank the run's money and records once.
     if (g.reward && !g.rewardBanked) {
       g.rewardBanked = true;
-      const before = clearedStars(save);
       const known = new Set(Object.keys(save.codex.kills));
       save.money += g.reward.total;
       if (state === 'clear') save.best[g.stage.id] = Math.max(save.best[g.stage.id] ?? 0, g.reward.stars);
@@ -84,10 +83,8 @@ function onState(state, g) {
       c.earned += g.reward.total;
       for (const [id, n] of Object.entries(g.killsBy)) c.kills[id] = (c.kills[id] ?? 0) + n;
       writeSave(save);
-      // What this run opened up, for the result card.
-      const after = clearedStars(save);
-      const unlocks = GRADES.filter((gr) => gr && gr.needStars > before && gr.needStars <= after).map((gr) => `${gr.name} 장비`);
-      g.resultExtra = { unlocks, newFoes: Object.keys(g.killsBy).filter((id) => !known.has(id)).length };
+      // What this run added to the 도감, for the result card.
+      g.resultExtra = { unlocks: [], newFoes: Object.keys(g.killsBy).filter((id) => !known.has(id)).length };
     }
     renderResult(g, state === 'clear', g.resultExtra);
     showScreen('result');

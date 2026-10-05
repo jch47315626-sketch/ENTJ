@@ -24,8 +24,9 @@ export const SLOTS = [
 ];
 
 /**
- * Equipment grades. Better grades open only after clearing a battlefield of
- * at least `needStars` difficulty, and cost far more.
+ * Equipment grades. All are on sale from the start; each grade costs about
+ * 2–2.5× more than its base price (see EQUIPMENT). `needStars` is kept only
+ * as the recommended difficulty for that grade.
  */
 export const GRADES = [
   null,
@@ -43,40 +44,40 @@ export const GRADES = [
  */
 export const EQUIPMENT = [
   { id: 'quilted', slot: 'body', grade: 1, name: '누비옷', price: 150, bonus: { maxHp: 10 }, icon: 'leather', tint: '#c9b48a' },
-  { id: 'leather', slot: 'body', grade: 2, name: '가죽 갑옷', price: 600, bonus: { maxHp: 20 } },
-  { id: 'lamellar', slot: 'body', grade: 3, name: '찰갑', price: 1800, bonus: { maxHp: 35, armor: 1 } },
-  { id: 'myeonggwang', slot: 'body', grade: 4, name: '명광개', price: 5000, bonus: { maxHp: 55, armor: 2 }, note: '가슴의 둥근 쇠판이 빛을 되쏜다.' },
-  { id: 'goldLamellar', slot: 'body', grade: 5, name: '금장 찰갑', price: 12000, bonus: { maxHp: 80, armor: 3 }, icon: 'lamellar', tint: '#d6a63e', note: '왕의 호위만 걸치던 금빛 미늘.' },
+  { id: 'leather', slot: 'body', grade: 2, name: '가죽 갑옷', price: 1200, bonus: { maxHp: 20 } },
+  { id: 'lamellar', slot: 'body', grade: 3, name: '찰갑', price: 3950, bonus: { maxHp: 35, armor: 1 } },
+  { id: 'myeonggwang', slot: 'body', grade: 4, name: '명광개', price: 12000, bonus: { maxHp: 55, armor: 2 }, note: '가슴의 둥근 쇠판이 빛을 되쏜다.' },
+  { id: 'goldLamellar', slot: 'body', grade: 5, name: '금장 찰갑', price: 30000, bonus: { maxHp: 80, armor: 3 }, icon: 'lamellar', tint: '#d6a63e', note: '왕의 호위만 걸치던 금빛 미늘.' },
 
-  { id: 'hood', slot: 'head', grade: 1, name: '가죽 두건', price: 120, bonus: { maxHp: 8 }, icon: 'ironHelm', tint: '#8a5a32' },
-  { id: 'ironHelm', slot: 'head', grade: 2, name: '철투구', price: 500, bonus: { armor: 1 } },
-  { id: 'plumeHelm', slot: 'head', grade: 3, name: '깃털 투구', price: 1500, bonus: { armor: 1, speed: 0.04 } },
-  { id: 'gilt', slot: 'head', grade: 4, name: '금동관', price: 4500, bonus: { might: 0.1 } },
-  { id: 'goldCrown', slot: 'head', grade: 5, name: '출자형 금관', price: 11000, bonus: { might: 0.15, armor: 1 }, icon: 'gilt', tint: '#ffd76a', note: '나뭇가지 꼴 세움장식에 곡옥이 흔들린다.' },
+  { id: 'hood', slot: 'head', grade: 1, name: '가죽 두건', price: 100, bonus: { maxHp: 8 }, icon: 'ironHelm', tint: '#8a5a32' },
+  { id: 'ironHelm', slot: 'head', grade: 2, name: '철투구', price: 1000, bonus: { armor: 1 } },
+  { id: 'plumeHelm', slot: 'head', grade: 3, name: '깃털 투구', price: 3300, bonus: { armor: 1, speed: 0.04 } },
+  { id: 'gilt', slot: 'head', grade: 4, name: '금동관', price: 10800, bonus: { might: 0.1 } },
+  { id: 'goldCrown', slot: 'head', grade: 5, name: '출자형 금관', price: 27500, bonus: { might: 0.15, armor: 1 }, icon: 'gilt', tint: '#ffd76a', note: '나뭇가지 꼴 세움장식에 곡옥이 흔들린다.' },
 
-  { id: 'gogok', slot: 'charm', grade: 1, name: '곡옥 목걸이', price: 180, bonus: { xp: 0.06 } },
-  { id: 'hobu', slot: 'charm', grade: 2, name: '호부', price: 650, bonus: { momentum: 0.12 } },
-  { id: 'glassBeads', slot: 'charm', grade: 3, name: '유리구슬 목걸이', price: 1700, bonus: { momentum: 0.15, xp: 0.06 }, icon: 'gogok', tint: '#4a8fc9' },
-  { id: 'chunma', slot: 'charm', grade: 4, name: '천마 말다래', price: 4800, bonus: { speed: 0.05, haste: 0.05 } },
-  { id: 'goldEarring', slot: 'charm', grade: 5, name: '굵은고리 금귀걸이', price: 11000, bonus: { might: 0.08, haste: 0.06, momentum: 0.1 }, icon: 'goldBangle', tint: '#ffd76a' },
+  { id: 'gogok', slot: 'charm', grade: 1, name: '곡옥 목걸이', price: 200, bonus: { xp: 0.06 } },
+  { id: 'hobu', slot: 'charm', grade: 2, name: '호부', price: 1300, bonus: { momentum: 0.12 } },
+  { id: 'glassBeads', slot: 'charm', grade: 3, name: '유리구슬 목걸이', price: 3750, bonus: { momentum: 0.15, xp: 0.06 }, icon: 'gogok', tint: '#4a8fc9' },
+  { id: 'chunma', slot: 'charm', grade: 4, name: '천마 말다래', price: 11500, bonus: { speed: 0.05, haste: 0.05 } },
+  { id: 'goldEarring', slot: 'charm', grade: 5, name: '굵은고리 금귀걸이', price: 27500, bonus: { might: 0.08, haste: 0.06, momentum: 0.1 }, icon: 'goldBangle', tint: '#ffd76a' },
 
-  { id: 'bronzeBangle', slot: 'wrist', grade: 1, name: '청동 팔찌', price: 140, bonus: { haste: 0.02 }, icon: 'silverBangle', tint: '#a8743a' },
-  { id: 'silverBangle', slot: 'wrist', grade: 2, name: '은팔찌', price: 550, bonus: { haste: 0.03 } },
-  { id: 'jadeBangle', slot: 'wrist', grade: 3, name: '옥팔찌', price: 1600, bonus: { haste: 0.03, maxHp: 10 }, icon: 'silverBangle', tint: '#5fa97a' },
-  { id: 'goldBangle', slot: 'wrist', grade: 4, name: '금팔찌', price: 4200, bonus: { might: 0.06, haste: 0.04 } },
-  { id: 'dragonBangle', slot: 'wrist', grade: 5, name: '용무늬 금팔찌', price: 10000, bonus: { might: 0.08, haste: 0.07 }, icon: 'goldBangle', tint: '#c9452e' },
+  { id: 'bronzeBangle', slot: 'wrist', grade: 1, name: '청동 팔찌', price: 150, bonus: { haste: 0.02 }, icon: 'silverBangle', tint: '#a8743a' },
+  { id: 'silverBangle', slot: 'wrist', grade: 2, name: '은팔찌', price: 1100, bonus: { haste: 0.03 } },
+  { id: 'jadeBangle', slot: 'wrist', grade: 3, name: '옥팔찌', price: 3500, bonus: { haste: 0.03, maxHp: 10 }, icon: 'silverBangle', tint: '#5fa97a' },
+  { id: 'goldBangle', slot: 'wrist', grade: 4, name: '금팔찌', price: 10100, bonus: { might: 0.06, haste: 0.04 } },
+  { id: 'dragonBangle', slot: 'wrist', grade: 5, name: '용무늬 금팔찌', price: 25000, bonus: { might: 0.08, haste: 0.07 }, icon: 'goldBangle', tint: '#c9452e' },
 
   { id: 'leatherBelt', slot: 'belt', grade: 1, name: '가죽 띠', price: 100, bonus: { maxHp: 8 } },
-  { id: 'silverBuckle', slot: 'belt', grade: 2, name: '은 띠고리', price: 500, bonus: { maxHp: 12, xp: 0.03 }, icon: 'leatherBelt', tint: '#c9ccd0' },
-  { id: 'giltBelt', slot: 'belt', grade: 3, name: '금동 허리띠', price: 1500, bonus: { maxHp: 15, armor: 1 }, icon: 'goldBelt', tint: '#b07a48' },
-  { id: 'goldBelt', slot: 'belt', grade: 4, name: '금제 허리띠', price: 4000, bonus: { maxHp: 20, xp: 0.08 }, note: '드리개가 찰랑인다.' },
-  { id: 'royalBelt', slot: 'belt', grade: 5, name: '황금 과대', price: 10000, bonus: { maxHp: 30, xp: 0.1, armor: 1 }, icon: 'goldBelt', tint: '#ffd76a' },
+  { id: 'silverBuckle', slot: 'belt', grade: 2, name: '은 띠고리', price: 1000, bonus: { maxHp: 12, xp: 0.03 }, icon: 'leatherBelt', tint: '#c9ccd0' },
+  { id: 'giltBelt', slot: 'belt', grade: 3, name: '금동 허리띠', price: 3300, bonus: { maxHp: 15, armor: 1 }, icon: 'goldBelt', tint: '#b07a48' },
+  { id: 'goldBelt', slot: 'belt', grade: 4, name: '금제 허리띠', price: 9600, bonus: { maxHp: 20, xp: 0.08 }, note: '드리개가 찰랑인다.' },
+  { id: 'royalBelt', slot: 'belt', grade: 5, name: '황금 과대', price: 25000, bonus: { maxHp: 30, xp: 0.1, armor: 1 }, icon: 'goldBelt', tint: '#ffd76a' },
 
-  { id: 'straw', slot: 'feet', grade: 1, name: '짚신', price: 80, bonus: { speed: 0.03 } },
-  { id: 'mokhwa', slot: 'feet', grade: 2, name: '가죽 목화', price: 450, bonus: { speed: 0.04 }, icon: 'giltShoes', tint: '#6b4a2e' },
-  { id: 'studded', slot: 'feet', grade: 3, name: '징 박은 신', price: 1400, bonus: { speed: 0.04, armor: 1 }, icon: 'giltShoes', tint: '#7d8288' },
-  { id: 'giltShoes', slot: 'feet', grade: 4, name: '금동 신발', price: 4000, bonus: { speed: 0.06, armor: 1 } },
-  { id: 'phoenixShoes', slot: 'feet', grade: 5, name: '봉황 무늬 식리', price: 10000, bonus: { speed: 0.08, armor: 2 }, icon: 'giltShoes', tint: '#ffd76a' },
+  { id: 'straw', slot: 'feet', grade: 1, name: '짚신', price: 100, bonus: { speed: 0.03 } },
+  { id: 'mokhwa', slot: 'feet', grade: 2, name: '가죽 목화', price: 900, bonus: { speed: 0.04 }, icon: 'giltShoes', tint: '#6b4a2e' },
+  { id: 'studded', slot: 'feet', grade: 3, name: '징 박은 신', price: 3100, bonus: { speed: 0.04, armor: 1 }, icon: 'giltShoes', tint: '#7d8288' },
+  { id: 'giltShoes', slot: 'feet', grade: 4, name: '금동 신발', price: 9600, bonus: { speed: 0.06, armor: 1 } },
+  { id: 'phoenixShoes', slot: 'feet', grade: 5, name: '봉황 무늬 식리', price: 25000, bonus: { speed: 0.08, armor: 2 }, icon: 'giltShoes', tint: '#ffd76a' },
 ];
 
 const BONUS_TEXT = {
@@ -127,7 +128,8 @@ export function entryCheck(save, heroId, stage) {
 
 /** Highest difficulty the player has cleared (0 = none). */
 export const clearedStars = (save) => Math.max(0, ...Object.values(save.best ?? {}));
-export const gradeOpen = (save, item) => clearedStars(save) >= GRADES[item.grade].needStars;
+// Every grade is on sale from the start; higher grades are simply far more expensive.
+export const gradeOpen = () => true;
 
 /** Camp training: permanent, levelled with money. */
 export const TRAINING = [
