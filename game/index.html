@@ -46,8 +46,13 @@
   </div>
 
   <div id="moveHint" class="move-hint" hidden>
-    <b>🕹️ 화면을 누른 채 끌거나 WASD · 방향키로 이동</b>
-    <span>⚔️ 공격은 자동이에요 — 적을 피하며 엽전을 모으세요</span>
+    <div class="mh-row">
+      <span class="touch-pad" aria-hidden="true"><span class="tp-ring"></span><span class="tp-knob"></span><span class="tp-finger">👆</span></span>
+      <span class="mh-or">또는</span>
+      <span class="keypad mini"><i></i><kbd class="key">W</kbd><i></i><kbd class="key">A</kbd><kbd class="key">S</kbd><kbd class="key">D</kbd></span>
+    </div>
+    <b>끌어서 움직여요!</b>
+    <span>⚔️ 공격은 자동 · 적을 피하며 🪙 엽전을 모아요</span>
   </div>
 
   <div id="bossIntro" class="boss-intro" hidden aria-live="assertive">
@@ -71,13 +76,35 @@
       </div>
       <h1 class="game-title home-title"><span class="hanja">三韓亂世</span><span class="hangul">삼한난세</span></h1>
       <div id="homeBody"></div>
-      <div class="controls-card" aria-label="조작법">
-        <b>🎮 조작법</b>
-        <span>🕹️ 이동 — <kbd>WASD</kbd> · 방향키 · 화면을 누른 채 끌기</span>
-        <span>⚔️ 공격 — 자동 (가까운 적을 알아서 친다)</span>
-        <span>📜 책략 고르기 — 누르기 또는 <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></span>
-        <span>⏸ 일시정지 — <kbd>P</kbd> · <kbd>Esc</kbd> · 오른쪽 위 버튼</span>
-      </div>
+      <section class="howto" aria-label="조작법">
+        <h3 class="howto-title"><span>🎮</span> 이렇게 놀아요</h3>
+        <div class="howto-grid">
+          <div class="howto-tile move">
+            <span class="ht-badge">🏃 이동</span>
+            <div class="ht-touch"><span class="touch-pad" aria-hidden="true"><span class="tp-ring"></span><span class="tp-knob"></span><span class="tp-finger">👆</span></span><small>화면을 꾹 누른 채<br>끌면 움직여요</small></div>
+            <div class="ht-keys">
+              <span class="keypad"><i></i><kbd class="key">W</kbd><i></i><kbd class="key">A</kbd><kbd class="key">S</kbd><kbd class="key">D</kbd></span>
+              <span class="ht-or">또는</span>
+              <span class="keypad"><i></i><kbd class="key">↑</kbd><i></i><kbd class="key">←</kbd><kbd class="key">↓</kbd><kbd class="key">→</kbd></span>
+            </div>
+          </div>
+          <div class="howto-tile attack">
+            <span class="ht-badge">⚔️ 공격</span>
+            <div class="ht-auto"><span class="auto-bubble">자동!</span></div>
+            <small>가까운 적을 알아서 쳐요.<br>나는 피하고 엽전만 줍기 🪙</small>
+          </div>
+          <div class="howto-tile pick">
+            <span class="ht-badge">📜 책략</span>
+            <div class="ht-cards"><span>1</span><span>2</span><span>3</span></div>
+            <small>레벨업하면 카드 3장!<br>누르거나 <kbd class="key sm">1</kbd><kbd class="key sm">2</kbd><kbd class="key sm">3</kbd></small>
+          </div>
+          <div class="howto-tile pause">
+            <span class="ht-badge">⏸ 쉬기</span>
+            <div class="ht-pausebtn">⏸</div>
+            <small>오른쪽 위 버튼 또는<br><kbd class="key sm">P</kbd> <kbd class="key sm">Esc</kbd></small>
+          </div>
+        </div>
+      </section>
       <label class="quick"><input id="quickMode" type="checkbox"> 빠른 시험 모드 (1분 뒤 보스)</label>
     </div>
   </section>
@@ -123,7 +150,7 @@
   <section id="pause" class="screen dim" hidden>
     <h2 class="panel-title">잠시 멈춤</h2>
     <div id="pauseOwned" class="owned pause-owned"></div>
-    <p class="pause-controls">🕹️ 이동: WASD · 방향키 · 화면 끌기 &nbsp;|&nbsp; ⚔️ 공격은 자동 &nbsp;|&nbsp; 📜 책략: 1·2·3</p>
+    <p class="pause-controls"><span>🏃 끌기 · <kbd class="key sm">W</kbd><kbd class="key sm">A</kbd><kbd class="key sm">S</kbd><kbd class="key sm">D</kbd></span><span>⚔️ 자동 공격</span><span>📜 <kbd class="key sm">1</kbd><kbd class="key sm">2</kbd><kbd class="key sm">3</kbd></span></p>
     <div class="row-btns">
       <button id="resumeBtn" class="seal-btn" type="button">계속</button>
       <button id="quitBtn" class="plain-btn" type="button">처음으로</button>

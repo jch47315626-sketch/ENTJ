@@ -786,3 +786,111 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 .bp-btn.chosen small { color: var(--gold); }
 /* done-tag had a fixed grid slot from the old shop layout; let new cards place it naturally */
 .step .done-tag, .item-card .done-tag, .grow-row .done-tag, .ic-ctrl .done-tag { grid-column: auto; grid-row: auto; text-align: center; }
+
+/* ==================================================================
+   귀염뽀짝 패스: pastel candy accents, bouncy buttons, sticker cards,
+   and a picture-first 조작법.
+   ================================================================== */
+:root {
+  --candy-pink: #ff9fb8;
+  --candy-mint: #8fe3c0;
+  --candy-sky: #9ccfff;
+  --candy-lemon: #ffe08a;
+  --candy-lilac: #c9a8ff;
+}
+/* soft sparkles over the menu backgrounds */
+.menu-screen, .title-screen {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255, 159, 184, 0.18) 0 60px, transparent 61px),
+    radial-gradient(circle at 88% 30%, rgba(156, 207, 255, 0.16) 0 80px, transparent 81px),
+    radial-gradient(circle at 20% 85%, rgba(143, 227, 192, 0.14) 0 90px, transparent 91px),
+    radial-gradient(circle at 80% 92%, rgba(201, 168, 255, 0.16) 0 70px, transparent 71px),
+    radial-gradient(ellipse at 50% 0%, rgba(255, 190, 140, 0.25), transparent 60%),
+    var(--ink);
+}
+.home-title .hangul { text-shadow: 0 4px 0 #b8433a, 0 8px 0 rgba(0, 0, 0, 0.25); letter-spacing: 0.02em; }
+.home-title .hanja { color: var(--candy-pink); }
+/* sticker-like cards */
+.home-hero, .home-stage, .style-card, .stage-detail, .prep-card, .grow-card, .record-card, .result-card {
+  border-radius: 24px;
+}
+.home-hero { background: linear-gradient(135deg, #ffd9a8, #f5b07a 60%, #f29a7a); box-shadow: 0 6px 0 #b86a4a, 0 12px 24px rgba(0, 0, 0, 0.25); }
+.home-stage { border: 2px dashed rgba(255, 224, 138, 0.45); background: rgba(255, 255, 255, 0.07); }
+.hs-stars { color: var(--candy-lemon); font-size: 18px; }
+/* bouncy buttons */
+.seal-btn, .buy-btn, .wear-btn, .forge-btn, .plain-btn, .sub-tab, .bp-btn, .hp-card, .d2-slot, .map-node, .slot-chip, .home-hero {
+  transition: transform 0.12s cubic-bezier(.3,1.6,.6,1), box-shadow 0.12s;
+}
+.seal-btn:hover:not(:disabled), .buy-btn:hover:not(:disabled), .sub-tab:hover, .bp-btn:hover, .hp-card:hover:not(:disabled), .d2-slot:hover, .home-hero:hover { transform: translateY(-2px) scale(1.02); }
+.seal-btn:active:not(:disabled), .buy-btn:active:not(:disabled), .sub-tab:active, .bp-btn:active, .hp-card:active, .d2-slot:active, .home-hero:active { transform: scale(0.96); }
+.seal-btn.cta { background: linear-gradient(180deg, #ffb08f, #ff7a6a 55%, #f0645a); box-shadow: 0 6px 0 #c4453c, 0 10px 22px rgba(240, 100, 90, 0.4); animation: ctaBob 2.4s ease-in-out infinite; }
+@keyframes ctaBob { 50% { transform: translateY(-3px); } }
+.buy-btn { background: linear-gradient(180deg, #ff9a8a, #f0645a); border: none; box-shadow: 0 3px 0 #c4453c; }
+.wear-btn { border: 2px solid var(--candy-mint); color: var(--candy-mint); background: rgba(143, 227, 192, 0.08); }
+.forge-btn { border: 2px solid var(--candy-lemon); color: var(--candy-lemon); }
+.sub-tab { border-width: 2px; }
+.sub-tab.on { background: linear-gradient(180deg, #fff0a8, var(--candy-lemon)); border-color: var(--candy-lemon); box-shadow: 0 3px 0 #c9a24a; }
+.bp-btn.on { border-color: var(--candy-pink); background: rgba(255, 159, 184, 0.16); }
+.hp-card.on { border-color: var(--candy-pink); background: rgba(255, 159, 184, 0.14); box-shadow: 0 4px 0 rgba(255, 159, 184, 0.35); }
+.bottom-nav button.on { color: #2b2236; background: linear-gradient(180deg, #fff0a8, var(--candy-lemon)); box-shadow: 0 3px 0 #c9a24a; }
+.bottom-nav button.on span { animation: navPop 0.35s cubic-bezier(.3,1.8,.6,1); }
+@keyframes navPop { 0% { transform: scale(0.6); } 100% { transform: scale(1); } }
+.coin-pill { background: linear-gradient(180deg, #4a3a5c, #2f2540); border: 2px solid rgba(255, 224, 138, 0.5); }
+.page-title { text-shadow: 0 3px 0 rgba(0, 0, 0, 0.35); }
+
+/* ---------------- 조작법 (home) ---------------- */
+.howto { padding: 14px; border-radius: 24px; background: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.04)); border: 2px solid rgba(201, 168, 255, 0.35); }
+.howto-title { margin: 0 0 10px; font-family: var(--font-brush); font-weight: 400; font-size: 22px; color: var(--hanji); display: flex; align-items: center; justify-content: center; gap: 6px; }
+.howto-title span { display: inline-block; animation: wiggle 2.2s ease-in-out infinite; }
+@keyframes wiggle { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+.howto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.howto-tile { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 26px 10px 12px; border-radius: 20px; background: rgba(0, 0, 0, 0.22); text-align: center; }
+.howto-tile small { font-size: 12.5px; color: var(--hanji); line-height: 1.5; }
+.howto-tile.move { grid-column: 1 / -1; }
+.ht-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); padding: 3px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; color: #2b2236; white-space: nowrap; box-shadow: 0 3px 0 rgba(0, 0, 0, 0.25); }
+.howto-tile.move .ht-badge { background: var(--candy-sky); }
+.howto-tile.attack .ht-badge { background: var(--candy-pink); }
+.howto-tile.pick .ht-badge { background: var(--candy-lemon); }
+.howto-tile.pause .ht-badge { background: var(--candy-mint); }
+.ht-touch { display: flex; align-items: center; gap: 12px; }
+.ht-touch small { text-align: left; }
+.ht-keys { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.ht-or, .mh-or { font-size: 12px; color: var(--hanji-dim); }
+/* keycaps */
+.key { display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 6px; border-radius: 9px; font: 700 14px/1 "Jua", sans-serif; color: #2b2236;
+  background: linear-gradient(180deg, #ffffff, #e9e2f5); border: none; box-shadow: 0 3px 0 #a99cc2, 0 4px 6px rgba(0, 0, 0, 0.25); }
+.key.sm { min-width: 22px; height: 22px; font-size: 12px; border-radius: 7px; box-shadow: 0 2px 0 #a99cc2; margin: 0 1px; vertical-align: middle; }
+.keypad { display: inline-grid; grid-template-columns: repeat(3, 30px); gap: 4px; }
+.keypad i { display: block; }
+.keypad .key:nth-of-type(1) { animation: keyTap 2.4s infinite; }
+.keypad .key:nth-of-type(2) { animation: keyTap 2.4s 0.6s infinite; }
+.keypad .key:nth-of-type(3) { animation: keyTap 2.4s 1.2s infinite; }
+.keypad .key:nth-of-type(4) { animation: keyTap 2.4s 1.8s infinite; }
+@keyframes keyTap { 0%, 18%, 100% { transform: none; box-shadow: 0 3px 0 #a99cc2, 0 4px 6px rgba(0, 0, 0, 0.25); } 8% { transform: translateY(3px); box-shadow: 0 0 0 #a99cc2; background: var(--candy-lemon); } }
+.keypad.mini { grid-template-columns: repeat(3, 24px); gap: 3px; }
+.keypad.mini .key { min-width: 24px; height: 24px; font-size: 12px; border-radius: 7px; }
+/* touch drag illustration */
+.touch-pad { position: relative; display: inline-block; width: 64px; height: 64px; flex: none; }
+.tp-ring { position: absolute; inset: 4px; border-radius: 50%; border: 3px solid rgba(156, 207, 255, 0.8); background: rgba(156, 207, 255, 0.12); }
+.tp-knob { position: absolute; left: 50%; top: 50%; width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #ffffff, var(--candy-sky)); box-shadow: 0 2px 4px rgba(0,0,0,0.3); animation: knobMove 2.6s ease-in-out infinite; }
+.tp-finger { position: absolute; left: 50%; top: 50%; font-size: 26px; margin: -2px 0 0 -6px; animation: knobMove 2.6s ease-in-out infinite; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.4)); }
+@keyframes knobMove { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(14px, -6px); } 50% { transform: translate(-4px, 14px); } 75% { transform: translate(-14px, -4px); } }
+.ht-auto { display: grid; place-items: center; height: 44px; }
+.auto-bubble { padding: 6px 14px; border-radius: 16px; background: var(--candy-pink); color: #2b2236; font: 700 18px/1 "Jua", sans-serif; box-shadow: 0 3px 0 #c76a85; animation: ctaBob 1.6s ease-in-out infinite; }
+.ht-cards { display: flex; gap: 5px; height: 44px; align-items: center; }
+.ht-cards span { display: grid; place-items: center; width: 26px; height: 36px; border-radius: 6px; background: linear-gradient(180deg, #fff8e0, #ffe08a); color: #2b2236; font: 700 14px "Jua", sans-serif; box-shadow: 0 2px 0 #c9a24a; }
+.ht-cards span:nth-child(1) { transform: rotate(-10deg); }
+.ht-cards span:nth-child(3) { transform: rotate(10deg); }
+.ht-pausebtn { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: #1d1a17; border: 2px solid var(--candy-mint); font-size: 18px; color: var(--hanji); }
+/* show touch first on phones, keys first on computers */
+@media (pointer: fine) { .ht-touch { order: 2; } .ht-keys { order: 1; } }
+
+/* ---------------- 조작 안내 (battle start) ---------------- */
+.move-hint { border-radius: 22px; border: 2px solid rgba(156, 207, 255, 0.6); background: rgba(43, 34, 54, 0.9); padding: 12px 18px; gap: 6px; }
+.move-hint .mh-row { display: flex; align-items: center; gap: 12px; }
+.move-hint b { font-family: var(--font-brush); font-weight: 400; font-size: 20px; color: var(--candy-sky); }
+.pause-controls { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.pause-controls span { padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); }
+@media (prefers-reduced-motion: reduce) {
+  .seal-btn.cta, .keypad .key, .tp-knob, .tp-finger, .auto-bubble, .howto-title span { animation: none !important; }
+}
