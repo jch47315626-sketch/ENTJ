@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>삼한난세</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Nanum+Brush+Script&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="field" aria-label="전장"></canvas>
+
+  <div id="hud" hidden>
+    <div class="xpbar"><i id="xpFill"></i></div>
+    <div class="hud-left">
+      <div class="slip hero-slip">
+        <div class="slip-head"><b id="heroName">왕건</b><span id="lv">Lv 1</span></div>
+        <div class="bar hp"><i id="hpFill"></i><span id="hpText">120 / 120</span></div>
+        <div class="bar mom"><i id="momFill"></i><span id="momLabel">기세</span></div>
+      </div>
+      <div id="owned" class="owned"></div>
+      <div id="evoHint" class="evo-hint" hidden></div>
+    </div>
+    <div class="hud-center">
+      <div id="timer" class="timer">00:00</div>
+      <div id="timerSub" class="timer-sub"></div>
+      <div id="bossBar" class="boss-bar" hidden>
+        <div id="bossName" class="boss-name"></div>
+        <div class="bar boss"><i id="bossFill"></i></div>
+      </div>
+    </div>
+    <div class="hud-right">
+      <span id="kills" class="kills">처치 0</span>
+      <button id="pauseBtn" class="icon-btn" type="button" aria-label="일시정지">멈춤</button>
+    </div>
+  </div>
+
+  <div id="banner" class="banner" aria-live="polite"></div>
+
+  <section id="title" class="screen title-screen">
+    <div class="title-wrap">
+      <p class="eyebrow">후삼국 생존 액션 · 시제품</p>
+      <h1 class="game-title"><span class="hanja">三韓亂世</span><span class="hangul">삼한난세</span></h1>
+      <p class="lede">이동만 하세요. 칼은 스스로 움직입니다. 5분을 버티면 해적 두령이 나타납니다.</p>
+
+      <h2 class="section-label">영웅</h2>
+      <div id="heroList" class="hero-list"></div>
+
+      <h2 class="section-label">전장</h2>
+      <div id="stageCard" class="stage-card"></div>
+
+      <label class="quick"><input id="quickMode" type="checkbox"> 빠른 시험 모드 (1분 뒤 보스 등장)</label>
+      <button id="startBtn" class="seal-btn" type="button">출진</button>
+      <p class="controls">이동: WASD · 방향키 · 화면을 누른 채 끌기 &nbsp;|&nbsp; 일시정지: P · Esc &nbsp;|&nbsp; 책략 선택: 1 · 2 · 3</p>
+    </div>
+  </section>
+
+  <section id="intro" class="screen intro-screen" hidden>
+    <p id="introYear" class="intro-year"></p>
+    <h2 id="introName" class="intro-name"></h2>
+    <p id="introText" class="intro-text"></p>
+  </section>
+
+  <section id="levelup" class="screen dim" hidden>
+    <h2 class="panel-title">책략 선택</h2>
+    <div id="choices" class="choices"></div>
+    <p class="hint">눌러서 고르거나 1 · 2 · 3 키</p>
+  </section>
+
+  <section id="pause" class="screen dim" hidden>
+    <h2 class="panel-title">잠시 멈춤</h2>
+    <div class="row-btns">
+      <button id="resumeBtn" class="seal-btn" type="button">계속</button>
+      <button id="quitBtn" class="plain-btn" type="button">처음으로</button>
+    </div>
+  </section>
+
+  <section id="result" class="screen dim" hidden>
+    <div id="resultSeal" class="big-seal">平定</div>
+    <h2 id="resultTitle" class="panel-title"></h2>
+    <p id="resultText" class="result-text"></p>
+    <dl id="resultStats" class="stats"></dl>
+    <div class="row-btns">
+      <button id="retryBtn" class="seal-btn" type="button">다시 출진</button>
+      <button id="homeBtn" class="plain-btn" type="button">처음으로</button>
+    </div>
+  </section>
+</div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
