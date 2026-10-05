@@ -112,6 +112,19 @@ export function itemBonus(item, lv = 0) {
   return out;
 }
 
+/**
+ * Entry check for a battlefield: `stage.require = { grade, count }` asks the
+ * hero to wear at least `count` pieces of that grade or better.
+ */
+export function entryCheck(save, heroId, stage) {
+  const req = stage.require;
+  if (!req) return { ok: true };
+  const outfit = save.equipped[heroId] ?? {};
+  const have = SLOTS.filter((sl) => (EQUIPMENT.find((e) => e.id === outfit[sl.id])?.grade ?? 0) >= req.grade).length;
+  const text = `${GRADES[req.grade].name} 이상 장비 ${req.count}부위 착용 필요 (지금 ${have})`;
+  return { ok: have >= req.count, have, need: req.count, grade: GRADES[req.grade], text };
+}
+
 /** Highest difficulty the player has cleared (0 = none). */
 export const clearedStars = (save) => Math.max(0, ...Object.values(save.best ?? {}));
 export const gradeOpen = (save, item) => clearedStars(save) >= GRADES[item.grade].needStars;

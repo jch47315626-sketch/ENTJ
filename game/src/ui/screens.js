@@ -1,7 +1,7 @@
 import { HEROES } from '../data/heroes.js';
 import { STAGES, STAGE_ORDER } from '../data/stages.js';
 import { BOSSES } from '../data/bosses.js';
-import { SLOTS, EQUIPMENT, TRAINING, SECRETS, REWARD_BY_STARS, GRADES, FORGE, forgeCost, gradeOpen, itemBonus, bonusText, metaBonus } from '../data/meta.js';
+import { SLOTS, EQUIPMENT, TRAINING, SECRETS, REWARD_BY_STARS, GRADES, FORGE, forgeCost, gradeOpen, itemBonus, bonusText, metaBonus, entryCheck } from '../data/meta.js';
 import { WEAPONS } from '../data/weapons.js';
 import { UPGRADES } from '../data/upgrades.js';
 import { SPECIALS } from '../systems/specials.js';
@@ -56,6 +56,12 @@ export function renderMain(save, sel) {
   const boss = BOSSES[st.bossAlt[sel.hero] ?? st.boss];
   $('mainMapName').textContent = `${st.numeral} ${st.name}`;
   $('mainMapMeta').textContent = `${starText(st.difficulty.stars)} ${st.difficulty.label} · 보상 ×${REWARD_BY_STARS[st.difficulty.stars]} · 적장 ${boss.name}`;
+  // Gear gate: without the required gear the march button stays shut.
+  const gate = entryCheck(save, sel.hero, st);
+  const req = $('mainReq');
+  req.hidden = gate.ok;
+  req.textContent = gate.ok ? '' : `출진 불가 — ${h.name}: ${gate.text}`;
+  $('startBtn').disabled = !gate.ok;
   $('titleMoney').textContent = save.money.toLocaleString();
 }
 
@@ -252,7 +258,7 @@ function tag(text) {
 }
 
 /** Battlefield picker. */
-export function renderMapSelect(sel, onStage) {
+export function renderMapSelect(sel, onStage, save) {
   const stages = $('stageList');
   stages.innerHTML = '';
   for (const id of STAGE_ORDER) {
@@ -268,6 +274,10 @@ export function renderMapSelect(sel, onStage) {
         <b>${st.name}</b>
         <small>${st.year} · ${st.place} · 적장 ${BOSSES[bossId].name}</small>
         <small class="diff" data-stars="${st.difficulty.stars}">난이도 ${starText(st.difficulty.stars)} ${st.difficulty.label} <span class="reward-mul">· 보상 ×${REWARD_BY_STARS[st.difficulty.stars]}</span></small>
+        ${st.require ? (() => {
+          const gate = entryCheck(save, sel.hero, st);
+          return `<small class="req${gate.ok ? ' ok' : ''}">출진 조건 · ${gate.text}</small>`;
+        })() : ''}
         <small>${st.intro}</small>
       </span>`;
     b.addEventListener('click', () => onStage(id));

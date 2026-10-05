@@ -6,7 +6,7 @@ import { Sound } from './audio/sound.js';
 import { showScreen, renderMain, renderHeroSelect, renderMapSelect, renderIntro, renderChoices, renderResult, renderCamp } from './ui/screens.js';
 import { loadSave, writeSave, outfitOf, treeOf } from './core/save.js';
 import { SKILL_TREES } from './data/trees.js';
-import { metaBonus, FORGE, forgeCost, gradeOpen } from './data/meta.js';
+import { metaBonus, FORGE, forgeCost, gradeOpen, entryCheck } from './data/meta.js';
 import { STAGES } from './data/stages.js';
 
 const $ = (id) => document.getElementById(id);
@@ -23,6 +23,11 @@ writeSave(save); // persist any format migration right away
 let introTimer = 0;
 
 function newGame() {
+  // Gear gate: send the player back to the menu, where the reason is shown.
+  if (!entryCheck(save, sel.hero, STAGES[sel.stage]).ok) {
+    toTitle();
+    return;
+  }
   sound.unlock();
   input.reset();
   hud.clearBanner();
@@ -207,7 +212,7 @@ function openMapSelect() {
   renderMapSelect(sel, (id) => {
     sel.stage = id;
     openMapSelect();
-  });
+  }, save);
   showScreen('mapSelect');
 }
 
