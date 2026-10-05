@@ -7,6 +7,7 @@ import { UPGRADES } from '../data/upgrades.js';
 import { SPECIALS } from '../systems/specials.js';
 import { drawUnit } from '../render/sprites.js';
 import { iconCanvas } from '../render/icons.js';
+import { SKILL_TREES, TREASURES } from '../data/trees.js';
 
 const $ = (id) => document.getElementById(id);
 const SCREENS = ['title', 'heroSelect', 'mapSelect', 'intro', 'levelup', 'pause', 'result', 'camp'];
@@ -113,6 +114,16 @@ export function renderHeroSelect(save, sel, act) {
   wpn.append(iconCanvas(h.weapon, 84, 'icon'));
   wpn.insertAdjacentHTML('beforeend', `<span class="dl">무기</span><span class="dn">${weapon[0].name}</span>`);
   doll.appendChild(wpn);
+  const tr = (TREASURES[h.id] ?? []).find((t) => t.id === wear.treasure);
+  const trCell = document.createElement('button');
+  trCell.type = 'button';
+  trCell.className = `doll-slot treasure${tr ? '' : ' empty'}`;
+  trCell.style.gridArea = 'treasure';
+  trCell.title = tr ? `${tr.name} — ${tr.desc}` : '보물: 비어 있음. 아래 보물 트리에서 고르세요';
+  trCell.append(iconCanvas(tr ? tr.id : 'empty:treasure', 56, 'icon'));
+  trCell.insertAdjacentHTML('beforeend', `<span class="dl">보물</span><span class="dn${tr ? '' : ' plus'}">${tr ? tr.name : '아래에서 선택'}</span>`);
+  trCell.addEventListener('click', () => box.querySelector('.treasure-tree')?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+  doll.appendChild(trCell);
   for (const sl of SLOTS) {
     const it = itemById(wear[sl.id]);
     const b = document.createElement('button');
@@ -127,6 +138,112 @@ export function renderHeroSelect(save, sel, act) {
     b.addEventListener('click', () => act.openSlot(sl.id));
     doll.appendChild(b);
   }
+  renderBuild(box, save, h, act);
+}
+
+/**
+ * Hero build: skill tree (two exclusive branches) and treasure tree.
+ * act = { buyNode(node, branchId), respec(), buyTreasure(t), wearTreasure(t) }
+ */
+function renderBuild(box, save, h, act) {
+  const tree = SKILL_TREES[h.id];
+  const state = save.trees?.[h.id] ?? { nodes: [], branch: null };
+  const has = (id) => state.nodes.includes(id);
+
+  const sec = document.createElement('div');
+  sec.className = 'build';
+  sec.innerHTML = `<h3 class="build-title">영웅 수련 <small>스킬 트리 — 한 갈래를 골라 다른 방식으로 싸운다</small></h3>`;
+  const grid = document.createElement('div');
+  grid.className = 'tree';
+  // Root
+  const root = nodeCard(tree.root.name, tree.root.desc, has(tree.root.id) ? 'got' : 'open',
+    has(tree.root.id) ? null : priceBtn(tree.root.price, save.money, () => act.buyNode(tree.root, null)));
+  root.classList.add('root');
+  grid.appendChild(root);
+  for (const br of tree.branches) {
+    const col = document.createElement('div');
+    const chosen = state.branch === br.id;
+    const locked = state.branch && !chosen;
+    col.className = `branch${chosen ? ' chosen' : ''}${locked ? ' locked' : ''}`;
+    col.innerHTML = `<div class="branch-head"><b>${br.name}</b><span>${br.style}</span></div>`;
+    br.nodes.forEach((n, i) => {
+      const prevOk = i === 0 ? has(tree.root.id) : has(br.nodes[i - 1].id);
+      let st = 'locked';
+      if (has(n.id)) st = 'got';
+      else if (!locked && prevOk) st = 'open';
+      const ctrl = st === 'open' ? priceBtn(n.price, save.money, () => act.buyNode(n, br.id)) : null;
+      const note = st === 'locked' ? (locked ? '다른 길을 걷는 중' : i === 0 ? '뿌리 먼저' : '앞 단계 먼저') : null;
+      col.appendChild(nodeCard(n.name, n.desc, st, ctrl, note));
+    });
+    grid.appendChild(col);
+  }
+  sec.appendChild(grid);
+  if (state.branch) {
+    const refund = Math.floor(0.9 * tree.branches.find((b) => b.id === state.branch).nodes.filter((n) => has(n.id)).reduce((a, n) => a + n.price, 0));
+    const r = document.createElement('button');
+    r.type = 'button';
+    r.className = 'plain-btn respec';
+    r.textContent = `길 바꾸기 (+${refund.toLocaleString()}냥 돌려받음)`;
+    r.addEventListener('click', act.respec);
+    sec.appendChild(r);
+  }
+
+  // Treasure tree
+  const list = TREASURES[h.id] ?? [];
+  const wearing = save.equipped?.[h.id]?.treasure;
+  const owned = (t) => save.owned.includes(t.id);
+  const tsec = document.createElement('div');
+  tsec.className = 'treasure-tree';
+  tsec.innerHTML = `<h3 class="build-title">보물 <small>아이템 트리 — 보물 칸에 하나를 끼운다</small></h3>`;
+  const tgrid = document.createElement('div');
+  tgrid.className = 'tree';
+  const card = (t) => {
+    const parentOk = !t.parent || save.owned.includes(t.parent);
+    let st = owned(t) ? 'got' : parentOk ? 'open' : 'locked';
+    let ctrl = null;
+    if (owned(t)) ctrl = wearing === t.id ? tag('착용 중') : smallBtn('착용', () => act.wearTreasure(t));
+    else if (parentOk) ctrl = priceBtn(t.price, save.money, () => act.buyTreasure(t));
+    const c = nodeCard(t.name, t.desc, st, ctrl, st === 'locked' ? '앞 보물 먼저' : null, t.id);
+    if (wearing === t.id) c.classList.add('worn');
+    return c;
+  };
+  const base = list.find((t) => !t.parent);
+  const rootCard = card(base);
+  rootCard.classList.add('root');
+  tgrid.appendChild(rootCard);
+  for (const bid of ['A', 'B']) {
+    const col = document.createElement('div');
+    col.className = 'branch';
+    const brName = tree.branches.find((b) => b.id === bid).name;
+    col.innerHTML = `<div class="branch-head"><b>${brName} 보물</b></div>`;
+    for (const t of list.filter((x) => x.branch === bid)) col.appendChild(card(t));
+    tgrid.appendChild(col);
+  }
+  tsec.appendChild(tgrid);
+  box.append(sec, tsec);
+}
+
+function nodeCard(name, desc, state, control, note, icon) {
+  const c = document.createElement('div');
+  c.className = `node ${state}`;
+  if (icon) c.appendChild(iconCanvas(icon, 44, 'row-icon'));
+  c.insertAdjacentHTML('beforeend', `<span class="nn">${name}</span><span class="nd">${desc}</span>`);
+  if (control) c.appendChild(control);
+  else if (state === 'got') c.appendChild(tag('습득'));
+  else if (note) c.appendChild(tag(note));
+  return c;
+}
+
+function priceBtn(price, money, onClick) {
+  return button(`${price.toLocaleString()}냥`, 'buy-btn', onClick, money < price);
+}
+
+function smallBtn(label, onClick) {
+  return button(label, 'wear-btn', onClick);
+}
+
+function tag(text) {
+  return doneTag(text);
 }
 
 /** Battlefield picker. */

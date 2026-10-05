@@ -1,3 +1,5 @@
+import { treeNodes, TREASURES } from './trees.js';
+
 /**
  * Progression between runs: money (냥) earned per run, equipment bought
  * and worn in slots, and skills learned in the camp (군영). Everything here
@@ -72,6 +74,7 @@ export const SECRETS = [
 
 /** Sums every owned bonus for one hero into a single object. */
 export function metaBonus(save, heroId) {
+  const treeGrants = [];
   const total = {};
   const add = (b) => {
     for (const k in b) total[k] = (total[k] ?? 0) + b[k];
@@ -85,6 +88,16 @@ export function metaBonus(save, heroId) {
     const lv = save.training[t.id] ?? 0;
     if (lv) add(t.bonus(lv));
   }
+  // Hero build: skill-tree nodes and the equipped treasure.
+  const bought = save.trees?.[heroId]?.nodes ?? [];
+  for (const node of treeNodes(heroId)) {
+    if (!bought.includes(node.id)) continue;
+    add(node.bonus);
+    treeGrants.push(...(node.grants ?? []));
+  }
+  const treasure = (TREASURES[heroId] ?? []).find((t) => t.id === outfit.treasure);
+  if (treasure) add(treasure.bonus);
+
   const grants = SECRETS.filter((s) => s.hero === heroId && save.secrets.includes(s.id)).map((s) => s.grant);
-  return { ...total, grants };
+  return { ...total, grants: [...new Set([...grants, ...treeGrants])] };
 }

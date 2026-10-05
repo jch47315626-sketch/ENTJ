@@ -1,3 +1,5 @@
+import { TREASURES } from '../data/trees.js';
+
 /**
  * Item icons drawn on canvas (no image files). Each painter draws into a
  * 100×100 box. Keys are equipment ids, weapon ids, or `empty:<slotId>` for
@@ -298,8 +300,96 @@ export const ICONS = {
   },
 };
 
+/** Treasure shapes, tinted per item (data/trees.js `icon: [shape, colour]`). */
+const SHAPES = {
+  banner(ctx, c) {
+    line(ctx, [28, 94, 28, 8], '#4a3020', 5);
+    circle(ctx, 28, 8, 4, GOLD(ctx));
+    ctx.fillStyle = c;
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(30, 14);
+    ctx.quadraticCurveTo(60, 8, 84, 18);
+    ctx.lineTo(80, 50);
+    ctx.quadraticCurveTo(56, 42, 30, 52);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255, 240, 200, 0.9)';
+    ctx.font = '700 22px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('王', 56, 38);
+    for (let i = 0; i < 4; i++) line(ctx, [34 + i * 12, 52 - i, 36 + i * 12, 62 - i], c, 3);
+  },
+  stirrup(ctx, c) {
+    line(ctx, [50, 6, 50, 26], '#4a3020', 4);
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 11;
+    ctx.beginPath();
+    ctx.moveTo(50, 26);
+    ctx.bezierCurveTo(18, 30, 16, 76, 30, 84);
+    ctx.lineTo(70, 84);
+    ctx.bezierCurveTo(84, 76, 82, 30, 50, 26);
+    ctx.stroke();
+    ctx.lineWidth = 7;
+    ctx.strokeStyle = c;
+    ctx.stroke();
+    fillPath(ctx, [26, 80, 74, 80, 76, 92, 24, 92], c);
+  },
+  seal(ctx, c) {
+    // A royal seal: knob on top, square face with a carved character.
+    fillPath(ctx, [36, 20, 64, 20, 70, 44, 30, 44], c);
+    circle(ctx, 50, 18, 9, c);
+    fillPath(ctx, [20, 44, 80, 44, 80, 90, 20, 90], c);
+    ctx.strokeStyle = 'rgba(255, 235, 190, 0.85)';
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(28, 52, 44, 30);
+    ctx.fillStyle = 'rgba(255, 235, 190, 0.9)';
+    ctx.font = '700 22px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('印', 50, 75);
+  },
+  mirror(ctx, c) {
+    // Bronze chest mirror (護心鏡) with cords.
+    line(ctx, [20, 14, 38, 30], '#6b2a22', 4);
+    line(ctx, [80, 14, 62, 30], '#6b2a22', 4);
+    circle(ctx, 50, 56, 34, c, INK, 2.5);
+    circle(ctx, 50, 56, 24, 'rgba(255,255,255,0.12)', 'rgba(29,26,23,0.6)', 1.5);
+    circle(ctx, 50, 56, 6, GOLD(ctx));
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      circle(ctx, 50 + Math.cos(a) * 29, 56 + Math.sin(a) * 29, 2, 'rgba(255,235,190,0.8)', null);
+    }
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(50, 56, 18, -2.4, -1.6);
+    ctx.stroke();
+  },
+  beads(ctx, c) {
+    for (let i = 0; i < 18; i++) {
+      const a = (i / 18) * Math.PI * 2;
+      circle(ctx, 50 + Math.cos(a) * 32, 46 + Math.sin(a) * 30, 5.5, c, INK, 1.2);
+    }
+    line(ctx, [50, 76, 50, 92], '#8e2a1e', 3);
+    circle(ctx, 50, 92, 4, '#b3261e');
+  },
+  scroll(ctx, c) {
+    fillPath(ctx, [22, 22, 78, 22, 78, 78, 22, 78], c);
+    for (const y of [22, 78]) {
+      fillPath(ctx, [16, y - 5, 84, y - 5, 84, y + 5, 16, y + 5], '#6b4a2e');
+    }
+    for (let x = 30; x <= 70; x += 8) line(ctx, [x, 32, x, 70], 'rgba(29,26,23,0.65)', 2);
+    circle(ctx, 66, 66, 6, null, '#b3261e', 2.5);
+  },
+};
+for (const list of Object.values(TREASURES)) {
+  for (const t of list) ICONS[t.id] = (ctx) => SHAPES[t.icon[0]](ctx, t.icon[1]);
+}
+
 /** The cheapest item of each slot, drawn faint, marks an empty slot. */
-const EMPTY_SHAPE = { head: 'ironHelm', body: 'leather', charm: 'gogok', wrist: 'silverBangle', belt: 'leatherBelt', feet: 'straw' };
+const EMPTY_SHAPE = { head: 'ironHelm', body: 'leather', charm: 'gogok', wrist: 'silverBangle', belt: 'leatherBelt', feet: 'straw', treasure: 'tr_wg_0' };
 
 /** Paints icon `key` into `canvas`, scaled to fit. */
 export function paintIcon(canvas, key) {

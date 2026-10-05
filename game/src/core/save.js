@@ -9,7 +9,8 @@ import { SLOTS } from '../data/meta.js';
 const KEY = 'samhan-save-v1';
 
 // equipped: { [heroId]: { [slotId]: itemId } } — each hero wears their own gear.
-const fresh = () => ({ money: 0, owned: [], equipped: {}, training: {}, secrets: [], best: {} });
+// trees: { [heroId]: { nodes: [nodeId], branch: 'A' | 'B' | null } } — skill-tree purchases.
+const fresh = () => ({ money: 0, owned: [], equipped: {}, training: {}, secrets: [], best: {}, trees: {} });
 
 export function loadSave() {
   try {
@@ -29,6 +30,11 @@ function migrate(save) {
     for (const id in HEROES) save.equipped[id] = { ...outfit };
   }
   return save;
+}
+
+/** A hero's skill-tree state. */
+export function treeOf(save, heroId) {
+  return (save.trees[heroId] ??= { nodes: [], branch: null });
 }
 
 /** The outfit one hero is wearing ({ slotId: itemId }). */

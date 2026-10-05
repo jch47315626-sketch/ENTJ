@@ -28,7 +28,7 @@ export function updateAllies(g, dt) {
       if (target) a.facing = Math.atan2(dy, dx);
       if (target && d <= reach + 14 && a.cd <= 0) {
         a.cd = 0.7;
-        g.damageEnemy(target, 9 * p.stats.might, a.x, a.y, 50);
+        g.damageEnemy(target, 9 * p.stats.might * (1 + (p.meta.allyMul ?? 0)), a.x, a.y, 50);
         g.fx.push({ type: 'thrust', x: a.x, y: a.y, angle: a.facing, t: 0, life: 0.15 });
       }
       if (a.life <= 0) {
@@ -84,7 +84,7 @@ export function updateAllies(g, dt) {
         g.projectiles.push({
           team: 'player', kind: 'arrow', x: a.x, y: a.y,
           vx: Math.cos(a.facing) * s, vy: Math.sin(a.facing) * s,
-          r: 5, damage: 10 * p.stats.might, knockback: 25, life: 1, pierce: 1, hit: new Set(), angle: a.facing,
+          r: 5, damage: 10 * p.stats.might * (1 + (p.meta.allyMul ?? 0)), knockback: 25, life: 1, pierce: 1, hit: new Set(), angle: a.facing,
         });
       }
     }

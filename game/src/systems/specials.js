@@ -12,8 +12,8 @@ export const SPECIALS = {
     name: '통솔',
     fire(g) {
       const p = g.player;
-      const count = 2 + p.stats.guard;
-      const life = 12 + 2 * p.stats.guard;
+      const count = 2 + p.stats.guard + (p.meta.guardBonus ?? 0);
+      const life = 12 + 2 * p.stats.guard + (p.meta.tongsolLife ?? 0);
       for (let i = 0; i < count; i++) {
         const a = (i / count) * TAU + rand(-0.2, 0.2);
         const x = p.x + Math.cos(a) * 40, y = p.y + Math.sin(a) * 40;
@@ -35,7 +35,7 @@ export const SPECIALS = {
       const aim = target ? Math.atan2(target.y - p.y, target.x - p.x) : p.facing;
       p.facing = aim;
       const dmg = Math.max(lv.damage, 30) * 6 * p.stats.might * p.stats.specialMul;
-      hitArc(g, p.x, p.y, aim, 240 * p.stats.area, 160, dmg, 320, 'paewang', { stun: 0.8 + p.stats.specialStun });
+      hitArc(g, p.x, p.y, aim, 240 * p.stats.area * p.stats.specialArea, 160, dmg, 320, 'paewang', { stun: 0.8 + p.stats.specialStun });
       g.shake(10);
       g.banner('패왕의 일격', 'small');
       g.sfx('paewang');
@@ -47,7 +47,14 @@ export const SPECIALS = {
     name: '관심법',
     fire(g) {
       const p = g.player;
-      const L = GWANSIM[Math.min(GWANSIM.length - 1, p.upgrades.gwansim ?? 0)];
+      const base = GWANSIM[Math.min(GWANSIM.length - 1, p.upgrades.gwansim ?? 0)];
+      const m = p.meta;
+      const L = {
+        ...base,
+        count: base.count + (m.gwansimCount ?? 0),
+        duration: base.duration + (m.gwansimDur ?? 0),
+        tier: m.gwansimAllTiers ? 99 : base.tier,
+      };
       const picks = [];
       g.grid.query(p.x, p.y, 340, (e) => {
         if (e.dead || e.isBoss || e.def.behavior === 'static' || g.isCharmed(e)) return;

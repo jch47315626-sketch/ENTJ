@@ -47,25 +47,31 @@ class Player {
     const b = this.hero.stats;
     const m = this.meta;
     const u = (id) => this.upgrades[id] ?? 0;
+    // 패왕의 분노: below half health the hero hits harder and faster.
+    const maxHp = b.maxHp + 25 * u('vitality') + (m.maxHp ?? 0);
+    this.enraged = !!m.berserk && this.hp !== undefined && this.hp < maxHp * 0.5;
+    const rage = this.enraged ? m.berserk : 0;
     this.stats = {
       maxHp: b.maxHp + 25 * u('vitality') + (m.maxHp ?? 0),
       speed: b.speed * (1 + 0.08 * u('swift') + (m.speed ?? 0)),
-      might: b.might * (1 + 0.15 * u('might') + (m.might ?? 0)),
-      haste: b.haste * (1 - 0.1 * u('haste') - (m.haste ?? 0)),
-      area: b.area * (1 + 0.12 * u('area')),
+      might: b.might * (1 + 0.15 * u('might') + (m.might ?? 0) + rage),
+      haste: b.haste * (1 - 0.1 * u('haste') - (m.haste ?? 0) - (rage ? 0.2 : 0)),
+      area: b.area * (1 + 0.12 * u('area') + (m.area ?? 0)),
       pickup: b.pickup * (1 + 0.35 * u('magnet') + (m.pickup ?? 0)),
       armor: b.armor + (m.armor ?? 0),
       momentumMul: 1 + 0.25 * u('momentum') + (m.momentum ?? 0),
       xpMul: 1 + (m.xp ?? 0),
       guard: u('guard'),
       caltrops: u('caltrops'),
-      specialMul: 1 + 0.3 * u('fury'),
+      specialMul: 1 + 0.3 * u('fury') + (m.specialMul ?? 0),
+      specialArea: 1 + (m.specialArea ?? 0),
       specialStun: 0.2 * u('fury'),
     };
   }
 
   heal(v) {
     this.hp = Math.min(this.stats.maxHp, this.hp + v);
+    if (this.meta.berserk) this.recalc();
   }
 
   /** Main weapon first, then any second weapons. */
@@ -322,6 +328,10 @@ export class Game {
 
   killEnemy(e) {
     e.dead = true;
+    // 미륵의 대계: a swayed soldier bursts when it falls.
+    if (this.isCharmed(e) && this.player.meta.charmBlast) {
+      hitArc(this, e.x, e.y, 0, 70, 360, this.player.meta.charmBlast * this.player.stats.might, 80, 'burst');
+    }
     this.sfx(e.isBoss ? 'bossDown' : 'kill');
     this.fx.push({ type: 'ink', x: e.x, y: e.y, t: 0, life: 0.8, size: e.r * (e.isBoss ? 4 : 1.6), seed: Math.random() });
     if (e.def.behavior === 'static') {
@@ -347,14 +357,15 @@ export class Game {
 
   hurtPlayer(amount, source = 'unknown') {
     const p = this.player;
-    if (p.invuln > 0 || this.state !== 'play') return;
-    if (p.mount && this.time < p.mount.invulnUntil) return;
+    if (p.invuln > 0 || this.state !== 'play') return false;
+    if (p.mount && this.time < p.mount.invulnUntil) return false;
     // Armour cuts 7% per point (max 50%), so it helps against big hits and small ones alike.
     const dmg = Math.max(1, amount * (1 - Math.min(0.5, 0.07 * p.stats.armor)));
     this.damageLog[source] = (this.damageLog[source] ?? 0) + dmg;
     p.hp -= dmg;
-    p.invuln = INVULN_TIME;
+    p.invuln = INVULN_TIME + (p.meta.invulBonus ?? 0);
     p.hurtFlash = 0.25;
+    if (p.meta.berserk) p.recalc();
     this.shake(4);
     this.sfx('hurt');
     this.texts.push({ x: p.x, y: p.y - 20, v: Math.round(dmg), t: 0, life: 0.7, hurt: true });
@@ -364,6 +375,7 @@ export class Game {
       this.endTimer = 1.2;
       this.fx.push({ type: 'ink', x: p.x, y: p.y, t: 0, life: 1.2, size: 40, seed: 0.3 });
     }
+    return true;
   }
 
   addMomentum(v) {
@@ -506,7 +518,7 @@ export class Game {
     p.moving = move.x !== 0 || move.y !== 0;
     if (p.moving) {
       let spd = p.stats.speed;
-      if (p.mount) spd *= p.mount.L.speed;
+      if (p.mount) spd *= p.mount.L.speed + (p.meta.mountSpeed ?? 0);
       for (const z of this.zones) {
         if (z.team === 'enemy' && z.slow && dist2(z.x, z.y, p.x, p.y) < z.r * z.r) spd *= 1 - z.slow;
       }
@@ -646,7 +658,11 @@ export class Game {
       const dmg = e.contactDamage ?? e.damage;
       if (dmg > 0 && !charmed) {
         const rr = e.r + p.r - 2;
-        if (dist2(e.x, e.y, p.x, p.y) < rr * rr) this.hurtPlayer(dmg, e.isBoss ? 'boss' : e.def.id);
+        if (dist2(e.x, e.y, p.x, p.y) < rr * rr && this.hurtPlayer(dmg, e.isBoss ? 'boss' : e.def.id) && p.meta.thorns) {
+          // 반격: whoever strikes the hero in melee takes a blow back.
+          this.damageEnemy(e, p.meta.thorns * p.stats.might, p.x, p.y, 120);
+          this.fx.push({ type: 'spark', x: e.x, y: e.y, t: 0, life: 0.25 });
+        }
       }
     }
   }
@@ -738,7 +754,7 @@ export class Game {
       m.drop = 0.06;
       this.zones.push({
         team: 'player', kind: 'hoof', x: p.x - Math.cos(p.facing) * 12, y: p.y - Math.sin(p.facing) * 12,
-        r: 26 * p.stats.area, dps: m.L.trailDps * p.stats.might, life: m.L.trailLife, t: 0, angle: p.facing,
+        r: 26 * p.stats.area, dps: m.L.trailDps * p.stats.might * (1 + (p.meta.trailMul ?? 0)), life: m.L.trailLife, t: 0, angle: p.facing,
       });
     }
     if (m.L.trample) {

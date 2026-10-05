@@ -4,7 +4,8 @@ import { Input } from './core/input.js';
 import { Hud } from './ui/hud.js';
 import { Sound } from './audio/sound.js';
 import { showScreen, renderMain, renderHeroSelect, renderMapSelect, renderIntro, renderChoices, renderResult, renderCamp } from './ui/screens.js';
-import { loadSave, writeSave, outfitOf } from './core/save.js';
+import { loadSave, writeSave, outfitOf, treeOf } from './core/save.js';
+import { SKILL_TREES } from './data/trees.js';
 import { metaBonus } from './data/meta.js';
 import { STAGES } from './data/stages.js';
 
@@ -135,8 +136,50 @@ function openHeroSelect() {
     openSlot(slot) {
       openCamp(slot, openHeroSelect);
     },
+    buyNode(node, branchId) {
+      const t = treeOf(save, sel.hero);
+      if (t.nodes.includes(node.id) || save.money < node.price) return;
+      if (branchId && t.branch && t.branch !== branchId) return;
+      save.money -= node.price;
+      t.nodes.push(node.id);
+      if (branchId) t.branch = branchId;
+      buildChanged();
+    },
+    // 길 바꾸기: drop the chosen branch for 90% of what it cost.
+    respec() {
+      const t = treeOf(save, sel.hero);
+      const br = SKILL_TREES[sel.hero].branches.find((b) => b.id === t.branch);
+      if (!br) return;
+      const bought = br.nodes.filter((n) => t.nodes.includes(n.id));
+      save.money += Math.floor(0.9 * bought.reduce((a, n) => a + n.price, 0));
+      t.nodes = t.nodes.filter((id) => !bought.some((n) => n.id === id));
+      t.branch = null;
+      buildChanged();
+    },
+    buyTreasure(item) {
+      if (save.owned.includes(item.id) || save.money < item.price) return;
+      if (item.parent && !save.owned.includes(item.parent)) return;
+      save.money -= item.price;
+      save.owned.push(item.id);
+      outfitOf(save, sel.hero).treasure = item.id;
+      buildChanged();
+    },
+    wearTreasure(item) {
+      outfitOf(save, sel.hero).treasure = item.id;
+      buildChanged();
+    },
   });
   showScreen('heroSelect');
+}
+
+/** Save, play the purchase sound and redraw the hero screen in place. */
+function buildChanged() {
+  writeSave(save);
+  sound.unlock();
+  sound.sfx('coin');
+  const y = $('heroSelect').scrollTop;
+  openHeroSelect();
+  $('heroSelect').scrollTop = y;
 }
 
 function openMapSelect() {

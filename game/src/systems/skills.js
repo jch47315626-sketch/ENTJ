@@ -13,11 +13,11 @@ export const ACTIVE_SKILLS = {
       const p = g.player;
       // He steps out a little ahead of the king.
       const a = p.facing + rand(-0.4, 0.4);
-      const hp = L.hp * (0.6 + 0.4 * enemyHpScale(g.time));
+      const hp = L.hp * (0.6 + 0.4 * enemyHpScale(g.time)) * (1 + (p.meta.shinHpMul ?? 0));
       g.allies.push({
         kind: 'shin', x: p.x + Math.cos(a) * 60, y: p.y + Math.sin(a) * 60, r: 15,
         hp, maxHp: hp, life: L.duration, maxLife: L.duration, lure: L.lure,
-        damage: L.damage, explode: L.explode, cd: 0.5, facing: a,
+        damage: L.damage * (1 + (p.meta.allyMul ?? 0)), explode: L.explode, cd: 0.5, facing: a,
       });
       g.fx.push({ type: 'puff', x: p.x + Math.cos(a) * 60, y: p.y + Math.sin(a) * 60, t: 0, life: 0.6, size: 26, tone: 'light' });
       g.banner('신숭겸 — 왕의 깃발 아래로 모여라!', 'small');
@@ -29,7 +29,7 @@ export const ACTIVE_SKILLS = {
     levels: HORSE,
     fire(g, L) {
       const p = g.player;
-      p.mount = { until: g.time + L.duration, invulnUntil: g.time + L.invuln, L, drop: 0 };
+      p.mount = { until: g.time + L.duration, invulnUntil: g.time + L.invuln + (p.meta.horseInvul ?? 0), L, drop: 0 };
       g.fx.push({ type: 'puff', x: p.x, y: p.y, t: 0, life: 0.6, size: 30, tone: 'mud' });
       g.banner(`${L.name} — 말에 오른다`, 'small');
       g.sfx('gallop');
@@ -47,7 +47,7 @@ ACTIVE_SKILLS.chain = {
     // Nothing to hook: look again shortly instead of wasting the cooldown.
     if (!pool.length) return 1;
     pool.sort((a, b) => ((b.x - p.x) ** 2 + (b.y - p.y) ** 2) - ((a.x - p.x) ** 2 + (a.y - p.y) ** 2));
-    for (const e of pool.slice(0, L.count)) e.pull = { stun: L.stun, slam: L.slam };
+    for (const e of pool.slice(0, L.count + (p.meta.chainBonus ?? 0))) e.pull = { stun: L.stun, slam: L.slam };
     g.sfx('chain');
   },
 };
@@ -60,9 +60,11 @@ export function updateSkills(g, dt) {
     if (!lv) continue;
     const skill = ACTIVE_SKILLS[id];
     const L = skill.levels[lv - 1];
-    p.skillTimers[id] = (p.skillTimers[id] ?? L.cooldown) - dt;
+    // Builds can shorten a skill's cooldown (e.g. horseCd from 기마의 길).
+    const cooldown = L.cooldown * (1 - (p.meta[`${id}Cd`] ?? 0));
+    p.skillTimers[id] = (p.skillTimers[id] ?? cooldown) - dt;
     if (p.skillTimers[id] <= 0) {
-      p.skillTimers[id] = L.cooldown;
+      p.skillTimers[id] = cooldown;
       // A skill may return a shorter wait (e.g. no valid target yet).
       const wait = skill.fire(g, L);
       if (typeof wait === 'number') p.skillTimers[id] = wait;
