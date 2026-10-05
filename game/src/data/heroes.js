@@ -39,7 +39,7 @@ export const HEROES = {
     role: '원거리 술사형',
     blurb: '석장으로 법력구를 쏘고 금강저로 벼락을 부른다. 기세가 차면 관심법으로 적을 홀려 서로 베게 한다.',
     available: true,
-    stats: { maxHp: 150, speed: 158, might: 1.2, haste: 1, area: 1.1, pickup: 85, armor: 1 },
+    stats: { maxHp: 150, speed: 158, might: 1.0, haste: 1, area: 1.1, pickup: 85, armor: 1 },
     weapon: 'seokjang',
     subWeapons: ['vajra'],
     special: 'gwansim',
