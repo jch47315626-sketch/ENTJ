@@ -1,3 +1,4 @@
+import { EQUIPMENT } from '../data/meta.js';
 import { TREASURES } from '../data/trees.js';
 
 /**
@@ -386,6 +387,40 @@ const SHAPES = {
 };
 for (const list of Object.values(TREASURES)) {
   for (const t of list) ICONS[t.id] = (ctx) => SHAPES[t.icon[0]](ctx, t.icon[1]);
+}
+
+// Items without their own drawing reuse another's, tinted.
+for (const it of EQUIPMENT) {
+  if (!it.icon || ICONS[it.id]) continue;
+  const base = ICONS[it.icon];
+  ICONS[it.id] = (ctx) => {
+    // Paint the base icon off-screen, recolour it, then clip to its shape.
+    const W = ctx.canvas.width, H = ctx.canvas.height;
+    const mk = () => {
+      const c = document.createElement('canvas');
+      c.width = W;
+      c.height = H;
+      const x = c.getContext('2d');
+      x.setTransform(ctx.getTransform());
+      return [c, x];
+    };
+    const [shape, sx] = mk();
+    base(sx);
+    const [tinted, tx] = mk();
+    base(tx);
+    tx.setTransform(1, 0, 0, 1, 0, 0);
+    tx.globalCompositeOperation = 'color';
+    tx.globalAlpha = 0.75;
+    tx.fillStyle = it.tint;
+    tx.fillRect(0, 0, W, H);
+    tx.globalAlpha = 1;
+    tx.globalCompositeOperation = 'destination-in';
+    tx.drawImage(shape, 0, 0);
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(tinted, 0, 0);
+    ctx.restore();
+  };
 }
 
 /** The cheapest item of each slot, drawn faint, marks an empty slot. */

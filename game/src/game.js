@@ -118,7 +118,10 @@ export class Game {
     this.pendingLevels = 0;
     this.choices = null;
     this.boss = null;
+    this.bosses = [];
+    this.bossGroup = null;
     this.bossIntro = 0;
+    this.darkUntil = 0; // 관심법의 밤: vision shrinks until this time
     this.arena = null;
     this.state = 'play'; // play | levelup | paused | over | clear
     this.endTimer = 0;
@@ -233,7 +236,7 @@ export class Game {
       damage: def.damage * dmgScale * (v ? v.damageMul : 1),
       damageMul: dmgScale * (v ? v.damageMul : 1),
       // Tougher stages give more 공훈 per kill so levelling keeps pace.
-      xp: def.xp * (v ? v.xpMul : 1) * (1 + (diff.enemyHp - 1) * 0.6),
+      xp: def.xp * (v ? v.xpMul : 1) * (1 + (diff.enemyHp - 1) * (diff.xpScale ?? 0.6)),
       vx: 0, vy: 0, kx: 0, ky: 0,
       facing: 0, flash: 0, seed: Math.random(),
     };
@@ -262,24 +265,53 @@ export class Game {
 
     const p = this.player;
     this.arena = { x: p.x, y: p.y, r: 460 };
-    const b = this.spawnEnemy('infantry', p.x, p.y - 300); // reuse instance shape
-    Object.assign(b, {
-      def: { ...def, behavior: 'boss' },
-      isBoss: true,
-      r: def.radius,
-      hp: def.hp * this.stage.difficulty.bossHp, maxHp: def.hp * this.stage.difficulty.bossHp,
-      speed: def.speed,
-      damage: def.damage * this.stage.difficulty.bossDamage,
-      damageMul: this.stage.difficulty.bossDamage,
-      xp: 0,
-      cooldownMul: 1,
-      summoned: new Set(),
+    // A group boss (e.g. the four founding generals) enters all at once.
+    this.bosses = [];
+    const ids = def.group ?? [bossId];
+    ids.forEach((id, i) => {
+      const a = -Math.PI / 2 + (ids.length > 1 ? ((i - (ids.length - 1) / 2) * Math.PI) / 3.2 : 0);
+      this.bosses.push(this.spawnBossUnit(id, p.x + Math.cos(a) * 300, p.y + Math.sin(a) * 300));
     });
+    const b = this.bosses[0];
+    this.bossGroup = def.group ? def : null;
     this.boss = b;
     this.bossIntro = 2.4;
     this.shake(8);
     this.sfx('boss');
     this.opts.onBoss?.(def);
+  }
+
+  /** One boss body (also used for 궁예's clones, which are `minion`s). */
+  spawnBossUnit(id, x, y) {
+    const def = BOSSES[id];
+    const diff = this.stage.difficulty;
+    const b = this.spawnEnemy('infantry', x, y); // reuse instance shape
+    if (!b) return null;
+    Object.assign(b, {
+      def: { ...def, behavior: 'boss' },
+      isBoss: true,
+      elite: false,
+      r: def.radius,
+      hp: def.hp * diff.bossHp, maxHp: def.hp * diff.bossHp,
+      speed: def.speed,
+      damage: def.damage * diff.bossDamage,
+      damageMul: diff.bossDamage,
+      xp: 0,
+      cooldownMul: 1,
+      summoned: new Set(),
+    });
+    return b;
+  }
+
+  /** Boss bar: one boss, or the summed health of a group. */
+  bossStatus() {
+    if (!this.bosses?.length) return null;
+    const main = this.bosses.filter((b) => !b.def.minion);
+    const hp = main.reduce((a, b) => a + Math.max(0, b.dead ? 0 : b.hp), 0);
+    if (hp <= 0) return null;
+    const max = main.reduce((a, b) => a + b.maxHp, 0);
+    const name = this.bossGroup ? `${this.bossGroup.name} (${main.filter((b) => !b.dead).length}/${main.length})` : main[0].def.name;
+    return { name, ratio: clamp(hp / max, 0, 1) };
   }
 
   syncArcherAllies() {
@@ -332,8 +364,8 @@ export class Game {
     if (this.isCharmed(e) && this.player.meta.charmBlast) {
       hitArc(this, e.x, e.y, 0, 70, 360, this.player.meta.charmBlast * this.player.stats.might, 80, 'burst');
     }
-    this.sfx(e.isBoss ? 'bossDown' : 'kill');
-    this.fx.push({ type: 'ink', x: e.x, y: e.y, t: 0, life: 0.8, size: e.r * (e.isBoss ? 4 : 1.6), seed: Math.random() });
+    this.sfx(e.isBoss && !e.def.minion ? 'bossDown' : 'kill');
+    this.fx.push({ type: 'ink', x: e.x, y: e.y, t: 0, life: 0.8, size: e.r * (e.isBoss && !e.def.minion ? 4 : 1.6), seed: Math.random() });
     if (e.def.behavior === 'static') {
       this.fx.push({ type: 'puff', x: e.x, y: e.y, t: 0, life: 0.6, size: 26, tone: 'mud' });
     } else {
@@ -342,7 +374,10 @@ export class Game {
     }
     if (e.xp > 0) this.dropCoin(e.x, e.y, e.xp);
     if (e.def.drop === 'rice') this.pickups.push({ kind: 'rice', x: e.x, y: e.y, heal: 25, magnet: false, t: 0 });
-    if (e.isBoss) {
+    if (e.isBoss && (e.def.minion || this.bosses.some((o) => !o.dead && !o.def.minion))) {
+      // A clone, or one of several generals: the fight goes on.
+      this.banner(`${e.def.name} 쓰러짐`, 'small');
+    } else if (e.isBoss) {
       this.state = 'clearing';
       this.endTimer = 2.2;
       this.banner(`${e.def.name} 격파`, 'big');
@@ -516,14 +551,17 @@ export class Game {
 
     // Player movement.
     p.moving = move.x !== 0 || move.y !== 0;
+    p.vx = p.vy = 0;
     if (p.moving) {
       let spd = p.stats.speed;
       if (p.mount) spd *= p.mount.L.speed + (p.meta.mountSpeed ?? 0);
       for (const z of this.zones) {
         if (z.team === 'enemy' && z.slow && dist2(z.x, z.y, p.x, p.y) < z.r * z.r) spd *= 1 - z.slow;
       }
-      p.x += move.x * spd * dt;
-      p.y += move.y * spd * dt;
+      p.vx = move.x * spd;
+      p.vy = move.y * spd;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
       p.facing = Math.atan2(move.y, move.x);
     }
     if (this.arena) {
@@ -854,7 +892,7 @@ export class Game {
       momentum: p.momentum / MOMENTUM.max,
       time: this.time, remaining, bossAt: this.stage.bossAt,
       kills: this.kills,
-      boss: this.boss && !this.boss.dead ? { name: this.boss.def.name, ratio: clamp(this.boss.hp / this.boss.maxHp, 0, 1) } : null,
+      boss: this.bossStatus(),
       bossPhase: !!this.boss,
     };
   }

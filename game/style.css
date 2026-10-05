@@ -398,3 +398,17 @@ button.doll-slot:hover, button.doll-slot:focus-visible { border-color: var(--gol
   .choice { animation: none; }
   .banner, .xpbar i { transition: none; }
 }
+
+/* Equipment grades and 제련 */
+.grade { font-style: normal; font-weight: 700; font-size: 0.85em; }
+.camp-item.with-icon .row-icon { border-color: var(--grade, #3a2e20); box-shadow: 0 0 0 1px var(--grade, transparent) inset; }
+.camp-item.sealed { opacity: 0.5; }
+.camp-item .ctrl-pair { grid-row: 1 / span 2; grid-column: 3; display: flex; flex-direction: column; gap: 4px; align-items: stretch; }
+.camp-item .ctrl-pair button, .camp-item .ctrl-pair .done-tag { font-size: 12px; padding: 5px 8px; text-align: center; }
+.forge-btn { color: var(--gold); background: transparent; border: 1px solid var(--gold); }
+.forge-btn:disabled { color: var(--hanji-dim); border-color: #3a3530; cursor: default; }
+.done-tag.locked { color: var(--hanji-dim); font-size: 11px; max-width: 9em; text-align: right; }
+.doll-slot:not(.empty):not(.weapon):not(.treasure) { border-color: var(--grade, #3a2e20); }
+.camp-toast { position: sticky; top: 8px; z-index: 3; margin: 6px auto; padding: 8px 14px; text-align: center; font-weight: 700; border-radius: 4px; max-width: 26em; }
+.camp-toast.ok { background: rgba(214, 166, 62, 0.92); color: #1d1a17; }
+.camp-toast.fail { background: rgba(124, 24, 18, 0.92); color: var(--hanji); }

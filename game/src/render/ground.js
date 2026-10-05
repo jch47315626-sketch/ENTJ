@@ -230,4 +230,100 @@ export const GROUNDS = {
       }
     }
   },
+  /** 철원 궁성: flagstone courtyard, stone lanterns, red palace pillars. */
+  palaceCourt(ctx, v, time) {
+    ctx.fillStyle = '#8b857a';
+    ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
+    const tx0 = Math.floor(v.x0 / TILE) - 1, tx1 = Math.floor(v.x1 / TILE) + 1;
+    const ty0 = Math.floor(v.y0 / TILE) - 1, ty1 = Math.floor(v.y1 / TILE) + 1;
+    const S = TILE / 4;
+
+    // Pass 1: flagstones, each a slightly different grey, with dark joints.
+    for (let tx = tx0; tx <= tx1; tx++) {
+      for (let ty = ty0; ty <= ty1; ty++) {
+        const ox = tx * TILE, oy = ty * TILE;
+        for (let i = 0; i < 4; i++) {
+          for (let j = 0; j < 4; j++) {
+            const h = hash2(tx * 4 + i, ty * 4 + j, 301);
+            const shift = (j % 2) * S * 0.5;
+            ctx.fillStyle = `rgba(${150 + h * 30 | 0}, ${144 + h * 28 | 0}, ${132 + h * 24 | 0}, 0.9)`;
+            ctx.fillRect(ox + i * S + shift + 2, oy + j * S + 2, S - 4, S - 4);
+            if (h < 0.08) {
+              ctx.strokeStyle = 'rgba(40, 34, 28, 0.35)';
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(ox + i * S + shift + 8, oy + j * S + 10);
+              ctx.lineTo(ox + i * S + shift + S * 0.6, oy + j * S + S * 0.7);
+              ctx.stroke();
+            }
+          }
+        }
+        // Moss in the cracks and fallen leaves.
+        if (hash2(tx, ty, 310) < 0.4) {
+          ctx.fillStyle = 'rgba(90, 104, 60, 0.25)';
+          ctx.beginPath();
+          ctx.ellipse(ox + hash2(tx, ty, 311) * TILE, oy + hash2(tx, ty, 312) * TILE, 40, 14, hash2(tx, ty, 313) * 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    // Pass 2: stone lanterns (석등) with a flickering glow, and palace pillars.
+    for (let tx = tx0; tx <= tx1; tx++) {
+      for (let ty = ty0; ty <= ty1; ty++) {
+        const ox = tx * TILE, oy = ty * TILE;
+        const hl = hash2(tx, ty, 320);
+        if (hl < 0.2) {
+          const cx = ox + 40 + hash2(tx, ty, 321) * (TILE - 80), cy = oy + 40 + hash2(tx, ty, 322) * (TILE - 80);
+          const fl = 0.8 + 0.2 * Math.sin(time * 9 + hl * 40) * Math.sin(time * 5.3 + hl * 11);
+          const glow = ctx.createRadialGradient(cx, cy - 16, 4, cx, cy - 16, 70);
+          glow.addColorStop(0, `rgba(255, 200, 110, ${0.35 * fl})`);
+          glow.addColorStop(1, 'rgba(255, 200, 110, 0)');
+          ctx.fillStyle = glow;
+          ctx.fillRect(cx - 70, cy - 86, 140, 140);
+          ctx.fillStyle = 'rgba(22, 19, 15, 0.25)';
+          ctx.beginPath();
+          ctx.ellipse(cx + 6, cy + 8, 22, 9, 0, 0, Math.PI * 2);
+          ctx.fill();
+          // Base, pillar, fire chamber, roof cap.
+          ctx.fillStyle = '#6e6a62';
+          ctx.fillRect(cx - 14, cy - 2, 28, 8);
+          ctx.fillStyle = '#7d786e';
+          ctx.fillRect(cx - 5, cy - 14, 10, 13);
+          ctx.fillStyle = '#5d5952';
+          ctx.fillRect(cx - 11, cy - 28, 22, 15);
+          ctx.fillStyle = `rgba(255, 196, 96, ${fl})`;
+          ctx.fillRect(cx - 5, cy - 25, 10, 9);
+          ctx.fillStyle = '#4a4740';
+          ctx.beginPath();
+          ctx.moveTo(cx - 17, cy - 28);
+          ctx.lineTo(cx + 17, cy - 28);
+          ctx.lineTo(cx + 7, cy - 37);
+          ctx.lineTo(cx - 7, cy - 37);
+          ctx.closePath();
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(cx, cy - 39, 3, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (hl > 0.9) {
+          // A lone red-lacquered pillar on a stone footing.
+          const cx = ox + hash2(tx, ty, 323) * TILE, cy = oy + hash2(tx, ty, 324) * TILE;
+          ctx.fillStyle = 'rgba(22, 19, 15, 0.22)';
+          ctx.beginPath();
+          ctx.ellipse(cx + 8, cy + 8, 24, 10, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#6e6a62';
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, 20, 12, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#8e2a1e';
+          ctx.fillRect(cx - 11, cy - 46, 22, 46);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+          ctx.fillRect(cx - 7, cy - 46, 4, 46);
+          ctx.fillStyle = '#2f5a4a';
+          ctx.fillRect(cx - 13, cy - 52, 26, 7);
+        }
+      }
+    }
+  },
 };

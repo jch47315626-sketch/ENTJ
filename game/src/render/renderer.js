@@ -70,6 +70,7 @@ export class Renderer {
     if (g.arena) this.drawArenaFloor(ctx, g, v);
     this.drawCaltrops(ctx, g);
     this.drawZones(ctx, g);
+    this.drawHalos(ctx, g);
 
     for (const k of g.pickups) {
       if (k.kind === 'coin') drawCoin(ctx, k.x, k.y, k.tier, k.t);
@@ -93,6 +94,7 @@ export class Renderer {
     for (const pr of g.projectiles) drawProjectile(ctx, pr);
     this.drawFx(ctx, g);
     if (g.arena) this.drawArenaBanners(ctx, g);
+    this.drawNight(ctx, g, v);
     this.drawTexts(ctx, g);
     ctx.restore();
 
@@ -208,6 +210,58 @@ export class Renderer {
         ctx.fill();
       }
     }
+  }
+
+  /** 미륵 광배: faint guide lines while winding up, bright beams once live. */
+  drawHalos(ctx, g) {
+    for (const b of g.enemies) {
+      if (b.dead || !b.halo) continue;
+      const H = b.halo;
+      for (let i = 0; i < H.beams; i++) {
+        const a = b.haloAngle + (i * TAU) / H.beams;
+        ctx.save();
+        ctx.translate(b.x, b.y);
+        ctx.rotate(a);
+        if (H.live) {
+          const flick = 0.75 + 0.25 * Math.sin(g.time * 30 + i);
+          ctx.fillStyle = `rgba(255, 226, 140, ${0.35 * flick})`;
+          ctx.fillRect(0, -H.width / 2, H.length, H.width);
+          ctx.fillStyle = `rgba(255, 250, 225, ${0.8 * flick})`;
+          ctx.fillRect(0, -H.width / 6, H.length, H.width / 3);
+        } else {
+          ctx.fillStyle = 'rgba(150, 100, 210, 0.18)';
+          ctx.fillRect(0, -H.width / 2, H.length, H.width);
+          ctx.strokeStyle = 'rgba(150, 100, 210, 0.8)';
+          ctx.setLineDash([10, 8]);
+          ctx.lineWidth = 2;
+          ctx.strokeRect(0, -H.width / 2, H.length, H.width);
+          ctx.setLineDash([]);
+        }
+        ctx.restore();
+      }
+      if (H.live) {
+        // The halo ring behind the head.
+        ctx.strokeStyle = 'rgba(255, 220, 120, 0.85)';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r + 10, 0, TAU);
+        ctx.stroke();
+      }
+    }
+  }
+
+  /** 관심법의 밤: everything beyond a small circle around the hero goes dark. */
+  drawNight(ctx, g, v) {
+    const left = g.darkUntil - g.time;
+    if (left <= 0) return;
+    const fade = Math.min(1, left / 1.5, (g.darkTotal - left) / 1.5);
+    const p = g.player;
+    const r0 = 150, r1 = 290;
+    const grd = ctx.createRadialGradient(p.x, p.y, r0, p.x, p.y, r1);
+    grd.addColorStop(0, 'rgba(12, 8, 20, 0)');
+    grd.addColorStop(1, `rgba(12, 8, 20, ${0.93 * fade})`);
+    ctx.fillStyle = grd;
+    ctx.fillRect(v.x0 - 40, v.y0 - 40, v.x1 - v.x0 + 80, v.y1 - v.y0 + 80);
   }
 
   drawEnemy(ctx, g, e) {
@@ -341,11 +395,12 @@ export class Renderer {
         ctx.setLineDash([]);
         ctx.restore();
       } else if (f.type === 'ringWarn') {
-        ctx.fillStyle = `rgba(179, 38, 30, ${0.1 + 0.22 * p})`;
+        const rgb = f.tone === 'violet' ? '150, 100, 210' : '179, 38, 30';
+        ctx.fillStyle = `rgba(${rgb}, ${0.1 + 0.22 * p})`;
         ctx.beginPath();
         ctx.arc(f.x, f.y, f.range, 0, TAU);
         ctx.fill();
-        ctx.strokeStyle = 'rgba(179, 38, 30, 0.8)';
+        ctx.strokeStyle = `rgba(${rgb}, 0.85)`;
         ctx.setLineDash([10, 8]);
         ctx.lineWidth = 2;
         ctx.stroke();

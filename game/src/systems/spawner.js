@@ -80,6 +80,16 @@ export class Spawner {
       g.spawnAllies(ev.ally, ev.count, ev.life);
     } else if (ev.type === 'decoy') {
       g.spawnDecoy(ev.life);
+    } else if (ev.type === 'night') {
+      // 관심법의 밤: sight shrinks; an assassin squad slips in under it.
+      g.darkTotal = ev.life;
+      g.darkUntil = g.time + ev.life;
+      if (ev.enemy) {
+        for (let i = 0; i < ev.count; i++) {
+          const a = (i / ev.count) * TAU;
+          g.spawnEnemy(ev.enemy, p.x + Math.cos(a) * 330, p.y + Math.sin(a) * 330, { elite: true });
+        }
+      }
     }
     if (ev.banner) g.banner(ev.banner);
     g.sfx('horn');

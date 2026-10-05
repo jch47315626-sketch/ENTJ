@@ -10,8 +10,12 @@ export const BOSS_PATTERNS = {
     update(g, b, P, dt) {
       const dx = g.player.x - b.x, dy = g.player.y - b.y;
       const d = Math.hypot(dx, dy) || 1;
-      b.vx = (dx / d) * b.speed;
-      b.vy = (dy / d) * b.speed;
+      // Casters (`keep`) hold their distance instead of closing in.
+      const dir = P.keep ? (d < P.keep - 30 ? -1 : d > P.keep + 30 ? 1 : 0) : 1;
+      b.vx = (dx / d) * b.speed * dir;
+      b.vy = (dy / d) * b.speed * dir;
+      // A caster pressed into melee slips away.
+      if (P.keep && d < 90 && (b.blinkCd ?? 0) <= g.time) blink(g, b);
       b.facing = Math.atan2(dy, dx);
       b.pt -= dt / b.cooldownMul;
       return b.pt <= 0;
@@ -141,6 +145,131 @@ export const BOSS_PATTERNS = {
     },
   },
 };
+
+/** Shared by 궁예's patterns: angle from the boss to a point. */
+const PRED = (g, lead) => {
+  const p = g.player;
+  return { x: p.x + (p.vx ?? 0) * lead, y: p.y + (p.vy ?? 0) * lead };
+};
+
+Object.assign(BOSS_PATTERNS, {
+  /**
+   * 관심법 낙뢰: reads where the hero is going and marks it; the first bolt
+   * lands on that predicted spot, the rest scatter around it.
+   */
+  lightning: {
+    start(g, b, P) {
+      b.ps = 'windup';
+      b.pt = P.windup * b.cooldownMul;
+      const c = PRED(g, P.lead);
+      b.strikes = [];
+      for (let i = 0; i < P.count; i++) {
+        const a = Math.random() * Math.PI * 2, d = i === 0 ? 0 : P.spread * (0.45 + 0.55 * Math.random());
+        const s = { x: c.x + Math.cos(a) * d, y: c.y + Math.sin(a) * d };
+        b.strikes.push(s);
+        g.fx.push({ type: 'ringWarn', x: s.x, y: s.y, range: P.radius, t: 0, life: b.pt, tone: 'violet' });
+      }
+      g.fx.push({ type: 'eye', x: b.x, y: b.y - b.r - 10, t: 0, life: b.pt, follow: b, size: 14 });
+    },
+    update(g, b, P, dt) {
+      b.vx = b.vy = 0;
+      b.pt -= dt;
+      if (b.pt > 0) return false;
+      const p = g.player;
+      for (const s of b.strikes) {
+        const rr = P.radius + p.r;
+        if ((p.x - s.x) ** 2 + (p.y - s.y) ** 2 < rr * rr) g.hurtPlayer(P.damage * b.damageMul, 'boss');
+        g.fx.push({ type: 'bolt', points: [{ x: s.x + 12, y: s.y - 260 }, { x: s.x - 6, y: s.y - 120 }, { x: s.x, y: s.y }], t: 0, life: 0.32, seed: Math.random() });
+        g.fx.push({ type: 'puff', x: s.x, y: s.y, t: 0, life: 0.45, size: P.radius * 0.6, tone: 'light' });
+      }
+      g.shake(4);
+      g.sfx('thunder');
+      return true;
+    },
+  },
+
+  /** 미륵 광배: beams of light radiate from the boss and sweep around. */
+  halo: {
+    start(g, b, P) {
+      b.ps = 'windup';
+      b.pt = P.windup * b.cooldownMul;
+      b.haloAngle = Math.atan2(g.player.y - b.y, g.player.x - b.x) + Math.PI / P.beams;
+      b.haloDir = Math.random() < 0.5 ? 1 : -1;
+      b.halo = { beams: P.beams, length: P.length, width: P.width, live: false };
+      g.sfx('gwansim');
+    },
+    update(g, b, P, dt) {
+      b.vx = b.vy = 0;
+      b.pt -= dt;
+      if (b.ps === 'windup') {
+        if (b.pt > 0) return false;
+        b.ps = 'sweep';
+        b.pt = P.time;
+        b.halo.live = true;
+        b.haloTick = 0;
+        g.sfx('beam');
+      }
+      b.haloAngle += b.haloDir * P.turn * dt / b.cooldownMul;
+      // Damage the hero if they stand inside any beam (ticks every 0.25 s).
+      b.haloTick -= dt;
+      const p = g.player;
+      const dx = p.x - b.x, dy = p.y - b.y, d = Math.hypot(dx, dy);
+      if (b.haloTick <= 0 && d < P.length && d > b.r * 0.5) {
+        const pa = Math.atan2(dy, dx);
+        for (let i = 0; i < P.beams; i++) {
+          const a = b.haloAngle + (i * Math.PI * 2) / P.beams;
+          const off = Math.abs(Math.sin(pa - a)) * d;
+          if (off < P.width / 2 + p.r && Math.cos(pa - a) > 0) {
+            g.hurtPlayer(P.dps * 0.25 * b.damageMul, 'boss');
+            b.haloTick = 0.25;
+            break;
+          }
+        }
+      }
+      if (b.pt > 0) return false;
+      b.halo = null;
+      return true;
+    },
+  },
+
+  /** 분신: calls mind-images of himself (every `every` cycles at most). */
+  clones: {
+    start(g, b, P) {
+      b.cloneCycle = (b.cloneCycle ?? 0) + 1;
+      const alive = g.enemies.filter((e) => !e.dead && e.def.minion).length;
+      if (b.cloneCycle % P.every !== 1 % P.every || alive >= 4) return;
+      for (let i = 0; i < P.count; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const c = g.spawnBossUnit('gungyeClone', b.x + Math.cos(a) * 90, b.y + Math.sin(a) * 90);
+        if (!c) continue;
+        g.fx.push({ type: 'eye', x: c.x, y: c.y, t: 0, life: 0.9, follow: c, size: 20 });
+      }
+      g.banner('분신 — 어느 쪽이 진짜 궁예인가', 'small');
+      g.sfx('gwansim');
+    },
+    update() {
+      return true;
+    },
+  },
+});
+
+/** 궁예 vanishes and reappears across the arena, leaving a burst behind. */
+function blink(g, b) {
+  const a = g.arena, p = g.player;
+  g.fx.push({ type: 'eye', x: b.x, y: b.y, t: 0, life: 0.6, size: 24 });
+  g.fx.push({ type: 'puff', x: b.x, y: b.y, t: 0, life: 0.5, size: 26, tone: 'light' });
+  let best = null;
+  for (let i = 0; i < 8; i++) {
+    const ang = Math.random() * Math.PI * 2, r = (a?.r ?? 400) * (0.4 + 0.45 * Math.random());
+    const c = { x: (a?.x ?? p.x) + Math.cos(ang) * r, y: (a?.y ?? p.y) + Math.sin(ang) * r };
+    const d = (c.x - p.x) ** 2 + (c.y - p.y) ** 2;
+    if (!best || d > best.d) best = { ...c, d };
+  }
+  b.x = best.x;
+  b.y = best.y;
+  b.blinkCd = g.time + 3.5 * b.cooldownMul;
+  g.sfx('gwansim');
+}
 
 function aimDash(g, b, P) {
   b.dashDir = Math.atan2(g.player.y - b.y, g.player.x - b.x);

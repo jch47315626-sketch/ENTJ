@@ -10,7 +10,8 @@ const KEY = 'samhan-save-v1';
 
 // equipped: { [heroId]: { [slotId]: itemId } } — each hero wears their own gear.
 // trees: { [heroId]: { nodes: [nodeId], branch: 'A' | 'B' | null } } — skill-tree purchases.
-const fresh = () => ({ money: 0, owned: [], equipped: {}, training: {}, secrets: [], best: {}, trees: {} });
+const fresh = () => ({ money: 0, owned: [], equipped: {}, training: {}, secrets: [], best: {}, trees: {}, forge: {} });
+// forge: { [itemId]: 0..5 } — 제련 level of each owned item.
 
 export function loadSave() {
   try {

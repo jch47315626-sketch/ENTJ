@@ -1,7 +1,7 @@
 import { HEROES } from '../data/heroes.js';
 import { STAGES, STAGE_ORDER } from '../data/stages.js';
 import { BOSSES } from '../data/bosses.js';
-import { SLOTS, EQUIPMENT, TRAINING, SECRETS, REWARD_BY_STARS, metaBonus } from '../data/meta.js';
+import { SLOTS, EQUIPMENT, TRAINING, SECRETS, REWARD_BY_STARS, GRADES, FORGE, forgeCost, gradeOpen, itemBonus, bonusText, metaBonus } from '../data/meta.js';
 import { WEAPONS } from '../data/weapons.js';
 import { UPGRADES } from '../data/upgrades.js';
 import { SPECIALS } from '../systems/specials.js';
@@ -31,6 +31,9 @@ export function drawPortrait(canvas, hero) {
 
 const outfit = (save, heroId) => save.equipped[heroId] ?? {};
 const itemById = (id) => EQUIPMENT.find((e) => e.id === id);
+const forgeLv = (save, item) => save.forge?.[item.id] ?? 0;
+/** "금관 +2" — the item name with its forge level. */
+const itemName = (save, item) => `${item.name}${forgeLv(save, item) ? ` +${forgeLv(save, item)}` : ''}`;
 
 /** Main menu: chosen hero and battlefield, start button and tabs. */
 export function renderMain(save, sel) {
@@ -44,7 +47,8 @@ export function renderMain(save, sel) {
   for (const sl of SLOTS) {
     const it = itemById(wear[sl.id]);
     const c = iconCanvas(it ? it.id : `empty:${sl.id}`, 30, `mini-icon${it ? '' : ' empty'}`);
-    c.title = it ? `${sl.name}: ${it.name}` : `${sl.name}: 비어 있음`;
+    if (it) c.style.borderColor = GRADES[it.grade].color;
+    c.title = it ? `${sl.name}: [${GRADES[it.grade].name}] ${itemName(save, it)}` : `${sl.name}: 비어 있음`;
     gear.appendChild(c);
   }
   gear.setAttribute('aria-label', SLOTS.map((sl) => `${sl.name} ${itemById(wear[sl.id])?.name ?? '없음'}`).join(', '));
@@ -130,10 +134,11 @@ export function renderHeroSelect(save, sel, act) {
     b.type = 'button';
     b.className = `doll-slot${it ? '' : ' empty'}`;
     b.style.gridArea = sl.id;
-    b.title = it ? `${it.name} — ${it.desc}` : `${sl.name}: 비어 있음. 눌러서 상점으로`;
+    b.title = it ? `[${GRADES[it.grade].name}] ${itemName(save, it)} — ${bonusText(itemBonus(it, forgeLv(save, it)))}` : `${sl.name}: 비어 있음. 눌러서 상점으로`;
+    if (it) b.style.setProperty('--grade', GRADES[it.grade].color);
     b.append(iconCanvas(it ? it.id : `empty:${sl.id}`, sl.id === 'body' ? 84 : 56, 'icon'));
     b.insertAdjacentHTML('beforeend', it
-      ? `<span class="dl">${sl.name}</span><span class="dn">${it.name}</span>`
+      ? `<span class="dl">${sl.name} · <i class="grade" style="color:${GRADES[it.grade].color}">${GRADES[it.grade].name}</i></span><span class="dn">${itemName(save, it)}</span>`
       : `<span class="dl">${sl.name}</span><span class="dn plus">+ 상점</span>`);
     b.addEventListener('click', () => act.openSlot(sl.id));
     doll.appendChild(b);
@@ -314,7 +319,7 @@ export function renderResult(g, won) {
   const seal = $('resultSeal');
   seal.textContent = won ? '平\n定' : '敗\n退';
   seal.classList.toggle('lose', !won);
-  const boss = g.boss?.def;
+  const boss = g.bossGroup ?? g.boss?.def;
   $('resultTitle').textContent = won ? '평정 — 스테이지 클리어' : '패퇴';
   $('resultText').textContent = won
     ? `${withObject(boss?.name ?? '적장')} 꺾었다. ${g.stage.clearText}`
@@ -351,9 +356,31 @@ export function renderCamp(save, heroId, act, focusSlot) {
     for (const item of EQUIPMENT.filter((e) => e.slot === slot.id)) {
       const owned = save.owned.includes(item.id);
       const worn = wearing[slot.id] === item.id;
-      col.appendChild(itemRow(item.name, item.desc, worn, owned
-        ? worn ? doneTag('착용 중') : button('착용', 'wear-btn', () => act.wear(item))
-        : button(`${fmtMoney(item.price)}냥`, 'buy-btn', () => act.buy(item), save.money < item.price), item.id));
+      const grade = GRADES[item.grade];
+      const lv = forgeLv(save, item);
+      const name = `<i class="grade" style="color:${grade.color}">${grade.name}</i> ${itemName(save, item)}`;
+      let control;
+      if (owned) {
+        control = document.createElement('span');
+        control.className = 'ctrl-pair';
+        control.append(worn ? doneTag('착용 중') : button('착용', 'wear-btn', () => act.wear(item)));
+        if (lv < FORGE.max) {
+          const cost = forgeCost(item, lv);
+          const fb = button(`제련 ${fmtMoney(cost)}냥 · ${Math.round(FORGE.chance[lv] * 100)}%`, 'forge-btn', () => act.forge(item), save.money < cost);
+          fb.title = `+${lv + 1} 제련: 성공하면 능력치 +${Math.round(FORGE.step * 100)}%p. 실패해도 냥은 사라진다.`;
+          control.append(fb);
+        } else control.append(doneTag('+5 완성'));
+      } else if (!gradeOpen(save, item)) {
+        control = doneTag(`★${grade.needStars} 전장 격파 시 해금`);
+        control.classList.add('locked');
+      } else {
+        control = button(`${fmtMoney(item.price)}냥`, 'buy-btn', () => act.buy(item), save.money < item.price);
+      }
+      const desc = lv ? bonusText(itemBonus(item, lv)) + (item.note ? `. ${item.note}` : '') : item.desc;
+      const row = itemRow(name, desc, worn, control, item.id);
+      row.style.setProperty('--grade', grade.color);
+      if (!owned && !gradeOpen(save, item)) row.classList.add('sealed');
+      col.appendChild(row);
     }
     gear.appendChild(col);
   }

@@ -6,7 +6,7 @@ import { Sound } from './audio/sound.js';
 import { showScreen, renderMain, renderHeroSelect, renderMapSelect, renderIntro, renderChoices, renderResult, renderCamp } from './ui/screens.js';
 import { loadSave, writeSave, outfitOf, treeOf } from './core/save.js';
 import { SKILL_TREES } from './data/trees.js';
-import { metaBonus } from './data/meta.js';
+import { metaBonus, FORGE, forgeCost, gradeOpen } from './data/meta.js';
 import { STAGES } from './data/stages.js';
 
 const $ = (id) => document.getElementById(id);
@@ -90,7 +90,7 @@ function openCamp(focusSlot = null, back = toTitle) {
   };
   const act = {
     buy(item) {
-      if (!spend(item.price)) return;
+      if (!gradeOpen(save, item) || !spend(item.price)) return;
       save.owned.push(item.id);
       outfitOf(save, sel.hero)[item.slot] = item.id;
       done();
@@ -98,6 +98,17 @@ function openCamp(focusSlot = null, back = toTitle) {
     wear(item) {
       outfitOf(save, sel.hero)[item.slot] = item.id;
       done();
+    },
+    forge(item) {
+      const lv = save.forge[item.id] ?? 0;
+      if (lv >= FORGE.max || !spend(forgeCost(item, lv))) return;
+      const ok = Math.random() < FORGE.chance[lv];
+      if (ok) save.forge[item.id] = lv + 1;
+      writeSave(save);
+      sound.unlock();
+      sound.sfx(ok ? 'coin' : 'hit');
+      renderCamp(save, sel.hero, act, item.slot);
+      campToast(ok ? `제련 성공 — ${item.name} +${lv + 1}` : `제련 실패 — ${item.name}은(는) +${lv} 그대로`, ok);
     },
     train(t) {
       const lv = save.training[t.id] ?? 0;
@@ -121,6 +132,16 @@ function openCamp(focusSlot = null, back = toTitle) {
   showScreen('camp');
 }
 let campBack = toTitle;
+
+/** Short message over the shop (forge results). */
+function campToast(text, ok) {
+  const el = document.getElementById('campToast');
+  el.textContent = text;
+  el.className = `camp-toast ${ok ? 'ok' : 'fail'}`;
+  el.hidden = false;
+  clearTimeout(campToast.t);
+  campToast.t = setTimeout(() => (el.hidden = true), 1800);
+}
 
 function drawTitle() {
   renderMain(save, sel);
