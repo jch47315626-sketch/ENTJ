@@ -3,7 +3,7 @@ import { ENEMIES, VETERAN } from './data/enemies.js';
 import { BOSSES } from './data/bosses.js';
 import { afterSwing, onHurt, updateBuild } from './systems/builds.js';
 import { STAGES, scaleStage } from './data/stages.js';
-import { enemyHpScale, enemyDamageScale } from './data/balance.js';
+import { enemyHpScale, enemyDamageScale, ENEMY_BOOST, ENEMY_ARMOR } from './data/balance.js';
 import { UPGRADES, FALLBACKS } from './data/upgrades.js';
 import { baseReward, REWARD_BY_STARS } from './data/meta.js';
 import { SpatialGrid } from './core/grid.js';
@@ -227,8 +227,8 @@ export class Game {
     if (this.enemies.length >= MAX_ENEMIES && id !== 'cart') return null;
     const def = ENEMIES[id];
     const diff = this.stage.difficulty;
-    const scale = def.noScaling ? 1 : enemyHpScale(this.time) * diff.enemyHp;
-    const dmgScale = enemyDamageScale(this.time) * diff.enemyDamage;
+    const scale = def.noScaling ? 1 : enemyHpScale(this.time) * diff.enemyHp * ENEMY_BOOST.hp;
+    const dmgScale = enemyDamageScale(this.time) * diff.enemyDamage * ENEMY_BOOST.damage;
     const v = elite ? VETERAN : null;
     const hp = def.hp * scale * (v ? v.hpMul : 1);
     const e = {
@@ -295,10 +295,10 @@ export class Game {
       isBoss: true,
       elite: false,
       r: def.radius,
-      hp: def.hp * diff.bossHp, maxHp: def.hp * diff.bossHp,
+      hp: def.hp * diff.bossHp * ENEMY_BOOST.hp, maxHp: def.hp * diff.bossHp * ENEMY_BOOST.hp,
       speed: def.speed,
-      damage: def.damage * diff.bossDamage,
-      damageMul: diff.bossDamage,
+      damage: def.damage * diff.bossDamage * ENEMY_BOOST.damage,
+      damageMul: diff.bossDamage * ENEMY_BOOST.damage,
       xp: 0,
       cooldownMul: 1,
       summoned: new Set(),
@@ -381,6 +381,8 @@ export class Game {
       }
     }
     if (e.def.armor) amount = Math.max(1, amount - e.def.armor);
+    // Stage armour: harder battlefields shrug off a share of every blow (supply carts excepted).
+    if (e.def.behavior !== 'static') amount = Math.max(1, amount * (1 - (ENEMY_ARMOR[this.stage.difficulty.stars] ?? 0)));
     if (opts?.stun) e.stun = Math.max(e.stun ?? 0, opts.stun * (e.isBoss ? 0.25 : 1));
     e.hp -= amount;
     this.sfx('hit');
