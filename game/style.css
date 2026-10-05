@@ -899,3 +899,84 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 .ht-save { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: rgba(201, 168, 255, 0.2); border: 2px solid var(--candy-lilac); font-size: 22px; }
 .howto-tile small b { color: var(--candy-lemon); font-weight: 400; font-family: var(--font-brush); }
 .howto-tile.save .plain-btn { border-color: var(--candy-lilac); color: var(--hanji); border-radius: 999px; }
+
+/* ------------------------------ 레벨업 카드 (귀염뽀짝) ------------------------------ */
+.levelup-screen { gap: 6px; }
+.lu-burst { margin: 0; font: 700 14px/1 "Jua", sans-serif; letter-spacing: 0.3em; color: var(--candy-lemon); animation: luPop 0.5s cubic-bezier(.3,1.8,.6,1); }
+.lu-title { font-size: clamp(30px, 8vw, 44px); margin: 0; text-shadow: 0 3px 0 rgba(0, 0, 0, 0.35); animation: luPop 0.5s 0.05s cubic-bezier(.3,1.8,.6,1) both; }
+.lu-sub { margin: 0 0 10px; color: var(--hanji-dim); font-size: 14px; }
+@keyframes luPop { 0% { transform: scale(0.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+.pick-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 220px)); gap: 14px; justify-content: center; width: 100%; perspective: 900px; }
+.pick-card {
+  --c: var(--candy-lilac); --c2: #8a6ac9;
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 26px 14px 16px; min-height: 250px;
+  border: 0; border-radius: 22px; background: #fff7e8; color: #2b2236; text-align: center; cursor: pointer;
+  box-shadow: 0 0 0 4px var(--c), 0 7px 0 4px var(--c2), 0 14px 24px rgba(0, 0, 0, 0.35);
+  animation: cardFlip 0.55s calc(var(--i) * 0.12s) cubic-bezier(.25,1.4,.5,1) both;
+  transition: transform 0.15s cubic-bezier(.3,1.6,.6,1);
+}
+.pick-card[data-cat="무예"] { --c: var(--candy-pink); --c2: #d0607e; }
+.pick-card[data-cat="병법"] { --c: var(--candy-sky); --c2: #5a8fc9; }
+.pick-card[data-cat="지세"] { --c: var(--candy-mint); --c2: #4fae86; }
+.pick-card[data-cat="보급"] { --c: var(--candy-lemon); --c2: #c9a24a; }
+.pick-card:hover, .pick-card:focus-visible { transform: translateY(-6px) rotate(-1.5deg); outline: none; }
+.pick-card:active { transform: scale(0.95); }
+@keyframes cardFlip { 0% { transform: rotateY(90deg) translateY(30px); opacity: 0; } 100% { transform: none; opacity: 1; } }
+.pc-sticker { position: absolute; top: -12px; left: 50%; transform: translateX(-50%) rotate(-3deg); padding: 3px 12px; border-radius: 999px; background: var(--c); color: #2b2236; font: 700 13px/1.4 "Jua", sans-serif; white-space: nowrap; box-shadow: 0 3px 0 var(--c2); }
+.pc-key { position: absolute; top: 10px; right: 12px; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 7px; background: #fff; color: #6b5a8a; font: 700 12px "Jua", sans-serif; box-shadow: 0 2px 0 #c9bde0; }
+.pc-icon { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ffffff, var(--c)); font-size: 30px; box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.08); }
+.pc-name { font: 400 26px/1.1 "Jua", sans-serif; }
+.pc-lvl { padding: 2px 10px; border-radius: 999px; background: var(--c); font: 700 12px/1.6 "Jua", sans-serif; }
+.pc-desc { font-size: 13.5px; line-height: 1.5; color: #4a3f5c; text-wrap: balance; }
+.pick-card.evo { --c: var(--candy-lemon); --c2: #c9a24a; background: linear-gradient(160deg, #fffbe8, #fff0b8); }
+.pick-card.evo::after { content: ''; position: absolute; inset: 0; border-radius: 22px; background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.7) 45%, transparent 60%); background-size: 250% 100%; animation: shine 1.8s linear infinite; pointer-events: none; }
+@keyframes shine { 0% { background-position: 150% 0; } 100% { background-position: -100% 0; } }
+@media (max-width: 640px) {
+  .pick-cards { grid-template-columns: 1fr; max-width: 360px; gap: 18px; }
+  .pick-card { min-height: 0; display: grid; grid-template-columns: auto 1fr; grid-template-areas: "icon name" "icon lvl" "desc desc"; column-gap: 12px; row-gap: 4px; text-align: left; padding: 18px 14px 12px; align-items: center; }
+  .pc-icon { grid-area: icon; width: 54px; height: 54px; font-size: 26px; }
+  .pc-name { grid-area: name; font-size: 23px; }
+  .pc-lvl { grid-area: lvl; justify-self: start; }
+  .pc-desc { grid-area: desc; }
+  .pc-key { display: none; }
+}
+
+/* ------------------------------ 결과 화면 (귀염뽀짝) ------------------------------ */
+.result-card { animation: luPop 0.45s cubic-bezier(.3,1.6,.6,1); }
+.result-stars { display: flex; gap: 4px; justify-content: center; font-size: 30px; letter-spacing: 0; }
+.result-stars .rs { color: rgba(255, 255, 255, 0.25); animation: starStamp 0.4s calc(0.25s + var(--i) * 0.18s) cubic-bezier(.3,1.8,.6,1) both; }
+.result-stars .rs.on { color: var(--candy-lemon); text-shadow: 0 2px 0 #c9a24a, 0 0 12px rgba(255, 224, 138, 0.7); }
+@keyframes starStamp { 0% { transform: scale(2.4) rotate(-30deg); opacity: 0; } 100% { transform: none; opacity: 1; } }
+.result-rows li { animation: rowIn 0.35s calc(0.4s + var(--i) * 0.08s) ease-out both; }
+@keyframes rowIn { 0% { transform: translateX(-16px); opacity: 0; } 100% { transform: none; opacity: 1; } }
+.result-rows .count-up { font-size: 18px; color: var(--candy-lemon); }
+.big-seal { animation: sealStamp 0.5s 0.1s cubic-bezier(.3,1.8,.6,1) both; }
+@keyframes sealStamp { 0% { transform: scale(2) rotate(-20deg); opacity: 0; } 100% { transform: rotate(-4deg); opacity: 1; } }
+.confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 5; }
+.confetti i { position: absolute; top: -20px; width: 9px; height: 14px; border-radius: 3px; animation-name: confettiFall; animation-timing-function: linear; animation-fill-mode: forwards; }
+@keyframes confettiFall { 0% { transform: translateY(0) rotate(0); opacity: 1; } 100% { transform: translateY(105vh) rotate(var(--r)); opacity: 0.8; } }
+@media (prefers-reduced-motion: reduce) {
+  .pick-card, .pick-card.evo::after, .result-stars .rs, .result-rows li, .big-seal, .confetti i, .lu-title, .lu-burst { animation: none !important; }
+}
+
+/* ------------------------------ 튜토리얼 말풍선 ------------------------------ */
+.tutor { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(max(14px, env(safe-area-inset-bottom)) + 168px); z-index: 35; width: min(420px, calc(100% - 28px)); pointer-events: none; }
+.tutor.at-top { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 140px); }
+.tutor.over-levelup { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 10px); }
+.tutor.pop { animation: tutorPop 0.4s cubic-bezier(.3,1.7,.6,1); }
+@keyframes tutorPop { 0% { transform: translateX(-50%) scale(0.7); opacity: 0; } 100% { transform: translateX(-50%) scale(1); opacity: 1; } }
+.tutor-bubble { position: relative; display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 20px; background: #fff7e8; color: #2b2236; box-shadow: 0 0 0 3px var(--candy-sky), 0 6px 0 3px #5a8fc9, 0 12px 24px rgba(0, 0, 0, 0.35); }
+.tutor-bubble::after { content: ''; position: absolute; left: 50%; bottom: -12px; margin-left: -10px; border: 10px solid transparent; border-top-color: #fff7e8; border-bottom: 0; }
+.tutor.at-top .tutor-bubble::after, .tutor.over-levelup .tutor-bubble::after { display: none; }
+.tutor-icon { display: grid; place-items: center; flex: none; width: 46px; height: 46px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ffffff, var(--candy-sky)); font-size: 24px; animation: wiggle 2s ease-in-out infinite; }
+.tutor-text b { font: 400 19px/1.2 "Jua", sans-serif; }
+.tutor-text p { margin: 2px 0 0; font-size: 13.5px; line-height: 1.45; color: #4a3f5c; }
+.tutor-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding: 0 6px; }
+.tutor-dots { display: flex; gap: 5px; }
+.tutor-dots i { width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, 0.3); }
+.tutor-dots i.done { background: var(--candy-mint); }
+.tutor-dots i.now { background: var(--candy-lemon); transform: scale(1.3); }
+.tutor-skip { pointer-events: auto; border: 0; padding: 4px 10px; border-radius: 999px; background: rgba(0, 0, 0, 0.45); color: var(--hanji); font-size: 12px; }
+.tut-glow { box-shadow: 0 0 0 3px var(--candy-lemon), 0 0 18px rgba(255, 224, 138, 0.9) !important; animation: glowPulse 1s ease-in-out infinite; }
+@keyframes glowPulse { 50% { box-shadow: 0 0 0 5px var(--candy-lemon), 0 0 28px rgba(255, 224, 138, 1) !important; } }
+.replay-btn { display: block; margin: -4px auto 10px; border-radius: 999px; border-color: var(--candy-sky); color: var(--hanji); }

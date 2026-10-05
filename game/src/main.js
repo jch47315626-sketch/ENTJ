@@ -2,6 +2,7 @@ import { Game } from './game.js';
 import { Renderer } from './render/renderer.js';
 import { Input } from './core/input.js';
 import { Hud } from './ui/hud.js';
+import { Tutorial } from './ui/tutorial.js';
 import { Sound } from './audio/sound.js';
 import { showScreen, renderIntro, renderChoices, renderResult } from './ui/screens.js';
 import { renderHome, renderHeroes, renderGrow, renderMap, renderPrep, renderCodex, setCodexTab } from './ui/menu.js';
@@ -17,6 +18,7 @@ const renderer = new Renderer(canvas);
 const input = new Input(canvas);
 const hud = new Hud();
 const sound = new Sound();
+const tutor = new Tutorial();
 
 let game = null;
 const sel = { hero: 'wanggeon', stage: 'seonamhae' };
@@ -53,7 +55,12 @@ function newGame() {
   renderIntro(STAGES[sel.stage]);
   showScreen('intro');
   introTimer = 2.6;
-  showMoveHint();
+  // First battle ever: guided steps instead of the short move hint.
+  if (!save.tutorialDone) tutor.start();
+  else {
+    tutor.stop();
+    showMoveHint();
+  }
   sound.startMusic();
   sound.setIntensity(0);
 }
@@ -62,6 +69,7 @@ function onState(state, g) {
   if (state === 'levelup') {
     renderChoices(g.choices, (i) => g.choose(i));
     showScreen('levelup');
+    tutor.onLevelup(g);
   } else if (state === 'paused') {
     sound.stopMusic();
     hud.fillPause(g);
@@ -69,8 +77,14 @@ function onState(state, g) {
   } else if (state === 'play') {
     sound.startMusic();
     showScreen(null);
+    tutor.onPick(g);
   } else if (state === 'over' || state === 'clear') {
     sound.stopMusic();
+    // One run with the tutorial on is enough; it can be replayed from home.
+    if (tutor.active || tutor.finished) {
+      tutor.stop();
+      save.tutorialDone = true;
+    }
     // Bank the run's money and records once.
     if (g.reward && !g.rewardBanked) {
       g.rewardBanked = true;
@@ -99,6 +113,7 @@ let menu = 'home';
 /** Leaves any run and opens a menu screen. */
 function toMenu(name = 'home') {
   game = null;
+  tutor.stop();
   $('moveHint').hidden = true;
   sound.stopMusic();
   hud.show(false);
@@ -260,6 +275,11 @@ input.on('key', (k) => {
 for (const b of $('bottomNav').querySelectorAll('button')) b.addEventListener('click', () => go(b.dataset.go));
 // 💾 저장: straight to the save code (도감 → 기록).
 $('howtoSave').addEventListener('click', () => $('homeSave').click());
+$('tutorReplay').addEventListener('click', () => {
+  save.tutorialDone = false;
+  writeSave(save);
+  toast('🎮 다음 출진에서 튜토리얼이 나와요!');
+});
 $('homeSave').addEventListener('click', () => {
   setCodexTab('record');
   go('codex');
@@ -359,6 +379,7 @@ function frame(now) {
       const mv = input.move();
       if ((mv.x || mv.y) && !$('moveHint').hidden) $('moveHint').hidden = true;
       game.update(dt, mv);
+      tutor.update(game, dt, mv);
     }
     renderer.render(game, input, dt);
     hud.update(game, dt);

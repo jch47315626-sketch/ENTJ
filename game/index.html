@@ -78,6 +78,7 @@
       <div id="homeBody"></div>
       <section class="howto" aria-label="조작법">
         <h3 class="howto-title"><span>🎮</span> 튜토리얼</h3>
+        <button id="tutorReplay" class="plain-btn small replay-btn" type="button">▶ 첫 판 튜토리얼 다시 보기</button>
         <div class="howto-grid">
           <div class="howto-tile move">
             <span class="ht-badge">🏃 이동</span>
@@ -129,6 +130,14 @@
   </nav>
   <p id="toast" class="toast" role="status" hidden></p>
 
+  <div id="tutor" class="tutor" hidden role="status" aria-live="polite">
+    <div class="tutor-bubble">
+      <span id="tutorIcon" class="tutor-icon">🕹️</span>
+      <div class="tutor-text"><b id="tutorTitle"></b><p id="tutorText"></p></div>
+    </div>
+    <div class="tutor-foot"><span id="tutorDots" class="tutor-dots"></span><button id="tutorSkip" class="tutor-skip" type="button">건너뛰기</button></div>
+  </div>
+
   <div id="confirmBox" class="confirm-back" hidden>
     <div class="confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="confirmText">
       <p class="confirm-icon">⚠️</p>
@@ -147,10 +156,12 @@
     <p id="introText" class="intro-text"></p>
   </section>
 
-  <section id="levelup" class="screen dim" hidden>
-    <h2 class="panel-title">책략 선택</h2>
-    <div id="choices" class="choices"></div>
-    <p class="hint">눌러서 고르거나 1 · 2 · 3 키</p>
+  <section id="levelup" class="screen dim levelup-screen" hidden>
+    <p class="lu-burst">LEVEL UP!</p>
+    <h2 class="panel-title lu-title">✨ 새로운 책략! ✨</h2>
+    <p class="lu-sub">카드 한 장을 골라 영웅을 키워요</p>
+    <div id="choices" class="pick-cards"></div>
+    <p class="hint">눌러서 고르거나 <kbd class="key sm">1</kbd><kbd class="key sm">2</kbd><kbd class="key sm">3</kbd></p>
   </section>
 
   <section id="pause" class="screen dim" hidden>
@@ -164,6 +175,7 @@
   </section>
 
   <section id="result" class="screen dim" hidden>
+    <div id="resultConfetti" class="confetti" aria-hidden="true"></div>
     <div class="result-card">
       <div id="resultSeal" class="big-seal">平定</div>
       <h2 id="resultTitle" class="panel-title"></h2>

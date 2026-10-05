@@ -31,26 +31,33 @@ export function renderIntro(stage) {
   $('introText').textContent = stage.intro;
 }
 
+/** Icon and colour per 책략 category. */
+const CAT = { 무예: '⚔️', 병법: '📜', 지세: '🌿', 보급: '🍙' };
+
+/** Level-up: three sticker cards that flip in one after another. */
 export function renderChoices(choices, onPick) {
   const box = $('choices');
   box.innerHTML = '';
   choices.forEach((c, i) => {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = `slip choice${c.evolution ? ' evo' : ''}`;
+    b.className = `pick-card${c.evolution ? ' evo' : ''}`;
+    b.dataset.cat = c.category;
+    b.style.setProperty('--i', i);
     const lvl = c.evolution
-      ? '무기 진화'
+      ? '🌟 무기 진화'
       : c.level == null
         ? '보급'
         : c.id === 'weapon' || c.sub
-          ? c.level === 1 ? '새 무기' : `무기 ${c.level}단계`
-          : c.level === 1 ? '새 책략' : `Lv ${c.level - 1} → ${c.level}`;
+          ? c.level === 1 ? '🆕 새 무기' : `무기 ${c.level}단계`
+          : c.level === 1 ? '🆕 새 책략' : `Lv ${c.level - 1} → ${c.level}`;
     b.innerHTML = `
-      <span class="key">${i + 1}</span>
-      <span class="cat" data-cat="${c.category}">${c.category}</span>
-      <span class="nm">${c.name}</span>
-      <span class="lvl">${lvl}</span>
-      <span class="ds">${c.desc}</span>`;
+      <span class="pc-sticker">${CAT[c.category] ?? '✨'} ${c.category}</span>
+      <span class="pc-key">${i + 1}</span>
+      <span class="pc-icon">${c.evolution ? '🌟' : CAT[c.category] ?? '✨'}</span>
+      <b class="pc-name">${c.name}</b>
+      <span class="pc-lvl">${lvl}</span>
+      <span class="pc-desc">${c.desc}</span>`;
     b.addEventListener('click', () => onPick(i));
     box.appendChild(b);
   });
@@ -68,7 +75,10 @@ export function renderResult(g, won, extra = {}) {
   seal.classList.toggle('lose', !won);
   const boss = g.bossGroup ?? g.boss?.def;
   $('resultTitle').textContent = won ? '⚔️ 승리' : '패퇴';
-  $('resultStars').textContent = won ? starText(g.stage.difficulty.stars) : '';
+  const stars = g.stage.difficulty.stars;
+  $('resultStars').innerHTML = won
+    ? Array.from({ length: 5 }, (_, i) => `<span class="rs${i < stars ? ' on' : ''}" style="--i:${i}">${i < stars ? '★' : '☆'}</span>`).join('')
+    : '';
   $('resultText').textContent = won
     ? `${boss?.name ?? '적장'} 처치! ${g.stage.clearText}`
     : g.boss ? `${boss.name}의 진을 넘지 못했다. 책략을 바꿔 다시 도전하자.` : `${g.stage.name}에서 쓰러졌다. 장비나 빌드를 바꿔 보자.`;
@@ -83,14 +93,46 @@ export function renderResult(g, won, extra = {}) {
   $('nextBtn').hidden = !(won && g.stage.next);
   const r = g.reward;
   const rows = [];
-  if (r) rows.push(['🪙', '냥', `+${r.total.toLocaleString()}`]);
+  if (r) rows.push(['🪙', '냥', `<span class="count-up" data-to="${r.total}">+0</span>`]);
   rows.push(['⭐', '공훈', `Lv ${g.player.level}`]);
   rows.push(['⚔️', '처치', `${g.kills}`]);
   rows.push(['⏱️', '버틴 시간', fmt(g.time)]);
   for (const u of extra.unlocks ?? []) rows.push(['🎁', u, '해금']);
   if (extra.newFoes) rows.push(['📖', '도감에 새 적', `+${extra.newFoes}`]);
-  $('resultRows').innerHTML = rows.map(([i, k, v]) => `<li><span>${i} ${k}</span><b>${v}</b></li>`).join('');
+  $('resultRows').innerHTML = rows.map(([i, k, v], n) => `<li style="--i:${n}"><span>${i} ${k}</span><b>${v}</b></li>`).join('');
+  countUp($('resultRows').querySelector('.count-up'));
+  confetti(won);
 }
 
 /** Grade name in its colour. */
 export const gradeTag = (g) => `<i class="grade" style="color:${GRADES[g].color}">${GRADES[g].name}</i>`;
+
+/** Money ticks up from 0 (차르르). */
+function countUp(el) {
+  if (!el) return;
+  const to = Number(el.dataset.to);
+  const start = performance.now() + 500;
+  const step = (now) => {
+    const t = Math.max(0, Math.min(1, (now - start) / 900));
+    el.textContent = `+${Math.round(to * (1 - (1 - t) ** 3)).toLocaleString()}`;
+    if (t < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+/** Paper confetti over the result card when the battle is won. */
+function confetti(on) {
+  const box = $('resultConfetti');
+  box.innerHTML = '';
+  if (!on) return;
+  const colors = ['#ff9fb8', '#8fe3c0', '#9ccfff', '#ffe08a', '#c9a8ff', '#ff8a72'];
+  for (let i = 0; i < 36; i++) {
+    const p = document.createElement('i');
+    p.style.left = `${Math.random() * 100}%`;
+    p.style.background = colors[i % colors.length];
+    p.style.animationDelay = `${Math.random() * 0.8}s`;
+    p.style.animationDuration = `${2.2 + Math.random() * 1.4}s`;
+    p.style.setProperty('--r', `${Math.random() * 720 - 360}deg`);
+    box.appendChild(p);
+  }
+}
