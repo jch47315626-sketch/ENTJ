@@ -30,7 +30,7 @@ export function updateAllies(g, dt) {
       }
       if (target) a.facing = Math.atan2(dy, dx);
       if (target && d <= reach + 14 && a.cd <= 0) {
-        a.cd = SOLDIER.cooldown;
+        a.cd = SOLDIER.cooldown * p.stats.haste;
         g.damageEnemy(target, SOLDIER.damage * p.stats.might * (1 + (p.meta.allyMul ?? 0)), a.x, a.y, 60);
         g.fx.push({ type: 'thrust', x: a.x, y: a.y, angle: a.facing, t: 0, life: 0.15 });
       }
@@ -60,7 +60,7 @@ export function updateAllies(g, dt) {
       if (target) {
         a.facing = Math.atan2(target.y - a.y, target.x - a.x);
         if (a.cd <= 0) {
-          a.cd = 0.8;
+          a.cd = 0.8 * p.stats.haste;
           g.damageEnemy(target, a.damage * p.stats.might, a.x, a.y, 70);
           g.fx.push({ type: 'slash', x: a.x, y: a.y, angle: a.facing, range: 44, arc: 120, t: 0, life: 0.18 });
         }
@@ -76,10 +76,12 @@ export function updateAllies(g, dt) {
           continue;
         }
       }
-      // Archers trail the hero on a slowly turning ring.
-      const ang = g.time * 0.6 + (archerIndex / archerCount) * TAU;
+      // Archers keep a fixed spot behind the hero (no circling), spread side by side.
+      const side = (archerIndex - (archerCount - 1) / 2) * 26;
       archerIndex++;
-      const tx = p.x + Math.cos(ang) * 48, ty = p.y + Math.sin(ang) * 48;
+      const f = p.facing;
+      const tx = p.x - Math.cos(f) * 46 - Math.sin(f) * side;
+      const ty = p.y - Math.sin(f) * 46 + Math.cos(f) * side;
       a.x += (tx - a.x) * Math.min(1, dt * 8);
       a.y += (ty - a.y) * Math.min(1, dt * 8);
       a.cd -= dt;
@@ -203,7 +205,7 @@ function updateRetinue(g, a, dt) {
       a.facing = Math.atan2(t.y - a.y, t.x - a.x);
       const d = moveTo(t.x, t.y, 210);
       if (d < t.r + a.r + 16 && a.cd <= 0) {
-        a.cd = R.cooldown;
+        a.cd = R.cooldown * p.stats.haste;
         g.damageEnemy(t, R.damage * allyMul(p), a.x, a.y, 60);
         g.fx.push({ type: 'thrust', x: a.x, y: a.y, angle: a.facing, t: 0, life: 0.15 });
       }
@@ -249,7 +251,7 @@ function updateRetinue(g, a, dt) {
         hit = true;
       });
       if (hit) {
-        a.cd = R.cooldown;
+        a.cd = R.cooldown * p.stats.haste;
         g.fx.push({ type: 'slash', x: a.x, y: a.y, angle: Math.atan2(a.y - p.y, a.x - p.x), range: R.radius, arc: 140, t: 0, life: 0.18 });
       }
     }
