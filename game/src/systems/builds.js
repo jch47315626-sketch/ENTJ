@@ -20,7 +20,7 @@ const PAEGONG = {
 const BANGYEOK = {
   wall: { radius: 100, perFoe: 0.6, max: 4 },
   // 반격: the attacker takes `mul` × the weapon's damage; nothing moves 견훤.
-  counter: { cooldown: 0.4, mul: 2.2, knockback: 160, stun: 0.35, fallbackRange: 180 },
+  counter: { cooldown: 0.6, mul: 1.6, knockback: 160, stun: 0.35, fallbackRange: 180 },
   // 패왕의 반격: a shock around the struck attacker.
   chase: { radius: 90, mul: 0.6 },
 };

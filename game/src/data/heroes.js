@@ -25,7 +25,7 @@ export const HEROES = {
     role: '근접 강타형',
     blurb: '원거리 공격은 없지만 세 영웅 중 가장 세고 단단하다. 기세가 차면 패왕의 일격으로 정면을 쓸어낸다.',
     available: true,
-    stats: { maxHp: 190, speed: 142, might: 1.0, haste: 1.15, area: 1.0, pickup: 70, armor: 3 },
+    stats: { maxHp: 190, speed: 142, might: 1.0, haste: 1.15, area: 1.0, pickup: 70, armor: 2 },
     weapon: 'daedo',
     special: 'paewang',
     favoredCategory: '무예',
