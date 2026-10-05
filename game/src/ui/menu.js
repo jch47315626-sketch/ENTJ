@@ -620,3 +620,8 @@ export function setHeroTab(tab, slot) {
   ui.heroTab = tab;
   if (slot) ui.slot = slot;
 }
+
+/** Opens the 도감 on its 기록 tab (save code). */
+export function setCodexTab(tab) {
+  ui.codexTab = tab;
+}

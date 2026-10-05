@@ -706,3 +706,6 @@ button.doll-slot:hover, button.doll-slot:focus-visible { border-color: var(--gol
 .bar.order i { background: linear-gradient(180deg, #9ec4ff, #3e6ab8); }
 .bar.order.full i { background: linear-gradient(180deg, #fff0a8, #ffcb6b); }
 .bar.order.full { box-shadow: 0 0 10px rgba(255, 203, 107, 0.8); }
+
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+.save-btn { border-radius: 999px; color: var(--hanji); border-color: rgba(255, 203, 107, 0.5); }

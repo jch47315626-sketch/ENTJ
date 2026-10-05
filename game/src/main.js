@@ -4,7 +4,7 @@ import { Input } from './core/input.js';
 import { Hud } from './ui/hud.js';
 import { Sound } from './audio/sound.js';
 import { showScreen, renderIntro, renderChoices, renderResult } from './ui/screens.js';
-import { renderHome, renderHeroes, renderGrow, renderMap, renderPrep, renderCodex } from './ui/menu.js';
+import { renderHome, renderHeroes, renderGrow, renderMap, renderPrep, renderCodex, setCodexTab } from './ui/menu.js';
 import { loadSave, writeSave, outfitOf, treeOf, encodeSave, decodeSave } from './core/save.js';
 import { SKILL_TREES } from './data/trees.js';
 import { metaBonus, FORGE, forgeCost, gradeOpen, entryCheck, clearedStars, GRADES } from './data/meta.js';
@@ -264,6 +264,11 @@ input.on('key', (k) => {
 });
 
 for (const b of $('bottomNav').querySelectorAll('button')) b.addEventListener('click', () => go(b.dataset.go));
+// 💾 저장: straight to the save code (도감 → 기록).
+$('homeSave').addEventListener('click', () => {
+  setCodexTab('record');
+  go('codex');
+});
 $('pauseBtn').addEventListener('click', () => game?.togglePause());
 $('resumeBtn').addEventListener('click', () => game?.togglePause());
 $('quitBtn').addEventListener('click', () => toMenu('home'));
