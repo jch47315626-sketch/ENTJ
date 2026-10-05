@@ -84,6 +84,18 @@
   </nav>
   <p id="toast" class="toast" role="status" hidden></p>
 
+  <div id="confirmBox" class="confirm-back" hidden>
+    <div class="confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="confirmText">
+      <p class="confirm-icon">⚠️</p>
+      <p id="confirmText" class="confirm-text">나가겠습니까?</p>
+      <p id="confirmSub" class="confirm-sub"></p>
+      <div class="row-btns">
+        <button id="confirmNo" class="seal-btn" type="button">계속하기</button>
+        <button id="confirmYes" class="plain-btn" type="button">나가기</button>
+      </div>
+    </div>
+  </div>
+
   <section id="intro" class="screen intro-screen" hidden>
     <p id="introYear" class="intro-year"></p>
     <h2 id="introName" class="intro-name"></h2>

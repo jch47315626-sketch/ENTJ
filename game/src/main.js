@@ -278,7 +278,7 @@ $('homeSave').addEventListener('click', () => {
 });
 $('pauseBtn').addEventListener('click', () => game?.togglePause());
 $('resumeBtn').addEventListener('click', () => game?.togglePause());
-$('quitBtn').addEventListener('click', () => toMenu('home'));
+$('quitBtn').addEventListener('click', () => askLeave(() => toMenu('home')));
 $('retryBtn').addEventListener('click', newGame);
 $('homeBtn').addEventListener('click', () => toMenu('home'));
 $('toMapBtn').addEventListener('click', () => toMenu('map'));
@@ -305,6 +305,50 @@ $('muteToggle').addEventListener('click', () => setMuted(!sound.muted));
 $('soundOn').addEventListener('change', (e) => setMuted(!e.target.checked));
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && game?.state === 'play') game.togglePause();
+});
+
+// ------------------------------------------------------------ leave guard
+
+/** A run is "in progress" until its result screen shows. */
+const inRun = () => game && !['over', 'clear'].includes(game.state);
+
+/** In-page 나가겠습니까? dialog. The run pauses while it is open. */
+function askLeave(onYes, sub = '지금 나가면 이번 전투의 진행과 보상이 사라져요.') {
+  const wasPlaying = game?.state === 'play';
+  if (wasPlaying) game.togglePause();
+  $('confirmText').textContent = '나가겠습니까?';
+  $('confirmSub').textContent = sub;
+  $('confirmBox').hidden = false;
+  $('confirmNo').focus();
+  $('confirmYes').onclick = () => {
+    $('confirmBox').hidden = true;
+    onYes();
+  };
+  // 계속하기: back to exactly where the player was (the fight resumes).
+  $('confirmNo').onclick = () => {
+    $('confirmBox').hidden = true;
+    if (wasPlaying && game?.state === 'paused') game.togglePause();
+  };
+}
+
+// Back button / swipe-back: keep one extra history entry so "back" lands
+// here first and asks, instead of leaving the game.
+try {
+  history.pushState({ samhan: true }, '');
+  window.addEventListener('popstate', () => {
+    history.pushState({ samhan: true }, '');
+    if (!$('confirmBox').hidden) return;
+    if (inRun()) askLeave(() => toMenu('home'));
+    else if (menu !== 'home') go('home');
+    else askLeave(() => history.go(-2), '게임 화면을 떠나요. 진행은 이 브라우저에 저장되어 있어요.');
+  });
+} catch {}
+
+// Closing or reloading the tab mid-battle: the browser's own warning.
+window.addEventListener('beforeunload', (e) => {
+  if (!inRun()) return;
+  e.preventDefault();
+  e.returnValue = '';
 });
 
 let last = performance.now();
