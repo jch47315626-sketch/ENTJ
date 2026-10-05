@@ -129,8 +129,8 @@ export class Renderer {
     ctx.translate(-cam.x, -cam.y);
 
     GROUNDS[g.stage.ground](ctx, v, g.time);
-    // Soft warm wash: keeps every field bright and storybook-like.
-    ctx.fillStyle = 'rgba(255, 238, 205, 0.3)';
+    // Soft dusk tint: keeps the field calm so units and pickups stand out.
+    ctx.fillStyle = 'rgba(24, 20, 36, 0.18)';
     ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
     if (g.arena) this.drawArenaFloor(ctx, g, v);
     this.drawCaltrops(ctx, g);
