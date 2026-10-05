@@ -65,8 +65,8 @@ export function renderChoices(choices, onPick) {
       ? '무기 진화'
       : c.level == null
         ? '보급'
-        : c.id === 'weapon'
-          ? `무기 ${c.level}단계`
+        : c.id === 'weapon' || c.sub
+          ? c.level === 1 ? '새 무기' : `무기 ${c.level}단계`
           : c.level === 1 ? '새 책략' : `Lv ${c.level - 1} → ${c.level}`;
     b.innerHTML = `
       <span class="key">${i + 1}</span>

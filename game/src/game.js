@@ -2,10 +2,11 @@ import { HEROES, MOMENTUM } from './data/heroes.js';
 import { ENEMIES, VETERAN } from './data/enemies.js';
 import { BOSSES } from './data/bosses.js';
 import { STAGES, scaleStage } from './data/stages.js';
+import { enemyHpScale, enemyDamageScale } from './data/balance.js';
 import { UPGRADES, FALLBACKS } from './data/upgrades.js';
 import { SpatialGrid } from './core/grid.js';
 import { clamp, rand, TAU, dist2, angleDiff } from './core/math.js';
-import { updateWeapon } from './systems/weapons.js';
+import { updateWeapon, hitArc } from './systems/weapons.js';
 import { SPECIALS } from './systems/specials.js';
 import { BEHAVIORS } from './systems/enemyAI.js';
 import { updateAllies } from './systems/allies.js';
@@ -14,7 +15,7 @@ import { Spawner } from './systems/spawner.js';
 export const XP_TO_NEXT = (lv) => 5 + 3 * lv + Math.floor(0.2 * lv * lv);
 
 const PLAYER_RADIUS = 14;
-const INVULN_TIME = 0.5;
+const INVULN_TIME = 0.6;
 const MAX_ENEMIES = 420;
 
 class Player {
@@ -26,6 +27,7 @@ class Player {
     this.facing = 0;
     this.upgrades = {};
     this.weapon = { id: hero.weapon, level: 0, timer: 0.3 };
+    this.subs = {}; // second weapons gained from level-ups, by id
     this.level = 1;
     this.xp = 0;
     this.momentum = 0;
@@ -51,14 +53,27 @@ class Player {
       momentumMul: 1 + 0.25 * u('momentum'),
       guard: u('guard'),
       caltrops: u('caltrops'),
-      specialMul: 1 + 0.3 * u('fury') + 0.25 * u('dharma'),
-      specialArea: 1 + 0.15 * u('dharma'),
+      specialMul: 1 + 0.3 * u('fury'),
       specialStun: 0.2 * u('fury'),
     };
   }
 
   heal(v) {
     this.hp = Math.min(this.stats.maxHp, this.hp + v);
+  }
+
+  /** Main weapon first, then any second weapons. */
+  weapons() {
+    return [this.weapon, ...Object.values(this.subs)];
+  }
+
+  syncSubWeapons() {
+    for (const id of this.hero.subWeapons ?? []) {
+      const lv = this.upgrades[id] ?? 0;
+      if (!lv) continue;
+      this.subs[id] ??= { id, level: 0, timer: 0.4 };
+      this.subs[id].level = lv - 1;
+    }
   }
 }
 
@@ -115,8 +130,17 @@ export class Game {
     this.shakeAmt = Math.max(this.shakeAmt, amount);
   }
 
-  /** What an enemy chases: a nearby decoy if one is luring, else the hero. */
+  isCharmed(e) {
+    return e.charmUntil > this.time;
+  }
+
+  /**
+   * What an enemy chases. Charmed units hunt their former comrades; others
+   * go for a charmed unit right next to them, a luring decoy, or the hero.
+   */
   targetFor(e) {
+    if (this.isCharmed(e)) return e.charmTarget ?? this.player;
+    if (e.nearCharmed && !e.nearCharmed.dead && this.isCharmed(e.nearCharmed)) return e.nearCharmed;
     if (this.decoy && !this.decoy.dead && !e.isBoss) {
       const d = this.decoy;
       if ((e.x - d.x) ** 2 + (e.y - d.y) ** 2 < 420 * 420) return d;
@@ -140,7 +164,7 @@ export class Game {
   nearestEnemy(x, y, maxR) {
     let best = null, bd = maxR * maxR;
     this.grid.query(x, y, maxR, (e) => {
-      if (e.dead || e.def.behavior === 'static') return;
+      if (e.dead || e.def.behavior === 'static' || this.isCharmed(e)) return;
       const d = dist2(x, y, e.x, e.y);
       if (d < bd) {
         bd = d;
@@ -153,7 +177,7 @@ export class Game {
   nearestEnemies(x, y, maxR, n) {
     const found = [];
     this.grid.query(x, y, maxR, (e) => {
-      if (e.dead || e.def.behavior === 'static') return;
+      if (e.dead || e.def.behavior === 'static' || this.isCharmed(e)) return;
       const d = dist2(x, y, e.x, e.y);
       if (d <= maxR * maxR) found.push({ e, d });
     });
@@ -166,7 +190,8 @@ export class Game {
   spawnEnemy(id, x, y, { elite = false } = {}) {
     if (this.enemies.length >= MAX_ENEMIES && id !== 'cart') return null;
     const def = ENEMIES[id];
-    const scale = def.noScaling ? 1 : 1 + this.time / 150;
+    const scale = def.noScaling ? 1 : enemyHpScale(this.time);
+    const dmgScale = enemyDamageScale(this.time);
     const v = elite ? VETERAN : null;
     const hp = def.hp * scale * (v ? v.hpMul : 1);
     const e = {
@@ -174,8 +199,8 @@ export class Game {
       r: def.radius * (v ? v.sizeMul : 1),
       hp, maxHp: hp,
       speed: def.speed * rand(0.92, 1.08),
-      damage: def.damage * (v ? v.damageMul : 1),
-      damageMul: v ? v.damageMul : 1,
+      damage: def.damage * dmgScale * (v ? v.damageMul : 1),
+      damageMul: dmgScale * (v ? v.damageMul : 1),
       xp: def.xp * (v ? v.xpMul : 1),
       vx: 0, vy: 0, kx: 0, ky: 0,
       facing: 0, flash: 0, seed: Math.random(),
@@ -238,6 +263,8 @@ export class Game {
   damageEnemy(e, amount, sx, sy, knockback = 0, opts) {
     if (e.dead) return;
     if (e.isBoss && this.bossIntro > 0) return;
+    // Charmed units only take blows from other enemies; the hero spares them.
+    if (this.isCharmed(e) && !opts?.byEnemy) return;
     if (e.invulnUntil > this.time) {
       if (Math.random() < 0.15) this.texts.push({ x: e.x, y: e.y - e.r, v: '막음', t: 0, life: 0.5 });
       return;
@@ -362,6 +389,7 @@ export class Game {
       level: u.id === 'weapon' ? p.weapon.level + 2 : u.maxLevel === Infinity ? null : lvl(u) + 1,
       maxLevel: u.id === 'weapon' ? null : u.maxLevel,
       evolution: !!u.isEvolution?.(this),
+      sub: !!u.subWeapon,
     }));
   }
 
@@ -469,6 +497,14 @@ export class Game {
     const slow = 1 - 0.15 * p.stats.caltrops;
     for (const e of this.enemies) {
       if (e.dead) continue;
+      const charmed = this.isCharmed(e);
+      if (charmed) {
+        e.charmTarget = this.nearestEnemy(e.x, e.y, 520);
+      } else if (e.charmUntil) {
+        e.charmUntil = 0; // the spell wore off
+        this.fx.push({ type: 'puff', x: e.x, y: e.y, t: 0, life: 0.5, size: 16, tone: 'light' });
+      }
+      e.atkCd = (e.atkCd ?? 0) - dt;
       if (e.stun > 0) {
         e.stun -= dt;
         e.vx = e.vy = 0;
@@ -487,10 +523,23 @@ export class Game {
       e.ky *= decay;
       e.flash -= dt;
 
-      // Separation from neighbours (static carts do not move).
+      // Separation from neighbours (static carts do not move); charmed and
+      // uncharmed soldiers that touch trade blows.
       if (e.def.behavior !== 'static') {
-        this.grid.query(e.x, e.y, e.r * 2, (o) => {
+        if (!charmed) e.nearCharmed = null;
+        this.grid.query(e.x, e.y, e.r * 2 + 40, (o) => {
           if (o === e || o.dead) return;
+          if (o.def.behavior !== 'static' && charmed !== this.isCharmed(o)) {
+            const reach = e.r + o.r + 6;
+            const d2 = dist2(e.x, e.y, o.x, o.y);
+            if (!charmed && d2 < 150 * 150 && !o.isBoss) e.nearCharmed = o;
+            if (d2 < reach * reach && e.atkCd <= 0) {
+              e.atkCd = 0.6;
+              const dmg = charmed ? e.def.damage * 3 * e.charmPower : e.damage * 1.5;
+              this.damageEnemy(o, dmg, e.x, e.y, 40, { byEnemy: true });
+              this.fx.push({ type: 'thrust', x: e.x, y: e.y, angle: Math.atan2(o.y - e.y, o.x - e.x), t: 0, life: 0.15 });
+            }
+          }
           const dx = e.x - o.x, dy = e.y - o.y;
           const min = e.r + o.r;
           const d2 = dx * dx + dy * dy;
@@ -515,7 +564,7 @@ export class Game {
 
       // Contact damage.
       const dmg = e.contactDamage ?? e.damage;
-      if (dmg > 0) {
+      if (dmg > 0 && !charmed) {
         const rr = e.r + p.r - 2;
         if (dist2(e.x, e.y, p.x, p.y) < rr * rr) this.hurtPlayer(dmg, e.isBoss ? 'boss' : e.def.id);
       }
@@ -529,7 +578,16 @@ export class Game {
       pr.y += pr.vy * dt;
       pr.life -= dt;
       if (pr.spin !== undefined) pr.spin += dt * 14;
-      if (pr.team === 'enemy') {
+      if (pr.team === 'charm') {
+        // Arrows loosed by charmed archers strike their own side.
+        this.grid.query(pr.x, pr.y, pr.r + 30, (e) => {
+          if (pr.life <= 0 || e.dead || this.isCharmed(e) || e.def.behavior === 'static') return;
+          if (dist2(pr.x, pr.y, e.x, e.y) < (pr.r + e.r) ** 2) {
+            this.damageEnemy(e, pr.damage, pr.x, pr.y, 20, { byEnemy: true });
+            pr.life = 0;
+          }
+        });
+      } else if (pr.team === 'enemy') {
         const rr = pr.r + p.r;
         if (dist2(pr.x, pr.y, p.x, p.y) < rr * rr) {
           this.hurtPlayer(pr.damage, pr.source ?? pr.kind);
@@ -537,11 +595,12 @@ export class Game {
         }
       } else {
         this.grid.query(pr.x, pr.y, pr.r + 30, (e) => {
-          if (pr.life <= 0 || e.dead || pr.hit.has(e)) return;
+          if (pr.life <= 0 || e.dead || pr.hit.has(e) || this.isCharmed(e)) return;
           const rr = pr.r + e.r;
           if (dist2(pr.x, pr.y, e.x, e.y) < rr * rr) {
             pr.hit.add(e);
             this.damageEnemy(e, pr.damage, pr.x - pr.vx * 0.05, pr.y - pr.vy * 0.05, pr.knockback, pr.stun ? { stun: pr.stun } : undefined);
+            if (pr.burst) hitArc(this, e.x, e.y, 0, pr.burst.radius, 360, pr.burst.damage, 30, 'burst');
             pr.pierce -= 1;
             if (pr.pierce <= 0) pr.life = 0;
           }

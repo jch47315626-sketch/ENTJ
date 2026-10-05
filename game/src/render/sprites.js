@@ -169,17 +169,26 @@ function drawWeapon(ctx, kind, r, look) {
       ctx.lineTo(r * 0.5, r * 1.02);
       ctx.stroke();
       break;
-    case 'mace':
-      ctx.strokeStyle = '#6b6258';
-      ctx.lineWidth = 1.6;
-      ctx.setLineDash([3, 2]);
+    case 'staff': {
+      // 석장: wooden staff topped by a ring hung with small rings.
+      ctx.strokeStyle = '#5a3f26';
+      ctx.lineWidth = 2.6;
       ctx.beginPath();
-      ctx.moveTo(r * 0.4, r * 0.7);
-      ctx.lineTo(r * 1.5, r * 0.9);
+      ctx.moveTo(-r * 0.5, r * 0.7);
+      ctx.lineTo(r * 1.9, r * 0.7);
       ctx.stroke();
-      ctx.setLineDash([]);
-      drawMaceHead(ctx, r * 1.6, r * 0.92, r * 0.36);
+      ctx.strokeStyle = look.trim ?? '#e0b24c';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(r * 2.2, r * 0.7, r * 0.34, 0, Math.PI * 2);
+      ctx.stroke();
+      for (const k of [-1, 1]) {
+        ctx.beginPath();
+        ctx.arc(r * 2.2, r * 0.7 + k * r * 0.42, r * 0.12, 0, Math.PI * 2);
+        ctx.stroke();
+      }
       break;
+    }
     case 'sword':
       ctx.strokeStyle = '#dcdbd2';
       ctx.lineWidth = 3;
@@ -441,6 +450,32 @@ export function drawProjectile(ctx, p) {
     ctx.strokeStyle = '#1d1a17';
     ctx.lineWidth = 1;
     ctx.stroke();
+  } else if (p.kind === 'orb') {
+    const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, p.r * 2);
+    glow.addColorStop(0, 'rgba(255, 236, 170, 0.9)');
+    glow.addColorStop(1, 'rgba(224, 178, 76, 0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(0, 0, p.r * 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#f6e3a8';
+    ctx.strokeStyle = 'rgba(29, 26, 23, 0.7)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(0, 0, p.r * 0.75, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  } else if (p.kind === 'beam') {
+    ctx.strokeStyle = 'rgba(240, 210, 130, 0.45)';
+    ctx.lineWidth = p.r * 2;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-60, 0);
+    ctx.lineTo(10, 0);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(255, 248, 220, 0.95)';
+    ctx.lineWidth = p.r * 0.7;
+    ctx.stroke();
   } else if (p.kind === 'quake') {
     const a = Math.min(1, p.life * 3);
     ctx.fillStyle = `rgba(90, 60, 40, ${0.55 * a})`;
@@ -489,17 +524,3 @@ function drawHorse(ctx, color, r, flash) {
   ctx.lineWidth = 1.6;
 }
 
-export function drawMaceHead(ctx, x, y, s) {
-  ctx.fillStyle = '#5c5650';
-  ctx.strokeStyle = INK;
-  ctx.lineWidth = 1.4;
-  ctx.beginPath();
-  for (let i = 0; i < 16; i++) {
-    const a = (i / 16) * Math.PI * 2;
-    const rr = i % 2 ? s : s * 1.35;
-    ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
-  }
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-}

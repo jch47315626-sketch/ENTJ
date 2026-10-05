@@ -1,5 +1,5 @@
 import { GROUNDS } from './ground.js';
-import { drawUnit, drawCart, drawCoin, drawRice, drawProjectile, drawMaceHead } from './sprites.js';
+import { drawUnit, drawCart, drawCoin, drawRice, drawProjectile } from './sprites.js';
 import { clamp, TAU } from '../core/math.js';
 
 const ALLY_LOOKS = {
@@ -14,7 +14,6 @@ const ARC_STYLE = {
   royal: { fill: [240, 210, 130, 0.55], edge: [29, 26, 23, 0.55], width: 2 },
   chop: { fill: [236, 222, 196, 0.6], edge: [142, 31, 23, 0.8], width: 3.5 },
   paewang: { fill: [200, 64, 44, 0.55], edge: [29, 26, 23, 0.8], width: 4 },
-  swing: { fill: [196, 190, 178, 0.3], edge: [29, 26, 23, 0.5], width: 2.5 },
 };
 const rgba = (c, a) => `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${c[3] * a})`;
 
@@ -90,7 +89,6 @@ export class Renderer {
       else this.drawEnemy(ctx, g, u);
     }
 
-    this.drawOrbit(ctx, g);
     for (const pr of g.projectiles) drawProjectile(ctx, pr);
     this.drawFx(ctx, g);
     if (g.arena) this.drawArenaBanners(ctx, g);
@@ -105,7 +103,7 @@ export class Renderer {
     const p = g.player;
     const look = p.hero.look;
     const blink = p.invuln > 0 && Math.floor(g.time * 30) % 2 === 0;
-    drawUnit(ctx, { ...look, body: look.robe, weapon: p.orbit ? null : look.weapon },
+    drawUnit(ctx, { ...look, body: look.robe },
       p.x, p.y, p.r, p.facing, { alpha: blink ? 0.45 : 1 });
     // Health strip under the hero.
     const w = 36, ratio = p.hp / p.stats.maxHp;
@@ -137,28 +135,6 @@ export class Renderer {
     }
   }
 
-  drawOrbit(ctx, g) {
-    const p = g.player;
-    if (!p.orbit) return;
-    ctx.strokeStyle = 'rgba(80, 74, 66, 0.8)';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([3, 3]);
-    for (const m of p.orbit) {
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y);
-      ctx.lineTo(m.x, m.y);
-      ctx.stroke();
-    }
-    ctx.setLineDash([]);
-    for (const m of p.orbit) {
-      ctx.fillStyle = 'rgba(224, 178, 76, 0.25)';
-      ctx.beginPath();
-      ctx.arc(m.x, m.y, m.size, 0, TAU);
-      ctx.fill();
-      drawMaceHead(ctx, m.x, m.y, m.size * 0.45);
-    }
-  }
-
   drawZones(ctx, g) {
     for (const z of g.zones) {
       const a = 1 - z.t / z.life;
@@ -176,19 +152,6 @@ export class Renderer {
           ctx.lineTo(z.x + Math.cos(ang) * z.r * 0.9, z.y + Math.sin(ang) * z.r * 0.55);
         }
         ctx.stroke();
-      } else if (z.kind === 'lotus') {
-        ctx.fillStyle = `rgba(224, 178, 76, ${0.18 * a})`;
-        ctx.beginPath();
-        ctx.arc(z.x, z.y, z.r, 0, TAU);
-        ctx.fill();
-        ctx.strokeStyle = `rgba(224, 178, 76, ${0.6 * a})`;
-        ctx.lineWidth = 2;
-        for (let i = 0; i < 8; i++) {
-          const ang = (i / 8) * TAU + g.time * 0.4;
-          ctx.beginPath();
-          ctx.ellipse(z.x + Math.cos(ang) * z.r * 0.55, z.y + Math.sin(ang) * z.r * 0.55, z.r * 0.3, z.r * 0.12, ang, 0, TAU);
-          ctx.stroke();
-        }
       } else if (z.kind === 'dust') {
         ctx.fillStyle = `rgba(150, 126, 90, ${0.35 * a})`;
         ctx.beginPath();
@@ -206,7 +169,21 @@ export class Renderer {
     const windup = e.state === 'windup' || (e.isBoss && e.ps === 'windup');
     let aura;
     if (e.isBoss && e.enraged) aura = `rgba(179, 38, 30, ${0.18 + 0.08 * Math.sin(g.time * 8)})`;
+    const charmed = g.isCharmed(e);
+    if (charmed) aura = `rgba(150, 100, 210, ${0.3 + 0.12 * Math.sin(g.time * 6 + e.seed * 6)})`;
     drawUnit(ctx, e.def.look, e.x, e.y, e.r, e.facing, { flash: e.flash > 0, elite: e.elite, shake: windup, aura });
+    if (charmed) {
+      // Small violet eye over swayed soldiers, fading as the spell runs out.
+      const left = Math.min(1, (e.charmUntil - g.time) / 2);
+      ctx.fillStyle = `rgba(150, 100, 210, ${0.4 + 0.5 * left})`;
+      ctx.beginPath();
+      ctx.ellipse(e.x, e.y - e.r - 9, 6, 3.5, 0, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = '#1d1a17';
+      ctx.beginPath();
+      ctx.arc(e.x, e.y - e.r - 9, 1.8, 0, TAU);
+      ctx.fill();
+    }
     if (e.stun > 0) {
       ctx.strokeStyle = 'rgba(240, 200, 110, 0.85)';
       ctx.lineWidth = 1.5;
@@ -328,8 +305,7 @@ export class Renderer {
         case 'slash':
         case 'royal':
         case 'chop':
-        case 'paewang':
-        case 'swing': {
+        case 'paewang': {
           const st = ARC_STYLE[f.type];
           const full = f.arc >= 360;
           const half = full ? Math.PI : (f.arc * Math.PI) / 360;
@@ -339,7 +315,7 @@ export class Renderer {
           ctx.fillStyle = rgba(st.fill, alpha);
           ctx.beginPath();
           ctx.arc(f.x, f.y, f.range, a0, a1);
-          ctx.arc(f.x, f.y, f.range * (f.type === 'swing' ? 0.72 : 0.6), a1, a0, true);
+          ctx.arc(f.x, f.y, f.range * 0.6, a1, a0, true);
           ctx.closePath();
           ctx.fill();
           ctx.strokeStyle = rgba(st.edge, alpha);
@@ -347,44 +323,72 @@ export class Renderer {
           ctx.beginPath();
           ctx.arc(f.x, f.y, f.range, a0, a1);
           ctx.stroke();
-          if (f.type === 'swing') drawMaceHead(ctx, f.x + Math.cos(a1) * f.range * 0.86, f.y + Math.sin(a1) * f.range * 0.86, 7);
           break;
         }
-        case 'ring':
-        case 'halo':
         case 'burst': {
-          const gold = f.type !== 'ring';
+          // Golden lotus pop.
           const rr = f.range * (0.4 + 0.6 * Math.min(1, p * 1.8));
           const a = 1 - p;
-          if (f.type === 'burst') {
-            ctx.fillStyle = `rgba(240, 200, 110, ${0.35 * a})`;
-            ctx.beginPath();
-            ctx.arc(f.x, f.y, rr, 0, TAU);
-            ctx.fill();
-          }
-          ctx.strokeStyle = gold ? `rgba(240, 200, 110, ${0.9 * a})` : `rgba(29, 26, 23, ${0.7 * a})`;
-          ctx.lineWidth = gold ? 6 : 4;
+          ctx.fillStyle = `rgba(240, 200, 110, ${0.3 * a})`;
           ctx.beginPath();
           ctx.arc(f.x, f.y, rr, 0, TAU);
-          ctx.stroke();
+          ctx.fill();
+          ctx.strokeStyle = `rgba(240, 200, 110, ${0.9 * a})`;
+          ctx.lineWidth = 3;
+          for (let i = 0; i < 6; i++) {
+            const ang = (i / 6) * TAU;
+            ctx.beginPath();
+            ctx.ellipse(f.x + Math.cos(ang) * rr * 0.5, f.y + Math.sin(ang) * rr * 0.5, rr * 0.45, rr * 0.18, ang, 0, TAU);
+            ctx.stroke();
+          }
           break;
         }
-        case 'mark': {
-          // 법륜 telegraph: a turning eight-spoked wheel.
-          const a = 0.4 + 0.5 * p;
-          ctx.strokeStyle = `rgba(240, 200, 110, ${a})`;
-          ctx.lineWidth = 3;
-          ctx.beginPath();
-          ctx.arc(f.x, f.y, f.range, 0, TAU);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.arc(f.x, f.y, f.range * 0.3, 0, TAU);
-          ctx.stroke();
-          for (let i = 0; i < 8; i++) {
-            const ang = (i / 8) * TAU + p * 2;
+        case 'bolt': {
+          // Lightning: a jagged white-blue line through every struck point.
+          const a = 1 - p;
+          ctx.lineCap = 'round';
+          for (const [w, col] of [[7, `rgba(140, 180, 255, ${0.35 * a})`], [2.5, `rgba(240, 248, 255, ${a})`]]) {
+            let seed = Math.floor(f.seed * 233280);
+            const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280 - 0.5;
+            ctx.strokeStyle = col;
+            ctx.lineWidth = w;
             ctx.beginPath();
-            ctx.moveTo(f.x + Math.cos(ang) * f.range * 0.3, f.y + Math.sin(ang) * f.range * 0.3);
-            ctx.lineTo(f.x + Math.cos(ang) * f.range, f.y + Math.sin(ang) * f.range);
+            ctx.moveTo(f.points[0].x, f.points[0].y);
+            for (let i = 1; i < f.points.length; i++) {
+              const A = f.points[i - 1], B = f.points[i];
+              for (let k = 1; k <= 4; k++) {
+                const t = k / 4;
+                const j = k === 4 ? 0 : 14;
+                ctx.lineTo(A.x + (B.x - A.x) * t + rnd() * j, A.y + (B.y - A.y) * t + rnd() * j);
+              }
+            }
+            ctx.stroke();
+          }
+          break;
+        }
+        case 'eye': {
+          // 관심법: an opened eye drawn in violet and gold.
+          const a = p < 0.2 ? p / 0.2 : 1 - (p - 0.2) / 0.8;
+          const w = f.size * (f.big ? 1.6 : 1.3), h = f.size * 0.7;
+          ctx.strokeStyle = `rgba(150, 100, 210, ${a})`;
+          ctx.lineWidth = f.big ? 3 : 2;
+          ctx.beginPath();
+          ctx.moveTo(f.x - w, f.y);
+          ctx.quadraticCurveTo(f.x, f.y - h * 1.6, f.x + w, f.y);
+          ctx.quadraticCurveTo(f.x, f.y + h * 1.6, f.x - w, f.y);
+          ctx.stroke();
+          ctx.fillStyle = `rgba(224, 178, 76, ${a})`;
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, h * 0.75, 0, TAU);
+          ctx.fill();
+          ctx.fillStyle = `rgba(29, 26, 23, ${a})`;
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, h * 0.35, 0, TAU);
+          ctx.fill();
+          if (f.big) {
+            ctx.strokeStyle = `rgba(150, 100, 210, ${0.5 * a})`;
+            ctx.beginPath();
+            ctx.arc(f.x, f.y, 340 * Math.min(1, p * 2), 0, TAU);
             ctx.stroke();
           }
           break;

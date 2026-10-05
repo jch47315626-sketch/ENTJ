@@ -1,5 +1,6 @@
 import { UPGRADES, evolutionHint } from '../data/upgrades.js';
 import { currentWeaponLevel } from '../systems/weapons.js';
+import { WEAPONS } from '../data/weapons.js';
 
 const $ = (id) => document.getElementById(id);
 const fmt = (s) => {
@@ -62,9 +63,10 @@ export class Hud {
     if (key === this.ownedKey) return;
     this.ownedKey = key;
     const parts = [`<span class="weapon">${currentWeaponLevel(p).name}</span>`];
+    for (const w of Object.values(p.subs)) parts.push(`<span class="weapon">${WEAPONS[w.id].levels[w.level].name}</span>`);
     for (const u of UPGRADES) {
       const lv = p.upgrades[u.id];
-      if (lv) parts.push(`<span>${u.name} ${lv}</span>`);
+      if (lv && !u.subWeapon) parts.push(`<span>${u.name} ${lv}</span>`);
     }
     this.el.owned.innerHTML = parts.join('');
     const hint = evolutionHint(g);

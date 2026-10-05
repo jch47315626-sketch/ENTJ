@@ -39,22 +39,37 @@ export const WEAPONS = {
     ],
   },
 
-  // 궁예 — 철퇴 → 중철퇴 → 왕철퇴 → 미륵철퇴
-  cheoltoe: {
-    id: 'cheoltoe',
+  // 궁예 주무기 — 석장 → 철석장 → 육환장 → 미륵석장 (원거리)
+  seokjang: {
+    id: 'seokjang',
     levels: [
-      { name: '철퇴', pattern: 'maceSwing', damage: 15, cooldown: 1.05, range: 70, arc: 360, knockback: 60,
-        desc: '쇠사슬 철퇴로 주위를 한 바퀴 휘돈다.' },
-      { name: '중철퇴', pattern: 'maceSwing', damage: 21, cooldown: 1.0, range: 78, arc: 360, knockback: 70,
-        desc: '더 무거운 철퇴로 더 넓게 휘돈다.' },
-      { name: '왕철퇴', pattern: 'maceSwing', damage: 27, cooldown: 0.95, range: 84, arc: 360, knockback: 80,
-        slam: { damage: 1.0, radius: 1.5, delay: 0.22 },
-        desc: '휘두른 끝에 바닥을 내려쳐 충격파를 일으킨다.' },
-      { name: '미륵철퇴', pattern: 'mireukMace', damage: 22, cooldown: 6, range: 88, knockback: 50,
-        orbit: { count: 2, speed: 3.8, size: 22, pulse: 0.45, rehit: 0.3 },
-        halo: { damage: 2.6, radius: 175 }, evolution: true,
-        requires: { upgrade: 'area', level: 3 },
-        desc: '철퇴 두 개가 곁을 맴돌며 끊임없이 치고, 6초마다 금빛 광배가 터진다.' },
+      { name: '석장', pattern: 'orbShot', damage: 13, cooldown: 0.75, range: 380, speed: 430, count: 1, spread: 0, pierce: 1, size: 9, knockback: 30,
+        desc: '가장 가까운 적에게 법력구를 쏜다.' },
+      { name: '철석장', pattern: 'orbShot', damage: 17, cooldown: 0.7, range: 400, speed: 460, count: 1, spread: 0, pierce: 2, size: 10, knockback: 35,
+        desc: '법력구가 적 둘을 꿰뚫는다.' },
+      { name: '육환장', pattern: 'orbShot', damage: 19, cooldown: 0.7, range: 410, speed: 470, count: 3, spread: 22, pierce: 2, size: 10, knockback: 35,
+        desc: '고리 여섯 개가 울리며 법력구 세 발이 부채꼴로 나간다.' },
+      { name: '미륵석장', pattern: 'lightBeam', damage: 26, cooldown: 0.8, range: 460, speed: 950, beams: 3, size: 9, knockback: 40,
+        burst: { radius: 46, damage: 0.5 }, evolution: true,
+        requires: { upgrade: 'area', level: 2 },
+        desc: '법력구 대신 꿰뚫는 빛줄기 세 갈래. 닿는 자리마다 금빛 연꽃이 터진다.' },
+    ],
+  },
+
+  // 궁예 둘째 무기 (책략으로 획득) — 금강저 → 쌍금강저 → 오고금강저 → 벽력금강저
+  vajra: {
+    id: 'vajra',
+    sub: true,
+    levels: [
+      { name: '금강저', pattern: 'chainBolt', damage: 16, cooldown: 2.2, range: 340, bolts: 1, chains: 2, chainRange: 120,
+        desc: '금강저를 던져 벼락이 적 셋을 타고 흐른다.' },
+      { name: '쌍금강저', pattern: 'chainBolt', damage: 20, cooldown: 2.0, range: 360, bolts: 2, chains: 3, chainRange: 130,
+        desc: '벼락 두 줄기가 각각 적 넷을 탄다.' },
+      { name: '오고금강저', pattern: 'chainBolt', damage: 24, cooldown: 1.8, range: 380, bolts: 2, chains: 5, chainRange: 140,
+        desc: '다섯 갈래 금강저. 벼락이 적 여섯을 탄다.' },
+      { name: '벽력금강저', pattern: 'thunderStorm', damage: 30, cooldown: 2.0, range: 440, strikes: 6, chains: 3, chainRange: 140, evolution: true,
+        requires: { upgrade: 'gwansim', level: 2 },
+        desc: '하늘에서 벼락 여섯 줄기가 내리꽂히고, 각각 적을 타고 번진다.' },
     ],
   },
 };

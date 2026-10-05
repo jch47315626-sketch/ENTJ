@@ -1,5 +1,6 @@
 import { TAU, rand } from '../core/math.js';
 import { hitArc, currentWeaponLevel } from './weapons.js';
+import { GWANSIM } from '../data/skills.js';
 
 /**
  * Hero special abilities (고유기). Fired automatically when the momentum
@@ -41,44 +42,34 @@ export const SPECIALS = {
     },
   },
 
-  // 궁예 — 적이 가장 몰린 곳에 법륜 표식, 0.8초 뒤 폭발 + 둔화 지대
-  mireuk: {
-    name: '미륵의 심판',
+  // 궁예 — 관심법: 주변의 일반 병사를 홀려 서로 싸우게 한다 (적장은 홀리지 못함)
+  gwansim: {
+    name: '관심법',
     fire(g) {
       const p = g.player;
-      const R = 140 * p.stats.area * p.stats.specialArea;
-      const spot = densestSpot(g, R) ?? { x: p.x + Math.cos(p.facing) * 120, y: p.y + Math.sin(p.facing) * 120 };
-      const dmg = Math.max(currentWeaponLevel(p).damage, 10) * 8 * p.stats.might * p.stats.specialMul;
-      g.fx.push({ type: 'mark', x: spot.x, y: spot.y, range: R, t: 0, life: 0.8 });
-      g.sfx('chant');
-      g.later(0.8, () => {
-        hitArc(g, spot.x, spot.y, 0, R, 360, dmg, 160, 'burst');
-        g.zones.push({ team: 'player', kind: 'lotus', x: spot.x, y: spot.y, r: R, slow: 0.5, life: 3, t: 0 });
-        g.shake(8);
-        g.sfx('burst');
+      const L = GWANSIM[Math.min(GWANSIM.length - 1, p.upgrades.gwansim ?? 0)];
+      const picks = [];
+      g.grid.query(p.x, p.y, 340, (e) => {
+        if (e.dead || e.isBoss || e.def.behavior === 'static' || g.isCharmed(e)) return;
+        const tier = (e.def.tier ?? 1) + (e.elite ? 1 : 0);
+        if (tier > L.tier) return;
+        if ((e.x - p.x) ** 2 + (e.y - p.y) ** 2 > 340 * 340) return;
+        picks.push(e);
       });
-      g.banner('미륵의 심판', 'small');
+      // The strongest eligible soldiers turn first.
+      picks.sort((a, b) => b.maxHp - a.maxHp);
+      const chosen = picks.slice(0, L.count);
+      for (const e of chosen) {
+        e.charmUntil = g.time + L.duration;
+        e.charmPower = L.power;
+        e.hp = e.maxHp;
+        g.fx.push({ type: 'eye', x: e.x, y: e.y - e.r - 6, t: 0, life: 0.9, follow: e, size: 9 });
+      }
+      g.fx.push({ type: 'eye', x: p.x, y: p.y, t: 0, life: 1.1, follow: p, size: 40, big: true });
+      g.banner(chosen.length ? `관심법 — ${chosen.length}명이 서로를 벤다` : '관심법 — 홀릴 자가 없다', 'small');
+      g.sfx('gwansim');
+      // Nothing to sway: keep most of the gauge instead of wasting it.
+      if (!chosen.length) p.momentum = 70;
     },
   },
 };
-
-/** Picks the enemy position with the most neighbours inside radius R. */
-function densestSpot(g, R) {
-  const cands = g.enemies.filter((e) => !e.dead && e.def.behavior !== 'static');
-  if (!cands.length) return null;
-  let best = null, bestN = -1;
-  const step = Math.max(1, Math.floor(cands.length / 40));
-  for (let i = 0; i < cands.length; i += step) {
-    const c = cands[i];
-    if ((c.x - g.player.x) ** 2 + (c.y - g.player.y) ** 2 > 420 * 420) continue;
-    let n = 0;
-    g.grid.query(c.x, c.y, R, (e) => {
-      if (!e.dead && (e.x - c.x) ** 2 + (e.y - c.y) ** 2 < R * R) n++;
-    });
-    if (n > bestN) {
-      bestN = n;
-      best = c;
-    }
-  }
-  return best && { x: best.x, y: best.y };
-}

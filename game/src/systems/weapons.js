@@ -86,67 +86,119 @@ export const PATTERNS = {
     },
   },
 
-  // 궁예 1~3단계: 주위 한 바퀴 휘두르기 (+ 바닥 내려치기)
-  maceSwing: {
+  // 궁예 주무기 1~3단계: 가까운 적에게 법력구 (부채꼴 다발)
+  orbShot: {
     fire(g, p, lv, s) {
-      const range = lv.range * s.area;
-      hitArc(g, p.x, p.y, p.facing, range, 360, lv.damage * s.might, lv.knockback, 'swing');
-      if (lv.slam) {
-        g.later(lv.slam.delay, () => {
-          hitArc(g, p.x, p.y, 0, range * lv.slam.radius, 360, lv.damage * lv.slam.damage * s.might, lv.knockback, 'ring');
-          g.sfx('slam');
+      const range = lv.range * Math.sqrt(s.area);
+      const target = g.nearestEnemy(p.x, p.y, range);
+      if (!target) return retry();
+      const aim = Math.atan2(target.y - p.y, target.x - p.x);
+      p.facing = aim;
+      const spread = (lv.spread * Math.PI) / 180;
+      for (let i = 0; i < lv.count; i++) {
+        const a = aim + (lv.count > 1 ? -spread / 2 + (spread * i) / (lv.count - 1) : 0);
+        g.projectiles.push({
+          team: 'player', kind: 'orb', x: p.x, y: p.y,
+          vx: Math.cos(a) * lv.speed, vy: Math.sin(a) * lv.speed,
+          r: lv.size * s.area, damage: lv.damage * s.might, knockback: lv.knockback,
+          life: (range * 1.15) / lv.speed, pierce: lv.pierce, hit: new Set(), angle: a,
         });
       }
-      g.sfx('swing');
+      g.sfx('orb');
     },
   },
 
-  // 궁예 진화: 철퇴 두 개가 상시 공전, 6초마다 광배 폭발
-  mireukMace: {
-    update(g, p, lv, s, dt) {
-      const O = lv.orbit;
-      p.orbitAngle = (p.orbitAngle ?? 0) + O.speed * dt;
-      const radius = lv.range * s.area * (1 + O.pulse * Math.sin(g.time * 2.2));
-      const size = O.size * s.area;
-      p.orbit = [];
-      for (let i = 0; i < O.count; i++) {
-        const a = p.orbitAngle + (i * TAU) / O.count;
-        const mx = p.x + Math.cos(a) * radius, my = p.y + Math.sin(a) * radius;
-        p.orbit.push({ x: mx, y: my, a, size });
-        g.grid.query(mx, my, size + 30, (e) => {
-          if (e.dead) return;
-          const rr = size + e.r;
-          if ((e.x - mx) ** 2 + (e.y - my) ** 2 > rr * rr) return;
-          if (g.time - (e.orbitHitAt ?? -9) < O.rehit) return;
-          e.orbitHitAt = g.time;
-          g.damageEnemy(e, lv.damage * s.might, mx, my, lv.knockback);
+  // 궁예 주무기 진화: 꿰뚫는 빛줄기 세 갈래 + 맞은 자리 연꽃 폭발
+  lightBeam: {
+    fire(g, p, lv, s) {
+      const range = lv.range * Math.sqrt(s.area);
+      const targets = g.nearestEnemies(p.x, p.y, range, lv.beams);
+      if (!targets.length) return retry();
+      p.facing = Math.atan2(targets[0].y - p.y, targets[0].x - p.x);
+      for (let i = 0; i < lv.beams; i++) {
+        const t = targets[i % targets.length];
+        const a = Math.atan2(t.y - p.y, t.x - p.x) + (i >= targets.length ? (i - 1) * 0.3 : 0);
+        g.projectiles.push({
+          team: 'player', kind: 'beam', x: p.x, y: p.y,
+          vx: Math.cos(a) * lv.speed, vy: Math.sin(a) * lv.speed,
+          r: lv.size * s.area, damage: lv.damage * s.might, knockback: lv.knockback,
+          life: (range * 1.1) / lv.speed, pierce: Infinity, hit: new Set(), angle: a,
+          burst: { radius: lv.burst.radius * s.area, damage: lv.damage * lv.burst.damage * s.might },
         });
       }
+      g.sfx('beam');
     },
+  },
+
+  // 금강저 1~3단계: 던진 금강저에서 벼락이 적을 타고 번진다
+  chainBolt: {
     fire(g, p, lv, s) {
-      // The first tick only arms the timer so the halo does not fire at once.
-      if (!p.haloArmed) {
-        p.haloArmed = true;
-        return;
+      const starts = g.nearestEnemies(p.x, p.y, lv.range, lv.bolts);
+      if (!starts.length) return retry();
+      for (const t of starts) chain(g, { x: p.x, y: p.y }, t, lv.chains, lv.chainRange, lv.damage * s.might);
+      g.sfx('thunder');
+    },
+  },
+
+  // 금강저 진화: 하늘에서 벼락 여러 줄기, 각각 번진다
+  thunderStorm: {
+    fire(g, p, lv, s) {
+      const pool = g.nearestEnemies(p.x, p.y, lv.range, 40);
+      if (!pool.length) return retry();
+      for (let i = 0; i < lv.strikes && pool.length; i++) {
+        const t = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+        chain(g, { x: t.x + 10, y: t.y - 220 }, t, lv.chains, lv.chainRange, lv.damage * s.might);
       }
-      hitArc(g, p.x, p.y, 0, lv.halo.radius * s.area, 360, lv.damage * lv.halo.damage * s.might, 120, 'halo');
-      g.sfx('halo');
+      g.shake(4);
+      g.sfx('thunder');
     },
   },
 };
 
-/** Ticks the player's weapon and fires when ready. */
+/** No target in reach: check again soon instead of waiting a full cooldown. */
+function retry() {
+  return 0.15;
+}
+
+/** Lightning from `from` into `first`, then jumping to nearby enemies. */
+function chain(g, from, first, jumps, jumpRange, damage) {
+  const hit = new Set();
+  const points = [from];
+  let cur = first;
+  let dmg = damage;
+  for (let k = 0; k <= jumps && cur; k++) {
+    hit.add(cur);
+    points.push({ x: cur.x, y: cur.y });
+    g.damageEnemy(cur, dmg, cur.x, cur.y, 0);
+    dmg *= 0.85;
+    let best = null, bd = jumpRange * jumpRange;
+    g.grid.query(cur.x, cur.y, jumpRange, (e) => {
+      if (e.dead || hit.has(e) || g.isCharmed(e) || e.def.behavior === 'static') return;
+      const d = (e.x - cur.x) ** 2 + (e.y - cur.y) ** 2;
+      if (d < bd) {
+        bd = d;
+        best = e;
+      }
+    });
+    cur = best;
+  }
+  g.fx.push({ type: 'bolt', points, t: 0, life: 0.28, seed: Math.random() });
+}
+
+/** Ticks every weapon the player holds and fires those that are ready. */
 export function updateWeapon(g, dt) {
   const p = g.player;
-  const w = p.weapon;
-  const lv = WEAPONS[w.id].levels[w.level];
-  const pat = PATTERNS[lv.pattern];
-  if (pat.update) pat.update(g, p, lv, p.stats, dt);
-  else p.orbit = null;
-  w.timer -= dt;
-  if (w.timer > 0) return;
-  w.timer = lv.cooldown * p.stats.haste;
-  pat.fire(g, p, lv, p.stats);
+  for (const w of p.weapons()) {
+    const lv = WEAPONS[w.id].levels[w.level];
+    const pat = PATTERNS[lv.pattern];
+    pat.update?.(g, p, lv, p.stats, dt);
+    w.timer -= dt;
+    if (w.timer > 0) continue;
+    w.timer = lv.cooldown * p.stats.haste;
+    // A pattern may return a shorter wait (e.g. nothing was in reach).
+    const wait = pat.fire(g, p, lv, p.stats);
+    if (typeof wait === 'number') w.timer = wait;
+  }
 }
 
 export function currentWeaponLevel(p) {
@@ -171,6 +223,6 @@ export function hitArc(g, x, y, angle, range, arcDeg, damage, knockback, style, 
     if (arcDeg < 360 && d > e.r + 8 && Math.abs(angleDiff(Math.atan2(dy, dx), angle)) > half + e.r / Math.max(d, 1)) return;
     g.damageEnemy(e, damage, x, y, knockback, opts);
   });
-  const life = { royal: 0.28, halo: 0.45, ring: 0.3, chop: 0.22 }[style] ?? 0.2;
+  const life = { royal: 0.28, burst: 0.4, chop: 0.22 }[style] ?? 0.2;
   g.fx.push({ type: style, x, y, angle, range, arc: arcDeg, t: 0, life });
 }

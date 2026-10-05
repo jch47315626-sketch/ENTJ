@@ -171,10 +171,20 @@ const EFFECTS = {
     s.drum(52, 0.45, 0.4);
     s.burst(0.4, { filter: 'lowpass', freq: 400, slide: 120, gain: 0.3 });
   },
-  swing: (s) => s.burst(0.2, { freq: 500, slide: 1400, q: 2, gain: 0.12 }),
-  slam: (s) => s.drum(70, 0.25, 0.3),
-  halo: (s) => {
-    for (const [f, d] of [[660, 1.2], [990, 1], [1320, 0.8]]) s.tone(f, d, { gain: 0.06 });
+  orb: (s) => s.tone(880, 0.12, { type: 'sine', gain: 0.05, slide: 1320 }),
+  beam: (s) => {
+    s.tone(1320, 0.25, { type: 'triangle', gain: 0.06, slide: 660 });
+    s.burst(0.15, { freq: 4000, q: 2, gain: 0.05 });
+  },
+  thunder: (s) => {
+    s.burst(0.08, { filter: 'highpass', freq: 3000, gain: 0.18 });
+    s.burst(0.5, { filter: 'lowpass', freq: 500, slide: 90, gain: 0.25, at: 0.03 });
+  },
+  gwansim: (s) => {
+    // A low chant under a bowl-like ring.
+    s.tone(110, 1.1, { gain: 0.08, attack: 0.15 });
+    s.tone(165, 1.1, { gain: 0.05, attack: 0.15 });
+    for (const [f, d] of [[660, 1.4], [990, 1.1]]) s.tone(f, d, { gain: 0.05, at: 0.1 });
   },
   hit: (s) => s.tone(190, 0.05, { type: 'square', gain: 0.035, slide: 90 }),
   kill: (s) => {
@@ -218,14 +228,6 @@ const EFFECTS = {
   throw: (s) => s.burst(0.12, { freq: 1500, slide: 3000, q: 3, gain: 0.08 }),
   volley: (s) => {
     for (let i = 0; i < 3; i++) s.burst(0.08, { freq: 3000, q: 4, gain: 0.06, at: i * 0.03 });
-  },
-  chant: (s) => {
-    s.tone(110, 0.9, { gain: 0.08, attack: 0.15 });
-    s.tone(165, 0.9, { gain: 0.05, attack: 0.15 });
-  },
-  burst: (s) => {
-    s.drum(48, 0.5, 0.4);
-    for (const f of [660, 880, 1320]) s.tone(f, 0.9, { gain: 0.05 });
   },
   paewang: (s) => {
     s.drum(42, 0.6, 0.5);
