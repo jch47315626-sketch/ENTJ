@@ -14,88 +14,67 @@
   <canvas id="field" aria-label="전장"></canvas>
 
   <div id="hud" hidden>
-    <div class="xpbar"><i id="xpFill"></i></div>
-    <div class="hud-left">
-      <div class="slip hero-slip">
-        <div class="slip-head"><b id="heroName">왕건</b><span id="lv">Lv 1</span></div>
+    <div class="hud-top">
+      <div class="hud-vitals">
         <div class="bar hp"><i id="hpFill"></i><span id="hpText">120 / 120</span></div>
-        <div class="bar mom"><i id="momFill"></i><span id="momLabel">기세</span></div>
+        <span id="loot" class="hud-pill loot" title="이번 판에서 번 냥 (승리하면 보너스 추가)">🪙 +0</span>
       </div>
-      <div id="owned" class="owned"></div>
+      <div class="hud-center">
+        <div id="timer" class="timer">00:00</div>
+        <div id="timerSub" class="timer-sub"></div>
+        <div id="bossBar" class="boss-bar" hidden>
+          <div id="bossName" class="boss-name"></div>
+          <div class="bar boss"><i id="bossFill"></i></div>
+        </div>
+      </div>
+      <div class="hud-right">
+        <button id="muteBtn" class="icon-btn" type="button" aria-pressed="false" aria-label="소리">🔊</button>
+        <button id="pauseBtn" class="icon-btn" type="button" aria-label="일시정지">⏸</button>
+      </div>
+    </div>
+    <div class="hud-bottom">
       <div id="evoHint" class="evo-hint" hidden></div>
+      <div id="heroStatus" class="hero-status"></div>
+      <div class="bar xp"><i id="xpFill"></i><span id="xpText">공훈 · Lv 1</span></div>
+      <div class="bar mom"><i id="momFill"></i><span id="momLabel">기세</span></div>
     </div>
-    <div class="hud-center">
-      <div id="timer" class="timer">00:00</div>
-      <div id="timerSub" class="timer-sub"></div>
-      <div id="bossBar" class="boss-bar" hidden>
-        <div id="bossName" class="boss-name"></div>
-        <div class="bar boss"><i id="bossFill"></i></div>
-      </div>
-    </div>
-    <div class="hud-right">
-      <span id="loot" class="kills loot" title="이번 판에서 번 냥 (승리하면 보너스 추가)">냥 +0</span>
-      <span id="kills" class="kills">처치 0</span>
-      <button id="muteBtn" class="icon-btn" type="button" aria-pressed="false">소리</button>
-      <button id="pauseBtn" class="icon-btn" type="button" aria-label="일시정지">멈춤</button>
-    </div>
+  </div>
+
+  <div id="bossIntro" class="boss-intro" hidden aria-live="assertive">
+    <p class="bi-warn">⚠️ 적장 출현!</p>
+    <div class="bi-line"></div>
+    <div id="biName" class="bi-name"></div>
+    <div id="biEpithet" class="bi-epithet"></div>
+    <div class="bi-line"></div>
   </div>
 
   <div id="banner" class="banner" aria-live="polite"></div>
 
-  <section id="title" class="screen title-screen">
-    <div class="title-wrap">
-      <p class="eyebrow">후삼국 생존 액션 · 시제품</p>
-      <h1 class="game-title"><span class="hanja">三韓亂世</span><span class="hangul">삼한난세</span></h1>
-
-      <div class="main-board">
-        <button id="mainHero" class="slip main-hero" type="button" aria-label="캐릭터 변경">
-          <canvas id="mainPortrait" class="portrait" width="200" height="200"></canvas>
-          <span class="mh-text">
-            <span id="mainHeroName" class="name"></span>
-            <span id="mainHeroMeta" class="meta"></span>
-            <span id="mainGear" class="gear-line"></span>
-          </span>
-        </button>
-        <button id="mainMap" class="main-map" type="button" aria-label="맵 변경">
-          <span class="mm-label">전장</span>
-          <span id="mainMapName" class="mm-name"></span>
-          <span id="mainMapMeta" class="mm-meta"></span>
-        </button>
-      </div>
-
-      <p id="mainReq" class="main-req" role="status" hidden></p>
-      <button id="startBtn" class="seal-btn start-btn" type="button">출진</button>
-
-      <nav class="main-tabs" aria-label="메뉴">
-        <button id="tabHero" class="tab" type="button"><b>캐릭터 변경</b><small>영웅 · 장비</small></button>
-        <button id="tabShop" class="tab" type="button"><b>상점</b><small><span id="titleMoney">0</span>냥</small></button>
-        <button id="tabMap" class="tab" type="button"><b>맵 변경</b><small>전장 선택</small></button>
-      </nav>
-
-      <div class="options">
-        <label class="quick"><input id="quickMode" type="checkbox"> 빠른 시험 모드 (1분 뒤 보스 등장)</label>
-        <label class="quick"><input id="soundOn" type="checkbox" checked> 소리</label>
-      </div>
-      <p class="controls">이동: WASD · 방향키 · 화면을 누른 채 끌기 &nbsp;|&nbsp; 일시정지: P · Esc &nbsp;|&nbsp; 책략 선택: 1 · 2 · 3</p>
-    </div>
-  </section>
-
-  <section id="heroSelect" class="screen menu-screen" hidden>
+  <section id="home" class="screen menu-screen home-screen">
     <div class="menu-wrap">
-      <h2 class="panel-title">캐릭터 선택</h2>
-      <div id="heroList" class="hero-list"></div>
-      <div id="heroDetail" class="hero-detail"></div>
-      <div class="row-btns"><button id="heroBack" class="seal-btn" type="button">선택 완료</button></div>
+      <div class="topbar">
+        <span class="coin-pill">🪙 <b id="homeMoney">0</b></span>
+        <label class="mini-toggle"><input id="soundOn" type="checkbox" checked> 🔊</label>
+      </div>
+      <h1 class="game-title home-title"><span class="hanja">三韓亂世</span><span class="hangul">삼한난세</span></h1>
+      <div id="homeBody"></div>
+      <label class="quick"><input id="quickMode" type="checkbox"> 빠른 시험 모드 (1분 뒤 보스)</label>
     </div>
   </section>
 
-  <section id="mapSelect" class="screen menu-screen" hidden>
-    <div class="menu-wrap">
-      <h2 class="panel-title">전장 선택</h2>
-      <div id="stageList" class="stage-list"></div>
-      <div class="row-btns"><button id="mapBack" class="seal-btn" type="button">선택 완료</button></div>
-    </div>
-  </section>
+  <section id="heroes" class="screen menu-screen" hidden><div class="menu-wrap" id="heroesBody"></div></section>
+  <section id="grow" class="screen menu-screen" hidden><div class="menu-wrap" id="growBody"></div></section>
+  <section id="map" class="screen menu-screen" hidden><div class="menu-wrap" id="mapBody"></div></section>
+  <section id="prep" class="screen menu-screen" hidden><div class="menu-wrap" id="prepBody"></div></section>
+  <section id="codex" class="screen menu-screen" hidden><div class="menu-wrap" id="codexBody"></div></section>
+
+  <nav id="bottomNav" class="bottom-nav" aria-label="메뉴">
+    <button type="button" data-go="heroes"><span>👑</span><b>영웅</b></button>
+    <button type="button" data-go="grow"><span>📈</span><b>성장</b></button>
+    <button type="button" data-go="map"><span>🗺️</span><b>전장</b></button>
+    <button type="button" data-go="codex"><span>📖</span><b>도감</b></button>
+  </nav>
+  <p id="toast" class="toast" role="status" hidden></p>
 
   <section id="intro" class="screen intro-screen" hidden>
     <p id="introYear" class="intro-year"></p>
@@ -111,42 +90,28 @@
 
   <section id="pause" class="screen dim" hidden>
     <h2 class="panel-title">잠시 멈춤</h2>
+    <div id="pauseOwned" class="owned pause-owned"></div>
     <div class="row-btns">
       <button id="resumeBtn" class="seal-btn" type="button">계속</button>
       <button id="quitBtn" class="plain-btn" type="button">처음으로</button>
     </div>
   </section>
 
-  <section id="camp" class="screen camp-screen" hidden>
-    <div class="camp-wrap">
-      <div class="camp-head">
-        <h2 class="panel-title">상점 <span class="hanja-small">軍營</span></h2>
-        <p class="purse">보유 <b id="campMoney">0</b>냥</p>
-      </div>
-      <p class="camp-note"><b id="campHero"></b>의 장비 · 등급 <b style="color:#9a9184">범품</b>·<b style="color:#4f8a4a">양품</b>·<b style="color:#3f6fae">상품</b>·<b style="color:#8a4fae">진품</b>·<b style="color:#d6a63e">국보</b> · 제련은 +5까지(갈수록 실패↑)</p>
-      <p id="campToast" class="camp-toast" role="status" hidden></p>
-      <div id="campTabs"></div>
-      <div id="campGearBox">
-        <div id="campSlots" class="slot-chips"></div>
-        <div id="campGear" class="camp-gear"></div>
-      </div>
-      <div id="campTraining" class="camp-grid" hidden></div>
-      <div id="campSecrets" class="camp-grid" hidden></div>
-      <div id="campRecord" class="record" hidden></div>
-      <div class="row-btns"><button id="campBack" class="seal-btn" type="button">돌아가기</button></div>
-    </div>
-  </section>
-
   <section id="result" class="screen dim" hidden>
-    <div id="resultSeal" class="big-seal">平定</div>
-    <h2 id="resultTitle" class="panel-title"></h2>
-    <p id="resultText" class="result-text"></p>
-    <dl id="resultStats" class="stats"></dl>
-    <p id="resultReward" class="reward"></p>
-    <div class="row-btns">
-      <button id="nextBtn" class="seal-btn" type="button" hidden>다음 전장</button>
-      <button id="retryBtn" class="seal-btn" type="button">다시 출진</button>
-      <button id="homeBtn" class="plain-btn" type="button">처음으로</button>
+    <div class="result-card">
+      <div id="resultSeal" class="big-seal">平定</div>
+      <h2 id="resultTitle" class="panel-title"></h2>
+      <div id="resultStars" class="result-stars"></div>
+      <p id="resultText" class="result-text"></p>
+      <ul id="resultRows" class="result-rows"></ul>
+      <div class="row-btns">
+        <button id="nextBtn" class="seal-btn" type="button" hidden>다음 전장</button>
+        <button id="retryBtn" class="seal-btn" type="button">다시 출진</button>
+      </div>
+      <div class="row-btns">
+        <button id="toMapBtn" class="plain-btn" type="button">🗺️ 전장으로</button>
+        <button id="homeBtn" class="plain-btn" type="button">🏠 홈</button>
+      </div>
     </div>
   </section>
 </div>

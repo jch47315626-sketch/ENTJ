@@ -115,6 +115,7 @@ export class Game {
     this.spawner = new Spawner(this.stage);
     this.time = 0;
     this.kills = 0;
+    this.killsBy = {}; // enemy and boss ids defeated this run, for the 도감
     this.pendingLevels = 0;
     this.choices = null;
     this.boss = null;
@@ -379,6 +380,7 @@ export class Game {
     if (e.def.behavior === 'static') {
       this.fx.push({ type: 'puff', x: e.x, y: e.y, t: 0, life: 0.6, size: 26, tone: 'mud' });
     } else {
+      this.killsBy[e.def.id] = (this.killsBy[e.def.id] ?? 0) + 1;
       this.kills++;
       this.addMomentum(MOMENTUM.perKill);
     }

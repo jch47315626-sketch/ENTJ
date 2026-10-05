@@ -10,7 +10,8 @@ const KEY = 'samhan-save-v1';
 
 // equipped: { [heroId]: { [slotId]: itemId } } — each hero wears their own gear.
 // trees: { [heroId]: { nodes: [nodeId], branch: 'A' | 'B' | null } } — skill-tree purchases.
-const fresh = () => ({ money: 0, owned: [], equipped: {}, training: {}, secrets: [], best: {}, trees: {}, forge: {} });
+const fresh = () => ({ money: 0, owned: [], equipped: {}, training: {}, secrets: [], best: {}, trees: {}, forge: {}, codex: { kills: {}, runs: 0, wins: 0, earned: 0 } });
+// codex: lifetime record for the 도감 — kills by enemy/boss id, runs, wins, 냥 earned.
 // forge: { [itemId]: 0..5 } — 제련 level of each owned item.
 
 export function loadSave() {
@@ -65,6 +66,7 @@ export function decodeSave(code) {
 
 /** Older saves had one shared outfit; give it to every hero. */
 function migrate(save) {
+  save.codex = { kills: {}, runs: 0, wins: 0, earned: 0, ...(save.codex ?? {}) };
   const shared = SLOTS.some((s) => typeof save.equipped[s.id] === 'string');
   if (shared) {
     const outfit = {};
