@@ -212,6 +212,7 @@ export function updateWeapon(g, dt) {
     // A pattern may return a shorter wait (e.g. nothing was in reach).
     const wait = pat.fire(g, p, lv, s);
     if (typeof wait === 'number') w.timer = wait;
+    else if (main) g.afterSwing();
   }
 }
 

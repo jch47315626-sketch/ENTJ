@@ -1,6 +1,7 @@
 import { HEROES, MOMENTUM } from './data/heroes.js';
 import { ENEMIES, VETERAN } from './data/enemies.js';
 import { BOSSES } from './data/bosses.js';
+import { afterSwing, onHurt, updateBuild } from './systems/builds.js';
 import { STAGES, scaleStage } from './data/stages.js';
 import { enemyHpScale, enemyDamageScale } from './data/balance.js';
 import { UPGRADES, FALLBACKS } from './data/upgrades.js';
@@ -334,6 +335,11 @@ export class Game {
     });
   }
 
+  /** After each main-weapon swing (견훤 패공의 길 lunges and dashes). */
+  afterSwing() {
+    afterSwing(this);
+  }
+
   /** 마구니: one orbiting spirit per level of the upgrade. */
   syncMaguni() {
     const want = this.player.upgrades.maguni ?? 0;
@@ -426,7 +432,8 @@ export class Game {
     if (p.invuln > 0 || this.state !== 'play') return false;
     if (p.mount && this.time < p.mount.invulnUntil) return false;
     // Armour cuts 7% per point (max 50%), so it helps against big hits and small ones alike.
-    let dmg = Math.max(1, amount * (1 - Math.min(0.5, 0.07 * p.stats.armor)));
+    // 철벽 (견훤 반격의 길) adds armour for every foe close by.
+    let dmg = Math.max(1, amount * (1 - Math.min(0.5, 0.07 * (p.stats.armor + (p.wall ?? 0)))));
     // 호위진: the bodyguards take a share of every blow.
     if (p.wardUntil > this.time) dmg = Math.max(1, dmg * 0.6);
     this.damageLog[source] = (this.damageLog[source] ?? 0) + dmg;
@@ -437,6 +444,7 @@ export class Game {
     this.shake(4);
     this.sfx('hurt');
     this.texts.push({ x: p.x, y: p.y - 20, v: Math.round(dmg), t: 0, life: 0.7, hurt: true });
+    onHurt(this);
     if (p.hp <= 0) {
       p.hp = 0;
       this.state = 'dying';
@@ -595,8 +603,9 @@ export class Game {
       p.vy = move.y * spd;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
-      p.facing = Math.atan2(move.y, move.x);
+      if (!p.dash) p.facing = Math.atan2(move.y, move.x);
     }
+    updateBuild(this, dt);
     if (this.arena) {
       const dx = p.x - this.arena.x, dy = p.y - this.arena.y;
       const d = Math.hypot(dx, dy), lim = this.arena.r - p.r;

@@ -2,6 +2,7 @@ import { UPGRADES, evolutionHint } from '../data/upgrades.js';
 import { currentWeaponLevel } from '../systems/weapons.js';
 import { WEAPONS } from '../data/weapons.js';
 import { ORDERS, orderEvery } from '../systems/allies.js';
+import { buildStatus } from '../systems/builds.js';
 
 const $ = (id) => document.getElementById(id);
 const fmt = (s) => {
@@ -134,7 +135,8 @@ function heroStatus(g) {
     if (ready('shin')) chips.push(`🛡️ 신숭겸 ${ready('shin')}`);
     if (ready('horse')) chips.push(p.mount ? '🐎 기마 중' : `🐎 말 ${ready('horse')}`);
   } else if (p.hero.id === 'gyeonhwon') {
-    chips.push(`🛡️ 갑주 ${Math.round(p.stats.armor)}`);
+    chips.push(...buildStatus(g));
+    if (!p.meta.proxArmor) chips.push(`🛡️ 갑주 ${Math.round(p.stats.armor)}`);
     if (p.upgrades.fury) chips.push(`🔥 패기 ${p.upgrades.fury}`);
     if (ready('chain')) chips.push(`⛓️ 철쇄 ${ready('chain')}`);
   } else if (p.hero.id === 'gungye') {

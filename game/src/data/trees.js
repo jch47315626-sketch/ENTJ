@@ -52,19 +52,19 @@ export const SKILL_TREES = {
     root: { id: 'gh_root', name: '후백제의 왕', price: 120, bonus: { might: 0.1 }, desc: '모든 공격 피해 +10%' },
     branches: [
       {
-        id: 'A', name: '패왕의 길', style: '패왕의 일격을 연달아 터뜨린다. 상처 입을수록 사나워진다.',
+        id: 'A', name: '패공의 길', style: '돌진해 베고, 빠졌다가, 다른 적에게 다시 들이친다. 전장을 가로지르며 싸운다.',
         nodes: [
-          { id: 'gh_a1', name: '패도', price: 300, bonus: { momentum: 0.3 }, desc: '기세 충전 +30%' },
-          { id: 'gh_a2', name: '일격필살', price: 650, bonus: { specialMul: 0.6, specialArea: 0.2 }, desc: '패왕의 일격 피해 +60%, 범위 +20%' },
-          { id: 'gh_a3', name: '패왕의 분노', price: 1300, bonus: { berserk: 0.45, momentum: 0.2 }, desc: '체력 절반 이하일 때 피해 +45%, 공격 속도 +20%. 기세 +20%' },
+          { id: 'gh_a1', name: '기습', price: 300, bonus: { lunge: 1, might: 0.05 }, desc: '칠 때마다 적에게 짧게 돌진한다' },
+          { id: 'gh_a2', name: '연참', price: 650, bonus: { rush: 1 }, desc: '베고 나면 다른 적에게 돌진해 한 번 더 베고 빠진다 (1.4초마다)' },
+          { id: 'gh_a3', name: '패왕의 대도', price: 1300, bonus: { rushWave: 1, might: 0.1 }, desc: '연참 돌진 베기가 검기를 날린다, 피해 +10%' },
         ],
       },
       {
-        id: 'B', name: '철벽의 길', style: '버티고 끌어온다. 갑주와 반격, 철쇄로 전장을 묶는다.',
+        id: 'B', name: '반격의 길', style: '적 한가운데서 버티다가, 맞는 순간 크게 받아쳐 공간을 연다.',
         nodes: [
-          { id: 'gh_b1', name: '중갑', price: 300, bonus: { armor: 2, maxHp: 20 }, desc: '갑주 +2, 최대 체력 +20' },
-          { id: 'gh_b2', name: '철쇄 달인', price: 650, bonus: { chainBonus: 2 }, grants: ['chain'], desc: '철쇄를 쓰며 출진, 끌어오는 수 +2' },
-          { id: 'gh_b3', name: '반격', price: 1300, bonus: { thorns: 30, invulBonus: 0.3, armor: 1 }, desc: '근접 공격을 받으면 그 적에게 피해 30, 피격 후 무적 +0.3초, 갑주 +1' },
+          { id: 'gh_b1', name: '철벽', price: 300, bonus: { proxArmor: 1, maxHp: 20 }, desc: '가까운 적이 많을수록 갑주가 오른다 (최대 +4), 체력 +20' },
+          { id: 'gh_b2', name: '되받아치기', price: 650, bonus: { counter: 1 }, desc: '맞으면 곧바로 주위를 크게 베어 밀어낸다 (0.9초마다)' },
+          { id: 'gh_b3', name: '패왕의 반격', price: 1300, bonus: { counterRush: 1, armor: 1 }, desc: '반격한 뒤 가장 가까운 적에게 돌진해 한 번 더 벤다, 갑주 +1' },
         ],
       },
     ],
