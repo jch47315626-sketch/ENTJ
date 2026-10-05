@@ -11,6 +11,7 @@ import { SPECIALS } from './systems/specials.js';
 import { BEHAVIORS } from './systems/enemyAI.js';
 import { updateAllies } from './systems/allies.js';
 import { Spawner } from './systems/spawner.js';
+import { updateSkills } from './systems/skills.js';
 
 export const XP_TO_NEXT = (lv) => 5 + 3 * lv + Math.floor(0.2 * lv * lv);
 
@@ -28,6 +29,7 @@ class Player {
     this.upgrades = {};
     this.weapon = { id: hero.weapon, level: 0, timer: 0.3 };
     this.subs = {}; // second weapons gained from level-ups, by id
+    this.skillTimers = {}; // cooldown skills gained from level-ups, by id
     this.level = 1;
     this.xp = 0;
     this.momentum = 0;
@@ -94,6 +96,7 @@ export class Game {
     this.texts = [];
     this.timers = [];
     this.damageLog = {}; // damage taken by source, for tuning
+    this.taunts = []; // allies that draw enemies to themselves
     this.zones = []; // ground areas: { team, kind, x, y, r, life, t, dps?, slow? }
     this.shakeAmt = 0;
     this.sfx = opts.onSfx ?? (() => {});
@@ -141,9 +144,16 @@ export class Game {
   targetFor(e) {
     if (this.isCharmed(e)) return e.charmTarget ?? this.player;
     if (e.nearCharmed && !e.nearCharmed.dead && this.isCharmed(e.nearCharmed)) return e.nearCharmed;
-    if (this.decoy && !this.decoy.dead && !e.isBoss) {
-      const d = this.decoy;
-      if ((e.x - d.x) ** 2 + (e.y - d.y) ** 2 < 420 * 420) return d;
+    if (!e.isBoss) {
+      let best = null, bd = Infinity;
+      for (const t of this.taunts) {
+        const d = (e.x - t.x) ** 2 + (e.y - t.y) ** 2;
+        if (d < t.lure * t.lure && d < bd) {
+          bd = d;
+          best = t;
+        }
+      }
+      if (best) return best;
     }
     return this.player;
   }
@@ -157,8 +167,7 @@ export class Game {
       sy += e.y - p.y;
     }
     const a = sx || sy ? Math.atan2(sy, sx) : rand(0, TAU);
-    this.decoy = { kind: 'decoy', x: p.x, y: p.y, r: 14, life, maxLife: life, facing: a, cd: 0 };
-    this.allies.push(this.decoy);
+    this.allies.push({ kind: 'decoy', x: p.x, y: p.y, r: 14, life, maxLife: life, facing: a, cd: 0, lure: 420 });
   }
 
   nearestEnemy(x, y, maxR) {
@@ -477,7 +486,9 @@ export class Game {
     for (const e of this.enemies) this.grid.insert(e);
 
     updateWeapon(this, dt);
+    updateSkills(this, dt);
     updateAllies(this, dt);
+    this.taunts = this.allies.filter((a) => a.lure && !a.dead);
     this.updateEnemies(dt);
     this.updateProjectiles(dt);
     this.updateZones(dt);
@@ -562,6 +573,20 @@ export class Game {
         }
       }
 
+      // Blows at an ally who is drawing them in (신숭겸); the stage decoy has no HP.
+      if (!charmed && !e.isBoss && e.atkCd <= 0) {
+        for (const t of this.taunts) {
+          if (t.hp === undefined) continue;
+          const reach = t.r + e.r + 4;
+          if (dist2(e.x, e.y, t.x, t.y) < reach * reach) {
+            t.hp -= e.damage;
+            t.hurtFlash = 0.12;
+            e.atkCd = 0.6;
+            break;
+          }
+        }
+      }
+
       // Contact damage.
       const dmg = e.contactDamage ?? e.damage;
       if (dmg > 0 && !charmed) {
@@ -588,6 +613,14 @@ export class Game {
           }
         });
       } else if (pr.team === 'enemy') {
+        for (const t of this.taunts) {
+          if (t.hp !== undefined && pr.life > 0 && dist2(pr.x, pr.y, t.x, t.y) < (pr.r + t.r) ** 2) {
+            t.hp -= pr.damage;
+            t.hurtFlash = 0.12;
+            pr.life = 0;
+          }
+        }
+        if (pr.life <= 0) continue;
         const rr = pr.r + p.r;
         if (dist2(pr.x, pr.y, p.x, p.y) < rr * rr) {
           this.hurtPlayer(pr.damage, pr.source ?? pr.kind);

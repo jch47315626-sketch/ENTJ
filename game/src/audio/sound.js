@@ -186,6 +186,15 @@ const EFFECTS = {
     s.tone(165, 1.1, { gain: 0.05, attack: 0.15 });
     for (const [f, d] of [[660, 1.4], [990, 1.1]]) s.tone(f, d, { gain: 0.05, at: 0.1 });
   },
+  shin: (s) => {
+    EFFECTS.horn(s);
+    s.drum(70, 0.3, 0.25, 0.1);
+  },
+  blast: (s) => {
+    s.drum(38, 0.8, 0.6);
+    s.burst(0.7, { filter: 'lowpass', freq: 1200, slide: 80, gain: 0.45 });
+    s.gong(0.1, 0.1, 110);
+  },
   hit: (s) => s.tone(190, 0.05, { type: 'square', gain: 0.035, slide: 90 }),
   kill: (s) => {
     s.burst(0.09, { filter: 'lowpass', freq: 700, gain: 0.1 });

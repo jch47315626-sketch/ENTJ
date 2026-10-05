@@ -223,6 +223,6 @@ export function hitArc(g, x, y, angle, range, arcDeg, damage, knockback, style, 
     if (arcDeg < 360 && d > e.r + 8 && Math.abs(angleDiff(Math.atan2(dy, dx), angle)) > half + e.r / Math.max(d, 1)) return;
     g.damageEnemy(e, damage, x, y, knockback, opts);
   });
-  const life = { royal: 0.28, burst: 0.4, chop: 0.22 }[style] ?? 0.2;
+  const life = { royal: 0.28, burst: 0.4, chop: 0.22, blast: 0.6 }[style] ?? 0.2;
   g.fx.push({ type: style, x, y, angle, range, arc: arcDeg, t: 0, life });
 }

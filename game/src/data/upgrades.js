@@ -1,5 +1,5 @@
 import { WEAPONS } from './weapons.js';
-import { GWANSIM, TIER_NAMES } from './skills.js';
+import { GWANSIM, TIER_NAMES, SHIN } from './skills.js';
 
 /**
  * Level-up choices (책략). `apply` runs after the level has been increased,
@@ -38,6 +38,22 @@ export const UPGRADES = [
     id: 'guard', name: '친위대', category: '병법', maxLevel: 5, weight: 10, heroes: ['wanggeon'],
     describe: () => '통솔로 부르는 창병 +1, 머무는 시간 +2초',
     apply: (g) => g.player.recalc(),
+  },
+  {
+    id: 'shin', category: '병법', maxLevel: SHIN.length, weight: 14, heroes: ['wanggeon'], skill: true,
+    name: (g) => SHIN[g.player.upgrades.shin ?? 0]?.name ?? '신숭겸',
+    ownedName: (g) => SHIN[(g.player.upgrades.shin ?? 1) - 1].name,
+    describe: (g) => SHIN[g.player.upgrades.shin ?? 0]?.desc ?? '',
+    isEvolution: (g) => !!SHIN[g.player.upgrades.shin ?? 0]?.evolution,
+    available: (g) => {
+      const next = SHIN[g.player.upgrades.shin ?? 0];
+      if (!next) return false;
+      return !next.requires || (g.player.upgrades[next.requires.upgrade] ?? 0) >= next.requires.level;
+    },
+    apply: (g) => {
+      // Arrives soon after being chosen, then on his own cooldown.
+      g.player.skillTimers.shin = Math.min(g.player.skillTimers.shin ?? 2, 2);
+    },
   },
   {
     id: 'fury', name: '패기', category: '무예', maxLevel: 4, weight: 9, heroes: ['gyeonhwon'],
@@ -138,6 +154,7 @@ export function evolutionHint(g) {
     hints.push(`${next.name}: ${up.name} Lv${next.requires.level} 필요`);
   };
   check(nextWeaponLevel(g));
+  if (p.upgrades.shin) check(SHIN[p.upgrades.shin]);
   for (const id of p.hero.subWeapons ?? []) {
     const lv = p.upgrades[id] ?? 0;
     if (lv > 0) check(WEAPONS[id].levels[lv]);

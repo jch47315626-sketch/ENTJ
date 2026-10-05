@@ -66,7 +66,8 @@ export class Hud {
     for (const w of Object.values(p.subs)) parts.push(`<span class="weapon">${WEAPONS[w.id].levels[w.level].name}</span>`);
     for (const u of UPGRADES) {
       const lv = p.upgrades[u.id];
-      if (lv && !u.subWeapon) parts.push(`<span>${u.name} ${lv}</span>`);
+      if (!lv || u.subWeapon) continue;
+      parts.push(u.ownedName ? `<span class="weapon">${u.ownedName(g)}</span>` : `<span>${u.name} ${lv}</span>`);
     }
     this.el.owned.innerHTML = parts.join('');
     const hint = evolutionHint(g);

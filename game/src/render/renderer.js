@@ -6,6 +6,7 @@ const ALLY_LOOKS = {
   soldier: { body: '#3e5a7a', accent: '#1f2d3d', hat: 'helmetBlue', weapon: 'spear', skin: '#e3c39c' },
   archer: { body: '#3e5a7a', accent: '#1f2d3d', hat: 'hoodBlue', weapon: 'bow', skin: '#e3c39c' },
   decoy: { body: '#2d3b5c', trim: '#c9a24a', plume: '#b3261e', hat: 'hero', weapon: 'sword', skin: '#e3c39c' },
+  shin: { body: '#2d3b5c', trim: '#c9a24a', plume: '#b3261e', hat: 'hero', weapon: 'sword', skin: '#e3c39c' },
 };
 
 /** Fill / edge colours for arc-shaped attack effects. */
@@ -115,8 +116,25 @@ export class Renderer {
 
   drawAlly(ctx, a) {
     const fade = a.maxLife ? clamp(a.life / 1.2, 0, 1) : 1;
-    drawUnit(ctx, ALLY_LOOKS[a.kind], a.x, a.y, a.r, a.facing, { alpha: fade });
-    if (a.kind === 'decoy') {
+    if (a.kind === 'shin') {
+      // Faint ring showing how far his banner draws the enemy.
+      ctx.strokeStyle = 'rgba(179, 38, 30, 0.22)';
+      ctx.setLineDash([6, 10]);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(a.x, a.y, a.lure, 0, TAU);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    drawUnit(ctx, ALLY_LOOKS[a.kind], a.x, a.y, a.r, a.facing, { alpha: fade, flash: a.hurtFlash > 0 });
+    if (a.kind === 'shin') {
+      const w = 38, ratio = clamp(a.hp / a.maxHp, 0, 1);
+      ctx.fillStyle = 'rgba(29,26,23,0.75)';
+      ctx.fillRect(a.x - w / 2 - 1, a.y + a.r + 9, w + 2, 5);
+      ctx.fillStyle = a.explode ? '#e0a040' : '#7fa0c8';
+      ctx.fillRect(a.x - w / 2, a.y + a.r + 10, w * ratio, 3);
+    }
+    if (a.kind === 'decoy' || a.kind === 'shin') {
       // The royal banner he carries.
       ctx.globalAlpha = fade;
       ctx.strokeStyle = '#2a2018';
@@ -341,6 +359,23 @@ export class Renderer {
             ctx.ellipse(f.x + Math.cos(ang) * rr * 0.5, f.y + Math.sin(ang) * rr * 0.5, rr * 0.45, rr * 0.18, ang, 0, TAU);
             ctx.stroke();
           }
+          break;
+        }
+        case 'blast': {
+          // 순절: red-gold shockwave with an ink core.
+          const rr = f.range * (0.3 + 0.7 * Math.min(1, p * 2.2));
+          const a = 1 - p;
+          ctx.fillStyle = `rgba(200, 70, 40, ${0.35 * a})`;
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, rr, 0, TAU);
+          ctx.fill();
+          ctx.strokeStyle = `rgba(240, 190, 90, ${0.95 * a})`;
+          ctx.lineWidth = 7;
+          ctx.stroke();
+          ctx.fillStyle = `rgba(29, 26, 23, ${0.5 * a})`;
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, rr * 0.35, 0, TAU);
+          ctx.fill();
           break;
         }
         case 'bolt': {

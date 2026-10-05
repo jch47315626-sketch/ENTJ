@@ -1,4 +1,5 @@
 import { TAU } from '../core/math.js';
+import { hitArc } from './weapons.js';
 
 /** Updates summoned soldiers and following archers. */
 export function updateAllies(g, dt) {
@@ -43,6 +44,21 @@ export function updateAllies(g, dt) {
         a.dead = true;
         g.fx.push({ type: 'ink', x: a.x, y: a.y, t: 0, life: 1, size: 22, seed: 0.7 });
       }
+    } else if (a.kind === 'shin') {
+      // 신숭겸 holds his ground with the royal banner and cuts at whoever reaches him.
+      a.life -= dt;
+      a.cd -= dt;
+      a.hurtFlash = (a.hurtFlash ?? 0) - dt;
+      const target = g.nearestEnemy(a.x, a.y, a.r + 46);
+      if (target) {
+        a.facing = Math.atan2(target.y - a.y, target.x - a.x);
+        if (a.cd <= 0) {
+          a.cd = 0.8;
+          g.damageEnemy(target, a.damage * p.stats.might, a.x, a.y, 70);
+          g.fx.push({ type: 'slash', x: a.x, y: a.y, angle: a.facing, range: 44, arc: 120, t: 0, life: 0.18 });
+        }
+      }
+      if (a.hp <= 0 || a.life <= 0) fallShin(g, a);
     } else if (a.kind === 'archer') {
       // Archers trail the hero on a slowly turning ring.
       const ang = g.time * 0.6 + (archerIndex / archerCount) * TAU;
@@ -65,4 +81,20 @@ export function updateAllies(g, dt) {
     }
   }
   g.allies = g.allies.filter((a) => !a.dead);
+}
+
+/** 신숭겸 falls; at the last tier his fall is an explosion. */
+function fallShin(g, a) {
+  a.dead = true;
+  g.fx.push({ type: 'ink', x: a.x, y: a.y, t: 0, life: 1.1, size: 26, seed: 0.4 });
+  if (a.explode) {
+    const E = a.explode;
+    hitArc(g, a.x, a.y, 0, E.radius, 360, E.damage * g.player.stats.might, 260, 'blast', { stun: E.stun });
+    g.shake(12);
+    g.sfx('blast');
+    g.banner('순절 — 신숭겸이 적진과 함께 스러진다', 'small');
+  } else {
+    g.banner('신숭겸이 대신 쓰러졌다', 'small');
+    g.sfx('gong');
+  }
 }

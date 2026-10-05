@@ -35,7 +35,7 @@ export const SPECIALS = {
       const aim = target ? Math.atan2(target.y - p.y, target.x - p.x) : p.facing;
       p.facing = aim;
       const dmg = Math.max(lv.damage, 30) * 6 * p.stats.might * p.stats.specialMul;
-      hitArc(g, p.x, p.y, aim, 210 * p.stats.area, 140, dmg, 320, 'paewang', { stun: 0.8 + p.stats.specialStun });
+      hitArc(g, p.x, p.y, aim, 240 * p.stats.area, 160, dmg, 320, 'paewang', { stun: 0.8 + p.stats.specialStun });
       g.shake(10);
       g.banner('패왕의 일격', 'small');
       g.sfx('paewang');
