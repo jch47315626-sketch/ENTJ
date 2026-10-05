@@ -85,9 +85,15 @@ export const UPGRADES = [
     apply: (g) => g.player.recalc(),
   },
   {
-    id: 'archers', name: '궁수대', category: '병법', maxLevel: 3, weight: 8, heroes: ['wanggeon', 'gyeonhwon'],
+    id: 'archers', name: '궁수대', category: '병법', maxLevel: 3, weight: 8, heroes: ['wanggeon'],
     describe: () => '곁을 따르며 활을 쏘는 아군 궁수 +1',
     apply: (g) => g.syncArcherAllies(),
+  },
+  {
+    // 견훤 대신: 발밑에 묻는 폭약 함정. 밟은 적 주변이 터진다.
+    id: 'traps', name: '함정', category: '병법', maxLevel: 3, weight: 8, heroes: ['gyeonhwon'],
+    describe: (g) => (g.player.upgrades.traps ? '함정 위력·범위 증가, 더 자주 더 많이 설치' : '몇 초마다 발밑에 함정을 묻는다 — 적이 밟으면 펑! 주변 적에게 큰 피해'),
+    apply: () => {},
   },
   {
     // 궁예 대신: 몸 주위를 도는 마구니가 날아오는 화살을 막고 닿는 적을 할퀸다.

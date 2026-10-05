@@ -139,6 +139,7 @@ function heroStatus(g) {
     if (!p.meta.proxArmor) chips.push(`🛡️ 갑주 ${Math.round(p.stats.armor)}`);
     if (p.upgrades.fury) chips.push(`🔥 패기 ${p.upgrades.fury}`);
     if (ready('chain')) chips.push(`⛓️ 철쇄 ${ready('chain')}`);
+    if (p.upgrades.traps) chips.push(`💣 함정 ${g.traps.length}`);
   } else if (p.hero.id === 'gungye') {
     const swayed = g.enemies.filter((e) => !e.dead && g.isCharmed(e)).length;
     chips.push(`🌀 홀린 적 ${swayed}`);

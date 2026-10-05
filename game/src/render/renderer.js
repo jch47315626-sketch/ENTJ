@@ -1,6 +1,7 @@
 import { GROUNDS } from './ground.js';
 import { drawUnit, drawCart, drawCoin, drawRice, drawProjectile } from './sprites.js';
 import { clamp, TAU } from '../core/math.js';
+import { TRAP } from '../systems/traps.js';
 
 const ALLY_LOOKS = {
   soldier: { body: '#3e5a7a', accent: '#1f2d3d', hat: 'helmetBlue', weapon: 'spear', skin: '#e3c39c' },
@@ -134,6 +135,7 @@ export class Renderer {
     ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
     if (g.arena) this.drawArenaFloor(ctx, g, v);
     this.drawCaltrops(ctx, g);
+    this.drawTraps(ctx, g);
     this.drawZones(ctx, g);
     this.drawHalos(ctx, g);
 
@@ -416,6 +418,39 @@ export class Renderer {
     ctx.arc(p.x, p.y, 120, 0, TAU);
     ctx.stroke();
     ctx.setLineDash([]);
+  }
+
+  /** 견훤's 함정: a buried pot with a fuse that glows once armed. */
+  drawTraps(ctx, g) {
+    for (const tr of g.traps) {
+      const armed = tr.t >= TRAP.arm;
+      const fade = Math.min(1, (TRAP.life - tr.t) / 2);
+      ctx.globalAlpha = Math.max(0.2, fade);
+      ctx.fillStyle = 'rgba(30, 22, 16, 0.55)';
+      ctx.beginPath();
+      ctx.ellipse(tr.x, tr.y + 3, 14, 7, 0, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = '#5a3d2a';
+      ctx.beginPath();
+      ctx.arc(tr.x, tr.y, 9, 0, TAU);
+      ctx.fill();
+      ctx.strokeStyle = '#2b1d14';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      const blink = armed ? 0.55 + 0.45 * Math.sin(g.time * 8 + tr.x) : 0.25;
+      ctx.fillStyle = `rgba(255, 120, 60, ${blink})`;
+      ctx.beginPath();
+      ctx.arc(tr.x + 4, tr.y - 7, 3.5, 0, TAU);
+      ctx.fill();
+      if (armed) {
+        ctx.strokeStyle = `rgba(255, 140, 70, ${0.25 * blink})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(tr.x, tr.y, TRAP.trigger + 6, 0, TAU);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
   }
 
   drawArenaFloor(ctx, g, v) {

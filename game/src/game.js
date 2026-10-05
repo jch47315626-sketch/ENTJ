@@ -12,6 +12,7 @@ import { updateWeapon, hitArc } from './systems/weapons.js';
 import { SPECIALS } from './systems/specials.js';
 import { BEHAVIORS } from './systems/enemyAI.js';
 import { updateAllies } from './systems/allies.js';
+import { updateTraps } from './systems/traps.js';
 import { Spawner } from './systems/spawner.js';
 import { updateSkills } from './systems/skills.js';
 
@@ -102,6 +103,8 @@ export class Game {
     this.enemies = [];
     this.projectiles = [];
     this.allies = [];
+    this.traps = []; // 견훤's 함정: { x, y, t }
+    this.trapCd = 1.5;
     this.pickups = [];
     this.fx = [];
     this.texts = [];
@@ -633,6 +636,7 @@ export class Game {
     updateWeapon(this, dt);
     updateSkills(this, dt);
     updateAllies(this, dt);
+    updateTraps(this, dt);
     this.taunts = this.allies.filter((a) => a.lure && !a.dead);
     this.updateEnemies(dt);
     this.updateProjectiles(dt);
