@@ -15,7 +15,7 @@ export class Hud {
     this.el = {
       xp: $('xpFill'), lv: $('lv'), name: $('heroName'),
       hp: $('hpFill'), hpText: $('hpText'), mom: $('momFill'), momBar: $('momFill').parentElement, momLabel: $('momLabel'),
-      timer: $('timer'), timerSub: $('timerSub'), kills: $('kills'),
+      timer: $('timer'), timerSub: $('timerSub'), kills: $('kills'), loot: $('loot'),
       bossBar: $('bossBar'), bossName: $('bossName'), bossFill: $('bossFill'),
       owned: $('owned'), evo: $('evoHint'),
     };
@@ -43,6 +43,7 @@ export class Hud {
     e.mom.style.width = `${h.momentum * 100}%`;
     e.momBar.classList.toggle('full', h.momentum > 0.9);
     e.kills.textContent = `처치 ${h.kills}`;
+    e.loot.textContent = `냥 +${g.liveReward().toLocaleString()}`;
     e.timer.textContent = fmt(h.time);
     if (h.bossPhase) {
       e.timerSub.textContent = '진(陣) — 보스를 쓰러뜨려라';

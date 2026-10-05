@@ -426,6 +426,12 @@ export class Game {
     this.setState('play');
   }
 
+  /** 냥 earned so far this run, before any victory bonus (shown in the HUD). */
+  liveReward() {
+    const base = baseReward({ kills: this.kills, seconds: this.time, won: false, bossKilled: false });
+    return Math.round(base * REWARD_BY_STARS[this.stage.difficulty.stars] * (1 + (this.opts.meta?.reward ?? 0)));
+  }
+
   /** 냥 for this run: base by performance, scaled by stage stars and 재물운. */
   computeReward(won) {
     const stars = this.stage.difficulty.stars;

@@ -133,9 +133,9 @@ export const PATTERNS = {
   // 금강저 1~3단계: 던진 금강저에서 벼락이 적을 타고 번진다
   chainBolt: {
     fire(g, p, lv, s) {
-      const starts = g.nearestEnemies(p.x, p.y, lv.range, lv.bolts);
+      const starts = g.nearestEnemies(p.x, p.y, lv.range * Math.sqrt(s.area), lv.bolts);
       if (!starts.length) return retry();
-      for (const t of starts) chain(g, { x: p.x, y: p.y }, t, lv.chains, lv.chainRange, lv.damage * s.might);
+      for (const t of starts) chain(g, { x: p.x, y: p.y }, t, chainJumps(p, lv), lv.chainRange * s.area, lv.damage * s.might);
       g.sfx('thunder');
     },
   },
@@ -143,17 +143,22 @@ export const PATTERNS = {
   // 금강저 진화: 하늘에서 벼락 여러 줄기, 각각 번진다
   thunderStorm: {
     fire(g, p, lv, s) {
-      const pool = g.nearestEnemies(p.x, p.y, lv.range, 40);
+      const pool = g.nearestEnemies(p.x, p.y, lv.range * Math.sqrt(s.area), 40);
       if (!pool.length) return retry();
       for (let i = 0; i < lv.strikes && pool.length; i++) {
         const t = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
-        chain(g, { x: t.x + 10, y: t.y - 220 }, t, lv.chains, lv.chainRange, lv.damage * s.might);
+        chain(g, { x: t.x + 10, y: t.y - 220 }, t, chainJumps(p, lv), lv.chainRange * s.area, lv.damage * s.might);
       }
       g.shake(4);
       g.sfx('thunder');
     },
   },
 };
+
+/** 장병술 widens lightning: one extra jump for every two levels. */
+function chainJumps(p, lv) {
+  return lv.chains + Math.floor((p.upgrades.area ?? 0) / 2);
+}
 
 /** No target in reach: check again soon instead of waiting a full cooldown. */
 function retry() {

@@ -93,6 +93,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
 .bar.boss i { background: linear-gradient(180deg, #c8463a, #6d1510); transition: width 0.1s linear; }
 
 .kills { font-size: 14px; background: rgba(21,19,15,0.72); padding: 4px 8px; font-variant-numeric: tabular-nums; }
+.loot { color: var(--gold); }
 .icon-btn {
   pointer-events: auto; font-size: 13px; padding: 6px 10px; color: var(--hanji);
   background: rgba(21,19,15,0.8); border: 1px solid var(--hanji-dim);
