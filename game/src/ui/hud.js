@@ -147,5 +147,7 @@ function heroStatus(g) {
     if (allies('maguni')) chips.push(`👹 마구니 ${allies('maguni')}`);
     if (Object.keys(p.subs).length) chips.push('☄️ 금강저');
   }
+  const crow = g.crows?.find((c) => c.t < 40);
+  if (crow) chips.push(`🐦‍⬛ 까마귀 ${Math.ceil(40 - crow.t)}초`);
   return chips.map((c) => `<span>${c}</span>`).join('');
 }

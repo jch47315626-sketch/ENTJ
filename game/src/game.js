@@ -3,9 +3,9 @@ import { ENEMIES, VETERAN } from './data/enemies.js';
 import { BOSSES } from './data/bosses.js';
 import { afterSwing, onHurt, updateBuild } from './systems/builds.js';
 import { STAGES, scaleStage } from './data/stages.js';
-import { enemyHpScale, enemyDamageScale, ENEMY_BOOST, ENEMY_ARMOR } from './data/balance.js';
+import { enemyHpScale, enemyDamageScale, ENEMY_BOOST, ENEMY_ARMOR, BOSS_BOOST, HP_REGEN } from './data/balance.js';
 import { UPGRADES, FALLBACKS } from './data/upgrades.js';
-import { baseReward, REWARD_BY_STARS } from './data/meta.js';
+import { baseReward, REWARD_BY_STARS, BOSS_REWARD } from './data/meta.js';
 import { SpatialGrid } from './core/grid.js';
 import { clamp, rand, TAU, dist2, angleDiff } from './core/math.js';
 import { updateWeapon, hitArc } from './systems/weapons.js';
@@ -13,6 +13,7 @@ import { SPECIALS } from './systems/specials.js';
 import { BEHAVIORS } from './systems/enemyAI.js';
 import { updateAllies } from './systems/allies.js';
 import { updateTraps } from './systems/traps.js';
+import { planCrows, updateCrows, callCrow, CROW } from './systems/crows.js';
 import { Spawner } from './systems/spawner.js';
 import { updateSkills } from './systems/skills.js';
 
@@ -105,6 +106,7 @@ export class Game {
     this.allies = [];
     this.traps = []; // 견훤's 함정: { x, y, t }
     this.trapCd = 1.5;
+    planCrows(this);
     this.pickups = [];
     this.fx = [];
     this.texts = [];
@@ -298,10 +300,10 @@ export class Game {
       isBoss: true,
       elite: false,
       r: def.radius,
-      hp: def.hp * diff.bossHp * ENEMY_BOOST.hp, maxHp: def.hp * diff.bossHp * ENEMY_BOOST.hp,
+      hp: def.hp * diff.bossHp * ENEMY_BOOST.hp * BOSS_BOOST.hp, maxHp: def.hp * diff.bossHp * ENEMY_BOOST.hp * BOSS_BOOST.hp,
       speed: def.speed,
-      damage: def.damage * diff.bossDamage * ENEMY_BOOST.damage,
-      damageMul: diff.bossDamage * ENEMY_BOOST.damage,
+      damage: def.damage * diff.bossDamage * ENEMY_BOOST.damage * BOSS_BOOST.damage,
+      damageMul: diff.bossDamage * ENEMY_BOOST.damage * BOSS_BOOST.damage,
       xp: 0,
       cooldownMul: 1,
       summoned: new Set(),
@@ -542,7 +544,7 @@ export class Game {
     const stars = this.stage.difficulty.stars;
     const base = baseReward({ kills: this.kills, seconds: this.time, won, bossKilled: won });
     const mul = REWARD_BY_STARS[stars] * (1 + (this.opts.meta?.reward ?? 0));
-    return { base, mul, total: Math.round(base * mul), stars };
+    return { base, mul, total: Math.round(base * mul), stars, bossBonus: won ? Math.round(BOSS_REWARD * mul) : 0 };
   }
 
   /** Start-of-run perks from the camp: secrets (비전) and free picks (병법서). */
@@ -620,6 +622,8 @@ export class Game {
       }
     }
     p.invuln -= dt;
+    // Natural recovery: 1% of max HP every 10 seconds.
+    if (p.hp < p.stats.maxHp) p.hp = Math.min(p.stats.maxHp, p.hp + p.stats.maxHp * HP_REGEN * dt);
     p.hurtFlash -= dt;
     this.updateMount(dt);
     this.shakeAmt = Math.max(0, this.shakeAmt - dt * 30);
@@ -637,6 +641,7 @@ export class Game {
     updateSkills(this, dt);
     updateAllies(this, dt);
     updateTraps(this, dt);
+    updateCrows(this, dt);
     this.taunts = this.allies.filter((a) => a.lure && !a.dead);
     this.updateEnemies(dt);
     this.updateProjectiles(dt);
@@ -891,6 +896,14 @@ export class Game {
       k.t += dt;
       const dx = p.x - k.x, dy = p.y - k.y;
       const d2 = dx * dx + dy * dy;
+      // 감나무 가지 must be walked onto; it is not pulled in.
+      if (k.kind === 'crowFeed') {
+        if (d2 < (p.r + 22) ** 2) {
+          k.taken = true;
+          callCrow(this, p.x, p.y);
+        } else if (k.t > CROW.feedLife) k.taken = true;
+        continue;
+      }
       if (!k.magnet && d2 < pr2) k.magnet = true;
       if (k.magnet) {
         const d = Math.sqrt(d2) || 1;

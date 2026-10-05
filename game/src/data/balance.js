@@ -15,5 +15,11 @@ export const enemyDamageScale = (t) => 0.45 + 0.55 * Math.min(1, t / 240);
  */
 export const ENEMY_BOOST = { hp: 1.3, damage: 1.3 };
 
+/** Extra toughness for bosses only, on top of ENEMY_BOOST. */
+export const BOSS_BOOST = { hp: 1.6, damage: 1.3 };
+
+/** Natural recovery: share of max HP restored per second (1% every 10 s). */
+export const HP_REGEN = 0.001;
+
 /** Enemy armour by stage stars: share of every hit that is shrugged off. */
 export const ENEMY_ARMOR = { 1: 0.05, 2: 0.1, 3: 0.15, 4: 0.2, 5: 0.25 };

@@ -9,9 +9,12 @@ import { treeNodes, TREASURES } from './trees.js';
 /** Reward multiplier by difficulty stars (1–5). */
 export const REWARD_BY_STARS = { 1: 1, 2: 1.8, 3: 3, 4: 4.5, 5: 6.5 };
 
+/** Base 냥 for felling the boss (before the stage multiplier). */
+export const BOSS_REWARD = 400;
+
 /** 냥 earned from a run, before the stage multiplier and 재물운. */
 export function baseReward({ kills, seconds, won, bossKilled }) {
-  return Math.round(kills * 0.6 + seconds * 0.4 + (won ? 150 : 0) + (bossKilled ? 100 : 0));
+  return Math.round(kills * 0.6 + seconds * 0.4 + (won ? 150 : 0) + (bossKilled ? BOSS_REWARD : 0));
 }
 
 export const SLOTS = [

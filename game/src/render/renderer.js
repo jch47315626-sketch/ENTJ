@@ -141,6 +141,7 @@ export class Renderer {
 
     for (const k of g.pickups) {
       if (k.kind === 'coin') drawCoin(ctx, k.x, k.y, k.tier, k.t);
+      else if (k.kind === 'crowFeed') this.drawCrowFeed(ctx, k, g.time);
       else drawRice(ctx, k.x, k.y, k.t);
     }
 
@@ -162,6 +163,7 @@ export class Renderer {
     this.drawFx(ctx, g);
     if (g.arena) this.drawArenaBanners(ctx, g);
     this.drawNight(ctx, g, v);
+    for (const c of g.crows) this.drawCrow(ctx, c);
     this.drawTexts(ctx, g);
     ctx.restore();
 
@@ -418,6 +420,87 @@ export class Renderer {
     ctx.arc(p.x, p.y, 120, 0, TAU);
     ctx.stroke();
     ctx.setLineDash([]);
+  }
+
+  /** 감나무 가지: a twig with two ripe persimmons, bobbing with a soft glow. */
+  drawCrowFeed(ctx, k, time) {
+    const bob = Math.sin(time * 3 + k.x) * 3;
+    const y = k.y + bob;
+    ctx.fillStyle = `rgba(255, 170, 70, ${0.18 + 0.12 * Math.sin(time * 4)})`;
+    ctx.beginPath();
+    ctx.arc(k.x, y, 24, 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = '#5a3a22';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(k.x - 14, y + 8);
+    ctx.quadraticCurveTo(k.x, y - 2, k.x + 14, y - 8);
+    ctx.stroke();
+    ctx.fillStyle = '#6aa04a';
+    ctx.beginPath();
+    ctx.ellipse(k.x + 6, y - 10, 6, 3, -0.6, 0, TAU);
+    ctx.fill();
+    for (const [ox, oy] of [[-5, 4], [6, 2]]) {
+      ctx.fillStyle = '#f08a2a';
+      ctx.beginPath();
+      ctx.arc(k.x + ox, y + oy, 6.5, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255, 230, 180, 0.7)';
+      ctx.beginPath();
+      ctx.arc(k.x + ox - 2, y + oy - 2, 2, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = '#3d5a2a';
+      ctx.fillRect(k.x + ox - 2, y + oy - 7, 4, 2);
+    }
+    ctx.lineCap = 'butt';
+  }
+
+  /** 까마귀: a chubby black bird with flapping wings (carries a coin when busy). */
+  drawCrow(ctx, c) {
+    const f = Math.sin(c.flap) * 0.9;
+    ctx.save();
+    ctx.translate(c.x, c.y);
+    ctx.scale(c.facing * 1.4, 1.4);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
+    ctx.beginPath();
+    ctx.ellipse(0, 34, 10, 4, 0, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = '#1f1b26';
+    for (const s of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(-2, -2);
+      ctx.quadraticCurveTo(-8, -2 - s * 4 - f * 12 * s, -16, -4 - f * 14);
+      ctx.quadraticCurveTo(-8, 4, -2, 3);
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 11, 8, 0, 0, TAU);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(9, -5, 6.5, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = '#f0b040';
+    ctx.beginPath();
+    ctx.moveTo(14, -6);
+    ctx.lineTo(21, -4);
+    ctx.lineTo(14, -2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(10.5, -6.5, 2, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = '#1f1b26';
+    ctx.beginPath();
+    ctx.arc(11, -6.5, 1, 0, TAU);
+    ctx.fill();
+    if (c.carry) {
+      ctx.fillStyle = '#f2c94c';
+      ctx.beginPath();
+      ctx.arc(20, -2, 4, 0, TAU);
+      ctx.fill();
+    }
+    ctx.restore();
   }
 
   /** 견훤's 함정: a buried pot with a fuse that glows once armed. */
