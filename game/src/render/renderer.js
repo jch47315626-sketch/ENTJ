@@ -456,7 +456,7 @@ export class Renderer {
     ctx.lineCap = 'butt';
   }
 
-  /** 까마귀: a chubby black bird with flapping wings (carries a coin when busy). */
+  /** 까마귀: a chubby black bird with flapping wings. */
   drawCrow(ctx, c) {
     const f = Math.sin(c.flap) * 0.9;
     ctx.save();
@@ -494,12 +494,6 @@ export class Renderer {
     ctx.beginPath();
     ctx.arc(11, -6.5, 1, 0, TAU);
     ctx.fill();
-    if (c.carry) {
-      ctx.fillStyle = '#f2c94c';
-      ctx.beginPath();
-      ctx.arc(20, -2, 4, 0, TAU);
-      ctx.fill();
-    }
     ctx.restore();
   }
 
