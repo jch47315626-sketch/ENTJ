@@ -142,6 +142,7 @@ function heroStatus(g) {
   } else if (p.hero.id === 'gungye') {
     const swayed = g.enemies.filter((e) => !e.dead && g.isCharmed(e)).length;
     chips.push(`🌀 홀린 적 ${swayed}`);
+    chips.push(...buildStatus(g));
     if (allies('maguni')) chips.push(`👹 마구니 ${allies('maguni')}`);
     if (Object.keys(p.subs).length) chips.push('☄️ 금강저');
   }

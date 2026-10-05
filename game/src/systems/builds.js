@@ -23,6 +23,13 @@ const BANGYEOK = {
   chase: { range: 270, speed: 760, mul: 1.3, arc: 140 },
 };
 
+// 궁예 법력 (A): stand still to gather power; 혼란 (B): sway soldiers nearby.
+const BEOPRYEOK = {
+  focus: { fill: 1.5, drain: 2.5, mul: 0.5 },
+  bigOrb: { every: 3.5, speed: 380, size: 24, mul: 4, burst: { radius: 80, mul: 1.2 } },
+};
+const HONRAN = { every: 1.8, radius: 130, time: 3, maxTier: 2 };
+
 const weaponDamage = (p) => Math.max(currentWeaponLevel(p).damage, 30);
 
 /** Moves the hero in a straight line for a short time (overrides steering). */
@@ -114,9 +121,12 @@ export function onHurt(g) {
   });
 }
 
-/** Every frame: dash movement, 철벽 armour from the crowd around the hero. */
+/** Every frame: dash movement, 철벽 armour, 법력 focus, 혼란 aura. */
 export function updateBuild(g, dt) {
   const p = g.player;
+  const m = p.meta;
+  if (m.focus) updateFocus(g, dt);
+  if (m.chaosAura) updateChaos(g, dt);
   if (p.dash) {
     const D = p.dash;
     const step = Math.min(dt, D.t);
@@ -142,6 +152,54 @@ export function updateBuild(g, dt) {
   }
 }
 
+/** 법력 집중: fills while standing, drains while walking; 천안통 fires at full. */
+function updateFocus(g, dt) {
+  const p = g.player;
+  const F = BEOPRYEOK.focus;
+  p.focus = p.moving ? Math.max(0, (p.focus ?? 0) - dt * F.drain) : Math.min(1, (p.focus ?? 0) + dt / F.fill);
+  if (!p.meta.bigOrb) return;
+  const B = BEOPRYEOK.bigOrb;
+  p.orbTimer = p.focus >= 1 ? (p.orbTimer ?? B.every) - dt : B.every;
+  if (p.orbTimer > 0) return;
+  const t = g.nearestEnemy(p.x, p.y, 520);
+  if (!t) return;
+  p.orbTimer = B.every;
+  const ang = Math.atan2(t.y - p.y, t.x - p.x);
+  const dmg = currentWeaponLevel(p).damage * B.mul * p.stats.might;
+  g.projectiles.push({
+    team: 'player', kind: 'orb', x: p.x, y: p.y, vx: Math.cos(ang) * B.speed, vy: Math.sin(ang) * B.speed,
+    r: B.size * p.stats.area, damage: dmg, knockback: 120, life: 1.6, pierce: Infinity, hit: new Set(), angle: ang,
+    burst: { radius: B.burst.radius * p.stats.area, damage: dmg * B.burst.mul / B.mul },
+  });
+  g.shake(4);
+  g.sfx('beam');
+  g.texts.push({ x: p.x, y: p.y - 44, v: '☄️ 천안통!', t: 0, life: 0.8, order: true });
+}
+
+/** 혼란의 기운: every so often one plain soldier near 궁예 turns on its own side. */
+function updateChaos(g, dt) {
+  const p = g.player;
+  const H = HONRAN;
+  p.chaosTimer = (p.chaosTimer ?? H.every) - dt;
+  if (p.chaosTimer > 0) return;
+  p.chaosTimer = H.every;
+  let pick = null, best = Infinity;
+  const maxTier = p.meta.gwansimAllTiers ? 99 : H.maxTier;
+  g.grid.query(p.x, p.y, H.radius + 20, (e) => {
+    if (e.dead || e.isBoss || e.def.behavior === 'static' || g.isCharmed(e)) return;
+    if ((e.def.tier ?? 1) + (e.elite ? 1 : 0) > maxTier) return;
+    const d = (e.x - p.x) ** 2 + (e.y - p.y) ** 2;
+    if (d < H.radius * H.radius && d < best) {
+      best = d;
+      pick = e;
+    }
+  });
+  if (!pick) return;
+  pick.charmUntil = g.time + H.time;
+  pick.charmPower = 1;
+  g.fx.push({ type: 'eye', x: pick.x, y: pick.y - pick.r - 6, t: 0, life: 0.8, follow: pick, size: 9 });
+}
+
 /** Short status for the HUD chips. */
 export function buildStatus(g) {
   const p = g.player;
@@ -151,6 +209,8 @@ export function buildStatus(g) {
   if (m.proxArmor) chips.push(`🛡️ 철벽 +${(p.wall ?? 0).toFixed(1)}`);
   if (m.counter) chips.push(p.countering ? '💥 반격!' : `💥 반격 ${wait(p.counterReadyAt)}`);
   if (m.rush) chips.push(`⚔️ 연참 ${wait(p.rushReadyAt)}`);
+  if (m.focus) chips.push(p.focus >= 1 ? '☄️ 법력 가득' : `☄️ 법력 ${Math.round((p.focus ?? 0) * 100)}%`);
+  if (m.chaosAura) chips.push(`🌀 혼란 ${Math.max(0, p.chaosTimer ?? 0).toFixed(1)}초`);
   else if (m.lunge) chips.push('⚔️ 기습');
   return chips;
 }

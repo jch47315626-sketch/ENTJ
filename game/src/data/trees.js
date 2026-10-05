@@ -73,17 +73,17 @@ export const SKILL_TREES = {
     root: { id: 'gy_root', name: '미륵의 현신', price: 120, bonus: { area: 0.1 }, desc: '공격 범위 +10%' },
     branches: [
       {
-        id: 'A', name: '법력의 길', style: '멀리서 쏟아붓는다. 석장과 금강저의 화력이 커진다.',
+        id: 'A', name: '법력의 길', style: '멈춰 서서 법력을 모으고, 멀리서 쏟아붓는다. 자리를 잡을수록 강해진다.',
         nodes: [
-          { id: 'gy_a1', name: '법력 증폭', price: 300, bonus: { mainDamage: 0.2 }, desc: '석장 피해 +20%' },
+          { id: 'gy_a1', name: '법력 집중', price: 300, bonus: { focus: 1, mainDamage: 0.1 }, desc: '멈춰 서 있으면 법력이 모여 석장 피해가 최대 +60%까지 오른다. 움직이면 흩어진다' },
           { id: 'gy_a2', name: '금강 수행', price: 650, bonus: { vajraCd: 0.2 }, grants: ['vajra'], desc: '금강저를 쥐고 출진, 금강저 재사용 −20%' },
-          { id: 'gy_a3', name: '천안통', price: 1300, bonus: { pierce: 2, rangeMul: 0.25, mainDamage: 0.2 }, desc: '법력구 관통 +2, 사거리 +25%, 석장 피해 +20%' },
+          { id: 'gy_a3', name: '천안통', price: 1300, bonus: { bigOrb: 1, pierce: 2, rangeMul: 0.25 }, desc: '법력이 가득 찬 채 3.5초마다 거대 법력탄 발사(관통·폭발), 관통 +2, 사거리 +25%' },
         ],
       },
       {
-        id: 'B', name: '관심의 길', style: '적을 홀려 서로 베게 한다. 관심법이 자주, 넓게, 오래 간다.',
+        id: 'B', name: '혼란의 길', style: '적 무리 속을 누비며 홀린다. 적끼리 베게 하고, 그 틈으로 빠져나간다.',
         nodes: [
-          { id: 'gy_b1', name: '심안', price: 300, bonus: { momentum: 0.3 }, desc: '기세 충전 +30% (관심법이 더 자주)' },
+          { id: 'gy_b1', name: '혼란의 기운', price: 300, bonus: { chaosAura: 1, momentum: 0.2 }, desc: '1.8초마다 곁(130)의 병사 하나가 잠시 홀려 제 편을 벤다. 기세 +20%' },
           { id: 'gy_b2', name: '관심 수련', price: 650, bonus: { gwansimDur: 3, gwansimCount: 2 }, grants: ['gwansim'], desc: '관심법 Lv2로 출진, 홀리는 적 +2, 지속 +3초' },
           { id: 'gy_b3', name: '미륵의 대계', price: 1300, bonus: { gwansimAllTiers: 1, charmBlast: 40 }, desc: '관심법이 모든 병사를 홀린다(적장 제외). 홀린 적이 쓰러지면 터진다' },
         ],

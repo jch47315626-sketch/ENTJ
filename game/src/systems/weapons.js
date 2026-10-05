@@ -201,7 +201,8 @@ export function updateWeapon(g, dt) {
     const main = w === p.weapon;
     const s = {
       ...p.stats,
-      might: p.stats.might * (1 + (main ? m.mainDamage ?? 0 : 0) + (p.mount ? m.mountedMight ?? 0 : 0)),
+      // 법력 집중 (궁예): standing still charges the main weapon.
+      might: p.stats.might * (1 + (main ? (m.mainDamage ?? 0) + (m.focus ? 0.5 * (p.focus ?? 0) : 0) : 0) + (p.mount ? m.mountedMight ?? 0 : 0)),
       pierceBonus: main ? m.pierce ?? 0 : 0,
       rangeMul: main ? 1 + (m.rangeMul ?? 0) : 1,
     };
