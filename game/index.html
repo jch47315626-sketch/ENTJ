@@ -123,15 +123,15 @@
         <h2 class="panel-title">상점 <span class="hanja-small">軍營</span></h2>
         <p class="purse">보유 <b id="campMoney">0</b>냥</p>
       </div>
-      <p class="camp-note">장비는 <b id="campHero"></b>에게 입힙니다. 산 장비는 다른 영웅에게도 입힐 수 있습니다. 수련은 모든 영웅에게 적용됩니다. 진행은 이 브라우저에 저장됩니다.</p>
-      <p class="camp-note">장비는 <b style="color:#9a9184">범품</b> · <b style="color:#4f8a4a">양품</b> · <b style="color:#3f6fae">상품</b> · <b style="color:#8a4fae">진품</b> · <b style="color:#d6a63e">국보</b> 다섯 등급입니다. 높은 등급은 그만한 난이도의 전장을 깨야 풀리고, 산 장비는 +5까지 제련할 수 있지만 단계가 오를수록 실패가 잦습니다.</p>
+      <p class="camp-note"><b id="campHero"></b>의 장비 · 등급 <b style="color:#9a9184">범품</b>·<b style="color:#4f8a4a">양품</b>·<b style="color:#3f6fae">상품</b>·<b style="color:#8a4fae">진품</b>·<b style="color:#d6a63e">국보</b> · 제련은 +5까지(갈수록 실패↑)</p>
       <p id="campToast" class="camp-toast" role="status" hidden></p>
-      <h3 class="section-label">장비</h3>
-      <div id="campGear" class="camp-gear"></div>
-      <h3 class="section-label">수련</h3>
-      <div id="campTraining" class="camp-grid"></div>
-      <h3 class="section-label">비전 — 영웅별 스킬</h3>
-      <div id="campSecrets" class="camp-grid"></div>
+      <div id="campTabs"></div>
+      <div id="campGearBox">
+        <div id="campSlots" class="slot-chips"></div>
+        <div id="campGear" class="camp-gear"></div>
+      </div>
+      <div id="campTraining" class="camp-grid" hidden></div>
+      <div id="campSecrets" class="camp-grid" hidden></div>
       <div class="row-btns"><button id="campBack" class="seal-btn" type="button">돌아가기</button></div>
     </div>
   </section>

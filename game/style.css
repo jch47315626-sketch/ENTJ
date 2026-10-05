@@ -473,3 +473,30 @@ button.doll-slot:hover, button.doll-slot:focus-visible { border-color: var(--gol
 .bar.mom i { background: linear-gradient(180deg, #a8e0ff, #5aa8d8); }
 .bar.mom.full i { background: linear-gradient(180deg, #fff0a8, var(--gold)); }
 .timer, .boss-name, .banner { letter-spacing: 0.02em; }
+
+/* Compact menus: tabs instead of long scrolling pages */
+.sub-tabs { display: flex; gap: 6px; justify-content: center; margin: 4px 0 10px; flex-wrap: wrap; }
+.sub-tab { padding: 7px 16px; border-radius: 999px; border: 1px solid var(--hanji-dim); background: transparent; color: var(--hanji); font-size: 14px; }
+.sub-tab.on { background: var(--gold); border-color: var(--gold); color: #2b2236; font-weight: 700; }
+.slot-chips { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
+.slot-chip { display: flex; align-items: center; gap: 6px; padding: 4px 12px 4px 4px; border-radius: 999px; border: 2px solid var(--grade, rgba(217, 200, 180, 0.35)); background: rgba(255, 255, 255, 0.05); color: var(--hanji); font-size: 13px; }
+.slot-chip.on { background: rgba(255, 203, 107, 0.2); border-color: var(--gold); }
+.slot-chip .mini-icon { border-radius: 999px; }
+.camp-gear { display: block; }
+.camp-gear .camp-slot { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px; }
+.camp-gear .camp-slot > h4 { display: none; }
+.camp-item { padding-block: 6px; }
+.camp-item .ds { font-size: 11.5px; line-height: 1.35; }
+.camp-item.with-icon .row-icon { width: 38px !important; height: 38px !important; }
+.stage-list { gap: 8px; }
+.stage-card { padding-block: 10px; }
+.stage-card .info small.req { font-size: 12px; }
+.hero-card { padding-block: 10px; }
+.hero-detail .doll, .hero-detail .build, .hero-detail .treasure-tree { margin-top: 0; }
+/* Tighter menu headers so each tab fits one screen */
+.menu-screen .panel-title { font-size: clamp(32px, 7vw, 42px); margin-bottom: 4px; }
+.menu-wrap { gap: 10px; }
+.hero-detail .portrait { width: 110px; height: 110px; }
+.hd-name { font-size: 38px; }
+.hero-detail .sub-tabs { margin: 0; }
+.doll-slot { padding-block: 6px; }

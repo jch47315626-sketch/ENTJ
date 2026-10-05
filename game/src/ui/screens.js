@@ -69,6 +69,26 @@ export function renderMain(save, sel) {
  * Character select: hero cards, then the chosen hero's stats and outfit.
  * act = { pick(heroId), openSlot(slotId) }
  */
+let heroTab = 'gear';
+
+/** Small tab strip; `onPick(id)` re-renders with the chosen tab. */
+function tabStrip(tabs, current, onPick) {
+  const nav = document.createElement('div');
+  nav.className = 'sub-tabs';
+  nav.setAttribute('role', 'tablist');
+  for (const [id, label] of tabs) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = `sub-tab${id === current ? ' on' : ''}`;
+    b.setAttribute('role', 'tab');
+    b.setAttribute('aria-selected', String(id === current));
+    b.textContent = label;
+    b.addEventListener('click', () => onPick(id));
+    nav.appendChild(b);
+  }
+  return nav;
+}
+
 export function renderHeroSelect(save, sel, act) {
   const list = $('heroList');
   list.innerHTML = '';
@@ -81,7 +101,7 @@ export function renderHeroSelect(save, sel, act) {
     b.innerHTML = `
       <span class="name">${h.name}</span>
       <span class="meta">${h.title} · ${h.role}</span>
-      <span class="blurb">${h.blurb}</span>`;
+`;
     b.addEventListener('click', () => act.pick(h.id));
     list.appendChild(b);
   }
@@ -131,8 +151,11 @@ export function renderHeroSelect(save, sel, act) {
   trCell.style.gridArea = 'treasure';
   trCell.title = tr ? `${tr.name} — ${tr.desc}` : '보물: 비어 있음. 아래 보물 트리에서 고르세요';
   trCell.append(iconCanvas(tr ? tr.id : 'empty:treasure', 56, 'icon'));
-  trCell.insertAdjacentHTML('beforeend', `<span class="dl">보물</span><span class="dn${tr ? '' : ' plus'}">${tr ? tr.name : '아래에서 선택'}</span>`);
-  trCell.addEventListener('click', () => box.querySelector('.treasure-tree')?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+  trCell.insertAdjacentHTML('beforeend', `<span class="dl">보물</span><span class="dn${tr ? '' : ' plus'}">${tr ? tr.name : '보물 탭에서'}</span>`);
+  trCell.addEventListener('click', () => {
+    heroTab = 'treasure';
+    renderHeroSelect(save, sel, act);
+  });
   doll.appendChild(trCell);
   for (const sl of SLOTS) {
     const it = itemById(wear[sl.id]);
@@ -149,7 +172,16 @@ export function renderHeroSelect(save, sel, act) {
     b.addEventListener('click', () => act.openSlot(sl.id));
     doll.appendChild(b);
   }
+  // Gear, skill tree and treasures share one panel, one tab at a time.
+  const pick = (id) => {
+    heroTab = id;
+    renderHeroSelect(save, sel, act);
+  };
+  box.querySelector('.doll').before(tabStrip([['gear', '장비'], ['skill', '스킬 트리'], ['treasure', '보물']], heroTab, pick));
   renderBuild(box, save, h, act);
+  box.querySelector('.doll').hidden = heroTab !== 'gear';
+  box.querySelector('.build').hidden = heroTab !== 'skill';
+  box.querySelector('.treasure-tree').hidden = heroTab !== 'treasure';
 }
 
 /**
@@ -272,13 +304,11 @@ export function renderMapSelect(sel, onStage, save) {
       <span class="no">${st.numeral}</span>
       <span class="info">
         <b>${st.name}</b>
-        <small>${st.year} · ${st.place} · 적장 ${BOSSES[bossId].name}</small>
-        <small class="diff" data-stars="${st.difficulty.stars}">난이도 ${starText(st.difficulty.stars)} ${st.difficulty.label} <span class="reward-mul">· 보상 ×${REWARD_BY_STARS[st.difficulty.stars]}</span></small>
+        <small class="diff" data-stars="${st.difficulty.stars}">${starText(st.difficulty.stars)} ${st.difficulty.label} <span class="reward-mul">· 보상 ×${REWARD_BY_STARS[st.difficulty.stars]} · 적장 ${BOSSES[bossId].name}</span></small>
         ${st.require ? (() => {
           const gate = entryCheck(save, sel.hero, st);
-          return `<small class="req${gate.ok ? ' ok' : ''}">출진 조건 · ${gate.text}</small>`;
+          return `<small class="req${gate.ok ? ' ok' : ''}">${gate.ok ? '출진 가능' : `🔒 ${gate.text}`}</small>`;
         })() : ''}
-        <small>${st.intro}</small>
       </span>`;
     b.addEventListener('click', () => onStage(id));
     stages.appendChild(b);
@@ -359,18 +389,52 @@ const fmtMoney = (n) => n.toLocaleString();
  * Camp: buy and wear gear (one item per slot), level training, learn hero
  * secrets. `act` = { buy(item), wear(item), train(t), learn(secret) }.
  */
+let campTab = 'gear';
+let campSlot = 'head';
+
 export function renderCamp(save, heroId, act, focusSlot) {
   $('campMoney').textContent = fmtMoney(save.money);
   $('campHero').textContent = HEROES[heroId].name;
   const wearing = outfit(save, heroId);
+  if (focusSlot) {
+    campTab = 'gear';
+    campSlot = focusSlot;
+  }
+  const again = () => renderCamp(save, heroId, act);
+  const tabs = $('campTabs');
+  tabs.innerHTML = '';
+  tabs.append(tabStrip([['gear', '장비'], ['train', '수련'], ['secret', '비전']], campTab, (id) => {
+    campTab = id;
+    again();
+  }));
+  $('campGearBox').hidden = campTab !== 'gear';
+  $('campTraining').hidden = campTab !== 'train';
+  $('campSecrets').hidden = campTab !== 'secret';
+
+  // Slot chips: each shows what the hero wears there.
+  const chips = $('campSlots');
+  chips.innerHTML = '';
+  for (const slot of SLOTS) {
+    const it = itemById(wearing[slot.id]);
+    const c = document.createElement('button');
+    c.type = 'button';
+    c.className = `slot-chip${slot.id === campSlot ? ' on' : ''}`;
+    c.append(iconCanvas(it ? it.id : `empty:${slot.id}`, 28, 'mini-icon'));
+    c.insertAdjacentHTML('beforeend', `<span>${slot.name}</span>`);
+    if (it) c.style.setProperty('--grade', GRADES[it.grade].color);
+    c.addEventListener('click', () => {
+      campSlot = slot.id;
+      again();
+    });
+    chips.appendChild(c);
+  }
 
   const gear = $('campGear');
   gear.innerHTML = '';
-  for (const slot of SLOTS) {
+  for (const slot of SLOTS.filter((sl) => sl.id === campSlot)) {
     const col = document.createElement('div');
-    col.className = `camp-slot${slot.id === focusSlot ? ' focus' : ''}`;
+    col.className = 'camp-slot';
     col.dataset.slot = slot.id;
-    col.innerHTML = `<h4>${slot.name}</h4>`;
     for (const item of EQUIPMENT.filter((e) => e.slot === slot.id)) {
       const owned = save.owned.includes(item.id);
       const worn = wearing[slot.id] === item.id;
@@ -402,7 +466,6 @@ export function renderCamp(save, heroId, act, focusSlot) {
     }
     gear.appendChild(col);
   }
-  if (focusSlot) gear.querySelector(`[data-slot="${focusSlot}"]`)?.scrollIntoView({ block: 'center' });
 
   const tr = $('campTraining');
   tr.innerHTML = '';
