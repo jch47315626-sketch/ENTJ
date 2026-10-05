@@ -894,3 +894,8 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 @media (prefers-reduced-motion: reduce) {
   .seal-btn.cta, .keypad .key, .tp-knob, .tp-finger, .auto-bubble, .howto-title span { animation: none !important; }
 }
+
+.howto-tile.save .ht-badge { background: var(--candy-lilac); }
+.ht-save { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: rgba(201, 168, 255, 0.2); border: 2px solid var(--candy-lilac); font-size: 22px; }
+.howto-tile small b { color: var(--candy-lemon); font-weight: 400; font-family: var(--font-brush); }
+.howto-tile.save .plain-btn { border-color: var(--candy-lilac); color: var(--hanji); border-radius: 999px; }

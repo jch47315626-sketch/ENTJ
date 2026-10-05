@@ -262,6 +262,7 @@ input.on('key', (k) => {
 
 for (const b of $('bottomNav').querySelectorAll('button')) b.addEventListener('click', () => go(b.dataset.go));
 // 💾 저장: straight to the save code (도감 → 기록).
+$('howtoSave').addEventListener('click', () => $('homeSave').click());
 $('homeSave').addEventListener('click', () => {
   setCodexTab('record');
   go('codex');
