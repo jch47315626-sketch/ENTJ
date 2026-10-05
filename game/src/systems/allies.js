@@ -82,10 +82,9 @@ export function updateAllies(g, dt) {
       const f = p.facing;
       const tx = p.x - Math.cos(f) * 46 - Math.sin(f) * side;
       const ty = p.y - Math.sin(f) * 46 + Math.cos(f) * side;
-      a.x += (tx - a.x) * Math.min(1, dt * 8);
-      a.y += (ty - a.y) * Math.min(1, dt * 8);
       a.cd -= dt;
       const target = g.nearestEnemy(a.x, a.y, 380);
+      archerStep(g, a, tx, ty, !!target, dt);
       if (target) a.facing = Math.atan2(target.y - a.y, target.x - a.x);
       if (target && a.cd <= 0) {
         a.cd = 1.4 * p.stats.haste;
@@ -159,6 +158,31 @@ function fireOrder(g, a) {
   }
 }
 
+/** How far an archer may fall behind before it reappears beside the king. */
+const ARCHER_LEASH = 420;
+
+/**
+ * Archers stand their ground while they have something to shoot and only
+ * walk back to their spot when idle. Left too far behind, they rejoin at
+ * the king's side in a puff of dust.
+ */
+function archerStep(g, a, tx, ty, shooting, dt) {
+  const p = g.player;
+  if ((a.x - p.x) ** 2 + (a.y - p.y) ** 2 > ARCHER_LEASH ** 2) {
+    g.fx.push({ type: 'puff', x: a.x, y: a.y, t: 0, life: 0.4, size: 14, tone: 'light' });
+    a.x = tx;
+    a.y = ty;
+    g.fx.push({ type: 'puff', x: a.x, y: a.y, t: 0, life: 0.5, size: 16, tone: 'light' });
+    return;
+  }
+  if (shooting) return;
+  const dx = tx - a.x, dy = ty - a.y, d = Math.hypot(dx, dy);
+  if (d < 2) return;
+  const step = Math.min(d, 260 * dt);
+  a.x += (dx / d) * step;
+  a.y += (dy / d) * step;
+}
+
 /** Where each standing troop keeps station, relative to the king's facing. */
 function stationOf(p, a) {
   const f = p.facing;
@@ -214,8 +238,8 @@ function updateRetinue(g, a, dt) {
       a.facing = p.facing;
     }
   } else if (a.role === 'archer') {
-    moveTo(home.x, home.y, 260);
     const t = g.nearestEnemy(a.x, a.y, R.range);
+    archerStep(g, a, home.x, home.y, !!t || a.volley > 0, dt);
     if (t) a.facing = Math.atan2(t.y - a.y, t.x - a.x);
     const shoot = (damage, spread) => {
       const ang = a.facing + (Math.random() - 0.5) * spread;
