@@ -98,7 +98,7 @@ export function renderResult(g, won, extra = {}) {
   rows.push(['⭐', '공훈', `Lv ${g.player.level}`]);
   rows.push(['⚔️', '처치', `${g.kills}`]);
   rows.push(['⏱️', '버틴 시간', fmt(g.time)]);
-  for (const u of extra.unlocks ?? []) rows.push(['🎁', u, '해금']);
+  for (const u of extra.unlocks ?? []) rows.push(['🏆', `업적 · ${u}`, '달성!']);
   if (extra.newFoes) rows.push(['📖', '도감에 새 적', `+${extra.newFoes}`]);
   $('resultRows').innerHTML = rows.map(([i, k, v], n) => `<li style="--i:${n}"><span>${i} ${k}</span><b>${v}</b></li>`).join('');
   countUp($('resultRows').querySelector('.count-up'));

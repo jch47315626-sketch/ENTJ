@@ -42,6 +42,7 @@ export function updateTraps(g, dt) {
 
 function explode(g, tr, lv) {
   tr.gone = true;
+  g.runStats.trapBlasts++;
   const r = TRAP.radius[lv] * g.player.stats.area;
   const dmg = TRAP.damage[lv] * g.player.stats.might;
   g.grid.query(tr.x, tr.y, r + 30, (e) => {

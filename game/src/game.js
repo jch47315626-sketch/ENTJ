@@ -106,6 +106,8 @@ export class Game {
     this.allies = [];
     this.traps = []; // 견훤's 함정: { x, y, t }
     this.trapCd = 1.5;
+    // Per-battle counts for 업적 (core/achieve.js).
+    this.runStats = { trapBlasts: 0, crowCalls: 0, crowBest: 0, hurtInBoss: 0 };
     planCrows(this);
     this.pickups = [];
     this.fx = [];
@@ -283,6 +285,7 @@ export class Game {
     const b = this.bosses[0];
     this.bossGroup = def.group ? def : null;
     this.boss = b;
+    this.runStats.bossSeen = true;
     this.bossIntro = 2.4;
     this.shake(8);
     this.sfx('boss');
@@ -444,6 +447,7 @@ export class Game {
     // 호위진: the bodyguards take a share of every blow.
     if (p.wardUntil > this.time) dmg = Math.max(1, dmg * 0.6);
     this.damageLog[source] = (this.damageLog[source] ?? 0) + dmg;
+    if (this.boss) this.runStats.hurtInBoss += dmg;
     p.hp -= dmg;
     p.invuln = INVULN_TIME + (p.meta.invulBonus ?? 0);
     p.hurtFlash = 0.25;

@@ -52,6 +52,8 @@ export function callCrow(g, x, y) {
     k.t = Math.max(k.t, 3); // pulled in fast, even from far away
     n++;
   }
+  g.runStats.crowCalls++;
+  g.runStats.crowBest = Math.max(g.runStats.crowBest, n);
   g.sfx('levelup');
   g.texts.push({ x, y: y - 30, v: n ? `까마귀! 엽전 ${n}개` : '까마귀!', t: 0, life: 1.2, heal: true });
 }

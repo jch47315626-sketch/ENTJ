@@ -8,6 +8,7 @@ import {
   forgeCost, gradeOpen, itemBonus, bonusText, metaBonus, entryCheck,
 } from '../data/meta.js';
 import { SKILL_TREES, TREASURES } from '../data/trees.js';
+import { ACHIEVEMENTS, ACH_GROUPS, progressOf } from '../data/achievements.js';
 import { SPECIALS } from '../systems/specials.js';
 import { drawUnit } from '../render/sprites.js';
 import { iconCanvas } from '../render/icons.js';
@@ -45,7 +46,7 @@ const TRAIN_UI = {
 };
 
 // Remembered between renders: which tab or card is open on each screen.
-const ui = { heroTab: 'gear', slot: 'head', view: {}, codexTab: 'hero', mapStage: null };
+const ui = { heroTab: 'gear', slot: 'head', view: {}, codexTab: 'ach', mapStage: null };
 
 /**
  * The hero's style is not chosen; it follows the skills learned.
@@ -482,7 +483,7 @@ export function renderCodex(save, sel, act) {
   const body = $('codexBody');
   body.innerHTML = '';
   body.append(header('📖 도감', save, act));
-  const tabs = [['hero', '영웅'], ['weapon', '무기'], ['gear', '장비'], ['treasure', '보물'], ['foe', '적'], ['record', '기록']];
+  const tabs = [['ach', '🏆 업적'], ['hero', '영웅'], ['weapon', '무기'], ['gear', '장비'], ['treasure', '보물'], ['foe', '적'], ['record', '기록']];
   body.append(tabStrip(tabs, ui.codexTab, (id) => {
     ui.codexTab = id;
     renderCodex(save, sel, act);
@@ -497,6 +498,10 @@ export function renderCodex(save, sel, act) {
     return c;
   };
 
+  if (ui.codexTab === 'ach') {
+    body.append(achPanel(save, act));
+    return;
+  }
   if (ui.codexTab === 'hero') {
     for (const h of Object.values(HEROES)) grid.append(cell(portrait(h, 64), h.name, `${h.title} · ${h.role}`));
   } else if (ui.codexTab === 'weapon') {
@@ -548,6 +553,34 @@ export function renderCodex(save, sel, act) {
     return;
   }
   body.append(grid);
+}
+
+/** 업적: progress per goal, with a 받기 button once a reward is waiting. */
+function achPanel(save, act) {
+  const box = el('div', 'ach-box');
+  const done = ACHIEVEMENTS.filter((a) => save.ach?.[a.id]).length;
+  const ready = ACHIEVEMENTS.filter((a) => save.ach?.[a.id] === 'ready');
+  const waiting = ready.reduce((n, a) => n + a.reward, 0);
+  const top = el('div', 'ach-top');
+  top.append(el('div', 'ach-count', `<b>${done}</b> / ${ACHIEVEMENTS.length} 달성
+    <span class="ach-meter"><i style="width:${(done / ACHIEVEMENTS.length) * 100}%"></i></span>`));
+  if (ready.length) top.append(button(`🎁 모두 받기 +${fmt(waiting)}냥`, 'ach-claim-all', () => act.claimAllAch()));
+  box.append(top);
+  for (const [gid, gname] of ACH_GROUPS) {
+    box.append(el('h4', 'ach-group', gname));
+    for (const a of ACHIEVEMENTS.filter((x) => x.group === gid)) {
+      const st = save.ach?.[a.id];
+      const row = el('div', `ach-card${st === 'ready' ? ' ready' : st === 'done' ? ' done' : ''}`);
+      row.append(el('span', 'ach-icon', a.icon));
+      const [now, need] = progressOf(a, save);
+      const bar = a.goal && !st ? `<span class="ach-prog"><i style="width:${Math.min(100, (now / need) * 100)}%"></i><em>${fmt(Math.min(now, need))} / ${fmt(need)}</em></span>` : '';
+      row.append(el('div', 'ach-text', `<b>${a.name}</b><small>${a.desc}</small>${bar}`));
+      if (st === 'ready') row.append(button(`받기<br><small>+${fmt(a.reward)}</small>`, 'ach-claim', () => act.claimAch(a.id)));
+      else row.append(el('span', 'ach-reward', st === 'done' ? '✅' : `🪙 ${fmt(a.reward)}`));
+      box.append(row);
+    }
+  }
+  return box;
 }
 
 /** 기록: lifetime numbers, battlefield records and the save code. */

@@ -8,6 +8,8 @@ import { showScreen, renderIntro, renderChoices, renderResult } from './ui/scree
 import { renderHome, renderHeroes, renderGrow, renderMap, renderPrep, renderCodex, setCodexTab } from './ui/menu.js';
 import { loadSave, writeSave, outfitOf, treeOf, encodeSave, decodeSave } from './core/save.js';
 import { SKILL_TREES } from './data/trees.js';
+import { runFacts, recordRun, checkAchievements, claimAchievement, readyCount } from './core/achieve.js';
+import { ACHIEVEMENTS } from './data/achievements.js';
 import { metaBonus, FORGE, forgeCost, gradeOpen, entryCheck } from './data/meta.js';
 import { STAGES } from './data/stages.js';
 import { HEROES } from './data/heroes.js';
@@ -93,9 +95,13 @@ function onState(state, g) {
       if (state === 'clear') c.wins += 1;
       c.earned += g.reward.total;
       for (const [id, n] of Object.entries(g.killsBy)) c.kills[id] = (c.kills[id] ?? 0) + n;
+      const run = runFacts(g, state === 'clear', save);
+      recordRun(save, run);
+      const unlocked = checkAchievements(save, run);
       writeSave(save);
+      updateBadge();
       // What this run added to the 도감, for the result card.
-      g.resultExtra = { unlocks: [], newFoes: Object.keys(g.killsBy).filter((id) => !known.has(id)).length };
+      g.resultExtra = { unlocks: unlocked.map((a) => `${a.icon} ${a.name}`), newFoes: Object.keys(g.killsBy).filter((id) => !known.has(id)).length };
     }
     renderResult(g, state === 'clear', g.resultExtra);
     showScreen('result');
@@ -146,8 +152,23 @@ const spend = (cost) => {
   return true;
 };
 
+/** 업적 met outside battle (buying, forging): toast them. */
+function checkMenuAchievements() {
+  const fresh = checkAchievements(save);
+  if (fresh.length) toast(`🏆 업적 달성! ${fresh.map((a) => a.name).join(', ')} — 도감에서 보상 받기`);
+  updateBadge();
+}
+
+/** Red dot on 📖 도감 while some 업적 reward is waiting. */
+function updateBadge() {
+  const n = readyCount(save);
+  const b = $('bottomNav').querySelector('[data-go="codex"]');
+  b.dataset.badge = n ? String(n) : '';
+}
+
 /** Saves, plays the coin sound and redraws. */
 function done() {
+  checkMenuAchievements();
   writeSave(save);
   sound.unlock();
   sound.sfx('coin');
@@ -182,6 +203,7 @@ const act = {
     if (lv >= FORGE.max || !spend(forgeCost(item, lv))) return;
     const ok = Math.random() < FORGE.chance[lv];
     if (ok) save.forge[item.id] = lv + 1;
+    checkMenuAchievements();
     writeSave(save);
     sound.unlock();
     sound.sfx(ok ? 'coin' : 'hit');
@@ -219,6 +241,27 @@ const act = {
     outfitOf(save, sel.hero).treasure = item.id;
     done();
   },
+  claimAch(id) {
+    const got = claimAchievement(save, id);
+    if (!got) return;
+    writeSave(save);
+    sound.unlock();
+    sound.sfx('coin');
+    updateBadge();
+    refresh();
+    toast(`🏆 보상 +${got.toLocaleString()}냥`);
+  },
+  claimAllAch() {
+    let got = 0;
+    for (const a of ACHIEVEMENTS) got += claimAchievement(save, a.id);
+    if (!got) return;
+    writeSave(save);
+    sound.unlock();
+    sound.sfx('coin');
+    updateBadge();
+    refresh();
+    toast(`🏆 보상 모두 받기 +${got.toLocaleString()}냥`);
+  },
   exportCode() {
     return encodeSave(save);
   },
@@ -237,6 +280,8 @@ const act = {
     // Replace the save in place: other code keeps a reference to `save`.
     for (const k of Object.keys(save)) delete save[k];
     Object.assign(save, next);
+    checkAchievements(save);
+    updateBadge();
     writeSave(save);
     refresh();
     return { ok: true, message: `불러왔어요! 냥 ${save.money.toLocaleString()}, 장비 ${save.owned.length}개.` };
@@ -424,5 +469,9 @@ function frame(now) {
 if (save.sel && HEROES[save.sel.hero] && STAGES[save.sel.stage]) Object.assign(sel, save.sel);
 setMuted(sound.muted);
 setVolume(Math.round(sound.volume * 100));
+// Older saves: anything already achieved shows up as a reward to collect.
+checkAchievements(save);
+writeSave(save);
+updateBadge();
 toMenu('home');
 requestAnimationFrame(frame);
