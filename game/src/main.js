@@ -3,7 +3,9 @@ import { Renderer } from './render/renderer.js';
 import { Input } from './core/input.js';
 import { Hud } from './ui/hud.js';
 import { Sound } from './audio/sound.js';
-import { showScreen, renderTitle, renderIntro, renderChoices, renderResult } from './ui/screens.js';
+import { showScreen, renderTitle, renderIntro, renderChoices, renderResult, renderCamp } from './ui/screens.js';
+import { loadSave, writeSave } from './core/save.js';
+import { metaBonus } from './data/meta.js';
 import { STAGES } from './data/stages.js';
 
 const $ = (id) => document.getElementById(id);
@@ -15,6 +17,7 @@ const sound = new Sound();
 
 let game = null;
 const sel = { hero: 'wanggeon', stage: 'seonamhae' };
+const save = loadSave();
 let introTimer = 0;
 
 function newGame() {
@@ -29,6 +32,7 @@ function newGame() {
     onState,
     onBoss: (def) => hud.banner(`${def.name}\n${def.epithet}`, 'big'),
     onSfx: (name) => sound.sfx(name),
+    meta: metaBonus(save, sel.hero),
   });
   window.__game = game; // handy for debugging from the console
   renderer.render(game, input, 0);
@@ -53,6 +57,13 @@ function onState(state, g) {
     showScreen(null);
   } else if (state === 'over' || state === 'clear') {
     sound.stopMusic();
+    // Bank the run's money once.
+    if (g.reward && !g.rewardBanked) {
+      g.rewardBanked = true;
+      save.money += g.reward.total;
+      if (state === 'clear') save.best[g.stage.id] = Math.max(save.best[g.stage.id] ?? 0, g.reward.stars);
+      writeSave(save);
+    }
     renderResult(g, state === 'clear');
     showScreen('result');
   }
@@ -67,7 +78,47 @@ function toTitle() {
   showScreen('title');
 }
 
+function openCamp() {
+  const spend = (cost) => {
+    if (save.money < cost) return false;
+    save.money -= cost;
+    return true;
+  };
+  const act = {
+    buy(item) {
+      if (!spend(item.price)) return;
+      save.owned.push(item.id);
+      save.equipped[item.slot] = item.id;
+      done();
+    },
+    wear(item) {
+      save.equipped[item.slot] = item.id;
+      done();
+    },
+    train(t) {
+      const lv = save.training[t.id] ?? 0;
+      if (lv >= t.max || !spend(t.price(lv))) return;
+      save.training[t.id] = lv + 1;
+      done();
+    },
+    learn(sc) {
+      if (!spend(sc.price)) return;
+      save.secrets.push(sc.id);
+      done();
+    },
+  };
+  function done() {
+    writeSave(save);
+    sound.unlock();
+    sound.sfx('coin');
+    renderCamp(save, sel.hero, act);
+  }
+  renderCamp(save, sel.hero, act);
+  showScreen('camp');
+}
+
 function drawTitle() {
+  $('titleMoney').textContent = save.money.toLocaleString();
   renderTitle(
     sel,
     (id) => {
@@ -100,6 +151,8 @@ input.on('key', (k) => {
 });
 
 $('startBtn').addEventListener('click', newGame);
+$('campBtn').addEventListener('click', openCamp);
+$('campBack').addEventListener('click', toTitle);
 $('pauseBtn').addEventListener('click', () => game?.togglePause());
 $('resumeBtn').addEventListener('click', () => game?.togglePause());
 $('quitBtn').addEventListener('click', toTitle);

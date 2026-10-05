@@ -13,7 +13,7 @@ export const STAGES = {
     intro: '903년, 왕건의 수군이 나주에 닿는다. 서남해의 해적 두령 능창이 갯벌에서 기다린다.',
     ground: 'tidalFlat',
     // Stage-wide multipliers on top of the time curves in data/balance.js.
-    difficulty: { label: '보통', stars: 1, enemyHp: 1, enemyDamage: 1, spawnRate: 1, eliteBonus: 0, bossHp: 1, bossDamage: 1 },
+    difficulty: { label: '쉬움', stars: 1, enemyHp: 1, enemyDamage: 1, spawnRate: 1, eliteBonus: 0, bossHp: 1, bossDamage: 1 },
     clearText: '서남해의 뱃길이 고려에 열린다.',
     next: 'gongsan',
     bossAt: 300,
@@ -41,7 +41,7 @@ export const STAGES = {
     year: '927',
     intro: '927년 가을, 팔공산 동수. 경주를 친 견훤의 군대가 돌아오는 길목에서 고려군을 에워싼다.',
     ground: 'autumnHills',
-    difficulty: { label: '어려움', stars: 3, enemyHp: 1.45, enemyDamage: 1.4, spawnRate: 1.2, eliteBonus: 0.1, bossHp: 1.35, bossDamage: 1.3 },
+    difficulty: { label: '보통', stars: 2, enemyHp: 1.45, enemyDamage: 1.4, spawnRate: 1.2, eliteBonus: 0.1, bossHp: 1.35, bossDamage: 1.3 },
     clearText: '공산의 포위를 뚫고 살아남았다. 팔공산이라는 이름은 이날 목숨을 바친 여덟 장수에게서 왔다고 전한다.',
     bossAt: 300,
     boss: 'gyeonhwon',

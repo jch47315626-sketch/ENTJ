@@ -4,6 +4,7 @@ import { BOSSES } from './data/bosses.js';
 import { STAGES, scaleStage } from './data/stages.js';
 import { enemyHpScale, enemyDamageScale } from './data/balance.js';
 import { UPGRADES, FALLBACKS } from './data/upgrades.js';
+import { baseReward, REWARD_BY_STARS } from './data/meta.js';
 import { SpatialGrid } from './core/grid.js';
 import { clamp, rand, TAU, dist2, angleDiff } from './core/math.js';
 import { updateWeapon, hitArc } from './systems/weapons.js';
@@ -20,7 +21,8 @@ const INVULN_TIME = 0.6;
 const MAX_ENEMIES = 420;
 
 class Player {
-  constructor(hero) {
+  constructor(hero, meta = {}) {
+    this.meta = meta; // bonuses from gear and camp training (data/meta.js)
     this.hero = hero;
     this.x = 0;
     this.y = 0;
@@ -43,16 +45,18 @@ class Player {
   /** Derives live stats from the hero base and owned upgrades. */
   recalc() {
     const b = this.hero.stats;
+    const m = this.meta;
     const u = (id) => this.upgrades[id] ?? 0;
     this.stats = {
-      maxHp: b.maxHp + 25 * u('vitality'),
-      speed: b.speed * (1 + 0.08 * u('swift')),
-      might: b.might * (1 + 0.15 * u('might')),
-      haste: b.haste * (1 - 0.1 * u('haste')),
+      maxHp: b.maxHp + 25 * u('vitality') + (m.maxHp ?? 0),
+      speed: b.speed * (1 + 0.08 * u('swift') + (m.speed ?? 0)),
+      might: b.might * (1 + 0.15 * u('might') + (m.might ?? 0)),
+      haste: b.haste * (1 - 0.1 * u('haste') - (m.haste ?? 0)),
       area: b.area * (1 + 0.12 * u('area')),
-      pickup: b.pickup * (1 + 0.35 * u('magnet')),
-      armor: b.armor,
-      momentumMul: 1 + 0.25 * u('momentum'),
+      pickup: b.pickup * (1 + 0.35 * u('magnet') + (m.pickup ?? 0)),
+      armor: b.armor + (m.armor ?? 0),
+      momentumMul: 1 + 0.25 * u('momentum') + (m.momentum ?? 0),
+      xpMul: 1 + (m.xp ?? 0),
       guard: u('guard'),
       caltrops: u('caltrops'),
       specialMul: 1 + 0.3 * u('fury'),
@@ -87,7 +91,7 @@ export class Game {
     this.opts = opts;
     const hero = HEROES[opts.heroId];
     this.stage = scaleStage(STAGES[opts.stageId], opts.quick ? 0.2 : 1);
-    this.player = new Player(hero);
+    this.player = new Player(hero, opts.meta);
     this.enemies = [];
     this.projectiles = [];
     this.allies = [];
@@ -113,6 +117,7 @@ export class Game {
     this.state = 'play'; // play | levelup | paused | over | clear
     this.endTimer = 0;
     this.view = { w: 1280, h: 720 }; // world-units visible; set by renderer
+    this.applyStartPerks();
   }
 
   // ---------------------------------------------------------------- helpers
@@ -360,7 +365,7 @@ export class Game {
 
   gainXp(v) {
     const p = this.player;
-    p.xp += v;
+    p.xp += v * p.stats.xpMul;
     while (p.xp >= XP_TO_NEXT(p.level)) {
       p.xp -= XP_TO_NEXT(p.level);
       p.level++;
@@ -421,7 +426,30 @@ export class Game {
     this.setState('play');
   }
 
+  /** 냥 for this run: base by performance, scaled by stage stars and 재물운. */
+  computeReward(won) {
+    const stars = this.stage.difficulty.stars;
+    const base = baseReward({ kills: this.kills, seconds: this.time, won, bossKilled: won });
+    const mul = REWARD_BY_STARS[stars] * (1 + (this.opts.meta?.reward ?? 0));
+    return { base, mul, total: Math.round(base * mul), stars };
+  }
+
+  /** Start-of-run perks from the camp: secrets (비전) and free picks (병법서). */
+  applyStartPerks() {
+    const m = this.opts.meta ?? {};
+    const p = this.player;
+    for (const id of m.grants ?? []) {
+      p.upgrades[id] = Math.max(p.upgrades[id] ?? 0, 1);
+      const up = UPGRADES.find((u) => u.id === id);
+      up?.apply(this);
+    }
+    p.recalc();
+    p.hp = p.stats.maxHp;
+    this.pendingLevels += m.freePicks ?? 0;
+  }
+
   setState(s) {
+    if ((s === 'clear' || s === 'over') && !this.reward) this.reward = this.computeReward(s === 'clear');
     this.state = s;
     if (s === 'clear') this.sfx('clear');
     if (s === 'over') this.sfx('defeat');

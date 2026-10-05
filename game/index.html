@@ -57,7 +57,10 @@
         <label class="quick"><input id="quickMode" type="checkbox"> 빠른 시험 모드 (1분 뒤 보스 등장)</label>
         <label class="quick"><input id="soundOn" type="checkbox" checked> 소리</label>
       </div>
-      <button id="startBtn" class="seal-btn" type="button">출진</button>
+      <div class="row-btns">
+        <button id="startBtn" class="seal-btn" type="button">출진</button>
+        <button id="campBtn" class="plain-btn" type="button">군영 · <span id="titleMoney">0</span>냥</button>
+      </div>
       <p class="controls">이동: WASD · 방향키 · 화면을 누른 채 끌기 &nbsp;|&nbsp; 일시정지: P · Esc &nbsp;|&nbsp; 책략 선택: 1 · 2 · 3</p>
     </div>
   </section>
@@ -82,11 +85,29 @@
     </div>
   </section>
 
+  <section id="camp" class="screen camp-screen" hidden>
+    <div class="camp-wrap">
+      <div class="camp-head">
+        <h2 class="panel-title">군영 <span class="hanja-small">軍營</span></h2>
+        <p class="purse">보유 <b id="campMoney">0</b>냥</p>
+      </div>
+      <p class="camp-note">전장에서 번 냥으로 장비를 갖추고 수련을 쌓으세요. 효과는 모든 출진에 적용됩니다. 진행은 이 브라우저에 저장됩니다.</p>
+      <h3 class="section-label">장비</h3>
+      <div id="campGear" class="camp-gear"></div>
+      <h3 class="section-label">수련</h3>
+      <div id="campTraining" class="camp-grid"></div>
+      <h3 class="section-label">비전 — 영웅별 스킬</h3>
+      <div id="campSecrets" class="camp-grid"></div>
+      <div class="row-btns"><button id="campBack" class="seal-btn" type="button">돌아가기</button></div>
+    </div>
+  </section>
+
   <section id="result" class="screen dim" hidden>
     <div id="resultSeal" class="big-seal">平定</div>
     <h2 id="resultTitle" class="panel-title"></h2>
     <p id="resultText" class="result-text"></p>
     <dl id="resultStats" class="stats"></dl>
+    <p id="resultReward" class="reward"></p>
     <div class="row-btns">
       <button id="nextBtn" class="seal-btn" type="button" hidden>다음 전장</button>
       <button id="retryBtn" class="seal-btn" type="button">다시 출진</button>
