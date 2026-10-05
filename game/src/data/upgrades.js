@@ -94,7 +94,7 @@ export const UPGRADES = [
   },
   {
     // 견훤 대신: 붙어 싸우는 만큼 버티도록, 벨 때마다 체력을 되찾는다.
-    id: 'lifesteal', name: '혈투', category: '병법', maxLevel: 3, weight: 9, heroes: ['gyeonhwon'],
+    id: 'lifesteal', name: '혈투', category: '병법', maxLevel: 3, weight: 12, heroes: ['gyeonhwon'],
     describe: (g) => {
       const L = LIFESTEAL[(g.player.upgrades.lifesteal ?? 0) + 1];
       return `대도로 벤 적 하나마다 최대 체력의 ${+(L.share * 100).toFixed(1)}% 회복 (한 번 휘두를 때 ${L.cap}명까지)`;
