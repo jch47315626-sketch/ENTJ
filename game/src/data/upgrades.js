@@ -102,7 +102,7 @@ export const FALLBACKS = [
 function skillUpgrade(id, levels, heroes, category, weight) {
   const next = (g) => levels[g.player.upgrades[id] ?? 0];
   return {
-    id, category, maxLevel: levels.length, weight, heroes, skill: true,
+    id, category, maxLevel: levels.length, weight, heroes, skill: true, title: levels[0].name,
     name: (g) => next(g)?.name ?? levels[0].name,
     ownedName: (g) => levels[(g.player.upgrades[id] ?? 1) - 1].name,
     describe: (g) => next(g)?.desc ?? '',
@@ -125,7 +125,7 @@ function subWeapon(id, heroes) {
   const lvl = (g) => g.player.upgrades[id] ?? 0;
   const next = (g) => W.levels[lvl(g)];
   return {
-    id, category: '무예', maxLevel: W.levels.length, weight: 16, heroes, subWeapon: true,
+    id, category: '무예', maxLevel: W.levels.length, weight: 16, heroes, subWeapon: true, title: W.levels[0].name,
     name: (g) => next(g)?.name ?? W.levels[0].name,
     describe: (g) => next(g)?.desc ?? '',
     isEvolution: (g) => !!next(g)?.evolution,

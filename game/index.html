@@ -46,23 +46,53 @@
     <div class="title-wrap">
       <p class="eyebrow">후삼국 생존 액션 · 시제품</p>
       <h1 class="game-title"><span class="hanja">三韓亂世</span><span class="hangul">삼한난세</span></h1>
-      <p class="lede">이동만 하세요. 무기는 스스로 움직입니다. 5분을 버티면 그 전장의 적장이 나타납니다.</p>
 
-      <h2 class="section-label">영웅</h2>
-      <div id="heroList" class="hero-list"></div>
+      <div class="main-board">
+        <button id="mainHero" class="slip main-hero" type="button" aria-label="캐릭터 변경">
+          <canvas id="mainPortrait" class="portrait" width="200" height="200"></canvas>
+          <span class="mh-text">
+            <span id="mainHeroName" class="name"></span>
+            <span id="mainHeroMeta" class="meta"></span>
+            <span id="mainGear" class="gear-line"></span>
+          </span>
+        </button>
+        <button id="mainMap" class="main-map" type="button" aria-label="맵 변경">
+          <span class="mm-label">전장</span>
+          <span id="mainMapName" class="mm-name"></span>
+          <span id="mainMapMeta" class="mm-meta"></span>
+        </button>
+      </div>
 
-      <h2 class="section-label">전장</h2>
-      <div id="stageList" class="stage-list"></div>
+      <button id="startBtn" class="seal-btn start-btn" type="button">출진</button>
+
+      <nav class="main-tabs" aria-label="메뉴">
+        <button id="tabHero" class="tab" type="button"><b>캐릭터 변경</b><small>영웅 · 장비</small></button>
+        <button id="tabShop" class="tab" type="button"><b>상점</b><small><span id="titleMoney">0</span>냥</small></button>
+        <button id="tabMap" class="tab" type="button"><b>맵 변경</b><small>전장 선택</small></button>
+      </nav>
 
       <div class="options">
         <label class="quick"><input id="quickMode" type="checkbox"> 빠른 시험 모드 (1분 뒤 보스 등장)</label>
         <label class="quick"><input id="soundOn" type="checkbox" checked> 소리</label>
       </div>
-      <div class="row-btns">
-        <button id="startBtn" class="seal-btn" type="button">출진</button>
-        <button id="campBtn" class="plain-btn" type="button">군영 · <span id="titleMoney">0</span>냥</button>
-      </div>
       <p class="controls">이동: WASD · 방향키 · 화면을 누른 채 끌기 &nbsp;|&nbsp; 일시정지: P · Esc &nbsp;|&nbsp; 책략 선택: 1 · 2 · 3</p>
+    </div>
+  </section>
+
+  <section id="heroSelect" class="screen menu-screen" hidden>
+    <div class="menu-wrap">
+      <h2 class="panel-title">캐릭터 선택</h2>
+      <div id="heroList" class="hero-list"></div>
+      <div id="heroDetail" class="hero-detail"></div>
+      <div class="row-btns"><button id="heroBack" class="seal-btn" type="button">선택 완료</button></div>
+    </div>
+  </section>
+
+  <section id="mapSelect" class="screen menu-screen" hidden>
+    <div class="menu-wrap">
+      <h2 class="panel-title">전장 선택</h2>
+      <div id="stageList" class="stage-list"></div>
+      <div class="row-btns"><button id="mapBack" class="seal-btn" type="button">선택 완료</button></div>
     </div>
   </section>
 
@@ -89,10 +119,10 @@
   <section id="camp" class="screen camp-screen" hidden>
     <div class="camp-wrap">
       <div class="camp-head">
-        <h2 class="panel-title">군영 <span class="hanja-small">軍營</span></h2>
+        <h2 class="panel-title">상점 <span class="hanja-small">軍營</span></h2>
         <p class="purse">보유 <b id="campMoney">0</b>냥</p>
       </div>
-      <p class="camp-note">전장에서 번 냥으로 장비를 갖추고 수련을 쌓으세요. 효과는 모든 출진에 적용됩니다. 진행은 이 브라우저에 저장됩니다.</p>
+      <p class="camp-note">장비는 <b id="campHero"></b>에게 입힙니다. 산 장비는 다른 영웅에게도 입힐 수 있습니다. 수련은 모든 영웅에게 적용됩니다. 진행은 이 브라우저에 저장됩니다.</p>
       <h3 class="section-label">장비</h3>
       <div id="campGear" class="camp-gear"></div>
       <h3 class="section-label">수련</h3>

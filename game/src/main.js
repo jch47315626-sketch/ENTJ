@@ -3,8 +3,8 @@ import { Renderer } from './render/renderer.js';
 import { Input } from './core/input.js';
 import { Hud } from './ui/hud.js';
 import { Sound } from './audio/sound.js';
-import { showScreen, renderTitle, renderIntro, renderChoices, renderResult, renderCamp } from './ui/screens.js';
-import { loadSave, writeSave } from './core/save.js';
+import { showScreen, renderMain, renderHeroSelect, renderMapSelect, renderIntro, renderChoices, renderResult, renderCamp } from './ui/screens.js';
+import { loadSave, writeSave, outfitOf } from './core/save.js';
 import { metaBonus } from './data/meta.js';
 import { STAGES } from './data/stages.js';
 
@@ -18,6 +18,7 @@ const sound = new Sound();
 let game = null;
 const sel = { hero: 'wanggeon', stage: 'seonamhae' };
 const save = loadSave();
+writeSave(save); // persist any format migration right away
 let introTimer = 0;
 
 function newGame() {
@@ -78,7 +79,9 @@ function toTitle() {
   showScreen('title');
 }
 
-function openCamp() {
+/** Shop. Gear goes on the hero chosen in the menu; `back` is where 돌아가기 leads. */
+function openCamp(focusSlot = null, back = toTitle) {
+  campBack = back;
   const spend = (cost) => {
     if (save.money < cost) return false;
     save.money -= cost;
@@ -88,11 +91,11 @@ function openCamp() {
     buy(item) {
       if (!spend(item.price)) return;
       save.owned.push(item.id);
-      save.equipped[item.slot] = item.id;
+      outfitOf(save, sel.hero)[item.slot] = item.id;
       done();
     },
     wear(item) {
-      save.equipped[item.slot] = item.id;
+      outfitOf(save, sel.hero)[item.slot] = item.id;
       done();
     },
     train(t) {
@@ -113,23 +116,35 @@ function openCamp() {
     sound.sfx('coin');
     renderCamp(save, sel.hero, act);
   }
-  renderCamp(save, sel.hero, act);
+  renderCamp(save, sel.hero, act, focusSlot);
   showScreen('camp');
 }
+let campBack = toTitle;
 
 function drawTitle() {
-  $('titleMoney').textContent = save.money.toLocaleString();
-  renderTitle(
-    sel,
-    (id) => {
+  renderMain(save, sel);
+}
+
+function openHeroSelect() {
+  renderHeroSelect(save, sel, {
+    pick(id) {
       sel.hero = id;
-      drawTitle();
+      openHeroSelect();
     },
-    (id) => {
-      sel.stage = id;
-      drawTitle();
+    // An outfit slot sends the player to that part of the shop, then back here.
+    openSlot(slot) {
+      openCamp(slot, openHeroSelect);
     },
-  );
+  });
+  showScreen('heroSelect');
+}
+
+function openMapSelect() {
+  renderMapSelect(sel, (id) => {
+    sel.stage = id;
+    openMapSelect();
+  });
+  showScreen('mapSelect');
 }
 
 function setMuted(m) {
@@ -151,8 +166,14 @@ input.on('key', (k) => {
 });
 
 $('startBtn').addEventListener('click', newGame);
-$('campBtn').addEventListener('click', openCamp);
-$('campBack').addEventListener('click', toTitle);
+$('tabShop').addEventListener('click', () => openCamp());
+$('tabHero').addEventListener('click', openHeroSelect);
+$('tabMap').addEventListener('click', openMapSelect);
+$('mainHero').addEventListener('click', openHeroSelect);
+$('mainMap').addEventListener('click', openMapSelect);
+$('heroBack').addEventListener('click', toTitle);
+$('mapBack').addEventListener('click', toTitle);
+$('campBack').addEventListener('click', () => campBack());
 $('pauseBtn').addEventListener('click', () => game?.togglePause());
 $('resumeBtn').addEventListener('click', () => game?.togglePause());
 $('quitBtn').addEventListener('click', toTitle);

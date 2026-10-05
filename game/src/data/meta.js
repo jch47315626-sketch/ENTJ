@@ -63,8 +63,9 @@ export function metaBonus(save, heroId) {
   const add = (b) => {
     for (const k in b) total[k] = (total[k] ?? 0) + b[k];
   };
+  const outfit = save.equipped[heroId] ?? {};
   for (const slot of SLOTS) {
-    const item = EQUIPMENT.find((e) => e.id === save.equipped[slot.id]);
+    const item = EQUIPMENT.find((e) => e.id === outfit[slot.id]);
     if (item) add(item.bonus);
   }
   for (const t of TRAINING) {

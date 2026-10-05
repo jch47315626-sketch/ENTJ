@@ -1,18 +1,58 @@
 import { HEROES } from '../data/heroes.js';
 import { STAGES, STAGE_ORDER } from '../data/stages.js';
 import { BOSSES } from '../data/bosses.js';
-import { SLOTS, EQUIPMENT, TRAINING, SECRETS, REWARD_BY_STARS } from '../data/meta.js';
+import { SLOTS, EQUIPMENT, TRAINING, SECRETS, REWARD_BY_STARS, metaBonus } from '../data/meta.js';
+import { WEAPONS } from '../data/weapons.js';
+import { UPGRADES } from '../data/upgrades.js';
+import { SPECIALS } from '../systems/specials.js';
+import { drawUnit } from '../render/sprites.js';
 
 const $ = (id) => document.getElementById(id);
-const SCREENS = ['title', 'intro', 'levelup', 'pause', 'result', 'camp'];
+const SCREENS = ['title', 'heroSelect', 'mapSelect', 'intro', 'levelup', 'pause', 'result', 'camp'];
 const starText = (n) => '★'.repeat(n) + '☆'.repeat(5 - n);
 
 export function showScreen(name) {
   for (const s of SCREENS) $(s).hidden = s !== name;
 }
 
-/** Hero slips and stage cards on the title screen. */
-export function renderTitle(sel, onHero, onStage) {
+/** Draws a hero, large, into a portrait canvas. */
+export function drawPortrait(canvas, hero) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, W, W);
+  ctx.translate(W * 0.42, W * 0.52);
+  ctx.scale(W / 48, W / 48);
+  const look = hero.look;
+  drawUnit(ctx, { ...look, body: look.robe }, 0, 0, 12, -0.5);
+}
+
+const outfit = (save, heroId) => save.equipped[heroId] ?? {};
+const itemById = (id) => EQUIPMENT.find((e) => e.id === id);
+
+/** Main menu: chosen hero and battlefield, start button and tabs. */
+export function renderMain(save, sel) {
+  const h = HEROES[sel.hero];
+  drawPortrait($('mainPortrait'), h);
+  $('mainHeroName').textContent = h.name;
+  $('mainHeroMeta').textContent = `${h.title} · ${h.role}`;
+  const wear = outfit(save, sel.hero);
+  $('mainGear').innerHTML = SLOTS.map((sl) => {
+    const it = itemById(wear[sl.id]);
+    return it ? `${sl.name} <b>${it.name}</b>` : `<span class="empty">${sl.name} 없음</span>`;
+  }).join(' · ');
+  const st = STAGES[sel.stage];
+  const boss = BOSSES[st.bossAlt[sel.hero] ?? st.boss];
+  $('mainMapName').textContent = `${st.numeral} ${st.name}`;
+  $('mainMapMeta').textContent = `${starText(st.difficulty.stars)} ${st.difficulty.label} · 보상 ×${REWARD_BY_STARS[st.difficulty.stars]} · 적장 ${boss.name}`;
+  $('titleMoney').textContent = save.money.toLocaleString();
+}
+
+/**
+ * Character select: hero cards, then the chosen hero's stats and outfit.
+ * act = { pick(heroId), openSlot(slotId) }
+ */
+export function renderHeroSelect(save, sel, act) {
   const list = $('heroList');
   list.innerHTML = '';
   for (const h of Object.values(HEROES)) {
@@ -24,11 +64,57 @@ export function renderTitle(sel, onHero, onStage) {
     b.innerHTML = `
       <span class="name">${h.name}</span>
       <span class="meta">${h.title} · ${h.role}</span>
-      <span class="blurb">${h.blurb}</span>
-      ${h.available ? '' : '<span class="lock">준비 중</span>'}`;
-    b.addEventListener('click', () => onHero(h.id));
+      <span class="blurb">${h.blurb}</span>`;
+    b.addEventListener('click', () => act.pick(h.id));
     list.appendChild(b);
   }
+
+  const h = HEROES[sel.hero];
+  const m = metaBonus(save, h.id);
+  const st = h.stats;
+  const stat = (label, base, total, fmt = (v) => v) =>
+    `<div><dt>${label}</dt><dd>${fmt(total)}${total !== base ? `<span class="up">기본 ${fmt(base)}</span>` : ''}</dd></div>`;
+  const pct = (v) => `×${v.toFixed(2)}`;
+  const weapon = WEAPONS[h.weapon].levels;
+  const own = UPGRADES.filter((u) => u.heroes?.includes(h.id)).map((u) => u.title ?? u.name);
+  const wear = outfit(save, h.id);
+
+  const box = $('heroDetail');
+  box.innerHTML = `
+    <canvas class="portrait" width="280" height="280"></canvas>
+    <div class="hd-body">
+      <div class="hd-name">${h.name}<small>${h.hanja} · ${h.title}</small></div>
+      <p class="hd-kit">
+        <b>무기</b> ${weapon.map((w) => w.name).join(' → ')}<br>
+        <b>고유기</b> ${SPECIALS[h.special].name} &nbsp; <b>전용 책략</b> ${own.join(', ')}
+      </p>
+      <dl class="hd-stats">
+        ${stat('체력', st.maxHp, st.maxHp + (m.maxHp ?? 0))}
+        ${stat('갑주', st.armor, st.armor + (m.armor ?? 0))}
+        ${stat('위력', st.might, st.might * (1 + (m.might ?? 0)), pct)}
+        ${stat('속공', st.haste, st.haste * (1 - (m.haste ?? 0)), pct)}
+        ${stat('범위', st.area, st.area, pct)}
+        ${stat('이동', st.speed, Math.round(st.speed * (1 + (m.speed ?? 0))))}
+      </dl>
+    </div>
+    <div class="slots"></div>`;
+  drawPortrait(box.querySelector('canvas'), h);
+  const slots = box.querySelector('.slots');
+  for (const sl of SLOTS) {
+    const it = itemById(wear[sl.id]);
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = `slot${it ? '' : ' empty'}`;
+    b.innerHTML = it
+      ? `<span class="sl">${sl.name}</span><span class="it">${it.name}</span><span class="ef">${it.desc}</span>`
+      : `<span class="sl">${sl.name}</span><span class="it">비어 있음</span><span class="ef">눌러서 상점으로 →</span>`;
+    b.addEventListener('click', () => act.openSlot(sl.id));
+    slots.appendChild(b);
+  }
+}
+
+/** Battlefield picker. */
+export function renderMapSelect(sel, onStage) {
   const stages = $('stageList');
   stages.innerHTML = '';
   for (const id of STAGE_ORDER) {
@@ -117,24 +203,28 @@ const fmtMoney = (n) => n.toLocaleString();
  * Camp: buy and wear gear (one item per slot), level training, learn hero
  * secrets. `act` = { buy(item), wear(item), train(t), learn(secret) }.
  */
-export function renderCamp(save, heroId, act) {
+export function renderCamp(save, heroId, act, focusSlot) {
   $('campMoney').textContent = fmtMoney(save.money);
+  $('campHero').textContent = HEROES[heroId].name;
+  const wearing = outfit(save, heroId);
 
   const gear = $('campGear');
   gear.innerHTML = '';
   for (const slot of SLOTS) {
     const col = document.createElement('div');
-    col.className = 'camp-slot';
+    col.className = `camp-slot${slot.id === focusSlot ? ' focus' : ''}`;
+    col.dataset.slot = slot.id;
     col.innerHTML = `<h4>${slot.name}</h4>`;
     for (const item of EQUIPMENT.filter((e) => e.slot === slot.id)) {
       const owned = save.owned.includes(item.id);
-      const worn = save.equipped[slot.id] === item.id;
+      const worn = wearing[slot.id] === item.id;
       col.appendChild(itemRow(item.name, item.desc, worn, owned
         ? worn ? doneTag('착용 중') : button('착용', 'wear-btn', () => act.wear(item))
         : button(`${fmtMoney(item.price)}냥`, 'buy-btn', () => act.buy(item), save.money < item.price)));
     }
     gear.appendChild(col);
   }
+  if (focusSlot) gear.querySelector(`[data-slot="${focusSlot}"]`)?.scrollIntoView({ block: 'center' });
 
   const tr = $('campTraining');
   tr.innerHTML = '';
