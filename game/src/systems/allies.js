@@ -62,11 +62,8 @@ export function updateAllies(g, dt) {
         a.shout = SHIN_AI.shoutFor;
         a.nextShout = SHIN_AI.shoutEvery;
       }
-      // He fights around the king: foes far from the king are left alone, and
-      // once he has strayed past the leash he runs back first.
-      const fromKing = Math.hypot(p.x - a.x, p.y - a.y);
-      let target = fromKing > SHIN_AI.leash ? null : g.nearestEnemy(a.x, a.y, SHIN_AI.seek);
-      if (target && Math.hypot(target.x - p.x, target.y - p.y) > SHIN_AI.leash) target = null;
+      // He never falls back to the king: he goes from one foe to the next.
+      const target = g.nearestEnemy(a.x, a.y, SHIN_AI.seek);
       if (target) {
         a.facing = Math.atan2(target.y - a.y, target.x - a.x);
         const d = Math.hypot(target.x - a.x, target.y - a.y);
@@ -75,15 +72,6 @@ export function updateAllies(g, dt) {
           const step = Math.min(d - reach, SHIN_AI.speed * dt);
           a.x += Math.cos(a.facing) * step;
           a.y += Math.sin(a.facing) * step;
-        }
-      } else {
-        // Nobody near the king (or too far out): run back to his side.
-        const dx = p.x - a.x, dy = p.y - a.y, d = Math.hypot(dx, dy);
-        if (d > 70) {
-          a.facing = Math.atan2(dy, dx);
-          const step = Math.min(d - 60, SHIN_AI.returnSpeed * dt);
-          a.x += (dx / d) * step;
-          a.y += (dy / d) * step;
         }
       }
       if (target && Math.hypot(target.x - a.x, target.y - a.y) < a.r + target.r + 30) {
@@ -310,8 +298,8 @@ function updateRetinue(g, a, dt) {
   }
 }
 
-/** 신숭겸: how far he looks for a fight, how far from the king he may go, his speeds, how often he shouts. */
-const SHIN_AI = { seek: 260, leash: 240, speed: 175, returnSpeed: 230, shoutEvery: 4.5, shoutFor: 1.8 };
+/** 신숭겸: how far he looks for a fight, how fast he runs, how often he shouts. */
+const SHIN_AI = { seek: 600, speed: 175, shoutEvery: 4.5, shoutFor: 1.8 };
 
 /** 통솔 spearmen. */
 const SOLDIER = { damage: 14, cooldown: 0.5, speed: 195 };
