@@ -759,11 +759,6 @@ button.doll-slot:hover, button.doll-slot:focus-visible { border-color: var(--gol
 .controls-card b { color: var(--hanji); font-size: 14px; }
 kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6px; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); font: 12px/1.6 ui-monospace, monospace; color: var(--hanji); text-align: center; }
 .pause-controls { font-size: 13px; color: var(--hanji-dim); margin: 0 0 12px; }
-.move-hint { position: absolute; left: 50%; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 150px); transform: translateX(-50%); z-index: 6; pointer-events: none;
-  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 16px; border-radius: 16px; background: rgba(43, 34, 54, 0.88); border: 1px solid rgba(255, 203, 107, 0.4); text-align: center; width: max-content; max-width: calc(100% - 32px); animation: hintPulse 1.6s ease-in-out infinite; }
-.move-hint b { font-size: 15px; color: var(--hanji); }
-.move-hint span { font-size: 12.5px; color: var(--hanji-dim); }
-@keyframes hintPulse { 50% { box-shadow: 0 0 0 4px rgba(255, 203, 107, 0.25); } }
 /* Bottom UI, larger again (user request) */
 .hud-bottom { width: min(680px, calc(100% - 20px)); gap: 8px; }
 .hud-bottom .bar { height: 34px; border-width: 2px; }
@@ -776,7 +771,6 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 .bottom-nav button span { font-size: 30px; }
 .bottom-nav button b { font-size: 18px; }
 .menu-screen { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
-.move-hint { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 180px); }
 @media (max-width: 640px) {
   .hud-bottom .bar { height: 32px; }
   .hud-bottom .bar span { font-size: 18px; line-height: 28px; }
@@ -855,7 +849,7 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 .ht-touch { display: flex; align-items: center; gap: 12px; }
 .ht-touch small { text-align: left; }
 .ht-keys { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; }
-.ht-or, .mh-or { font-size: 12px; color: var(--hanji-dim); }
+.ht-or { font-size: 12px; color: var(--hanji-dim); }
 /* keycaps */
 .key { display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 6px; border-radius: 9px; font: 700 14px/1 "Jua", sans-serif; color: #2b2236;
   background: linear-gradient(180deg, #ffffff, #e9e2f5); border: none; box-shadow: 0 3px 0 #a99cc2, 0 4px 6px rgba(0, 0, 0, 0.25); }
@@ -886,9 +880,6 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 @media (pointer: fine) { .ht-touch { order: 2; } .ht-keys { order: 1; } }
 
 /* ---------------- 조작 안내 (battle start) ---------------- */
-.move-hint { border-radius: 22px; border: 2px solid rgba(156, 207, 255, 0.6); background: rgba(43, 34, 54, 0.9); padding: 12px 18px; gap: 6px; }
-.move-hint .mh-row { display: flex; align-items: center; gap: 12px; }
-.move-hint b { font-family: var(--font-brush); font-weight: 400; font-size: 20px; color: var(--candy-sky); }
 .pause-controls { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
 .pause-controls span { padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); }
 @media (prefers-reduced-motion: reduce) {
