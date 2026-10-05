@@ -63,8 +63,8 @@ export const SKILL_TREES = {
         id: 'B', name: '반격의 길', style: '적 한가운데서 버티다가, 맞는 순간 크게 받아쳐 공간을 연다.',
         nodes: [
           { id: 'gh_b1', name: '철벽', price: 900, bonus: { proxArmor: 1, maxHp: 20 }, desc: '가까운 적이 많을수록 갑주가 오른다 (최대 +4), 체력 +20' },
-          { id: 'gh_b2', name: '되받아치기', price: 1950, bonus: { counter: 1 }, desc: '맞으면 곧바로 주위를 크게 베어 밀어낸다 (0.9초마다)' },
-          { id: 'gh_b3', name: '패왕의 반격', price: 3900, bonus: { counterRush: 1, armor: 1 }, desc: '반격한 뒤 가장 가까운 적에게 돌진해 한 번 더 벤다, 갑주 +1' },
+          { id: 'gh_b2', name: '되받아치기', price: 1950, bonus: { counter: 1 }, desc: '나를 때린 적이 대도 피해의 2.2배를 그대로 돌려받고 잠깐 멈춘다 (0.4초마다)' },
+          { id: 'gh_b3', name: '패왕의 반격', price: 3900, bonus: { counterRush: 1, armor: 1 }, desc: '반격당한 적 주위로 충격이 퍼져 근처 적까지 벤다, 갑주 +1' },
         ],
       },
     ],

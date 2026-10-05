@@ -19,8 +19,10 @@ const PAEGONG = {
 };
 const BANGYEOK = {
   wall: { radius: 100, perFoe: 0.6, max: 4 },
-  counter: { cooldown: 0.9, delay: 0.18, radius: 125, mul: 2.2, knockback: 300, stun: 0.35 },
-  chase: { range: 270, speed: 760, mul: 1.3, arc: 140 },
+  // 반격: the attacker takes `mul` × the weapon's damage; nothing moves 견훤.
+  counter: { cooldown: 0.4, mul: 2.2, knockback: 160, stun: 0.35, fallbackRange: 180 },
+  // 패왕의 반격: a shock around the struck attacker.
+  chase: { radius: 90, mul: 0.6 },
 };
 
 // 궁예 법력 (A): stand still to gather power; 혼란 (B): sway soldiers nearby.
@@ -112,34 +114,34 @@ export function afterSwing(g) {
 }
 
 /** 반격: the hero just took a hit. */
-export function onHurt(g) {
+/**
+ * 되받아치기 (견훤 반격의 길): whoever wounds him takes the blow back — the
+ * attacker itself is struck, wherever it stands; 견훤 keeps moving freely.
+ * 패왕의 반격 also sends a shock through the foes around the attacker.
+ */
+export function onHurt(g, attacker) {
   const p = g.player;
   if (!p.meta.counter || g.time < (p.counterReadyAt ?? 0)) return;
   const C = BANGYEOK.counter;
   const m = p.meta;
   const drill = p.upgrades.counterDrill ?? 0;
+  // Blows with no one behind them (fire, auras) strike back at the nearest foe.
+  const target = attacker && !attacker.dead ? attacker : g.nearestEnemy(p.x, p.y, C.fallbackRange);
+  if (!target) return;
   p.counterReadyAt = g.time + C.cooldown * Math.max(0.3, 1 - (m.counterCd ?? 0));
-  const mul = C.mul * (1 + (m.counterMul ?? 0) + 0.25 * drill);
-  const radius = C.radius * (1 + (m.counterRadius ?? 0) + 0.1 * drill);
-  p.countering = true;
-  g.later(C.delay, () => {
-    p.countering = false;
-    if (g.state !== 'play') return;
-    g.heroDrain(hitArc(g, p.x, p.y, 0, radius * p.stats.area, 360, weaponDamage(p) * mul * p.stats.might, C.knockback, 'paewang', { stun: C.stun }));
-    g.shake(6);
-    g.sfx('quake');
-    g.texts.push({ x: p.x, y: p.y - 44, v: '💥 반격!', t: 0, life: 0.8, order: true });
-    // 패왕의 반격: chase the nearest survivor and cut again.
-    if (p.meta.counterRush) {
-      const H = BANGYEOK.chase;
-      const t = g.nearestEnemy(p.x, p.y, H.range);
-      if (!t) return;
-      const ang = Math.atan2(t.y - p.y, t.x - p.x);
-      const d = Math.max(0, Math.hypot(t.x - p.x, t.y - p.y) - t.r - p.r - 14);
-      p.invuln = Math.max(p.invuln, d / H.speed + 0.1);
-      dash(p, ang, H.speed, d / H.speed, () => strike(g, H.mul, H.arc));
-    }
-  });
+  const dmg = weaponDamage(p) * C.mul * (1 + (m.counterMul ?? 0) + 0.25 * drill) * p.stats.might;
+  g.damageEnemy(target, dmg, p.x, p.y, C.knockback, { stun: C.stun });
+  g.heroDrain(1);
+  g.fx.push({ type: 'spark', x: target.x, y: target.y, t: 0, life: 0.3 });
+  g.fx.push({ type: 'thrust', x: p.x, y: p.y, angle: Math.atan2(target.y - p.y, target.x - p.x), t: 0, life: 0.15 });
+  g.texts.push({ x: target.x, y: target.y - target.r - 18, v: '💥 반격!', t: 0, life: 0.7, order: true });
+  g.sfx('chop');
+  if (m.counterRush) {
+    const H = BANGYEOK.chase;
+    const radius = H.radius * (1 + (m.counterRadius ?? 0) + 0.1 * drill) * p.stats.area;
+    hitArc(g, target.x, target.y, 0, radius, 360, dmg * H.mul, C.knockback * 0.6, 'paewang', { stun: C.stun });
+    g.shake(5);
+  }
 }
 
 /** Every frame: dash movement, 철벽 armour, 법력 focus, 혼란 aura. */
@@ -233,7 +235,7 @@ export function buildStatus(g) {
   const chips = [];
   const wait = (at) => (g.time >= (at ?? 0) ? '준비' : `${Math.ceil(at - g.time)}초`);
   if (m.proxArmor) chips.push(`🛡️ 철벽 +${(p.wall ?? 0).toFixed(1)}`);
-  if (m.counter) chips.push(p.countering ? '💥 반격!' : `💥 반격 ${wait(p.counterReadyAt)}`);
+  if (m.counter) chips.push(`💥 반격 ${wait(p.counterReadyAt)}`);
   if (m.rush) chips.push(`⚔️ 연참 ${wait(p.rushReadyAt)}`);
   if (m.focus) chips.push(p.focus >= 1 ? '☄️ 법력 가득' : `☄️ 법력 ${Math.round((p.focus ?? 0) * 100)}%`);
   if (m.chaosAura) chips.push(`🌀 혼란 ${Math.max(0, p.chaosTimer ?? 0).toFixed(1)}초`);

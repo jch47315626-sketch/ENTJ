@@ -81,7 +81,7 @@ export const BOSS_PATTERNS = {
         g.projectiles.push({
           team: 'enemy', kind: P.kind ?? 'hook', x: b.x, y: b.y,
           vx: Math.cos(a) * P.speed, vy: Math.sin(a) * P.speed,
-          r: P.kind === 'arrow' ? 6 : P.kind === 'wave' ? 14 : 8, damage: P.damage * b.damageMul, source: 'boss', life: 1.6, angle: a, spin: P.kind === 'arrow' ? undefined : 0,
+          r: P.kind === 'arrow' ? 6 : P.kind === 'wave' ? 14 : 8, damage: P.damage * b.damageMul, source: 'boss', owner: b, life: 1.6, angle: a, spin: P.kind === 'arrow' ? undefined : 0,
         });
       }
       g.sfx(P.kind === 'arrow' ? 'volley' : 'throw');
@@ -130,7 +130,7 @@ export const BOSS_PATTERNS = {
       b.pt -= dt;
       if (b.pt > 0) return false;
       const rr = P.radius + g.player.r;
-      if ((g.player.x - b.x) ** 2 + (g.player.y - b.y) ** 2 < rr * rr) g.hurtPlayer(P.damage * b.damageMul, 'boss');
+      if ((g.player.x - b.x) ** 2 + (g.player.y - b.y) ** 2 < rr * rr) g.hurtPlayer(P.damage * b.damageMul, 'boss', b);
       g.fx.push({ type: 'bossSpin', x: b.x, y: b.y, range: P.radius, t: 0, life: 0.3 });
       g.shake(5);
       g.sfx('bossSpin');
@@ -192,7 +192,7 @@ Object.assign(BOSS_PATTERNS, {
       const p = g.player;
       for (const s of b.strikes) {
         const rr = P.radius + p.r;
-        if ((p.x - s.x) ** 2 + (p.y - s.y) ** 2 < rr * rr) g.hurtPlayer(P.damage * b.damageMul, 'boss');
+        if ((p.x - s.x) ** 2 + (p.y - s.y) ** 2 < rr * rr) g.hurtPlayer(P.damage * b.damageMul, 'boss', b);
         g.fx.push({ type: 'bolt', points: [{ x: s.x + 12, y: s.y - 260 }, { x: s.x - 6, y: s.y - 120 }, { x: s.x, y: s.y }], t: 0, life: 0.32, seed: Math.random() });
         g.fx.push({ type: 'puff', x: s.x, y: s.y, t: 0, life: 0.45, size: P.radius * 0.6, tone: 'light' });
       }

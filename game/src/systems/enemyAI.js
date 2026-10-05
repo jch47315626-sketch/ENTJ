@@ -47,7 +47,7 @@ export const BEHAVIORS = {
         g.projectiles.push({
           team: charmed ? 'charm' : 'enemy', kind: 'arrow', x: e.x, y: e.y,
           vx: Math.cos(a) * P.arrowSpeed, vy: Math.sin(a) * P.arrowSpeed,
-          r: 5, damage: charmed ? P.arrowDamage * 3 * e.charmPower : P.arrowDamage * e.damageMul, life: 2.2, angle: a, source: e.def.id,
+          r: 5, damage: charmed ? P.arrowDamage * 3 * e.charmPower : P.arrowDamage * e.damageMul, life: 2.2, angle: a, source: e.def.id, owner: e,
         });
       }
       if (P.retreat) e.retreat = P.retreat;

@@ -494,7 +494,8 @@ export class Game {
     this.pickups.push({ kind: 'coin', tier, value, x: x + rand(-4, 4), y: y + rand(-4, 4), magnet: false, t: 0 });
   }
 
-  hurtPlayer(amount, source = 'unknown') {
+  /** `attacker`: the enemy that dealt the blow, when there is one (for 반격). */
+  hurtPlayer(amount, source = 'unknown', attacker = null) {
     const p = this.player;
     if (p.invuln > 0 || this.state !== 'play') return false;
     if (p.mount && this.time < p.mount.invulnUntil) return false;
@@ -512,7 +513,7 @@ export class Game {
     this.shake(4);
     this.sfx('hurt');
     this.texts.push({ x: p.x, y: p.y - 20, v: Math.round(dmg), t: 0, life: 0.7, hurt: true });
-    onHurt(this);
+    onHurt(this, attacker);
     if (p.hp <= 0) {
       p.hp = 0;
       this.state = 'dying';
@@ -811,7 +812,7 @@ export class Game {
       const dmg = e.contactDamage ?? e.damage;
       if (dmg > 0 && !charmed) {
         const rr = e.r + p.r - 2;
-        if (dist2(e.x, e.y, p.x, p.y) < rr * rr && this.hurtPlayer(dmg, e.isBoss ? 'boss' : e.def.id) && p.meta.thorns) {
+        if (dist2(e.x, e.y, p.x, p.y) < rr * rr && this.hurtPlayer(dmg, e.isBoss ? 'boss' : e.def.id, e) && p.meta.thorns) {
           // 반격: whoever strikes the hero in melee takes a blow back.
           this.damageEnemy(e, p.meta.thorns * p.stats.might, p.x, p.y, 120);
           this.fx.push({ type: 'spark', x: e.x, y: e.y, t: 0, life: 0.25 });
@@ -847,7 +848,7 @@ export class Game {
         if (pr.life <= 0) continue;
         const rr = pr.r + p.r;
         if (dist2(pr.x, pr.y, p.x, p.y) < rr * rr) {
-          this.hurtPlayer(pr.damage, pr.source ?? pr.kind);
+          this.hurtPlayer(pr.damage, pr.source ?? pr.kind, pr.owner);
           pr.life = 0;
         }
       } else {
