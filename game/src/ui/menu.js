@@ -10,6 +10,7 @@ import {
 import { SKILL_TREES, TREASURES } from '../data/trees.js';
 import { ACHIEVEMENTS, ACH_GROUPS, progressOf } from '../data/achievements.js';
 import { dailyFor, todayKey, untilTomorrow } from '../data/daily.js';
+import { josa } from '../core/korean.js';
 import { SPECIALS } from '../systems/specials.js';
 import { drawUnit } from '../render/sprites.js';
 import { iconCanvas } from '../render/icons.js';
@@ -181,7 +182,7 @@ function dailyCard(save, act) {
   card.append(el('div', 'dc-head', `<b>📅 오늘의 전장</b><span>${mm}월 ${dd}일 · 새 도전까지 ${untilTomorrow()}</span>`));
   const who = el('div', 'dc-who');
   who.append(portrait(h, 56));
-  who.append(el('div', 'dc-where', `<b>${h.name}로 출진</b><span>${starText(st.difficulty.stars)} ${st.numeral} ${st.name}</span>`));
+  who.append(el('div', 'dc-where', `<b>${josa(h.name, '으로')} 출전</b><span>${starText(st.difficulty.stars)} ${st.numeral} ${st.name}</span>`));
   card.append(who);
   const [hard, boon] = d.rules;
   card.append(el('div', 'dc-rules', `

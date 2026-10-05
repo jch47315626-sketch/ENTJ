@@ -12,6 +12,7 @@ import { SKILL_TREES } from './data/trees.js';
 import { runFacts, recordRun, checkAchievements, claimAchievement, readyCount } from './core/achieve.js';
 import { ACHIEVEMENTS } from './data/achievements.js';
 import { dailyFor, dailyHeroBonus, todayKey } from './data/daily.js';
+import { josa } from './core/korean.js';
 import { metaBonus, FORGE, forgeCost, gradeOpen, entryCheck } from './data/meta.js';
 import { STAGES } from './data/stages.js';
 import { HEROES } from './data/heroes.js';
@@ -253,7 +254,7 @@ const act = {
     sound.unlock();
     sound.sfx(ok ? 'forgeOk' : 'forgeFail');
     refresh();
-    toast(ok ? `🔨 제련 성공! ${item.name} +${lv + 1}` : `제련 실패… ${item.name}은(는) +${lv} 그대로`, ok);
+    toast(ok ? `🔨 제련 성공! ${item.name} +${lv + 1}` : `제련 실패… ${josa(item.name, '은')} +${lv} 그대로`, ok);
   },
   train(t) {
     const lv = save.training[t.id] ?? 0;
