@@ -104,8 +104,13 @@ export class Renderer {
     const p = g.player;
     const look = p.hero.look;
     const blink = p.invuln > 0 && Math.floor(g.time * 30) % 2 === 0;
-    drawUnit(ctx, { ...look, body: look.robe },
-      p.x, p.y, p.r, p.facing, { alpha: blink ? 0.45 : 1 });
+    const m = p.mount;
+    const shielded = m && g.time < m.invulnUntil;
+    drawUnit(ctx, { ...look, body: look.robe, mount: m ? '#6b4a2e' : undefined },
+      p.x, p.y, p.r, p.facing, {
+        alpha: blink ? 0.45 : 1,
+        aura: shielded ? `rgba(240, 200, 110, ${0.35 + 0.15 * Math.sin(g.time * 20)})` : undefined,
+      });
     // Health strip under the hero.
     const w = 36, ratio = p.hp / p.stats.maxHp;
     ctx.fillStyle = 'rgba(29,26,23,0.75)';
@@ -169,6 +174,17 @@ export class Renderer {
           ctx.moveTo(z.x, z.y);
           ctx.lineTo(z.x + Math.cos(ang) * z.r * 0.9, z.y + Math.sin(ang) * z.r * 0.55);
         }
+        ctx.stroke();
+      } else if (z.kind === 'hoof') {
+        // Churned earth with a hoofprint, glowing faintly while it still burns.
+        ctx.fillStyle = `rgba(120, 82, 48, ${0.35 * a})`;
+        ctx.beginPath();
+        ctx.arc(z.x, z.y, z.r * 0.8, 0, TAU);
+        ctx.fill();
+        ctx.strokeStyle = `rgba(230, 150, 70, ${0.55 * a})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(z.x, z.y, z.r * 0.35, z.angle + 0.6, z.angle + TAU - 0.6);
         ctx.stroke();
       } else if (z.kind === 'dust') {
         ctx.fillStyle = `rgba(150, 126, 90, ${0.35 * a})`;

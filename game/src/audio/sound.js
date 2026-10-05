@@ -195,6 +195,10 @@ const EFFECTS = {
     s.burst(0.7, { filter: 'lowpass', freq: 1200, slide: 80, gain: 0.45 });
     s.gong(0.1, 0.1, 110);
   },
+  gallop: (s) => {
+    EFFECTS.horn(s);
+    for (let i = 0; i < 6; i++) s.drum(i % 3 === 2 ? 70 : 110, 0.09, 0.14, 0.15 + i * 0.09 + (i >= 3 ? 0.08 : 0));
+  },
   hit: (s) => s.tone(190, 0.05, { type: 'square', gain: 0.035, slide: 90 }),
   kill: (s) => {
     s.burst(0.09, { filter: 'lowpass', freq: 700, gain: 0.1 });

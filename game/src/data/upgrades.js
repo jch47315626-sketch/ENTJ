@@ -1,5 +1,5 @@
 import { WEAPONS } from './weapons.js';
-import { GWANSIM, TIER_NAMES, SHIN } from './skills.js';
+import { GWANSIM, TIER_NAMES, SHIN, HORSE } from './skills.js';
 
 /**
  * Level-up choices (책략). `apply` runs after the level has been increased,
@@ -39,22 +39,8 @@ export const UPGRADES = [
     describe: () => '통솔로 부르는 창병 +1, 머무는 시간 +2초',
     apply: (g) => g.player.recalc(),
   },
-  {
-    id: 'shin', category: '병법', maxLevel: SHIN.length, weight: 14, heroes: ['wanggeon'], skill: true,
-    name: (g) => SHIN[g.player.upgrades.shin ?? 0]?.name ?? '신숭겸',
-    ownedName: (g) => SHIN[(g.player.upgrades.shin ?? 1) - 1].name,
-    describe: (g) => SHIN[g.player.upgrades.shin ?? 0]?.desc ?? '',
-    isEvolution: (g) => !!SHIN[g.player.upgrades.shin ?? 0]?.evolution,
-    available: (g) => {
-      const next = SHIN[g.player.upgrades.shin ?? 0];
-      if (!next) return false;
-      return !next.requires || (g.player.upgrades[next.requires.upgrade] ?? 0) >= next.requires.level;
-    },
-    apply: (g) => {
-      // Arrives soon after being chosen, then on his own cooldown.
-      g.player.skillTimers.shin = Math.min(g.player.skillTimers.shin ?? 2, 2);
-    },
-  },
+  skillUpgrade('shin', SHIN, ['wanggeon'], '병법', 14),
+  skillUpgrade('horse', HORSE, ['wanggeon'], '지세', 13),
   {
     id: 'fury', name: '패기', category: '무예', maxLevel: 4, weight: 9, heroes: ['gyeonhwon'],
     describe: () => '패왕의 일격 피해 +30%, 기절 +0.2초',
@@ -112,6 +98,27 @@ export const FALLBACKS = [
   { id: 'coinPouch', name: '엽전 꾸러미', category: '보급', maxLevel: Infinity, describe: () => '공훈 25 획득', apply: (g) => g.gainXp(25) },
 ];
 
+/** Level-up entry that grants a cooldown skill (systems/skills.js), then grows it. */
+function skillUpgrade(id, levels, heroes, category, weight) {
+  const next = (g) => levels[g.player.upgrades[id] ?? 0];
+  return {
+    id, category, maxLevel: levels.length, weight, heroes, skill: true,
+    name: (g) => next(g)?.name ?? levels[0].name,
+    ownedName: (g) => levels[(g.player.upgrades[id] ?? 1) - 1].name,
+    describe: (g) => next(g)?.desc ?? '',
+    isEvolution: (g) => !!next(g)?.evolution,
+    available: (g) => {
+      const n = next(g);
+      if (!n) return false;
+      return !n.requires || (g.player.upgrades[n.requires.upgrade] ?? 0) >= n.requires.level;
+    },
+    apply: (g) => {
+      // Comes into play soon after being chosen, then on its own cooldown.
+      g.player.skillTimers[id] = Math.min(g.player.skillTimers[id] ?? 2, 2);
+    },
+  };
+}
+
 /** Level-up entry that grants a hero's second weapon, then grows it. */
 function subWeapon(id, heroes) {
   const W = WEAPONS[id];
@@ -155,6 +162,7 @@ export function evolutionHint(g) {
   };
   check(nextWeaponLevel(g));
   if (p.upgrades.shin) check(SHIN[p.upgrades.shin]);
+  if (p.upgrades.horse) check(HORSE[p.upgrades.horse]);
   for (const id of p.hero.subWeapons ?? []) {
     const lv = p.upgrades[id] ?? 0;
     if (lv > 0) check(WEAPONS[id].levels[lv]);

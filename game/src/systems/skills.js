@@ -1,4 +1,4 @@
-import { SHIN } from '../data/skills.js';
+import { SHIN, HORSE } from '../data/skills.js';
 import { enemyHpScale } from '../data/balance.js';
 import { rand } from '../core/math.js';
 
@@ -22,6 +22,17 @@ export const ACTIVE_SKILLS = {
       g.fx.push({ type: 'puff', x: p.x + Math.cos(a) * 60, y: p.y + Math.sin(a) * 60, t: 0, life: 0.6, size: 26, tone: 'light' });
       g.banner('신숭겸 — 왕의 깃발 아래로 모여라!', 'small');
       g.sfx('shin');
+    },
+  },
+
+  horse: {
+    levels: HORSE,
+    fire(g, L) {
+      const p = g.player;
+      p.mount = { until: g.time + L.duration, invulnUntil: g.time + L.invuln, L, drop: 0 };
+      g.fx.push({ type: 'puff', x: p.x, y: p.y, t: 0, life: 0.6, size: 30, tone: 'mud' });
+      g.banner(`${L.name} — 말에 오른다`, 'small');
+      g.sfx('gallop');
     },
   },
 };

@@ -20,13 +20,13 @@ export const STAGES = {
     supplyEvery: 40,
     phases: [
       { until: 60, rate: [0.9, 1.2], mix: { infantry: 70, bandit: 30 }, eliteChance: 0 },
-      { until: 120, rate: [1.2, 1.6], mix: { infantry: 50, bandit: 30, archer: 20 }, eliteChance: 0 },
-      { until: 240, rate: [1.8, 2.8], mix: { infantry: 45, bandit: 30, archer: 25 }, eliteChance: 0.15 },
-      { until: 300, rate: [3.5, 4.5], mix: { infantry: 50, bandit: 30, archer: 20 }, eliteChance: 0.25 },
+      { until: 120, rate: [1.2, 1.6], mix: { infantry: 58, bandit: 34, archer: 8 }, eliteChance: 0 },
+      { until: 240, rate: [1.8, 2.8], mix: { infantry: 55, bandit: 35, archer: 10 }, eliteChance: 0.15 },
+      { until: 300, rate: [3.5, 4.5], mix: { infantry: 58, bandit: 34, archer: 8 }, eliteChance: 0.25 },
     ],
     events: [
       { at: 90, type: 'pack', enemy: 'bandit', count: 10, banner: '해적 기습! 한쪽에서 몰려온다' },
-      { at: 165, type: 'pack', enemy: 'archer', count: 8, banner: '갈대숲의 궁수대' },
+      { at: 165, type: 'pack', enemy: 'archer', count: 5, banner: '갈대숲의 궁수대' },
       { at: 240, type: 'ring', enemy: 'infantry', count: 26, banner: '포위되었다! 길을 열어라' },
     ],
   },
@@ -45,10 +45,10 @@ export const STAGES = {
     bossAlt: { gyeonhwon: 'shinsunggyeom' },
     supplyEvery: 38,
     phases: [
-      { until: 60, rate: [0.9, 1.2], mix: { infantry: 60, archer: 20, bandit: 20 }, eliteChance: 0 },
-      { until: 120, rate: [1.2, 1.6], mix: { infantry: 50, archer: 15, cavalry: 10, shield: 12, bandit: 13 }, eliteChance: 0 },
-      { until: 240, rate: [1.8, 2.5], mix: { infantry: 40, archer: 10, cavalry: 12, shield: 13, ironclad: 9, eliteArcher: 9, bandit: 7 }, eliteChance: 0.05 },
-      { until: 300, rate: [2.8, 3.5], mix: { infantry: 38, cavalry: 10, shield: 13, ironclad: 12, eliteArcher: 10, eliteCavalry: 7, bandit: 10 }, eliteChance: 0.08 },
+      { until: 60, rate: [0.9, 1.2], mix: { infantry: 66, archer: 8, bandit: 26 }, eliteChance: 0 },
+      { until: 120, rate: [1.2, 1.6], mix: { infantry: 55, archer: 6, cavalry: 10, shield: 12, bandit: 17 }, eliteChance: 0 },
+      { until: 240, rate: [1.8, 2.5], mix: { infantry: 46, archer: 4, cavalry: 12, shield: 13, ironclad: 10, eliteArcher: 5, bandit: 10 }, eliteChance: 0.05 },
+      { until: 300, rate: [2.8, 3.5], mix: { infantry: 42, cavalry: 10, shield: 13, ironclad: 13, eliteArcher: 5, eliteCavalry: 7, bandit: 10 }, eliteChance: 0.08 },
     ],
     events: [
       { at: 100, type: 'pack', enemy: 'cavalry', count: 5, banner: '후백제 기병대 돌격!' },

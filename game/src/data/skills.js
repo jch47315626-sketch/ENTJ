@@ -31,3 +31,20 @@ export const SHIN = [
     requires: { upgrade: 'guard', level: 3 },
     desc: '쓰러질 때 폭탄처럼 터져 주변 적을 날려 버린다.' },
 ];
+
+/**
+ * 말타기 (왕건's mount skill, gained from level-ups). On cooldown he mounts:
+ * faster for `duration`, untouchable for the first `invuln` seconds, and the
+ * ground he gallops over hurts enemies (`trailDps` for `trailLife` seconds).
+ */
+export const HORSE = [
+  { name: '말타기', cooldown: 18, duration: 4, invuln: 1.0, speed: 1.6, trailDps: 30, trailLife: 1.2,
+    desc: '말에 올라 내달린다. 처음 1초는 무적, 말발굽이 지난 자리는 적을 다치게 한다.' },
+  { name: '기마술', cooldown: 16, duration: 4.5, invuln: 1.3, speed: 1.65, trailDps: 42, trailLife: 1.4,
+    desc: '더 자주, 더 오래 달린다. 무적 1.3초.' },
+  { name: '돌격', cooldown: 14, duration: 5, invuln: 1.6, speed: 1.7, trailDps: 55, trailLife: 1.6,
+    desc: '말발굽 자국이 더 뜨겁고 오래 남는다. 무적 1.6초.' },
+  { name: '천리마', cooldown: 12, duration: 5.5, invuln: 2.0, speed: 1.8, trailDps: 70, trailLife: 1.8, trample: 45, evolution: true,
+    requires: { upgrade: 'swift', level: 2 },
+    desc: '무적 2초. 부딪힌 적을 짓밟아 날려 버린다.' },
+];

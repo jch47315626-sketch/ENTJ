@@ -330,6 +330,7 @@ export class Game {
   hurtPlayer(amount, source = 'unknown') {
     const p = this.player;
     if (p.invuln > 0 || this.state !== 'play') return;
+    if (p.mount && this.time < p.mount.invulnUntil) return;
     const dmg = Math.max(1, amount - p.stats.armor);
     this.damageLog[source] = (this.damageLog[source] ?? 0) + dmg;
     p.hp -= dmg;
@@ -457,6 +458,7 @@ export class Game {
     p.moving = move.x !== 0 || move.y !== 0;
     if (p.moving) {
       let spd = p.stats.speed;
+      if (p.mount) spd *= p.mount.L.speed;
       for (const z of this.zones) {
         if (z.team === 'enemy' && z.slow && dist2(z.x, z.y, p.x, p.y) < z.r * z.r) spd *= 1 - z.slow;
       }
@@ -474,6 +476,7 @@ export class Game {
     }
     p.invuln -= dt;
     p.hurtFlash -= dt;
+    this.updateMount(dt);
     this.shakeAmt = Math.max(0, this.shakeAmt - dt * 30);
 
     this.addMomentum(MOMENTUM.perSecond * dt);
@@ -643,6 +646,36 @@ export class Game {
     this.projectiles = this.projectiles.filter((pr) => pr.life > 0);
   }
 
+  /** 말타기: hoofprints that hurt enemies, and trampling at the top tier. */
+  updateMount(dt) {
+    const p = this.player;
+    const m = p.mount;
+    if (!m) return;
+    if (this.time >= m.until) {
+      p.mount = null;
+      this.fx.push({ type: 'puff', x: p.x, y: p.y, t: 0, life: 0.5, size: 24, tone: 'mud' });
+      return;
+    }
+    m.drop -= dt;
+    if (p.moving && m.drop <= 0) {
+      m.drop = 0.06;
+      this.zones.push({
+        team: 'player', kind: 'hoof', x: p.x - Math.cos(p.facing) * 12, y: p.y - Math.sin(p.facing) * 12,
+        r: 26 * p.stats.area, dps: m.L.trailDps * p.stats.might, life: m.L.trailLife, t: 0, angle: p.facing,
+      });
+    }
+    if (m.L.trample) {
+      this.grid.query(p.x, p.y, p.r + 40, (e) => {
+        if (e.dead || this.isCharmed(e) || e.def.behavior === 'static') return;
+        const rr = p.r + e.r + 8;
+        if (dist2(e.x, e.y, p.x, p.y) > rr * rr) return;
+        if (this.time - (e.trampledAt ?? -9) < 0.5) return;
+        e.trampledAt = this.time;
+        this.damageEnemy(e, m.L.trample * p.stats.might, p.x, p.y, 220);
+      });
+    }
+  }
+
   updateZones(dt) {
     for (const z of this.zones) {
       z.t += dt;
@@ -651,7 +684,12 @@ export class Game {
         if (z.tick <= 0) {
           z.tick = 0.25;
           this.grid.query(z.x, z.y, z.r + 30, (e) => {
-            if (!e.dead && dist2(z.x, z.y, e.x, e.y) < (z.r + e.r) ** 2) this.damageEnemy(e, z.dps * 0.25, z.x, z.y, 0);
+            if (e.dead || dist2(z.x, z.y, e.x, e.y) >= (z.r + e.r) ** 2) return;
+            // Overlapping zones of one kind (a hoof trail) count once per tick.
+            e.zoneHits ??= {};
+            if (this.time - (e.zoneHits[z.kind] ?? -9) < 0.24) return;
+            e.zoneHits[z.kind] = this.time;
+            this.damageEnemy(e, z.dps * 0.25, z.x, z.y, 0);
           });
         }
       }
