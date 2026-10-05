@@ -753,3 +753,14 @@ button.doll-slot:hover, button.doll-slot:focus-visible { border-color: var(--gol
 .confirm-text { margin: 4px 0; font-family: var(--font-brush); font-size: 28px; color: var(--hanji); }
 .confirm-sub { margin: 0 0 14px; font-size: 13px; color: var(--hanji-dim); line-height: 1.5; }
 .confirm-card .row-btns { justify-content: center; gap: 10px; }
+
+/* 조작법 */
+.controls-card { display: flex; flex-direction: column; gap: 4px; padding: 10px 14px; border-radius: 14px; background: rgba(0, 0, 0, 0.22); text-align: left; font-size: 13px; color: var(--hanji-dim); }
+.controls-card b { color: var(--hanji); font-size: 14px; }
+kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6px; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); font: 12px/1.6 ui-monospace, monospace; color: var(--hanji); text-align: center; }
+.pause-controls { font-size: 13px; color: var(--hanji-dim); margin: 0 0 12px; }
+.move-hint { position: absolute; left: 50%; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 150px); transform: translateX(-50%); z-index: 6; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 16px; border-radius: 16px; background: rgba(43, 34, 54, 0.88); border: 1px solid rgba(255, 203, 107, 0.4); text-align: center; width: max-content; max-width: calc(100% - 32px); animation: hintPulse 1.6s ease-in-out infinite; }
+.move-hint b { font-size: 15px; color: var(--hanji); }
+.move-hint span { font-size: 12.5px; color: var(--hanji-dim); }
+@keyframes hintPulse { 50% { box-shadow: 0 0 0 4px rgba(255, 203, 107, 0.25); } }

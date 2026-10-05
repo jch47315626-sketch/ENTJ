@@ -53,6 +53,7 @@ function newGame() {
   renderIntro(STAGES[sel.stage]);
   showScreen('intro');
   introTimer = 2.6;
+  showMoveHint();
   sound.startMusic();
   sound.setIntensity(0);
 }
@@ -101,6 +102,7 @@ let menu = 'home';
 /** Leaves any run and opens a menu screen. */
 function toMenu(name = 'home') {
   game = null;
+  $('moveHint').hidden = true;
   sound.stopMusic();
   hud.show(false);
   hud.clearBanner();
@@ -307,6 +309,14 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden && game?.state === 'play') game.togglePause();
 });
 
+/** How to move: shown for the first seconds of a run, gone on first move. */
+function showMoveHint() {
+  const el = $('moveHint');
+  el.hidden = false;
+  clearTimeout(showMoveHint.t);
+  showMoveHint.t = setTimeout(() => (el.hidden = true), 8000);
+}
+
 // ------------------------------------------------------------ leave guard
 
 /** A run is "in progress" until its result screen shows. */
@@ -360,7 +370,9 @@ function frame(now) {
       introTimer -= dt;
       if (introTimer <= 0) showScreen(null);
     } else {
-      game.update(dt, input.move());
+      const mv = input.move();
+      if ((mv.x || mv.y) && !$('moveHint').hidden) $('moveHint').hidden = true;
+      game.update(dt, mv);
     }
     renderer.render(game, input, dt);
     hud.update(game, dt);
