@@ -21,6 +21,48 @@ export function loadSave() {
   return fresh();
 }
 
+// ------------------------------------------------------------ save codes
+// A save code is the save as JSON, UTF-8, base64, with a short checksum so a
+// mistyped or cut-off code is rejected instead of loading half a save.
+const CODE_PREFIX = 'SAMHAN1-';
+
+function checksum(text) {
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619);
+  return (h >>> 0).toString(36).padStart(7, '0').slice(-7);
+}
+
+/** The whole save as one copyable line. */
+export function encodeSave(save) {
+  const bytes = new TextEncoder().encode(JSON.stringify(save));
+  let bin = '';
+  for (const b of bytes) bin += String.fromCharCode(b);
+  const body = btoa(bin);
+  return `${CODE_PREFIX}${checksum(body)}-${body}`;
+}
+
+/** Reads a save code back. Throws an Error with a Korean message if it is not valid. */
+export function decodeSave(code) {
+  const text = String(code ?? '').replace(/\s+/g, '');
+  if (!text.startsWith(CODE_PREFIX)) throw new Error('삼한난세 저장 코드가 아닙니다.');
+  const rest = text.slice(CODE_PREFIX.length);
+  const dash = rest.indexOf('-');
+  const sum = rest.slice(0, dash), body = rest.slice(dash + 1);
+  if (dash < 0 || checksum(body) !== sum) throw new Error('코드가 잘렸거나 바뀌었습니다. 처음부터 끝까지 다시 복사해 주세요.');
+  let data;
+  try {
+    const bin = atob(body);
+    const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+    data = JSON.parse(new TextDecoder().decode(bytes));
+  } catch {
+    throw new Error('코드를 읽을 수 없습니다.');
+  }
+  if (!data || typeof data !== 'object' || typeof data.money !== 'number' || !Array.isArray(data.owned)) {
+    throw new Error('코드 안의 기록이 올바르지 않습니다.');
+  }
+  return migrate({ ...fresh(), ...data });
+}
+
 /** Older saves had one shared outfit; give it to every hero. */
 function migrate(save) {
   const shared = SLOTS.some((s) => typeof save.equipped[s.id] === 'string');

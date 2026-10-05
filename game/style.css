@@ -500,3 +500,17 @@ button.doll-slot:hover, button.doll-slot:focus-visible { border-color: var(--gol
 .hd-name { font-size: 38px; }
 .hero-detail .sub-tabs { margin: 0; }
 .doll-slot { padding-block: 6px; }
+
+/* 기록 탭: save codes */
+.record { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; text-align: left; }
+.record-card { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(217, 200, 180, 0.25); border-radius: 14px; padding: 14px 16px; }
+.record-card h4 { margin: 0 0 6px; font-family: var(--font-brush); font-weight: 400; font-size: 20px; }
+.record-card p { margin: 0 0 8px; font-size: 13px; color: var(--hanji-dim); line-height: 1.5; }
+.record-card p b { color: var(--seal); }
+.save-code { width: 100%; resize: vertical; font-family: ui-monospace, monospace; font-size: 11px; line-height: 1.4; padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(217, 200, 180, 0.35); background: rgba(0, 0, 0, 0.25); color: var(--hanji); word-break: break-all; -webkit-user-select: text; user-select: text; }
+.record-btns { display: flex; justify-content: flex-end; margin-top: 8px; }
+.record-btns button { padding: 8px 18px; font-size: 14px; }
+.record-msg { min-height: 1.4em; margin: 8px 0 0 !important; font-size: 13px !important; }
+.record-msg.ok { color: var(--jade) !important; }
+.record-msg.fail { color: var(--seal) !important; }
+.record-msg.warn { color: var(--gold) !important; }

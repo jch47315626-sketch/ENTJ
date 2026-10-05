@@ -403,13 +403,15 @@ export function renderCamp(save, heroId, act, focusSlot) {
   const again = () => renderCamp(save, heroId, act);
   const tabs = $('campTabs');
   tabs.innerHTML = '';
-  tabs.append(tabStrip([['gear', '장비'], ['train', '수련'], ['secret', '비전']], campTab, (id) => {
+  tabs.append(tabStrip([['gear', '장비'], ['train', '수련'], ['secret', '비전'], ['record', '기록']], campTab, (id) => {
     campTab = id;
     again();
   }));
   $('campGearBox').hidden = campTab !== 'gear';
   $('campTraining').hidden = campTab !== 'train';
   $('campSecrets').hidden = campTab !== 'secret';
+  $('campRecord').hidden = campTab !== 'record';
+  if (campTab === 'record') renderRecord(save, act);
 
   // Slot chips: each shows what the hero wears there.
   const chips = $('campSlots');
@@ -485,6 +487,70 @@ export function renderCamp(save, heroId, act, focusSlot) {
     se.appendChild(itemRow(`${sc.name} <span class="lv">${hero}</span>`, sc.desc, has,
       has ? doneTag('습득') : button(`${fmtMoney(sc.price)}냥`, 'buy-btn', () => act.learn(sc), save.money < sc.price)));
   }
+}
+
+/**
+ * 기록 tab: copy the save as a code, or paste a code from another device.
+ * act.exportCode() → string, act.importCode(text) → { ok, message }.
+ */
+function renderRecord(save, act) {
+  const box = $('campRecord');
+  box.innerHTML = `
+    <div class="record-card">
+      <h4>내 기록 내보내기</h4>
+      <p>이 코드를 복사해 두면 다른 기기나 브라우저에서 그대로 이어서 할 수 있어요. 백업용으로도 좋아요.</p>
+      <textarea id="saveCodeOut" class="save-code" readonly rows="3"></textarea>
+      <div class="record-btns"><button type="button" class="buy-btn" id="saveCopy">코드 복사</button></div>
+    </div>
+    <div class="record-card">
+      <h4>기록 불러오기</h4>
+      <p>다른 곳에서 복사한 코드를 붙여 넣으세요. <b>지금 이 브라우저의 기록은 덮어써져요.</b></p>
+      <textarea id="saveCodeIn" class="save-code" rows="3" placeholder="SAMHAN1-로 시작하는 코드"></textarea>
+      <div class="record-btns"><button type="button" class="wear-btn" id="saveLoad">불러오기</button></div>
+      <p id="saveMsg" class="record-msg" role="status"></p>
+    </div>`;
+  const out = box.querySelector('#saveCodeOut');
+  out.value = act.exportCode();
+  out.addEventListener('focus', () => out.select());
+  const msg = box.querySelector('#saveMsg');
+  box.querySelector('#saveCopy').addEventListener('click', async () => {
+    out.select();
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(out.value);
+      ok = true;
+    } catch {
+      try {
+        ok = document.execCommand('copy');
+      } catch {}
+    }
+    msg.textContent = ok ? '복사했어요. 메모장이나 메신저에 붙여 넣어 보관하세요.' : '자동 복사가 막혀 있어요. 위 칸을 길게 눌러 직접 복사해 주세요.';
+    msg.className = 'record-msg ok';
+  });
+  // Two steps: the first press shows what the code holds, the second overwrites.
+  const load = box.querySelector('#saveLoad');
+  const input = box.querySelector('#saveCodeIn');
+  let armed = false;
+  input.addEventListener('input', () => {
+    armed = false;
+    load.textContent = '불러오기';
+    load.className = 'wear-btn';
+  });
+  load.addEventListener('click', () => {
+    const r = act.importCode(input.value, armed);
+    if (r.ok) {
+      // renderCamp rebuilt this tab; report on the fresh message line.
+      const m = $('saveMsg');
+      m.textContent = r.message;
+      m.className = 'record-msg ok';
+      return;
+    }
+    armed = !!r.needConfirm;
+    load.textContent = armed ? '정말 덮어쓰기' : '불러오기';
+    load.className = armed ? 'buy-btn' : 'wear-btn';
+    msg.textContent = r.message;
+    msg.className = `record-msg ${armed ? 'warn' : 'fail'}`;
+  });
 }
 
 function itemRow(nameHtml, desc, on, control, icon) {

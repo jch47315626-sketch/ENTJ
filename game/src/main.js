@@ -4,7 +4,7 @@ import { Input } from './core/input.js';
 import { Hud } from './ui/hud.js';
 import { Sound } from './audio/sound.js';
 import { showScreen, renderMain, renderHeroSelect, renderMapSelect, renderIntro, renderChoices, renderResult, renderCamp } from './ui/screens.js';
-import { loadSave, writeSave, outfitOf, treeOf } from './core/save.js';
+import { loadSave, writeSave, outfitOf, treeOf, encodeSave, decodeSave } from './core/save.js';
 import { SKILL_TREES } from './data/trees.js';
 import { metaBonus, FORGE, forgeCost, gradeOpen, entryCheck } from './data/meta.js';
 import { STAGES } from './data/stages.js';
@@ -103,6 +103,28 @@ function openCamp(focusSlot = null, back = toTitle) {
     wear(item) {
       outfitOf(save, sel.hero)[item.slot] = item.id;
       done();
+    },
+    exportCode() {
+      return encodeSave(save);
+    },
+    /** First call previews the code; call again with confirmed=true to overwrite. */
+    importCode(text, confirmed) {
+      let next;
+      try {
+        next = decodeSave(text);
+      } catch (e) {
+        return { ok: false, message: e.message };
+      }
+      const won = Object.keys(next.best ?? {}).length;
+      if (!confirmed) {
+        return { ok: false, needConfirm: true, message: `냥 ${next.money.toLocaleString()} · 장비 ${next.owned.length}개 · 깬 전장 ${won}곳 — 이 기록으로 덮어쓸까요? 지금 기록은 사라져요.` };
+      }
+      // Replace the save in place: other code keeps a reference to `save`.
+      for (const k of Object.keys(save)) delete save[k];
+      Object.assign(save, next);
+      writeSave(save);
+      renderCamp(save, sel.hero, act);
+      return { ok: true, message: `불러왔어요! 냥 ${save.money.toLocaleString()}, 장비 ${save.owned.length}개.` };
     },
     forge(item) {
       const lv = save.forge[item.id] ?? 0;
