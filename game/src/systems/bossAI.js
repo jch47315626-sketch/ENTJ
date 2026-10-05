@@ -33,7 +33,7 @@ export const BOSS_PATTERNS = {
           b.ps = 'dash';
           b.travel = 0;
           b.hitWall = false;
-          b.contactDamage = P.damage;
+          b.contactDamage = P.damage * b.damageMul;
         }
         return false;
       }
@@ -77,7 +77,7 @@ export const BOSS_PATTERNS = {
         g.projectiles.push({
           team: 'enemy', kind: P.kind ?? 'hook', x: b.x, y: b.y,
           vx: Math.cos(a) * P.speed, vy: Math.sin(a) * P.speed,
-          r: P.kind === 'arrow' ? 6 : 8, damage: P.damage, source: 'boss', life: 1.6, angle: a, spin: P.kind === 'arrow' ? undefined : 0,
+          r: P.kind === 'arrow' ? 6 : 8, damage: P.damage * b.damageMul, source: 'boss', life: 1.6, angle: a, spin: P.kind === 'arrow' ? undefined : 0,
         });
       }
       g.sfx(P.kind === 'arrow' ? 'volley' : 'throw');
@@ -98,7 +98,7 @@ export const BOSS_PATTERNS = {
       b.pt -= dt;
       if (b.pt > 0) return false;
       const rr = P.radius + g.player.r;
-      if ((g.player.x - b.x) ** 2 + (g.player.y - b.y) ** 2 < rr * rr) g.hurtPlayer(P.damage, 'boss');
+      if ((g.player.x - b.x) ** 2 + (g.player.y - b.y) ** 2 < rr * rr) g.hurtPlayer(P.damage * b.damageMul, 'boss');
       g.fx.push({ type: 'bossSpin', x: b.x, y: b.y, range: P.radius, t: 0, life: 0.3 });
       g.shake(5);
       g.sfx('bossSpin');

@@ -154,6 +154,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
   padding: 12px 14px; background: rgba(239, 229, 204, 0.06); border: 0; border-left: 3px solid var(--hanji-dim); min-width: 0;
 }
 .stage-card[aria-pressed="true"] { border-left-color: var(--seal); background: rgba(239, 229, 204, 0.13); outline: 1px solid rgba(210, 172, 88, 0.6); }
+.stage-card .diff { color: var(--gold); letter-spacing: 0.05em; }
+.stage-card .diff[data-stars="3"] { color: #e0705a; }
 .options { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; }
 .icon-btn[aria-pressed="true"] { color: var(--hanji-dim); text-decoration: line-through; }
 .stage-card .no { font-family: var(--font-brush); font-size: 40px; color: var(--seal); line-height: 1; }

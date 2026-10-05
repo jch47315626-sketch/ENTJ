@@ -41,6 +41,7 @@ export function renderTitle(sel, onHero, onStage) {
       <span class="info">
         <b>${st.name}</b>
         <small>${st.year} · ${st.place} · 적장 ${BOSSES[bossId].name}</small>
+        <small class="diff" data-stars="${st.difficulty.stars}">난이도 ${'★'.repeat(st.difficulty.stars)}${'☆'.repeat(3 - st.difficulty.stars)} ${st.difficulty.label}</small>
         <small>${st.intro}</small>
       </span>`;
     b.addEventListener('click', () => onStage(id));
@@ -49,7 +50,7 @@ export function renderTitle(sel, onHero, onStage) {
 }
 
 export function renderIntro(stage) {
-  $('introYear').textContent = `${stage.year} · ${stage.place}`;
+  $('introYear').textContent = `${stage.year} · ${stage.place} · 난이도 ${stage.difficulty.label}`;
   $('introName').textContent = stage.name;
   $('introText').textContent = stage.intro;
 }

@@ -199,8 +199,9 @@ export class Game {
   spawnEnemy(id, x, y, { elite = false } = {}) {
     if (this.enemies.length >= MAX_ENEMIES && id !== 'cart') return null;
     const def = ENEMIES[id];
-    const scale = def.noScaling ? 1 : enemyHpScale(this.time);
-    const dmgScale = enemyDamageScale(this.time);
+    const diff = this.stage.difficulty;
+    const scale = def.noScaling ? 1 : enemyHpScale(this.time) * diff.enemyHp;
+    const dmgScale = enemyDamageScale(this.time) * diff.enemyDamage;
     const v = elite ? VETERAN : null;
     const hp = def.hp * scale * (v ? v.hpMul : 1);
     const e = {
@@ -244,9 +245,10 @@ export class Game {
       def: { ...def, behavior: 'boss' },
       isBoss: true,
       r: def.radius,
-      hp: def.hp, maxHp: def.hp,
+      hp: def.hp * this.stage.difficulty.bossHp, maxHp: def.hp * this.stage.difficulty.bossHp,
       speed: def.speed,
-      damage: def.damage,
+      damage: def.damage * this.stage.difficulty.bossDamage,
+      damageMul: this.stage.difficulty.bossDamage,
       xp: 0,
       cooldownMul: 1,
       summoned: new Set(),

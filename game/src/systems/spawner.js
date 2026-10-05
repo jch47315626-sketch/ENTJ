@@ -31,14 +31,15 @@ export class Spawner {
     }
 
     const { phase, progress } = this.phaseAt(t);
-    this.acc += lerp(phase.rate[0], phase.rate[1], progress) * dt;
+    const diff = this.stage.difficulty;
+    this.acc += lerp(phase.rate[0], phase.rate[1], progress) * diff.spawnRate * dt;
     while (this.acc >= 1) {
       this.acc -= 1;
       const id = pickWeighted(phase.mix);
       const a = rand(0, TAU);
       const d = g.spawnDistance();
       g.spawnEnemy(id, g.player.x + Math.cos(a) * d, g.player.y + Math.sin(a) * d, {
-        elite: Math.random() < phase.eliteChance,
+        elite: Math.random() < phase.eliteChance + (t >= 60 ? diff.eliteBonus : 0),
       });
     }
 
