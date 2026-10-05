@@ -25,7 +25,8 @@ export function updateCrows(g, dt) {
     g.crowPlan.shift();
     const a = rand(0, TAU), d = rand(170, 260);
     g.pickups.push({ kind: 'crowFeed', x: p.x + Math.cos(a) * d, y: p.y + Math.sin(a) * d, magnet: false, t: 0 });
-    g.banner('🐦‍⬛ 감나무 가지가 떨어졌다! 주우면 까마귀가 바닥의 엽전을 몽땅 가져와요');
+    g.banner('🐦‍⬛ 까마귀가 나타났다!\n감나무 가지를 주우면 바닥의 엽전을 몽땅 물어 와요', 'crow');
+    g.sfx('horn');
   }
   // The crow only circles the hero once and flies off; the coins are already on their way.
   for (const c of g.crows) {
@@ -52,6 +53,7 @@ export function callCrow(g, x, y) {
     k.t = Math.max(k.t, 3); // pulled in fast, even from far away
     n++;
   }
+  g.banner(n ? `🐦‍⬛ 까마귀가 엽전 ${n}개를 물어 왔다!` : '🐦‍⬛ 까마귀가 왔지만 주울 엽전이 없었다…', 'crow');
   g.runStats.crowCalls++;
   g.runStats.crowBest = Math.max(g.runStats.crowBest, n);
   g.sfx('levelup');

@@ -243,9 +243,9 @@ function gearPanel(save, h, act) {
   box.append(doll);
 
   const slot = SLOTS.find((s) => s.id === ui.slot);
-  box.append(el('h4', 'list-title', `${SLOT_ICON[slot.id]} ${slot.name} <small>등급이 높을수록 강하고, 어려운 전장을 깨야 풀려요</small>`));
+  box.append(el('h4', 'list-title', `${SLOT_ICON[slot.id]} ${h.name}의 ${slot.name} <small>영웅마다 장비가 따로예요 — ${h.name}만 찰 수 있어요</small>`));
   const list = el('div', 'item-list');
-  for (const item of EQUIPMENT.filter((e) => e.slot === slot.id)) list.append(itemCard(save, h, item, act));
+  for (const item of EQUIPMENT.filter((e) => e.slot === slot.id && e.hero === h.id)) list.append(itemCard(save, h, item, act));
   box.append(list);
   return box;
 }
@@ -515,7 +515,7 @@ export function renderCodex(save, sel, act) {
   } else if (ui.codexTab === 'gear') {
     for (const it of EQUIPMENT) {
       const has = save.owned.includes(it.id);
-      const c = cell(iconCanvas(has ? it.id : `empty:${it.slot}`, 48, 'row-icon'), it.name, `${GRADES[it.grade].name} ${SLOTS.find((s) => s.id === it.slot).name}`, !has);
+      const c = cell(iconCanvas(has ? it.id : `empty:${it.slot}`, 48, 'row-icon'), it.name, `${HEROES[it.hero].name} · ${GRADES[it.grade].name} ${SLOTS.find((s) => s.id === it.slot).name}`, !has);
       c.style.setProperty('--grade', GRADES[it.grade].color);
       grid.append(c);
     }

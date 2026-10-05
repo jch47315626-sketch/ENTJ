@@ -41,11 +41,12 @@ export const GRADES = [
 ];
 
 /**
- * Equipment, five grades per slot. `bonus` keys: maxHp, armor, might, haste
+ * Gear template, five grades per slot. Every hero gets their own copy of
+ * each piece (see EQUIPMENT below), so gear is never shared between heroes. `bonus` keys: maxHp, armor, might, haste
  * (cooldown multiplier reduction), speed, momentum, xp (fractions except
  * maxHp/armor). `icon` reuses another item's drawing, tinted by `tint`.
  */
-export const EQUIPMENT = [
+const GEAR_BASE = [
   { id: 'quilted', slot: 'body', grade: 1, name: '누비옷', price: 150, bonus: { maxHp: 10 }, icon: 'leather', tint: '#c9b48a' },
   { id: 'leather', slot: 'body', grade: 2, name: '가죽 갑옷', price: 1200, bonus: { maxHp: 20 } },
   { id: 'lamellar', slot: 'body', grade: 3, name: '찰갑', price: 3950, bonus: { maxHp: 35, armor: 1 } },
@@ -82,6 +83,51 @@ export const EQUIPMENT = [
   { id: 'giltShoes', slot: 'feet', grade: 4, name: '금동 신발', price: 9600, bonus: { speed: 0.06, armor: 1 } },
   { id: 'phoenixShoes', slot: 'feet', grade: 5, name: '봉황 무늬 식리', price: 25000, bonus: { speed: 0.08, armor: 2 }, icon: 'giltShoes', tint: '#ffd76a' },
 ];
+
+/** Each hero's name for every piece, in GEAR_BASE order (slot by slot, grade 1→5). */
+const GEAR_NAMES = {
+  wanggeon: {
+    body: ['송악 누비옷', '해상 가죽갑옷', '고려 찰갑', '태조 명광개', '금장 용린갑'],
+    head: ['뱃사람 두건', '송악 철투구', '청깃 투구', '고려 금동관', '태조 금관'],
+    charm: ['바다 곡옥', '해신 호부', '청유리 목걸이', '해동 천마 장식', '왕씨 금귀걸이'],
+    wrist: ['닻줄 팔찌', '송악 은팔찌', '벽옥 팔찌', '고려 금팔찌', '청룡 금팔찌'],
+    belt: ['뱃사람 띠', '개경 은 띠고리', '고려 금동띠', '개경 금제띠', '태조 과대'],
+    feet: ['갯벌 짚신', '바닷가죽 목화', '징 박은 수군화', '고려 금동신', '청봉황 식리'],
+  },
+  gyeonhwon: {
+    body: ['완산 누비옷', '백제 가죽갑옷', '흑철 찰갑', '패왕 명광개', '흑금 찰갑'],
+    head: ['무진 두건', '흑철 투구', '붉은깃 투구', '백제 금동관', '패왕 금관'],
+    charm: ['범 이빨 목걸이', '무장 호부', '붉은 유리구슬', '백제 천마 장식', '견씨 금귀걸이'],
+    wrist: ['무쇠 팔찌', '완산 은팔찌', '홍옥 팔찌', '백제 금팔찌', '흑룡 금팔찌'],
+    belt: ['무쇠 띠', '백제 은 띠고리', '완산 금동띠', '패왕 금제띠', '패왕 과대'],
+    feet: ['행군 짚신', '백제 목화', '쇠징 군화', '백제 금동신', '범무늬 식리'],
+  },
+  gungye: {
+    body: ['승복 누비옷', '태봉 가죽갑옷', '철원 찰갑', '미륵 명광개', '금란 가사갑'],
+    head: ['승려 두건', '철원 철투구', '보라깃 투구', '미륵 금동관', '미륵 보관'],
+    charm: ['백팔 염주', '법력 호부', '자수정 구슬', '태봉 천마 장식', '미륵 금귀걸이'],
+    wrist: ['단주 팔찌', '철원 은팔찌', '자옥 팔찌', '태봉 금팔찌', '금강 금팔찌'],
+    belt: ['승려 띠', '태봉 은 띠고리', '철원 금동띠', '미륵 금제띠', '미륵 과대'],
+    feet: ['탁발 짚신', '태봉 목화', '쇠징 신', '철원 금동신', '연꽃 식리'],
+  },
+};
+
+/** Id of one hero's copy of a template piece. */
+export const gearId = (heroId, baseId) => `${heroId}.${baseId}`;
+
+/**
+ * Every hero's own gear: same slots, grades, prices and bonuses as the
+ * template, different names, and only that hero can wear it. `base` is the
+ * template id (its drawing is reused for the icon).
+ */
+export const EQUIPMENT = [];
+for (const heroId of Object.keys(GEAR_NAMES)) {
+  for (const b of GEAR_BASE) {
+    const name = GEAR_NAMES[heroId][b.slot][b.grade - 1];
+    EQUIPMENT.push({ ...b, id: gearId(heroId, b.id), base: b.id, hero: heroId, name, icon: b.icon ?? b.id });
+  }
+}
+export const GEAR_BASE_IDS = GEAR_BASE.map((b) => b.id);
 
 const BONUS_TEXT = {
   maxHp: (v) => `최대 체력 +${Math.round(v)}`,
@@ -166,7 +212,7 @@ export function metaBonus(save, heroId) {
   const outfit = save.equipped[heroId] ?? {};
   for (const slot of SLOTS) {
     const item = EQUIPMENT.find((e) => e.id === outfit[slot.id]);
-    if (item) add(itemBonus(item, save.forge?.[item.id] ?? 0));
+    if (item && item.hero === heroId) add(itemBonus(item, save.forge?.[item.id] ?? 0));
   }
   for (const t of TRAINING) {
     const lv = save.training[t.id] ?? 0;

@@ -4,7 +4,11 @@ import { WEAPONS } from '../data/weapons.js';
 import { ORDERS, orderEvery } from '../systems/allies.js';
 import { buildStatus } from '../systems/builds.js';
 
+import { CROW } from '../systems/crows.js';
+
 const $ = (id) => document.getElementById(id);
+/** Screen direction (east first, clockwise, y down) as an arrow. */
+const ARROWS = ['➡️', '↘️', '⬇️', '↙️', '⬅️', '↖️', '⬆️', '↗️'];
 const fmt = (s) => {
   s = Math.max(0, Math.floor(s));
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
@@ -53,6 +57,14 @@ export class Hud {
       e.bossFill.style.width = `${h.boss.ratio * 100}%`;
     }
     e.status.innerHTML = heroStatus(g);
+    // 🌳 A branch is waiting on the ground: keep reminding until it is picked up.
+    const feed = g.pickups.find((k) => k.kind === 'crowFeed');
+    $('crowAlert').hidden = !feed;
+    if (feed) {
+      const p = g.player;
+      const dir = ARROWS[Math.round(((Math.atan2(feed.y - p.y, feed.x - p.x) + Math.PI * 2) % (Math.PI * 2)) / (Math.PI / 4)) % 8];
+      $('crowAlert').textContent = `🐦‍⬛ 감나무 가지 ${dir} 주우러 가요! ${Math.max(0, Math.ceil(CROW.feedLife - feed.t))}초`;
+    }
     // 🏯 군령: fills toward the next order of any troop kind; flashes just before.
     const orders = Object.entries(g.orders ?? {});
     $('orderBar').hidden = !orders.length;
@@ -107,7 +119,8 @@ export class Hud {
     b.textContent = text;
     b.className = `banner show ${size === 'normal' ? '' : size}`;
     clearTimeout(this.bannerTimer);
-    this.bannerTimer = setTimeout(() => b.classList.remove('show'), size === 'big' ? 2600 : 2000);
+    const ms = size === 'crow' ? 5500 : size === 'big' ? 2600 : 2000;
+    this.bannerTimer = setTimeout(() => b.classList.remove('show'), ms);
   }
 
   clearBanner() {

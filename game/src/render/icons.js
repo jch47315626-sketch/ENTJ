@@ -389,10 +389,14 @@ for (const list of Object.values(TREASURES)) {
   for (const t of list) ICONS[t.id] = (ctx) => SHAPES[t.icon[0]](ctx, t.icon[1]);
 }
 
-// Items without their own drawing reuse another's, tinted.
+// Each hero's gear reuses the template drawing (`icon`), tinted when the template is.
 for (const it of EQUIPMENT) {
   if (!it.icon || ICONS[it.id]) continue;
   const base = ICONS[it.icon];
+  if (!it.tint) {
+    ICONS[it.id] = base;
+    continue;
+  }
   ICONS[it.id] = (ctx) => {
     // Paint the base icon off-screen, recolour it, then clip to its shape.
     const W = ctx.canvas.width, H = ctx.canvas.height;

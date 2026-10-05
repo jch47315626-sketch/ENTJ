@@ -4,7 +4,7 @@
  * game keeps working with an in-memory save.
  */
 import { HEROES } from '../data/heroes.js';
-import { SLOTS } from '../data/meta.js';
+import { SLOTS, GEAR_BASE_IDS, gearId } from '../data/meta.js';
 
 const KEY = 'samhan-save-v1';
 
@@ -77,7 +77,32 @@ function migrate(save) {
     save.equipped = {};
     for (const id in HEROES) save.equipped[id] = { ...outfit };
   }
+  splitSharedGear(save);
   return save;
+}
+
+/**
+ * Gear used to be shared by all heroes; now each hero has their own copy.
+ * A piece bought before the split becomes one copy per hero (with its forge
+ * level), so nothing already paid for is lost.
+ */
+function splitSharedGear(save) {
+  const old = new Set(GEAR_BASE_IDS);
+  if (!save.owned.some((id) => old.has(id))) return;
+  const owned = [];
+  for (const id of save.owned) {
+    if (!old.has(id)) owned.push(id);
+    else for (const h in HEROES) owned.push(gearId(h, id));
+  }
+  save.owned = [...new Set(owned)];
+  for (const id of Object.keys(save.forge ?? {})) {
+    if (!old.has(id)) continue;
+    for (const h in HEROES) save.forge[gearId(h, id)] = Math.max(save.forge[gearId(h, id)] ?? 0, save.forge[id]);
+    delete save.forge[id];
+  }
+  for (const [h, outfit] of Object.entries(save.equipped ?? {})) {
+    for (const s of SLOTS) if (old.has(outfit?.[s.id])) outfit[s.id] = gearId(h, outfit[s.id]);
+  }
 }
 
 /** A hero's skill-tree state. */

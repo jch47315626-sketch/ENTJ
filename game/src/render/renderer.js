@@ -164,6 +164,7 @@ export class Renderer {
     if (g.arena) this.drawArenaBanners(ctx, g);
     this.drawNight(ctx, g, v);
     for (const c of g.crows) this.drawCrow(ctx, c);
+    for (const k of g.pickups) if (k.kind === 'crowFeed') this.drawFeedPointer(ctx, k, g.time, v);
     this.drawTexts(ctx, g);
     ctx.restore();
 
@@ -454,6 +455,72 @@ export class Renderer {
       ctx.fillRect(k.x + ox - 2, y + oy - 7, 4, 2);
     }
     ctx.lineCap = 'butt';
+  }
+
+  /**
+   * Where the 감나무 가지 is: a bouncing marker above it, or an arrow at the
+   * screen edge pointing to it when it is off-screen.
+   */
+  drawFeedPointer(ctx, k, time, v) {
+    const m = 50;
+    const inside = k.x > v.x0 + m && k.x < v.x1 - m && k.y > v.y0 + m && k.y < v.y1 - m;
+    const pulse = 0.5 + 0.5 * Math.sin(time * 6);
+    ctx.save();
+    if (inside) {
+      // Expanding rings and a bouncing "!" badge.
+      for (let i = 0; i < 2; i++) {
+        const t = (time * 0.9 + i * 0.5) % 1;
+        ctx.strokeStyle = `rgba(255, 210, 100, ${0.8 * (1 - t)})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(k.x, k.y, 20 + t * 46, 0, TAU);
+        ctx.stroke();
+      }
+      const by = k.y - 46 - Math.abs(Math.sin(time * 4)) * 10;
+      ctx.fillStyle = '#ffd56b';
+      ctx.beginPath();
+      ctx.arc(k.x, by, 13, 0, TAU);
+      ctx.fill();
+      ctx.strokeStyle = '#2b2236';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = '#2b2236';
+      ctx.font = 'bold 18px "Jua", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('!', k.x, by + 1);
+      ctx.restore();
+      return;
+    }
+    // Off-screen: an arrow on the edge, toward the branch.
+    const cx = (v.x0 + v.x1) / 2, cy = (v.y0 + v.y1) / 2;
+    const dx = k.x - cx, dy = k.y - cy;
+    const sx = (v.x1 - v.x0) / 2 - m, sy = (v.y1 - v.y0) / 2 - m;
+    const s = Math.min(sx / Math.abs(dx || 1e-6), sy / Math.abs(dy || 1e-6));
+    const ax = cx + dx * s, ay = cy + dy * s;
+    const ang = Math.atan2(dy, dx);
+    ctx.save();
+    ctx.translate(ax, ay);
+    ctx.fillStyle = 'rgba(28, 24, 44, 0.85)';
+    ctx.beginPath();
+    ctx.arc(0, 0, 24, 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = `rgba(255, 213, 107, ${0.6 + 0.4 * pulse})`;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.font = '20px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🐦‍⬛', 0, 1);
+    ctx.rotate(ang);
+    ctx.fillStyle = '#ffd56b';
+    ctx.beginPath();
+    ctx.moveTo(38 + pulse * 4, 0);
+    ctx.lineTo(26, -9);
+    ctx.lineTo(26, 9);
+    ctx.fill();
+    ctx.restore();
+    ctx.restore();
   }
 
   /** 까마귀: a chubby black bird with flapping wings. */

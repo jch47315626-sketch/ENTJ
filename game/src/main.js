@@ -188,13 +188,16 @@ const act = {
     sel.stage = id;
     refresh();
   },
+  // Gear belongs to one hero only.
   buy(item) {
+    if (item.hero !== sel.hero || save.owned.includes(item.id)) return;
     if (!gradeOpen(save, item) || !spend(item.price)) return;
     save.owned.push(item.id);
     outfitOf(save, sel.hero)[item.slot] = item.id;
     done();
   },
   wear(item) {
+    if (item.hero !== sel.hero) return;
     outfitOf(save, sel.hero)[item.slot] = item.id;
     done();
   },

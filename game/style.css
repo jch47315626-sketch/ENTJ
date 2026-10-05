@@ -1006,3 +1006,10 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 .ach-reward { font: 400 14px "Jua", sans-serif; color: var(--candy-lemon); white-space: nowrap; }
 .ach-claim { border: 0; padding: 6px 12px; border-radius: 12px; background: linear-gradient(180deg, #ffd56b, #f0a83a); color: #2b2236; font: 400 16px/1.1 "Jua", sans-serif; box-shadow: 0 3px 0 #b9782a; cursor: pointer; animation: badgePop 1.4s ease-in-out infinite; }
 .ach-claim small { font-size: 11px; }
+
+/* 🐦‍⬛ 까마귀 알림: 큰 금빛 배너 + 가지를 주울 때까지 남는 안내 */
+.banner.crow { font-family: "Jua", sans-serif; font-size: clamp(20px, 5.4vw, 30px); line-height: 1.35; color: #ffe08a; padding: 12px 18px; border-radius: 20px; background: rgba(28, 24, 44, 0.86); border: 2px solid rgba(255, 213, 107, 0.85); box-shadow: 0 0 24px rgba(255, 190, 80, 0.45); width: min(92vw, 520px); }
+.banner.crow.show { animation: crowPop 0.5s cubic-bezier(.3,1.7,.6,1), crowGlow 1.2s ease-in-out 0.5s infinite; }
+@keyframes crowPop { 0% { transform: translateX(-50%) scale(0.6); } 100% { transform: translateX(-50%) scale(1); } }
+@keyframes crowGlow { 50% { box-shadow: 0 0 36px rgba(255, 190, 80, 0.8); } }
+.crow-alert { align-self: center; padding: 6px 14px; border-radius: 999px; background: rgba(28, 24, 44, 0.9); border: 2px solid rgba(255, 213, 107, 0.9); color: #ffe08a; font: 400 16px "Jua", sans-serif; box-shadow: 0 0 14px rgba(255, 190, 80, 0.5); animation: crowGlow 1s ease-in-out infinite; }
