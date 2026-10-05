@@ -421,3 +421,55 @@ button.doll-slot:hover, button.doll-slot:focus-visible { border-color: var(--gol
 
 /* 통일 엔딩 */
 .big-seal.ending { background: #d6a63e; color: #1d1a17; border-color: #8a5a14; box-shadow: 0 0 40px rgba(214, 166, 62, 0.55); }
+
+/* ------------------------------------------------------------------
+   귀여운 테마: rounded type, warmer dusk palette, soft rounded panels.
+   Layered over the base styles so the layout stays the same.
+   ------------------------------------------------------------------ */
+:root {
+  --ink: #2b2236;
+  --ink-soft: #3b3049;
+  --hanji: #fff4df;
+  --hanji-dim: #d9c8b4;
+  --wood: #e0b07a;
+  --wood-dark: #a8784a;
+  --seal: #f0645a;
+  --gold: #ffcb6b;
+  --jade: #7fd1a8;
+  --font-brush: "Jua", "Gowun Dodum", sans-serif;
+  --font-body: "Gowun Dodum", "Jua", sans-serif;
+}
+.title-screen {
+  background:
+    radial-gradient(ellipse at 50% 25%, rgba(255, 190, 140, 0.28), transparent 60%),
+    radial-gradient(ellipse at 15% 90%, rgba(127, 209, 168, 0.22), transparent 55%),
+    radial-gradient(ellipse at 90% 80%, rgba(240, 100, 90, 0.18), transparent 50%),
+    var(--ink);
+}
+.screen.dim { background: rgba(43, 34, 54, 0.82); }
+.slip, .hero-card, .stage-card, .camp-item, .doll-slot, .node, .main-hero, .main-map, .tab, .choice,
+.camp-slot, .branch, .result-text, .hd-stats > div, .kills, .owned span, .evo-hint {
+  border-radius: 14px;
+}
+.seal-btn, .buy-btn, .wear-btn, .forge-btn, .icon-btn, button.tab {
+  border-radius: 999px;
+}
+.seal-btn {
+  background: linear-gradient(180deg, #ff8a72, var(--seal));
+  box-shadow: 0 4px 0 #b8433a, 0 8px 18px rgba(240, 100, 90, 0.35);
+  border: none;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.seal-btn:hover:not(:disabled) { transform: translateY(-2px); }
+.seal-btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 #b8433a; }
+.slip, .hero-card, .main-hero {
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.18), 0 10px 22px rgba(0, 0, 0, 0.25);
+}
+.big-seal { border-radius: 18px; }
+.mini-icon, .row-icon, .doll-slot .icon { border-radius: 10px; }
+.bar { border-radius: 999px; }
+.bar i { border-radius: 999px; }
+.bar.hp i { background: linear-gradient(180deg, #ff8a7a, #e0483c); }
+.bar.mom i { background: linear-gradient(180deg, #a8e0ff, #5aa8d8); }
+.bar.mom.full i { background: linear-gradient(180deg, #fff0a8, var(--gold)); }
+.timer, .boss-name, .banner { letter-spacing: 0.02em; }

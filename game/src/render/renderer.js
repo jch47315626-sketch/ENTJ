@@ -67,6 +67,9 @@ export class Renderer {
     ctx.translate(-cam.x, -cam.y);
 
     GROUNDS[g.stage.ground](ctx, v, g.time);
+    // Soft warm wash: keeps every field bright and storybook-like.
+    ctx.fillStyle = 'rgba(255, 238, 205, 0.3)';
+    ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
     if (g.arena) this.drawArenaFloor(ctx, g, v);
     this.drawCaltrops(ctx, g);
     this.drawZones(ctx, g);
@@ -108,7 +111,7 @@ export class Renderer {
     const blink = p.invuln > 0 && Math.floor(g.time * 30) % 2 === 0;
     const m = p.mount;
     const shielded = m && g.time < m.invulnUntil;
-    drawUnit(ctx, { ...look, body: look.robe, mount: m ? '#6b4a2e' : undefined },
+    drawUnit(ctx, { ...look, body: look.robe, mount: m ? '#f2ede0' : undefined },
       p.x, p.y, p.r, p.facing, {
         alpha: blink ? 0.45 : 1,
         aura: shielded ? `rgba(240, 200, 110, ${0.35 + 0.15 * Math.sin(g.time * 20)})` : undefined,
@@ -116,9 +119,9 @@ export class Renderer {
     // Health strip under the hero.
     const w = 36, ratio = p.hp / p.stats.maxHp;
     ctx.fillStyle = 'rgba(29,26,23,0.75)';
-    ctx.fillRect(p.x - w / 2 - 1, p.y + p.r + 9, w + 2, 5);
+    ctx.fillRect(p.x - w / 2 - 1, p.y + p.r + 13, w + 2, 5);
     ctx.fillStyle = ratio > 0.35 ? '#c8b277' : '#b3261e';
-    ctx.fillRect(p.x - w / 2, p.y + p.r + 10, w * ratio, 3);
+    ctx.fillRect(p.x - w / 2, p.y + p.r + 14, w * ratio, 3);
   }
 
   drawAlly(ctx, a) {
@@ -295,11 +298,11 @@ export class Renderer {
       const left = Math.min(1, (e.charmUntil - g.time) / 2);
       ctx.fillStyle = `rgba(150, 100, 210, ${0.4 + 0.5 * left})`;
       ctx.beginPath();
-      ctx.ellipse(e.x, e.y - e.r - 9, 6, 3.5, 0, 0, TAU);
+      ctx.ellipse(e.x, e.y - e.r * 2.5 - 6, 6, 3.5, 0, 0, TAU);
       ctx.fill();
       ctx.fillStyle = '#1d1a17';
       ctx.beginPath();
-      ctx.arc(e.x, e.y - e.r - 9, 1.8, 0, TAU);
+      ctx.arc(e.x, e.y - e.r * 2.5 - 6, 1.8, 0, TAU);
       ctx.fill();
     }
     if (e.stun > 0) {
@@ -307,7 +310,7 @@ export class Renderer {
       ctx.lineWidth = 1.5;
       for (let i = 0; i < 3; i++) {
         const ang = g.time * 6 + (i * TAU) / 3;
-        const sx = e.x + Math.cos(ang) * e.r * 0.8, sy = e.y - e.r * 1.1 + Math.sin(ang) * e.r * 0.3;
+        const sx = e.x + Math.cos(ang) * e.r * 0.8, sy = e.y - e.r * 2.3 + Math.sin(ang) * e.r * 0.3;
         ctx.beginPath();
         ctx.moveTo(sx - 3, sy);
         ctx.lineTo(sx + 3, sy);

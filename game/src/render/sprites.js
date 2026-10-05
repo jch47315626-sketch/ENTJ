@@ -1,5 +1,6 @@
 const INK = '#1d1a17';
 const HANJI = '#f1e8d2';
+const UNIT_SCALE = 1.35;
 
 /** Soft ground shadow under every unit. */
 export function drawShadow(ctx, x, y, r) {
@@ -10,11 +11,16 @@ export function drawShadow(ctx, x, y, r) {
 }
 
 /**
- * Draws a top-down soldier figure: shoulders, weapon, head and headgear.
- * look = { body, accent, hat, weapon, skin?, trim?, plume? }
+ * Draws a chibi figure seen from the front: a big round head with a face,
+ * a small body, little feet that patter while walking. The figure turns
+ * left or right with `facing`; the weapon points along `facing`.
+ * look = { body, accent, hat, weapon, skin?, trim?, plume?, mount?,
+ *          cape?, beard?, mustache?, brows?, eyepatch?, bulk?, blush? }
  */
 export function drawUnit(ctx, look, x, y, r, facing, o = {}) {
-  drawShadow(ctx, x, y, r);
+  // Chibi figures are drawn a little larger than their hit circle.
+  r *= o.scale ?? UNIT_SCALE;
+  drawShadow(ctx, x, y, r * (look.mount ? 1.5 : 1));
   ctx.save();
   ctx.translate(x, y);
   if (o.shake) ctx.translate((Math.random() - 0.5) * 3, (Math.random() - 0.5) * 3);
@@ -24,55 +30,123 @@ export function drawUnit(ctx, look, x, y, r, facing, o = {}) {
     ctx.strokeStyle = 'rgba(142, 31, 23, 0.8)';
     ctx.lineWidth = 2.5;
     ctx.beginPath();
-    ctx.arc(0, 0, r * 1.3, 0, Math.PI * 2);
+    ctx.ellipse(0, r * 0.5, r * 1.25, r * 0.55, 0, 0, Math.PI * 2);
     ctx.stroke();
   }
   if (o.aura) {
     ctx.fillStyle = o.aura;
     ctx.beginPath();
-    ctx.arc(0, 0, r * 1.5, 0, Math.PI * 2);
+    ctx.arc(0, -r * 0.2, r * 1.55, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  ctx.rotate(facing);
-  ctx.lineWidth = 1.6;
+  const sx = Math.cos(facing) < 0 ? -1 : 1; // which way the figure turns
+  const back = Math.sin(facing) < -0.75; // walking away: show the back of the head
+  // Hop while moving: each unit has its own phase from its position.
+  const now = performance.now() / 1000;
+  const phase = now * 11 + (x * 0.037 + y * 0.051);
+  const hop = Math.abs(Math.sin(phase)) * r * 0.1;
+  const fill = (c) => (o.flash ? HANJI : c);
+
+  ctx.lineWidth = Math.max(1.2, r * 0.09);
   ctx.strokeStyle = INK;
   ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
 
-  if (look.mount) drawHorse(ctx, look.mount, r, o.flash);
-  drawWeapon(ctx, look.weapon, r, look);
+  if (look.mount) {
+    drawHorse(ctx, look.mount, r, o.flash, sx, phase);
+    ctx.translate(0, -r * 0.55);
+  }
+  ctx.translate(0, -hop);
 
-  // Shoulders / torso.
-  ctx.fillStyle = o.flash ? HANJI : look.body;
+  const bulk = look.bulk ?? 1;
+  const weaponFirst = back;
+  const weapon = () => {
+    ctx.save();
+    ctx.translate(sx * r * 0.55 * bulk, r * 0.15);
+    ctx.rotate(facing);
+    ctx.scale(0.8, 0.8);
+    ctx.translate(-r * 0.2, -r * 0.66);
+    ctx.lineWidth = 1.6;
+    drawWeapon(ctx, look.weapon, r, look);
+    ctx.restore();
+  };
+
+  // Cape behind everything.
+  if (look.cape) {
+    ctx.fillStyle = fill(look.cape);
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.5 * bulk, -r * 0.05);
+    ctx.quadraticCurveTo(-sx * r * 0.9, r * 0.5, -sx * r * 0.75 - r * 0.2, r * 0.78 + Math.sin(phase) * r * 0.06);
+    ctx.lineTo(r * 0.6 * bulk, r * 0.62);
+    ctx.lineTo(r * 0.5 * bulk, -r * 0.05);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+  if (weaponFirst && look.weapon) weapon();
+
+  // Feet patter in turn.
+  if (!look.mount) {
+    ctx.fillStyle = fill(look.accent ?? '#2a2420');
+    for (const k of [-1, 1]) {
+      const lift = Math.max(0, Math.sin(phase + (k > 0 ? 0 : Math.PI))) * r * 0.12;
+      ctx.beginPath();
+      ctx.ellipse(k * r * 0.26, r * 0.68 - lift, r * 0.2, r * 0.13, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+  }
+
+  // Body: a little rounded robe or coat.
+  ctx.fillStyle = fill(look.body);
   ctx.beginPath();
-  ctx.ellipse(0, 0, r * 0.72, r, 0, 0, Math.PI * 2);
+  ctx.moveTo(-r * 0.42 * bulk, -r * 0.1);
+  ctx.quadraticCurveTo(-r * 0.7 * bulk, r * 0.62, -r * 0.5 * bulk, r * 0.66);
+  ctx.lineTo(r * 0.5 * bulk, r * 0.66);
+  ctx.quadraticCurveTo(r * 0.7 * bulk, r * 0.62, r * 0.42 * bulk, -r * 0.1);
+  ctx.closePath();
   ctx.fill();
   ctx.stroke();
   if (look.plates) {
-    ctx.strokeStyle = 'rgba(200, 204, 208, 0.55)';
-    for (const k of [-0.45, 0, 0.45]) {
+    ctx.strokeStyle = 'rgba(210, 214, 218, 0.6)';
+    for (const k of [0.15, 0.35, 0.52]) {
       ctx.beginPath();
-      ctx.moveTo(-r * 0.55, k * r);
-      ctx.lineTo(r * 0.55, k * r);
+      ctx.moveTo(-r * 0.48 * bulk, k * r);
+      ctx.lineTo(r * 0.48 * bulk, k * r);
       ctx.stroke();
     }
     ctx.strokeStyle = INK;
   }
-  if (look.tassel) {
-    ctx.fillStyle = look.tassel;
-    ctx.fillRect(-r * 0.75, -r * 0.2, r * 0.3, r * 0.4);
-  }
   if (look.trim) {
+    // Collar and belt.
     ctx.strokeStyle = look.trim;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = Math.max(1.5, r * 0.11);
     ctx.beginPath();
-    ctx.ellipse(0, 0, r * 0.5, r * 0.78, 0, -0.9, 0.9);
+    ctx.moveTo(-r * 0.3 * bulk, -r * 0.05);
+    ctx.lineTo(0, r * 0.18);
+    ctx.lineTo(r * 0.3 * bulk, -r * 0.05);
+    ctx.moveTo(-r * 0.56 * bulk, r * 0.4);
+    ctx.lineTo(r * 0.56 * bulk, r * 0.4);
     ctx.stroke();
     ctx.strokeStyle = INK;
-    ctx.lineWidth = 1.6;
+    ctx.lineWidth = Math.max(1.2, r * 0.09);
+  }
+  if (look.tassel) {
+    ctx.fillStyle = look.tassel;
+    ctx.fillRect(-sx * r * 0.55, r * 0.2, r * 0.18, r * 0.3);
+  }
+  // Little round hands.
+  ctx.fillStyle = fill(look.skin ?? '#e6c49c');
+  for (const k of [-1, 1]) {
+    ctx.beginPath();
+    ctx.arc(k * r * 0.55 * bulk, r * 0.25, r * 0.13, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
   }
 
-  drawHead(ctx, look, r, o.flash);
+  drawHead(ctx, look, r, o.flash, sx, back, phase);
+  if (!weaponFirst && look.weapon) weapon();
   ctx.restore();
 }
 
@@ -208,137 +282,313 @@ function drawWeapon(ctx, kind, r, look) {
   ctx.lineWidth = 1.6;
 }
 
-function drawHead(ctx, look, r, flash) {
-  const hr = r * 0.5;
-  ctx.fillStyle = flash ? HANJI : look.skin ?? '#d9b48a';
+/** Head centre sits above the body; everything on it is drawn relative to (0, hy). */
+function drawHead(ctx, look, r, flash, sx, back, phase) {
+  const hr = r * 0.66;
+  const hy = -r * 0.62;
+  const fill = (c) => (flash ? HANJI : c);
+  const skin = fill(look.skin ?? '#e6c49c');
+
+  // Halo behind the head (궁예).
+  if (look.hat === 'monk') {
+    ctx.strokeStyle = look.trim ?? '#e0b24c';
+    ctx.lineWidth = Math.max(1.5, r * 0.12);
+    ctx.globalAlpha *= 0.9;
+    ctx.beginPath();
+    ctx.arc(0, hy - r * 0.05, hr * 1.35, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha /= 0.9;
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = Math.max(1.2, r * 0.09);
+  }
+  // Plume streaming up from the helmet (behind the head).
+  if (look.hat === 'hero') {
+    ctx.fillStyle = fill(look.plume ?? '#b3261e');
+    ctx.beginPath();
+    ctx.moveTo(0, hy - hr * 0.95);
+    ctx.quadraticCurveTo(-sx * hr * 0.9, hy - hr * 1.9 + Math.sin(phase) * r * 0.05, -sx * hr * 1.25, hy - hr * 1.2);
+    ctx.quadraticCurveTo(-sx * hr * 0.5, hy - hr * 1.15, 0, hy - hr * 0.8);
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  // Face.
+  ctx.fillStyle = skin;
   ctx.beginPath();
-  ctx.arc(r * 0.05, 0, hr, 0, Math.PI * 2);
+  ctx.arc(0, hy, hr, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
+
+  if (back) {
+    // Back of the head: hair, no face.
+    if (!['monk', 'hood', 'hoodBlue', 'pirateBoss'].includes(look.hat)) {
+      ctx.fillStyle = fill('#2a211b');
+      ctx.beginPath();
+      ctx.arc(0, hy, hr * 0.92, Math.PI * 0.1, Math.PI * 0.9, true);
+      ctx.fill();
+    }
+  } else {
+    drawFace(ctx, look, r, hr, hy, sx, flash);
+  }
+  drawHat(ctx, look, r, hr, hy, sx, flash, phase);
+}
+
+/** Eyes, cheeks and character marks (beard, eyepatch, brows). */
+function drawFace(ctx, look, r, hr, hy, sx, flash) {
+  const look2 = sx * hr * 0.16; // eyes glance the way the figure faces
+  const ey = hy + hr * 0.12;
+  const ex = hr * 0.36;
+  const eyeR = Math.max(1.3, hr * 0.15);
+  // Cheeks.
+  if (!flash) {
+    ctx.fillStyle = look.blush ?? 'rgba(232, 120, 110, 0.45)';
+    for (const k of [-1, 1]) {
+      ctx.beginPath();
+      ctx.ellipse(k * hr * 0.55 + look2 * 0.6, ey + hr * 0.3, hr * 0.17, hr * 0.1, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  for (const k of [-1, 1]) {
+    const cx = k * ex + look2;
+    // 궁예's patch covers the eye on the side he turns away.
+    if (look.eyepatch && k === -sx) {
+      ctx.fillStyle = INK;
+      ctx.beginPath();
+      ctx.ellipse(cx, ey, eyeR * 1.6, eyeR * 1.35, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = Math.max(1, r * 0.06);
+      ctx.beginPath();
+      ctx.moveTo(cx - eyeR * 1.5, ey - eyeR);
+      ctx.lineTo(-k * hr * 0.95, hy - hr * 0.45);
+      ctx.stroke();
+      continue;
+    }
+    ctx.fillStyle = INK;
+    ctx.beginPath();
+    ctx.ellipse(cx, ey, eyeR, eyeR * 1.3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(cx + eyeR * 0.35, ey - eyeR * 0.45, eyeR * 0.42, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = Math.max(1, r * 0.07);
+  if (look.brows) {
+    // angry: slanting down to the middle. kind: gentle arches.
+    for (const k of [-1, 1]) {
+      const cx = k * ex + look2;
+      ctx.beginPath();
+      if (look.brows === 'angry') {
+        ctx.moveTo(cx - k * eyeR * 1.6, ey - eyeR * 2.6);
+        ctx.lineTo(cx + k * eyeR * 1.2, ey - eyeR * 1.7);
+      } else {
+        ctx.arc(cx, ey - eyeR * 1.2, eyeR * 1.3, Math.PI * 1.2, Math.PI * 1.8);
+      }
+      ctx.stroke();
+    }
+  }
+  // Mouth.
+  ctx.beginPath();
+  if (look.brows === 'angry') {
+    ctx.moveTo(look2 - hr * 0.12, ey + hr * 0.42);
+    ctx.lineTo(look2 + hr * 0.12, ey + hr * 0.38);
+  } else {
+    ctx.arc(look2, ey + hr * 0.3, hr * 0.12, 0.2, Math.PI - 0.2);
+  }
+  ctx.stroke();
+  if (look.mustache) {
+    ctx.strokeStyle = fillOr(flash, look.mustache);
+    ctx.lineWidth = Math.max(1.4, r * 0.1);
+    ctx.beginPath();
+    ctx.moveTo(look2 - hr * 0.3, ey + hr * 0.3);
+    ctx.quadraticCurveTo(look2, ey + hr * 0.18, look2 + hr * 0.3, ey + hr * 0.3);
+    ctx.stroke();
+  }
+  if (look.beard) {
+    // A full beard around the chin.
+    ctx.fillStyle = fillOr(flash, look.beard);
+    ctx.beginPath();
+    ctx.moveTo(-hr * 0.78, hy + hr * 0.2);
+    ctx.quadraticCurveTo(-hr * 0.6, hy + hr * 1.35, look2, hy + hr * 1.45);
+    ctx.quadraticCurveTo(hr * 0.6, hy + hr * 1.35, hr * 0.78, hy + hr * 0.2);
+    ctx.quadraticCurveTo(hr * 0.4, hy + hr * 0.75, look2, hy + hr * 0.62);
+    ctx.quadraticCurveTo(-hr * 0.4, hy + hr * 0.75, -hr * 0.78, hy + hr * 0.2);
+    ctx.fill();
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = Math.max(1, r * 0.06);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = Math.max(1.2, r * 0.09);
+}
+
+const fillOr = (flash, c) => (flash ? HANJI : c);
+
+/** Headgear, drawn over the top of the head. */
+function drawHat(ctx, look, r, hr, hy, sx, flash, phase) {
+  const f = (c) => fillOr(flash, c);
+  const dome = (color, cover = 0.15) => {
+    ctx.fillStyle = f(color);
+    ctx.beginPath();
+    ctx.arc(0, hy, hr * 1.04, Math.PI + cover, -cover);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  };
   switch (look.hat) {
     case 'helmet':
-    case 'helmetBlue':
-      ctx.fillStyle = look.hat === 'helmet' ? '#3b3328' : '#24324a';
+    case 'helmetBlue': {
+      const c = look.hat === 'helmet' ? '#5a4a36' : '#33507a';
+      dome(c, 0.05);
+      ctx.fillStyle = f(look.hat === 'helmet' ? '#3b3328' : '#24324a');
+      ctx.fillRect(-hr * 1.15, hy - hr * 0.1, hr * 2.3, hr * 0.2);
+      ctx.strokeRect(-hr * 1.15, hy - hr * 0.1, hr * 2.3, hr * 0.2);
+      ctx.fillStyle = f('#b3261e');
       ctx.beginPath();
-      ctx.arc(-r * 0.02, 0, hr * 1.05, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = '#9a8f78';
-      ctx.beginPath();
-      ctx.arc(-r * 0.02, 0, hr * 0.32, 0, Math.PI * 2);
+      ctx.arc(0, hy - hr * 1.05, hr * 0.15, 0, Math.PI * 2);
       ctx.fill();
       break;
+    }
     case 'hood':
-    case 'hoodBlue':
-      ctx.fillStyle = look.hat === 'hood' ? look.accent : '#2c4058';
+    case 'hoodBlue': {
+      ctx.fillStyle = f(look.hat === 'hood' ? look.accent ?? '#3a4a2a' : '#2c4058');
       ctx.beginPath();
-      ctx.arc(-r * 0.1, 0, hr * 1.02, Math.PI * 0.35, Math.PI * 1.65);
+      ctx.arc(0, hy, hr * 1.12, Math.PI * 0.72, Math.PI * 0.28);
+      ctx.lineTo(hr * 0.55, hy + hr * 0.1);
+      ctx.quadraticCurveTo(0, hy - hr * 0.75, -hr * 0.55, hy + hr * 0.1);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
       break;
-    case 'band':
-      ctx.strokeStyle = '#b3261e';
-      ctx.lineWidth = 2.5;
+    }
+    case 'band': {
+      // Messy hair and a red headband with trailing ends.
+      ctx.fillStyle = f('#2a211b');
       ctx.beginPath();
-      ctx.arc(r * 0.05, 0, hr * 0.85, 0, Math.PI * 2);
-      ctx.stroke();
+      ctx.arc(0, hy, hr * 1.02, Math.PI * 1.05, -Math.PI * 0.05);
+      for (let i = 0; i < 5; i++) ctx.lineTo(hr * (0.8 - i * 0.4), hy - hr * (i % 2 ? 0.55 : 0.85));
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = f('#c0392b');
+      ctx.fillRect(-hr * 1.02, hy - hr * 0.42, hr * 2.04, hr * 0.24);
+      ctx.strokeStyle = f('#c0392b');
+      ctx.lineWidth = Math.max(1.5, r * 0.12);
       ctx.beginPath();
-      ctx.moveTo(-hr * 0.8, 0);
-      ctx.lineTo(-hr * 1.7, hr * 0.5);
+      ctx.moveTo(-sx * hr * 0.95, hy - hr * 0.3);
+      ctx.quadraticCurveTo(-sx * hr * 1.5, hy - hr * 0.1 + Math.sin(phase) * r * 0.08, -sx * hr * 1.8, hy + hr * 0.2);
       ctx.stroke();
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = Math.max(1.2, r * 0.09);
       break;
-    case 'pirateBoss':
-      ctx.fillStyle = '#a58c56';
+    }
+    case 'pirateBoss': {
+      // Big straw hat.
+      ctx.fillStyle = f('#c8a860');
       ctx.beginPath();
-      ctx.arc(0, 0, r * 0.95, 0, Math.PI * 2);
+      ctx.ellipse(0, hy - hr * 0.45, hr * 1.7, hr * 0.42, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
-      ctx.strokeStyle = 'rgba(29,26,23,0.45)';
-      for (let i = 0; i < 10; i++) {
-        const a = (i / 10) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.ellipse(0, hy - hr * 0.75, hr * 0.85, hr * 0.55, 0, Math.PI, 0);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = f('#8a2a1e');
+      ctx.fillRect(-hr * 0.85, hy - hr * 0.78, hr * 1.7, hr * 0.18);
+      break;
+    }
+    case 'heavyHelmet': {
+      dome('#3c4046', -0.12);
+      ctx.strokeStyle = '#9aa0a6';
+      ctx.lineWidth = Math.max(1.2, r * 0.08);
+      ctx.beginPath();
+      ctx.moveTo(0, hy - hr * 1.02);
+      ctx.lineTo(0, hy - hr * 0.1);
+      ctx.stroke();
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = Math.max(1.2, r * 0.09);
+      // Cheek guards.
+      ctx.fillStyle = f('#4c5157');
+      for (const k of [-1, 1]) {
         ctx.beginPath();
-        ctx.moveTo(Math.cos(a) * r * 0.45, Math.sin(a) * r * 0.45);
-        ctx.lineTo(Math.cos(a) * r * 0.92, Math.sin(a) * r * 0.92);
+        ctx.moveTo(k * hr * 0.98, hy - hr * 0.1);
+        ctx.lineTo(k * hr * 1.08, hy + hr * 0.55);
+        ctx.lineTo(k * hr * 0.72, hy + hr * 0.45);
+        ctx.closePath();
+        ctx.fill();
         ctx.stroke();
       }
-      ctx.strokeStyle = INK;
-      ctx.fillStyle = '#6e5a32';
+      ctx.fillStyle = f('#b3261e');
       ctx.beginPath();
-      ctx.arc(0, 0, r * 0.42, 0, Math.PI * 2);
+      ctx.moveTo(0, hy - hr * 1.0);
+      ctx.lineTo(-hr * 0.18, hy - hr * 1.45);
+      ctx.lineTo(hr * 0.18, hy - hr * 1.45);
+      ctx.closePath();
       ctx.fill();
-      ctx.stroke();
       break;
-    case 'heavyHelmet':
-      ctx.fillStyle = '#2f3133';
+    }
+    case 'crown': {
+      // Black topknot hair under a spiky gold crown.
+      ctx.fillStyle = f('#1d1a17');
       ctx.beginPath();
-      ctx.arc(-r * 0.02, 0, hr * 1.18, 0, Math.PI * 2);
+      ctx.arc(0, hy, hr * 1.02, Math.PI * 1.05, -Math.PI * 0.05);
+      ctx.closePath();
+      ctx.fill();
+      const gold = f(look.trim ?? '#d8b46a');
+      ctx.fillStyle = gold;
+      ctx.beginPath();
+      ctx.moveTo(-hr * 0.85, hy - hr * 0.35);
+      for (let i = 0; i <= 4; i++) {
+        const xx = -hr * 0.85 + (hr * 1.7 * i) / 4;
+        ctx.lineTo(xx, hy - hr * (i % 2 ? 1.05 : 1.5));
+        if (i < 4) ctx.lineTo(xx + hr * 0.21, hy - hr * 0.8);
+      }
+      ctx.lineTo(hr * 0.85, hy - hr * 0.35);
+      ctx.closePath();
       ctx.fill();
       ctx.stroke();
-      ctx.strokeStyle = '#8d9195';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(-hr * 1.1, 0);
-      ctx.lineTo(hr * 1.1, 0);
-      ctx.stroke();
-      break;
-    case 'crown':
-      ctx.fillStyle = '#2a1a14';
-      ctx.beginPath();
-      ctx.arc(-r * 0.02, 0, hr * 1.05, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = look.trim ?? '#d8b46a';
-      for (let i = 0; i < 6; i++) {
-        const a = (i / 6) * Math.PI * 2;
+      // Jade drops hanging from the crown.
+      ctx.fillStyle = f('#3fae7a');
+      for (const k of [-0.5, 0, 0.5]) {
         ctx.beginPath();
-        ctx.moveTo(Math.cos(a - 0.25) * hr * 0.75, Math.sin(a - 0.25) * hr * 0.75);
-        ctx.lineTo(Math.cos(a) * hr * 1.35, Math.sin(a) * hr * 1.35);
-        ctx.lineTo(Math.cos(a + 0.25) * hr * 0.75, Math.sin(a + 0.25) * hr * 0.75);
+        ctx.arc(k * hr, hy - hr * 0.5, hr * 0.1, 0, Math.PI * 2);
         ctx.fill();
       }
+      break;
+    }
+    case 'monk': {
+      // Shaved head: a shine spot instead of hair.
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
       ctx.beginPath();
-      ctx.arc(-r * 0.02, 0, hr * 0.42, 0, Math.PI * 2);
+      ctx.ellipse(-hr * 0.35, hy - hr * 0.55, hr * 0.25, hr * 0.14, -0.5, 0, Math.PI * 2);
+      ctx.fill();
+      // A dot of wisdom (백호) on the forehead.
+      ctx.fillStyle = f(look.trim ?? '#e0b24c');
+      ctx.beginPath();
+      ctx.arc(0, hy - hr * 0.3, hr * 0.09, 0, Math.PI * 2);
       ctx.fill();
       break;
-    case 'monk':
-      // Shaved head with a golden halo ring and the famous eyepatch.
-      ctx.strokeStyle = look.trim ?? '#e0b24c';
-      ctx.lineWidth = 2;
+    }
+    case 'hero': {
+      dome('#26262c', -0.05);
+      ctx.strokeStyle = f(look.trim ?? '#c9a24a');
+      ctx.lineWidth = Math.max(1.5, r * 0.12);
       ctx.beginPath();
-      ctx.arc(r * 0.05, 0, hr * 1.45, 0, Math.PI * 2);
+      ctx.arc(0, hy, hr * 1.04, Math.PI + 0.1, -0.1);
       ctx.stroke();
-      ctx.fillStyle = '#1d1a17';
       ctx.beginPath();
-      ctx.ellipse(r * 0.38, -hr * 0.42, hr * 0.32, hr * 0.26, 0, 0, Math.PI * 2);
+      ctx.moveTo(-hr * 1.05, hy - hr * 0.02);
+      ctx.lineTo(hr * 1.05, hy - hr * 0.02);
+      ctx.stroke();
+      ctx.fillStyle = f(look.trim ?? '#c9a24a');
+      ctx.beginPath();
+      ctx.arc(0, hy - hr * 0.95, hr * 0.17, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = '#1d1a17';
-      ctx.lineWidth = 1.4;
-      ctx.beginPath();
-      ctx.moveTo(r * 0.38, -hr * 0.42);
-      ctx.lineTo(-hr * 0.7, hr * 0.6);
-      ctx.stroke();
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = Math.max(1.2, r * 0.09);
       break;
-    case 'hero':
-      ctx.fillStyle = '#2a2a2e';
-      ctx.beginPath();
-      ctx.arc(-r * 0.02, 0, hr * 1.08, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = look.trim;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      // Plume trailing behind the helmet.
-      ctx.strokeStyle = look.plume;
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(-hr * 0.2, 0);
-      ctx.quadraticCurveTo(-hr * 1.6, hr * 0.2, -hr * 2.3, -hr * 0.35);
-      ctx.stroke();
-      ctx.fillStyle = look.trim;
-      ctx.beginPath();
-      ctx.arc(-r * 0.02, 0, hr * 0.3, 0, Math.PI * 2);
-      ctx.fill();
-      break;
+    }
   }
 }
 
@@ -505,22 +755,60 @@ export function drawProjectile(ctx, p) {
   ctx.restore();
 }
 
-function drawHorse(ctx, color, r, flash) {
-  ctx.fillStyle = flash ? HANJI : color;
-  ctx.beginPath();
-  ctx.ellipse(r * 0.15, 0, r * 1.55, r * 0.62, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.ellipse(r * 1.75, 0, r * 0.5, r * 0.3, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
+function drawHorse(ctx, color, r, flash, sx, phase) {
+  const f = flash ? HANJI : color;
+  ctx.save();
+  ctx.scale(sx, 1);
+  // Legs trotting.
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = Math.max(2, r * 0.18);
+  for (const [lx, ph] of [[-0.75, 0], [-0.45, Math.PI], [0.5, Math.PI], [0.8, 0]]) {
+    const swing = Math.sin(phase + ph) * r * 0.18;
+    ctx.beginPath();
+    ctx.moveTo(lx * r, r * 0.45);
+    ctx.lineTo(lx * r + swing, r * 0.92);
+    ctx.stroke();
+  }
+  ctx.lineWidth = Math.max(1.2, r * 0.09);
+  // Tail.
   ctx.strokeStyle = '#1d1a17';
-  ctx.lineWidth = 2.5;
+  ctx.lineWidth = Math.max(2, r * 0.16);
   ctx.beginPath();
-  ctx.moveTo(-r * 1.35, 0);
-  ctx.lineTo(-r * 1.9, r * 0.15);
+  ctx.moveTo(-r * 1.05, r * 0.15);
+  ctx.quadraticCurveTo(-r * 1.5, r * 0.2 + Math.sin(phase) * r * 0.1, -r * 1.4, r * 0.7);
   ctx.stroke();
-  ctx.lineWidth = 1.6;
+  ctx.lineWidth = Math.max(1.2, r * 0.09);
+  // Body, neck and head.
+  ctx.fillStyle = f;
+  ctx.beginPath();
+  ctx.ellipse(0, r * 0.3, r * 1.1, r * 0.48, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(r * 0.6, r * 0.1);
+  ctx.lineTo(r * 1.0, -r * 0.45);
+  ctx.lineTo(r * 1.3, -r * 0.3);
+  ctx.lineTo(r * 1.0, r * 0.3);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.ellipse(r * 1.25, -r * 0.45, r * 0.38, r * 0.24, 0.35, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  // Ear, eye, mane, saddle cloth.
+  ctx.beginPath();
+  ctx.moveTo(r * 1.0, -r * 0.62);
+  ctx.lineTo(r * 1.05, -r * 0.88);
+  ctx.lineTo(r * 1.18, -r * 0.65);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = INK;
+  ctx.beginPath();
+  ctx.arc(r * 1.28, -r * 0.52, r * 0.06, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#b3261e';
+  ctx.fillRect(-r * 0.45, -r * 0.12, r * 0.9, r * 0.4);
+  ctx.strokeRect(-r * 0.45, -r * 0.12, r * 0.9, r * 0.4);
+  ctx.restore();
 }
-

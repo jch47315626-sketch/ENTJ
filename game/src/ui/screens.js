@@ -23,10 +23,10 @@ export function drawPortrait(canvas, hero) {
   const W = canvas.width;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, W, W);
-  ctx.translate(W * 0.42, W * 0.52);
-  ctx.scale(W / 48, W / 48);
+  ctx.translate(W * 0.5, W * 0.6);
+  ctx.scale(W / 44, W / 44);
   const look = hero.look;
-  drawUnit(ctx, { ...look, body: look.robe }, 0, 0, 12, -0.5);
+  drawUnit(ctx, { ...look, body: look.robe }, 0, 0, 12, 0.35, { scale: 1 });
 }
 
 const outfit = (save, heroId) => save.equipped[heroId] ?? {};

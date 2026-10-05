@@ -9,7 +9,7 @@ export const BOSSES = {
     hanja: '水獺 能昌',
     epithet: '압해도의 해적 두령',
     hp: 2400, speed: 85, radius: 30, damage: 15, knockResist: 0.92, xp: 0,
-    look: { body: '#3e5560', accent: '#1d2a30', hat: 'pirateBoss', weapon: 'hook' },
+    look: { body: '#3e6a78', accent: '#1d2a30', hat: 'pirateBoss', weapon: 'hook', beard: '#8a4a22', brows: 'angry', bulk: 1.15 },
     patterns: [
       { type: 'chase', time: 2.2 },
       { type: 'dash', windup: 0.75, speed: 560, distance: 440, damage: 22 },
@@ -31,7 +31,7 @@ export const BOSSES = {
     hanja: '甄萱',
     epithet: '후백제의 대왕',
     hp: 3200, speed: 78, radius: 32, damage: 16, knockResist: 0.95, xp: 0,
-    look: { body: '#6b2a22', accent: '#2e120e', hat: 'crown', weapon: 'greatsword', trim: '#d8b46a', skin: '#dcb58c' },
+    look: { body: '#8e2a20', accent: '#2e120e', hat: 'crown', weapon: 'greatsword', trim: '#f0c050', skin: '#e0b88e', beard: '#1d1a17', brows: 'angry', bulk: 1.25, cape: '#2e120e' },
     patterns: [
       { type: 'chase', time: 2.0 },
       { type: 'spin', windup: 0.9, radius: 150, damage: 22 },
@@ -53,7 +53,7 @@ export const BOSSES = {
     hanja: '申崇謙',
     epithet: '왕의 갑옷을 입은 대역',
     hp: 3600, speed: 90, radius: 30, damage: 16, knockResist: 0.95, xp: 0,
-    look: { body: '#2d3b5c', accent: '#151c2c', hat: 'hero', weapon: 'shield', trim: '#c9a24a', plume: '#b3261e', skin: '#e3c39c' },
+    look: { body: '#2d5a9c', accent: '#151c2c', hat: 'hero', weapon: 'shield', trim: '#e8c060', plume: '#e0392b', skin: '#e3c39c', brows: 'angry', mustache: '#2a1e14' },
     patterns: [
       { type: 'chase', time: 1.8 },
       { type: 'dash', windup: 0.65, speed: 560, distance: 400, damage: 22 },
@@ -74,7 +74,7 @@ export const BOSSES = {
     hanja: '金渥',
     epithet: '후백제의 시랑',
     hp: 3600, speed: 82, radius: 30, damage: 16, knockResist: 0.95, xp: 0,
-    look: { body: '#5a2a3a', accent: '#24101a', hat: 'heavyHelmet', weapon: 'glaive', trim: '#d8b46a', skin: '#dcb58c' },
+    look: { body: '#7a2a4a', accent: '#24101a', hat: 'heavyHelmet', weapon: 'glaive', trim: '#d8b46a', skin: '#dcb58c', brows: 'angry', mustache: '#1d1a17', bulk: 1.1 },
     patterns: [
       { type: 'chase', time: 1.8 },
       { type: 'firePots', windup: 0.9, count: 3, spread: 110, radius: 62, dps: 20, life: 3.2 },
@@ -96,7 +96,7 @@ export const BOSSES = {
     hanja: '庾黔弼',
     epithet: '고려의 맹장',
     hp: 3600, speed: 95, radius: 30, damage: 17, knockResist: 0.95, xp: 0,
-    look: { body: '#2d3b5c', accent: '#151c2c', hat: 'heavyHelmet', weapon: 'spear', trim: '#c9a24a', skin: '#e3c39c', mount: '#3a2a1c' },
+    look: { body: '#2d5a9c', accent: '#151c2c', hat: 'heavyHelmet', weapon: 'spear', trim: '#e8c060', skin: '#e3c39c', mount: '#3a2a1c', brows: 'angry', beard: '#2a1e14' },
     patterns: [
       { type: 'chase', time: 1.6 },
       { type: 'dash', windup: 0.6, speed: 600, distance: 460, damage: 24, repeat: 2 },
@@ -120,7 +120,7 @@ export const BOSSES = {
     hanja: '弓裔',
     epithet: '미륵을 자처한 태봉의 왕',
     hp: 6000, speed: 80, radius: 30, damage: 16, knockResist: 0.95, xp: 0,
-    look: { body: '#4a2f5e', accent: '#1d1a17', hat: 'monk', weapon: 'staff', trim: '#e0b24c', plume: '#e0b24c', skin: '#e3c19a' },
+    look: { body: '#6a3f8e', accent: '#1d1a17', hat: 'monk', weapon: 'staff', trim: '#f0c050', plume: '#e0b24c', skin: '#f0d0aa', eyepatch: true, brows: 'angry', cape: '#e0b24c', bulk: 1.1 },
     patterns: [
       { type: 'chase', time: 1.6, keep: 230 },
       { type: 'lightning', windup: 0.9, count: 3, spread: 120, radius: 70, damage: 26, lead: 0.7 },
@@ -142,7 +142,7 @@ export const BOSSES = {
     id: 'gungyeClone',
     name: '궁예의 분신',
     hp: 420, speed: 95, radius: 26, damage: 12, knockResist: 0.6, xp: 0, minion: true,
-    look: { body: '#6a5280', accent: '#1d1a17', hat: 'monk', weapon: 'staff', trim: '#b9a0d8', plume: '#b9a0d8', skin: '#d6c6e6' },
+    look: { body: '#8a72a8', accent: '#1d1a17', hat: 'monk', weapon: 'staff', trim: '#b9a0d8', plume: '#b9a0d8', skin: '#e2d6f0', eyepatch: true },
     patterns: [
       { type: 'chase', time: 1.4, keep: 200 },
       { type: 'lightning', windup: 1.0, count: 1, spread: 0, radius: 60, damage: 18, lead: 0.5 },
@@ -161,7 +161,7 @@ export const BOSSES = {
   hongyu: {
     id: 'hongyu', name: '홍유', hanja: '洪儒', epithet: '창을 든 공신',
     hp: 1500, speed: 92, radius: 28, damage: 15, knockResist: 0.95, xp: 0,
-    look: { body: '#2d3b5c', accent: '#151c2c', hat: 'heavyHelmet', weapon: 'spear', trim: '#c9a24a', skin: '#e3c39c' },
+    look: { body: '#2d3b5c', accent: '#151c2c', hat: 'heavyHelmet', weapon: 'spear', trim: '#c9a24a', skin: '#e3c39c', mustache: '#2a1e14', brows: 'angry' },
     patterns: [
       { type: 'chase', time: 2.0 },
       { type: 'dash', windup: 0.7, speed: 560, distance: 420, damage: 22, repeat: 2 },
@@ -170,7 +170,7 @@ export const BOSSES = {
   baehyeongyeong: {
     id: 'baehyeongyeong', name: '배현경', hanja: '裵玄慶', epithet: '활을 든 공신',
     hp: 1500, speed: 78, radius: 28, damage: 14, knockResist: 0.95, xp: 0,
-    look: { body: '#3b4a2d', accent: '#1c2414', hat: 'helmetBlue', weapon: 'bow', trim: '#c9a24a', skin: '#e3c39c' },
+    look: { body: '#3b4a2d', accent: '#1c2414', hat: 'helmetBlue', weapon: 'bow', trim: '#c9a24a', skin: '#e3c39c', brows: 'kind' },
     patterns: [
       { type: 'chase', time: 2.2 },
       { type: 'fan', windup: 0.7, count: 7, spread: 70, speed: 320, damage: 12, kind: 'arrow' },
@@ -179,7 +179,7 @@ export const BOSSES = {
   shinGongsin: {
     id: 'shinGongsin', name: '신숭겸', hanja: '申崇謙', epithet: '방패를 든 공신',
     hp: 1500, speed: 84, radius: 30, damage: 15, knockResist: 0.97, xp: 0,
-    look: { body: '#2d3b5c', accent: '#151c2c', hat: 'hero', weapon: 'shield', trim: '#c9a24a', plume: '#b3261e', skin: '#e3c39c' },
+    look: { body: '#2d5a9c', accent: '#151c2c', hat: 'hero', weapon: 'shield', trim: '#e8c060', plume: '#e0392b', skin: '#e3c39c', brows: 'angry', mustache: '#2a1e14' },
     patterns: [
       { type: 'chase', time: 2.0 },
       { type: 'spin', windup: 0.8, radius: 140, damage: 22 },
@@ -189,7 +189,7 @@ export const BOSSES = {
   bokjigyeom: {
     id: 'bokjigyeom', name: '복지겸', hanja: '卜智謙', epithet: '불을 놓는 공신',
     hp: 1500, speed: 80, radius: 28, damage: 14, knockResist: 0.95, xp: 0,
-    look: { body: '#5a3a2a', accent: '#24140c', hat: 'helmet', weapon: 'glaive', trim: '#c9a24a', skin: '#e3c39c' },
+    look: { body: '#5a3a2a', accent: '#24140c', hat: 'helmet', weapon: 'glaive', trim: '#c9a24a', skin: '#e3c39c', beard: '#4a3a2a' },
     patterns: [
       { type: 'chase', time: 2.2 },
       { type: 'firePots', windup: 0.9, count: 3, spread: 120, radius: 58, dps: 18, life: 3 },
@@ -203,7 +203,7 @@ export const BOSSES = {
     hanja: '神劍',
     epithet: '후백제의 마지막 왕',
     hp: 8000, speed: 92, radius: 32, damage: 17, knockResist: 0.96, xp: 0,
-    look: { body: '#5a1e1a', accent: '#24100c', hat: 'crown', weapon: 'spear', trim: '#d8b46a', skin: '#dcb58c', mount: '#2d241c' },
+    look: { body: '#6a1e1a', accent: '#24100c', hat: 'crown', weapon: 'spear', trim: '#d8b46a', skin: '#e6c4a0', mount: '#2d241c', brows: 'angry', cape: '#2e120e' },
     // 1단계: 말 위에서 기병을 지휘한다.
     patterns: [
       { type: 'chase', time: 1.6 },
@@ -217,7 +217,7 @@ export const BOSSES = {
     phase2: {
       below: 0.5, speedMul: 1.25, invuln: 1.6,
       banner: '찬탈자의 광기 — 신검이 말에서 뛰어내린다!',
-      look: { body: '#7a1e16', accent: '#24100c', hat: 'crown', weapon: 'greatsword', trim: '#ffd76a', skin: '#dcb58c' },
+      look: { body: '#9a1e16', accent: '#24100c', hat: 'crown', weapon: 'greatsword', trim: '#ffd76a', skin: '#e6c4a0', brows: 'angry', cape: '#1d1a17', bulk: 1.15, blush: 'rgba(200, 40, 30, 0.6)' },
       patterns: [
         { type: 'chase', time: 1.0 },
         { type: 'spin', windup: 0.6, radius: 160, damage: 26, repeat: 2 },
@@ -241,7 +241,7 @@ export const BOSSES = {
     hanja: '王建',
     epithet: '고려 태조 · 삼한을 하나로',
     hp: 8000, speed: 88, radius: 30, damage: 16, knockResist: 0.96, xp: 0,
-    look: { body: '#2d3b5c', accent: '#151c2c', hat: 'hero', weapon: 'sword', trim: '#c9a24a', plume: '#b3261e', skin: '#e8c9a0' },
+    look: { body: '#2d5a9c', accent: '#151c2c', hat: 'hero', weapon: 'sword', trim: '#e8c060', plume: '#e0392b', skin: '#f2d2ac', cape: '#c0392b', brows: 'kind', mustache: '#3a2a1c' },
     patterns: [
       { type: 'chase', time: 1.6 },
       { type: 'spin', windup: 0.75, radius: 150, damage: 24 },
@@ -253,7 +253,7 @@ export const BOSSES = {
     phase2: {
       below: 0.5, speedMul: 1.15, invuln: 1.6,
       banner: '태조의 검 — 왕건이 검을 뽑아 든다!',
-      look: { body: '#1e2a48', accent: '#0e1424', hat: 'crown', weapon: 'sword', trim: '#ffd76a', plume: '#ffd76a', skin: '#e8c9a0', mount: '#6b4a2e' },
+      look: { body: '#1e3a78', accent: '#0e1424', hat: 'crown', weapon: 'sword', trim: '#ffd76a', plume: '#ffd76a', skin: '#f2d2ac', mount: '#f2ede0', cape: '#c0392b', brows: 'angry', mustache: '#3a2a1c' },
       patterns: [
         { type: 'chase', time: 1.0 },
         { type: 'spin', windup: 0.6, radius: 165, damage: 26, repeat: 2 },

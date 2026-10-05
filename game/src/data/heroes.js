@@ -15,7 +15,7 @@ export const HEROES = {
     weapon: 'goryeoSword',
     special: 'tongsol',
     favoredCategory: '병법',
-    look: { hat: 'hero', weapon: 'sword', robe: '#2d3b5c', trim: '#c9a24a', plume: '#b3261e', skin: '#e8c9a0' },
+    look: { hat: 'hero', weapon: 'sword', robe: '#2d5a9c', accent: '#1e2a48', trim: '#e8c060', plume: '#e0392b', skin: '#f2d2ac', cape: '#c0392b', brows: 'kind', mustache: '#3a2a1c' },
   },
   gyeonhwon: {
     id: 'gyeonhwon',
@@ -29,7 +29,7 @@ export const HEROES = {
     weapon: 'daedo',
     special: 'paewang',
     favoredCategory: '무예',
-    look: { hat: 'crown', weapon: 'greatsword', robe: '#6b2a22', trim: '#d8b46a', plume: '#1d1a17', skin: '#dcb58c' },
+    look: { hat: 'crown', weapon: 'greatsword', robe: '#8e2a20', accent: '#2e120e', trim: '#f0c050', plume: '#1d1a17', skin: '#e0b88e', beard: '#1d1a17', brows: 'angry', bulk: 1.25, cape: '#2e120e' },
   },
   gungye: {
     id: 'gungye',
@@ -44,7 +44,7 @@ export const HEROES = {
     subWeapons: ['vajra'],
     special: 'gwansim',
     favoredCategory: '지세',
-    look: { hat: 'monk', weapon: 'staff', robe: '#4a2f5e', trim: '#e0b24c', plume: '#e0b24c', skin: '#e3c19a' },
+    look: { hat: 'monk', weapon: 'staff', robe: '#6a3f8e', accent: '#2e1a40', trim: '#f0c050', plume: '#e0b24c', skin: '#f0d0aa', eyepatch: true, cape: '#e0b24c' },
   },
 };
 
