@@ -269,7 +269,32 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
 .hd-stats dt { font-size: 11px; color: var(--hanji-dim); letter-spacing: 0.15em; }
 .hd-stats dd { margin: 0; font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .hd-stats dd .up { color: var(--gold); font-size: 12px; margin-left: 2px; }
-.slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; grid-column: 1 / -1; }
+/* Paper-doll outfit: weapon | head/wrist | body/belt | charm/feet */
+.doll {
+  grid-column: 1 / -1; display: grid; gap: 8px; justify-content: start;
+  grid-template-columns: 110px 96px 120px 96px;
+  grid-template-areas: "weapon head body charm" "weapon wrist belt feet";
+}
+.doll-slot {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  min-height: 112px; padding: 8px 4px 6px; font: inherit; color: var(--hanji);
+  background: radial-gradient(circle at 50% 40%, #24201a, #0d0b09 75%);
+  border: 1px solid #4a3a28; box-shadow: inset 0 0 0 1px #000, inset 0 6px 14px rgba(0,0,0,0.7);
+}
+button.doll-slot:hover, button.doll-slot:focus-visible { border-color: var(--gold); }
+.doll-slot.weapon { min-height: 232px; border-color: #6b5434; }
+.doll-slot .icon { display: block; }
+.doll-slot .dl { font-size: 10px; letter-spacing: 0.25em; color: var(--hanji-dim); }
+.doll-slot .dn { font-size: 12px; font-weight: 700; text-align: center; line-height: 1.2; }
+.doll-slot .dn.plus { color: var(--seal); font-weight: 400; }
+.doll-slot.empty { border-style: dashed; border-color: rgba(185, 173, 146, 0.35); }
+.gear-line { display: flex; flex-wrap: wrap; gap: 4px; }
+.mini-icon { background: #0d0b09; border: 1px solid rgba(29,26,23,0.8); }
+.mini-icon.empty { background: rgba(13, 11, 9, 0.55); }
+.camp-item.with-icon { grid-template-columns: auto 1fr auto; }
+.camp-item .row-icon { grid-row: 1 / span 2; background: #0d0b09; border: 1px solid #3a2e20; }
+.camp-item.with-icon .nm, .camp-item.with-icon .ds { grid-column: 2; }
+.camp-item.with-icon button, .camp-item.with-icon .done-tag { grid-column: 3; }
 .slot {
   display: flex; flex-direction: column; gap: 2px; padding: 10px; text-align: left; font: inherit; color: var(--hanji); min-width: 0;
   background: rgba(21, 19, 15, 0.55); border: 1px solid rgba(210, 172, 88, 0.6);
@@ -321,7 +346,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
   .hero-detail { grid-template-columns: 1fr; }
   .hero-detail .portrait { width: 110px; height: 110px; }
   .hd-stats { grid-template-columns: repeat(3, auto); }
-  .slots { grid-template-columns: 1fr; }
+  .doll { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: "weapon head body" "weapon wrist belt" "charm feet ."; }
+  .doll-slot.weapon { min-height: 0; }
   .start-btn { width: 100%; }
   .hero-list, .stage-list { grid-template-columns: 1fr; }
   .hero-card { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 10px; }

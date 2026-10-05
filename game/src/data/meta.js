@@ -13,9 +13,12 @@ export function baseReward({ kills, seconds, won, bossKilled }) {
 }
 
 export const SLOTS = [
-  { id: 'body', name: '갑옷' },
   { id: 'head', name: '투구' },
+  { id: 'body', name: '갑옷' },
   { id: 'charm', name: '장신구' },
+  { id: 'wrist', name: '팔찌' },
+  { id: 'belt', name: '허리띠' },
+  { id: 'feet', name: '신발' },
 ];
 
 /**
@@ -34,6 +37,15 @@ export const EQUIPMENT = [
   { id: 'gogok', slot: 'charm', name: '곡옥 목걸이', price: 200, bonus: { xp: 0.1 }, desc: '공훈 획득 +10%' },
   { id: 'hobu', slot: 'charm', name: '호부', price: 550, bonus: { momentum: 0.2 }, desc: '기세 충전 +20%' },
   { id: 'chunma', slot: 'charm', name: '천마 말다래', price: 1300, bonus: { speed: 0.06, haste: 0.06 }, desc: '이동 +6%, 공격 재사용 −6%' },
+
+  { id: 'silverBangle', slot: 'wrist', name: '은팔찌', price: 160, bonus: { haste: 0.03 }, desc: '공격 재사용 −3%' },
+  { id: 'goldBangle', slot: 'wrist', name: '금팔찌', price: 950, bonus: { might: 0.06, haste: 0.04 }, desc: '피해 +6%, 공격 재사용 −4%' },
+
+  { id: 'leatherBelt', slot: 'belt', name: '가죽 띠', price: 100, bonus: { maxHp: 10 }, desc: '최대 체력 +10' },
+  { id: 'goldBelt', slot: 'belt', name: '금제 허리띠', price: 900, bonus: { maxHp: 15, xp: 0.08 }, desc: '최대 체력 +15, 공훈 +8%. 드리개가 찰랑인다.' },
+
+  { id: 'straw', slot: 'feet', name: '짚신', price: 80, bonus: { speed: 0.03 }, desc: '이동 +3%' },
+  { id: 'giltShoes', slot: 'feet', name: '금동 신발', price: 800, bonus: { speed: 0.06, armor: 1 }, desc: '이동 +6%, 갑주 +1' },
 ];
 
 /** Camp training: permanent, levelled with money. */

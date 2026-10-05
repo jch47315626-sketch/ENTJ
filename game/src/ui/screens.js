@@ -6,6 +6,7 @@ import { WEAPONS } from '../data/weapons.js';
 import { UPGRADES } from '../data/upgrades.js';
 import { SPECIALS } from '../systems/specials.js';
 import { drawUnit } from '../render/sprites.js';
+import { iconCanvas } from '../render/icons.js';
 
 const $ = (id) => document.getElementById(id);
 const SCREENS = ['title', 'heroSelect', 'mapSelect', 'intro', 'levelup', 'pause', 'result', 'camp'];
@@ -37,10 +38,15 @@ export function renderMain(save, sel) {
   $('mainHeroName').textContent = h.name;
   $('mainHeroMeta').textContent = `${h.title} · ${h.role}`;
   const wear = outfit(save, sel.hero);
-  $('mainGear').innerHTML = SLOTS.map((sl) => {
+  const gear = $('mainGear');
+  gear.innerHTML = '';
+  for (const sl of SLOTS) {
     const it = itemById(wear[sl.id]);
-    return it ? `${sl.name} <b>${it.name}</b>` : `<span class="empty">${sl.name} 없음</span>`;
-  }).join(' · ');
+    const c = iconCanvas(it ? it.id : `empty:${sl.id}`, 30, `mini-icon${it ? '' : ' empty'}`);
+    c.title = it ? `${sl.name}: ${it.name}` : `${sl.name}: 비어 있음`;
+    gear.appendChild(c);
+  }
+  gear.setAttribute('aria-label', SLOTS.map((sl) => `${sl.name} ${itemById(wear[sl.id])?.name ?? '없음'}`).join(', '));
   const st = STAGES[sel.stage];
   const boss = BOSSES[st.bossAlt[sel.hero] ?? st.boss];
   $('mainMapName').textContent = `${st.numeral} ${st.name}`;
@@ -97,19 +103,29 @@ export function renderHeroSelect(save, sel, act) {
         ${stat('이동', st.speed, Math.round(st.speed * (1 + (m.speed ?? 0))))}
       </dl>
     </div>
-    <div class="slots"></div>`;
+    <div class="doll"></div>`;
   drawPortrait(box.querySelector('canvas'), h);
-  const slots = box.querySelector('.slots');
+  // Paper-doll: weapon on the left, then the six gear slots in two rows.
+  const doll = box.querySelector('.doll');
+  const wpn = document.createElement('div');
+  wpn.className = 'doll-slot weapon';
+  wpn.style.gridArea = 'weapon';
+  wpn.append(iconCanvas(h.weapon, 84, 'icon'));
+  wpn.insertAdjacentHTML('beforeend', `<span class="dl">무기</span><span class="dn">${weapon[0].name}</span>`);
+  doll.appendChild(wpn);
   for (const sl of SLOTS) {
     const it = itemById(wear[sl.id]);
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = `slot${it ? '' : ' empty'}`;
-    b.innerHTML = it
-      ? `<span class="sl">${sl.name}</span><span class="it">${it.name}</span><span class="ef">${it.desc}</span>`
-      : `<span class="sl">${sl.name}</span><span class="it">비어 있음</span><span class="ef">눌러서 상점으로 →</span>`;
+    b.className = `doll-slot${it ? '' : ' empty'}`;
+    b.style.gridArea = sl.id;
+    b.title = it ? `${it.name} — ${it.desc}` : `${sl.name}: 비어 있음. 눌러서 상점으로`;
+    b.append(iconCanvas(it ? it.id : `empty:${sl.id}`, sl.id === 'body' ? 84 : 56, 'icon'));
+    b.insertAdjacentHTML('beforeend', it
+      ? `<span class="dl">${sl.name}</span><span class="dn">${it.name}</span>`
+      : `<span class="dl">${sl.name}</span><span class="dn plus">+ 상점</span>`);
     b.addEventListener('click', () => act.openSlot(sl.id));
-    slots.appendChild(b);
+    doll.appendChild(b);
   }
 }
 
@@ -220,7 +236,7 @@ export function renderCamp(save, heroId, act, focusSlot) {
       const worn = wearing[slot.id] === item.id;
       col.appendChild(itemRow(item.name, item.desc, worn, owned
         ? worn ? doneTag('착용 중') : button('착용', 'wear-btn', () => act.wear(item))
-        : button(`${fmtMoney(item.price)}냥`, 'buy-btn', () => act.buy(item), save.money < item.price)));
+        : button(`${fmtMoney(item.price)}냥`, 'buy-btn', () => act.buy(item), save.money < item.price), item.id));
     }
     gear.appendChild(col);
   }
@@ -246,10 +262,11 @@ export function renderCamp(save, heroId, act, focusSlot) {
   }
 }
 
-function itemRow(nameHtml, desc, on, control) {
+function itemRow(nameHtml, desc, on, control, icon) {
   const row = document.createElement('div');
-  row.className = `camp-item${on ? ' on' : ''}`;
-  row.innerHTML = `<span class="nm">${nameHtml}</span><span class="ds">${desc}</span>`;
+  row.className = `camp-item${on ? ' on' : ''}${icon ? ' with-icon' : ''}`;
+  if (icon) row.appendChild(iconCanvas(icon, 44, 'row-icon'));
+  row.insertAdjacentHTML('beforeend', `<span class="nm">${nameHtml}</span><span class="ds">${desc}</span>`);
   row.appendChild(control);
   return row;
 }
