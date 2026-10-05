@@ -169,6 +169,30 @@ export function renderHome(save, sel, act) {
   card.append(cta);
   body.append(card);
   body.append(dailyCard(save, act));
+  body.append(endlessCard(save, sel, act));
+}
+
+/** ♾️ 무한 전장: the chosen hero and field with no end; best time per field. */
+function endlessCard(save, sel, act) {
+  const st = STAGES[sel.stage];
+  const h = HEROES[sel.hero];
+  const best = save.endless?.[sel.stage];
+  const mmss = (s) => `${Math.floor(s / 60)}분 ${String(Math.floor(s % 60)).padStart(2, '0')}초`;
+  const card = el('div', 'endless-card');
+  card.append(el('div', 'dc-head', `<b>♾️ 무한 전장</b><span>쓰러질 때까지 버티기</span>`));
+  const who = el('div', 'dc-who');
+  who.append(portrait(h, 56));
+  who.append(el('div', 'dc-where', `<b>${josa(h.name, '으로')} 출전</b><span>${starText(st.difficulty.stars)} ${st.numeral} ${st.name}</span>`));
+  card.append(who);
+  card.append(el('p', 'ec-rule', '적이 갈수록 많아지고, 적장은 <b>3분마다</b> 더 강해져 돌아와요. 영웅과 전장은 위에서 고른 그대로예요.'));
+  card.append(el('p', 'ec-best', best
+    ? `🏆 이 전장 최고 기록 <b>${mmss(best.time)}</b> · 적장 ${best.bosses}명 · ${HEROES[best.hero]?.name ?? ''}`
+    : '아직 기록이 없어요 — 첫 기록을 세워 보세요!'));
+  const row = el('div', 'ec-btns');
+  row.append(button('🗺️ 전장 바꾸기', 'plain-btn small', () => act.go('map')));
+  row.append(button('♾️ 무한 전장 도전', 'endless-btn', () => act.startEndless()));
+  card.append(row);
+  return card;
 }
 
 /** 📅 오늘의 전장: today's hero, field and rules, and whether its bonus is taken. */

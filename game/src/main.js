@@ -32,10 +32,14 @@ writeSave(save); // persist any format migration right away
 let introTimer = 0;
 /** The 오늘의 전장 being played (so 다시 출진 replays it), or null. */
 let runDaily = null;
+/** Playing ♾️ 무한 전장 (so 다시 출진 replays it). */
+let runEndless = false;
+const ENDLESS_RUN = { endless: true };
 
-/** Starts a battle: the chosen hero and field, or a daily challenge. */
-function newGame(daily = null) {
-  runDaily = daily?.rules ? daily : null;
+/** Starts a battle: the chosen hero and field, a daily challenge, or endless mode. */
+function newGame(mode = null) {
+  runDaily = mode?.rules ? mode : null;
+  runEndless = !!mode?.endless;
   const heroId = runDaily?.heroId ?? sel.hero;
   const stageId = runDaily?.stageId ?? sel.stage;
   // Gear gate: send the player back to the menu, where the reason is shown.
@@ -59,7 +63,8 @@ function newGame(daily = null) {
     heroId,
     stageId,
     daily: runDaily,
-    quick: !runDaily && $('quickMode').checked,
+    endless: runEndless,
+    quick: !runDaily && !runEndless && $('quickMode').checked,
     onBanner: (t, size) => hud.banner(t, size),
     onState,
     onBoss: (def) => hud.bossIntro(def),
@@ -70,7 +75,7 @@ function newGame(daily = null) {
   renderer.render(game, input, 0);
   hud.show(true);
   hud.update(game, 0, true);
-  renderIntro(STAGES[stageId], runDaily);
+  renderIntro(STAGES[stageId], runDaily, runEndless);
   showScreen('intro');
   introTimer = 2.6;
   // First battle ever: guided steps. After that, no hints — the player knows the controls.
@@ -116,6 +121,15 @@ function onState(state, g) {
       if (state === 'clear') c.wins += 1;
       c.earned += g.reward.total;
       for (const [id, n] of Object.entries(g.killsBy)) c.kills[id] = (c.kills[id] ?? 0) + n;
+      // ♾️ 무한 전장: keep the best time per battlefield.
+      let endless = null;
+      if (g.stage.endless) {
+        save.endless ??= {};
+        const prev = save.endless[g.stage.id];
+        const isNew = !prev || g.time > prev.time;
+        if (isNew) save.endless[g.stage.id] = { time: Math.floor(g.time), kills: g.kills, bosses: g.endlessBosses, hero: g.player.hero.id };
+        endless = { time: g.time, bosses: g.endlessBosses, isNew, best: save.endless[g.stage.id] };
+      }
       const run = runFacts(g, state === 'clear', save);
       recordRun(save, run);
       // 오늘의 전장: the first win of that day pays its bonus once.
@@ -135,7 +149,7 @@ function onState(state, g) {
       writeSave(save);
       updateBadge();
       // What this run added to the 도감, for the result card.
-      g.resultExtra = { dailyBonus, unlocks: unlocked.map((a) => `${a.icon} ${a.name}`), newFoes: Object.keys(g.killsBy).filter((id) => !known.has(id)).length };
+      g.resultExtra = { dailyBonus, endless, unlocks: unlocked.map((a) => `${a.icon} ${a.name}`), newFoes: Object.keys(g.killsBy).filter((id) => !known.has(id)).length };
     }
     renderResult(g, state === 'clear', g.resultExtra);
     if (g.resultExtra?.unlocks.length && !g.achieveSounded) {
@@ -223,6 +237,7 @@ const act = {
   toast,
   start: () => newGame(),
   startDaily: () => newGame(dailyFor(todayKey())),
+  startEndless: () => newGame(ENDLESS_RUN),
   pickHero(id) {
     sel.hero = id;
     refresh();
@@ -359,7 +374,7 @@ input.on('key', (k) => {
     sound.sfx('pick');
     game.choose(Number(k) - 1);
   }
-  if ((game.state === 'over' || game.state === 'clear') && k === 'enter') newGame(runDaily);
+  if ((game.state === 'over' || game.state === 'clear') && k === 'enter') newGame(runDaily ?? (runEndless ? ENDLESS_RUN : null));
 });
 
 for (const b of $('bottomNav').querySelectorAll('button')) b.addEventListener('click', () => go(b.dataset.go));
@@ -377,7 +392,7 @@ $('homeSave').addEventListener('click', () => {
 $('pauseBtn').addEventListener('click', () => game?.togglePause());
 $('resumeBtn').addEventListener('click', () => game?.togglePause());
 $('quitBtn').addEventListener('click', () => askLeave(() => toMenu('home')));
-$('retryBtn').addEventListener('click', () => newGame(runDaily));
+$('retryBtn').addEventListener('click', () => newGame(runDaily ?? (runEndless ? ENDLESS_RUN : null)));
 $('homeBtn').addEventListener('click', () => toMenu('home'));
 $('toMapBtn').addEventListener('click', () => toMenu('map'));
 $('nextBtn').addEventListener('click', () => {

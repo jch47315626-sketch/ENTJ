@@ -23,6 +23,10 @@ export function runFacts(g, won, save) {
     gearWorn: SLOTS.filter((sl) => outfit[sl.id]).length,
     drained: Math.round(g.runStats.drained),
     crowCalls: g.runStats.crowCalls,
+    objects: g.runStats.objects ?? 0,
+    endless: !!g.stage.endless,
+    endlessTime: g.stage.endless ? Math.floor(g.time) : 0,
+    endlessBosses: g.endlessBosses ?? 0,
     crowBest: g.runStats.crowBest,
   };
 }
@@ -33,6 +37,9 @@ export function recordRun(save, run) {
   st.drained = (st.drained ?? 0) + run.drained;
   st.crowCalls = (st.crowCalls ?? 0) + run.crowCalls;
   st.crowBest = Math.max(st.crowBest ?? 0, run.crowBest);
+  st.objects = (st.objects ?? 0) + run.objects;
+  st.endlessBest = Math.max(st.endlessBest ?? 0, run.endlessTime);
+  st.endlessBosses = Math.max(st.endlessBosses ?? 0, run.endlessBosses);
   if (run.won) {
     st.bosses = (st.bosses ?? 0) + 1;
     st.heroBest = { ...(st.heroBest ?? {}) };

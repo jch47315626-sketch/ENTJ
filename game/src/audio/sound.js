@@ -478,6 +478,11 @@ const EFFECTS = {
     s.taepyeongso(587.3, 0.25, 0, 0.05);
     s.taepyeongso(784, 0.4, 0.2, 0.05);
   },
+  /** 전고: a quick roll on the war drum. */
+  drumRoll: (s) => {
+    for (let i = 0; i < 8; i++) s.drum(i % 2 ? 90 : 70, 0.18, 0.18 + i * 0.02, i * 0.07);
+    s.gong(0.6, 0.08, 170);
+  },
   /** 오늘의 전장 시작. */
   daily: (s) => {
     s.gong(0, 0.1, 196);

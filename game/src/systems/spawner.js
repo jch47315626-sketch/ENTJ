@@ -1,4 +1,5 @@
 import { pickWeighted, rand, lerp, TAU } from '../core/math.js';
+import { ENDLESS } from '../data/endless.js';
 
 /** Drives the stage timeline: spawn rates, events, supply carts and the boss. */
 export class Spawner {
@@ -32,7 +33,9 @@ export class Spawner {
 
     const { phase, progress } = this.phaseAt(t);
     const diff = this.stage.difficulty;
-    this.acc += lerp(phase.rate[0], phase.rate[1], progress) * diff.spawnRate * dt;
+    // 무한 전장: the waves keep thickening.
+    const grow = this.stage.endless ? 1 + t / ENDLESS.spawnGrowth : 1;
+    this.acc += lerp(phase.rate[0], phase.rate[1], progress) * diff.spawnRate * grow * dt;
     while (this.acc >= 1) {
       this.acc -= 1;
       const id = pickWeighted(phase.mix);

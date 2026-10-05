@@ -61,6 +61,12 @@ export const ACHIEVEMENTS = [
   { id: 'daily1', group: 'field', icon: '📅', name: '오늘의 승자', desc: '오늘의 전장에서 처음 승리한다', reward: 300, check: (s) => (s.stats.dailyWins ?? 0) >= 1 },
   { id: 'daily7', group: 'field', icon: '🗓️', name: '하루도 빠짐없이', desc: '오늘의 전장을 7번 (서로 다른 날) 이긴다', reward: 3000, goal: (s) => [s.stats.dailyWins ?? 0, 7] },
 
+  // 전장 오브젝트 · 무한 전장
+  { id: 'objects30', group: 'field', icon: '🥁', name: '전장의 지혜', desc: '항아리·전고·돌탑 같은 전장 오브젝트를 모두 합쳐 30개 부순다', reward: 800, goal: (s) => [s.stats.objects ?? 0, 30] },
+  { id: 'endless5', group: 'war', icon: '♾️', name: '끝없는 싸움', desc: '무한 전장에서 5분을 버틴다', reward: 800, check: (s) => (s.stats.endlessBest ?? 0) >= 300 },
+  { id: 'endless10', group: 'war', icon: '⏳', name: '불굴', desc: '무한 전장에서 10분을 버틴다', reward: 2500, check: (s) => (s.stats.endlessBest ?? 0) >= 600 },
+  { id: 'endlessBoss3', group: 'war', icon: '👹', name: '적장 셋을 넘어', desc: '무한 전장 한 판에서 적장을 3번 쓰러뜨린다', reward: 3000, check: (s) => (s.stats.endlessBosses ?? 0) >= 3 },
+
   // 군영
   { id: 'fullSet', group: 'camp', icon: '🧥', name: '완전 무장', desc: '한 영웅이 장비 6부위를 모두 찬다', reward: 500,
     check: (s) => Object.values(s.equipped ?? {}).some((o) => SLOTS.every((sl) => o?.[sl.id])) },

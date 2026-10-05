@@ -57,6 +57,20 @@ export const ENEMIES = {
     behavior: 'static', knockResist: 1, drop: 'rice', noScaling: true,
     look: { body: '#8b6a3e', accent: '#4a3620', hat: 'cart' },
   },
+
+  // 전장 오브젝트 (systems/fieldObjects.js): break one to set off its effect.
+  oilJar: {
+    id: 'oilJar', name: '기름 항아리', hp: 12, speed: 0, damage: 0, radius: 16, xp: 0,
+    behavior: 'static', knockResist: 1, noScaling: true, object: 'oil',
+  },
+  warDrum: {
+    id: 'warDrum', name: '전고', hp: 18, speed: 0, damage: 0, radius: 19, xp: 0,
+    behavior: 'static', knockResist: 1, noScaling: true, object: 'drum',
+  },
+  shrine: {
+    id: 'shrine', name: '서낭당 돌탑', hp: 24, speed: 0, damage: 0, radius: 18, xp: 0,
+    behavior: 'static', knockResist: 1, noScaling: true, object: 'shrine',
+  },
 };
 
 /** Veteran variant used for elites in stages that have no dedicated elite types. */

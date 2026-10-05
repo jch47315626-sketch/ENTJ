@@ -1038,3 +1038,15 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 .daily-btn { border: 0; padding: 12px; border-radius: 999px; background: linear-gradient(180deg, #d9bcff, #a983e8); color: #2b2236; font: 400 20px "Jua", sans-serif; box-shadow: 0 4px 0 #7a5bb8; cursor: pointer; }
 .daily-card.done .daily-btn { background: rgba(255, 255, 255, 0.1); color: var(--hanji); box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35); }
 .daily-btn:active { transform: translateY(2px); }
+
+/* ♾️ 무한 전장 */
+.endless-card { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; padding: 14px; border-radius: 22px; background: linear-gradient(180deg, #2c2742, #221d34); border: 2px solid rgba(156, 207, 255, 0.55); box-shadow: 0 0 18px rgba(156, 207, 255, 0.15); }
+.endless-card .dc-head b { color: var(--candy-sky); }
+.ec-rule { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--hanji-dim); text-align: left; }
+.ec-rule b { color: var(--hanji); }
+.ec-best { margin: 0; padding: 8px 12px; border-radius: 12px; background: rgba(255, 213, 107, 0.1); font-size: 14px; color: var(--hanji); text-align: center; }
+.ec-best b { font-family: "Jua", sans-serif; font-weight: 400; font-size: 18px; color: var(--candy-lemon); }
+.ec-btns { display: flex; gap: 8px; align-items: stretch; }
+.ec-btns .plain-btn { flex: none; border-radius: 999px; }
+.endless-btn { flex: 1; border: 0; padding: 12px; border-radius: 999px; background: linear-gradient(180deg, #b7dcff, #79aee6); color: #1f2a40; font: 400 19px "Jua", sans-serif; box-shadow: 0 4px 0 #4f7fb8; cursor: pointer; }
+.endless-btn:active { transform: translateY(2px); }

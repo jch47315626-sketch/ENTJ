@@ -13,7 +13,9 @@ import { SPECIALS } from './systems/specials.js';
 import { BEHAVIORS } from './systems/enemyAI.js';
 import { updateAllies } from './systems/allies.js';
 import { planCrows, updateCrows, callCrow, CROW } from './systems/crows.js';
+import { updateFieldObjects, breakObject } from './systems/fieldObjects.js';
 import { applyDaily } from './data/daily.js';
+import { ENDLESS, makeEndless } from './data/endless.js';
 import { Spawner } from './systems/spawner.js';
 import { updateSkills } from './systems/skills.js';
 
@@ -56,9 +58,10 @@ class Player {
     const rage = this.enraged ? m.berserk : 0;
     this.stats = {
       maxHp,
-      speed: b.speed * (1 + 0.08 * u('swift') + (m.speed ?? 0)),
+      // 전고 (war drum object): faster steps and swings while it beats.
+      speed: b.speed * (1 + 0.08 * u('swift') + (m.speed ?? 0)) * (this.drumUntil ? 1.2 : 1),
       might: b.might * (1 + 0.15 * u('might') + (m.might ?? 0) + rage),
-      haste: b.haste * (1 - 0.1 * u('haste') - (m.haste ?? 0) - (rage ? 0.2 : 0)),
+      haste: b.haste * (1 - 0.1 * u('haste') - (m.haste ?? 0) - (rage ? 0.2 : 0)) * (this.drumUntil ? 0.75 : 1),
       area: b.area * (1 + 0.12 * u('area') + (m.area ?? 0)),
       pickup: b.pickup * (1 + 0.35 * u('magnet') + (m.pickup ?? 0)),
       armor: b.armor + (m.armor ?? 0),
@@ -100,7 +103,9 @@ export class Game {
     this.opts = opts;
     const hero = HEROES[opts.heroId];
     // 오늘의 전장: the day's rules are folded into the stage's difficulty.
-    const base = opts.daily ? applyDaily(STAGES[opts.stageId], opts.daily) : STAGES[opts.stageId];
+    // ♾️ 무한 전장: the same field, with no end (data/endless.js).
+    const base = opts.daily ? applyDaily(STAGES[opts.stageId], opts.daily) : opts.endless ? makeEndless(STAGES[opts.stageId]) : STAGES[opts.stageId];
+    this.endlessBosses = 0;
     this.stage = scaleStage(base, opts.quick ? 0.2 : 1);
     this.player = new Player(hero, opts.meta);
     this.enemies = [];
@@ -231,11 +236,12 @@ export class Game {
   // --------------------------------------------------------------- spawning
 
   spawnEnemy(id, x, y, { elite = false } = {}) {
-    if (this.enemies.length >= MAX_ENEMIES && id !== 'cart') return null;
+    if (this.enemies.length >= MAX_ENEMIES && ENEMIES[id]?.behavior !== 'static') return null;
     const def = ENEMIES[id];
     const diff = this.stage.difficulty;
     const scale = def.noScaling ? 1 : enemyHpScale(this.time) * diff.enemyHp * ENEMY_BOOST.hp;
-    const dmgScale = enemyDamageScale(this.time) * diff.enemyDamage * ENEMY_BOOST.damage;
+    const late = this.stage.endless ? 1 + Math.max(0, this.time - 300) / ENDLESS.damageGrowth : 1;
+    const dmgScale = enemyDamageScale(this.time) * diff.enemyDamage * ENEMY_BOOST.damage * late;
     const v = elite ? VETERAN : null;
     const hp = def.hp * scale * (v ? v.hpMul : 1);
     const e = {
@@ -303,10 +309,10 @@ export class Game {
       isBoss: true,
       elite: false,
       r: def.radius,
-      hp: def.hp * diff.bossHp * ENEMY_BOOST.hp * BOSS_BOOST.hp, maxHp: def.hp * diff.bossHp * ENEMY_BOOST.hp * BOSS_BOOST.hp,
+      hp: def.hp * diff.bossHp * ENEMY_BOOST.hp * BOSS_BOOST.hp * this.endlessBossMul('hp'), maxHp: def.hp * diff.bossHp * ENEMY_BOOST.hp * BOSS_BOOST.hp * this.endlessBossMul('hp'),
       speed: def.speed,
-      damage: def.damage * diff.bossDamage * ENEMY_BOOST.damage * BOSS_BOOST.damage,
-      damageMul: diff.bossDamage * ENEMY_BOOST.damage * BOSS_BOOST.damage,
+      damage: def.damage * diff.bossDamage * ENEMY_BOOST.damage * BOSS_BOOST.damage * this.endlessBossMul('damage'),
+      damageMul: diff.bossDamage * ENEMY_BOOST.damage * BOSS_BOOST.damage * this.endlessBossMul('damage'),
       xp: 0,
       cooldownMul: 1,
       summoned: new Set(),
@@ -437,6 +443,7 @@ export class Game {
     this.fx.push({ type: 'ink', x: e.x, y: e.y, t: 0, life: 0.8, size: e.r * (e.isBoss && !e.def.minion ? 4 : 1.6), seed: Math.random() });
     if (e.def.behavior === 'static') {
       this.fx.push({ type: 'puff', x: e.x, y: e.y, t: 0, life: 0.6, size: 26, tone: 'mud' });
+      if (e.def.object && this.state === 'play') breakObject(this, e);
     } else {
       this.killsBy[e.def.id] = (this.killsBy[e.def.id] ?? 0) + 1;
       this.kills++;
@@ -447,12 +454,39 @@ export class Game {
     if (e.isBoss && (e.def.minion || this.bosses.some((o) => !o.dead && !o.def.minion))) {
       // A clone, or one of several generals: the fight goes on.
       this.banner(`${e.def.name} 쓰러짐`, 'small');
+    } else if (e.isBoss && this.stage.endless) {
+      this.endBossWave(e);
     } else if (e.isBoss) {
       this.state = 'clearing';
       this.endTimer = 2.2;
       this.banner(`${e.def.name} 격파`, 'big');
       for (const o of this.enemies) if (!o.dead && o !== e) this.killEnemy(o);
     }
+  }
+
+  /** Later endless bosses are tougher: ×(1 + step × bosses already felled). */
+  endlessBossMul(kind) {
+    if (!this.stage.endless) return 1;
+    return 1 + this.endlessBosses * (kind === 'hp' ? ENDLESS.bossHpStep : ENDLESS.bossDamageStep);
+  }
+
+  /** 무한 전장: a boss fell — the field opens again and the next one is on its way. */
+  endBossWave(e) {
+    this.endlessBosses++;
+    for (const o of this.enemies) if (!o.dead && o !== e && o.isBoss) this.killEnemy(o);
+    this.boss = null;
+    this.bosses = [];
+    this.bossGroup = null;
+    this.arena = null;
+    this.spawner.bossStarted = false;
+    this.stage.bossAt = this.time + ENDLESS.bossEvery;
+    // Spoils: a spray of coins and a rice ball.
+    for (let i = 0; i < 12; i++) this.dropCoin(e.x + rand(-50, 50), e.y + rand(-50, 50), 5);
+    this.pickups.push({ kind: 'rice', x: e.x, y: e.y, heal: 40, magnet: false, t: 0 });
+    // Two more 감나무 branches before the next boss.
+    this.crowPlan.push(this.time + rand(25, 70), this.time + rand(90, 150));
+    this.crowPlan.sort((a, b) => a - b);
+    this.banner(`${e.def.name} 격파! (${this.endlessBosses}번째) — 다음 적장까지 ${ENDLESS.bossEvery / 60}분`, 'big');
   }
 
   dropCoin(x, y, value) {
@@ -571,7 +605,8 @@ export class Game {
     const stars = this.stage.difficulty.stars;
     const base = baseReward({ kills: this.kills, seconds: this.time, won, bossKilled: won });
     const mul = REWARD_BY_STARS[stars] * (1 + (this.opts.meta?.reward ?? 0)) * (this.stage.difficulty.rewardMul ?? 1);
-    return { base, mul, total: Math.round(base * mul), stars, bossBonus: won ? Math.round(BOSS_REWARD * mul) : 0 };
+    const bossBonus = won ? Math.round(BOSS_REWARD * mul) : this.stage.endless ? Math.round(BOSS_REWARD * mul * ENDLESS.bossBounty * this.endlessBosses) : 0;
+    return { base, mul, total: Math.round(base * mul) + (this.stage.endless ? bossBonus : 0), stars, bossBonus };
   }
 
   /** Start-of-run perks from the camp: secrets (비전) and free picks (병법서). */
@@ -668,6 +703,7 @@ export class Game {
     updateSkills(this, dt);
     updateAllies(this, dt);
     updateCrows(this, dt);
+    updateFieldObjects(this, dt);
     this.taunts = this.allies.filter((a) => a.lure && !a.dead);
     this.updateEnemies(dt);
     this.updateProjectiles(dt);

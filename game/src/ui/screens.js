@@ -25,10 +25,13 @@ export function drawPortrait(canvas, hero) {
   drawUnit(ctx, { ...look, body: look.robe }, 0, 0, 12, 0.35, { scale: 1 });
 }
 
-export function renderIntro(stage, daily = null) {
-  $('introYear').textContent = `${daily ? '📅 오늘의 전장 · ' : ''}${stage.year} · ${stage.place} · 난이도 ${stage.difficulty.label}`;
+export function renderIntro(stage, daily = null, endless = false) {
+  const tag = daily ? '📅 오늘의 전장 · ' : endless ? '♾️ 무한 전장 · ' : '';
+  $('introYear').textContent = `${tag}${stage.year} · ${stage.place} · 난이도 ${stage.difficulty.label}`;
   $('introName').textContent = stage.name;
-  $('introText').textContent = daily ? daily.rules.map((r) => `${r.icon} ${r.name} — ${r.desc}`).join('\n') : stage.intro;
+  $('introText').textContent = daily
+    ? daily.rules.map((r) => `${r.icon} ${r.name} — ${r.desc}`).join('\n')
+    : endless ? '끝이 없는 전장. 적은 갈수록 많아지고, 적장은 3분마다 더 강해져 돌아온다.\n쓰러질 때까지 버텨라!' : stage.intro;
 }
 
 /** Icon and colour per 책략 category. */
@@ -90,12 +93,21 @@ export function renderResult(g, won, extra = {}) {
     $('resultTitle').textContent = end.title;
     $('resultText').textContent = end.alt?.[g.player.hero.id] ?? end.text;
   }
-  $('nextBtn').hidden = !(won && g.stage.next) || !!g.stage.daily;
+  // ♾️ 무한 전장 ends only in defeat: show it as a record, not a loss.
+  const en = extra.endless;
+  if (en) {
+    seal.textContent = '無\n限';
+    seal.classList.remove('lose');
+    $('resultTitle').textContent = en.isNew ? '♾️ 새 최고 기록!' : '♾️ 무한 전장';
+    $('resultText').textContent = `${fmt(en.time)} 버티고 적장 ${en.bosses}명을 쓰러뜨렸다.${en.isNew ? '' : ` (최고 ${fmt(en.best.time)})`}`;
+  }
+  $('nextBtn').hidden = !(won && g.stage.next) || !!g.stage.daily || !!en;
   const r = g.reward;
   const rows = [];
   if (r) rows.push(['🪙', '냥', `<span class="count-up" data-to="${r.total}">+0</span>`]);
   if (r?.bossBonus) rows.push(['👑', '적장 토벌 보상', `+${r.bossBonus.toLocaleString()}`]);
   if (extra.dailyBonus) rows.push(['📅', '오늘의 전장 보상', `+${extra.dailyBonus.toLocaleString()}`]);
+  if (en) rows.push(['♾️', '적장 격파', `${en.bosses}명`]);
   rows.push(['⭐', '공훈', `Lv ${g.player.level}`]);
   rows.push(['⚔️', '처치', `${g.kills}`]);
   rows.push(['⏱️', '버틴 시간', fmt(g.time)]);

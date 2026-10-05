@@ -243,6 +243,103 @@ export class Renderer {
     if (a.kind === 'shin' && a.shout > 0) this.drawShout(ctx, a.x, a.y - 74, '내가 왕건이다!', Math.min(1, a.shout * 3));
   }
 
+  /** 전장 오브젝트: oil jar, war drum, roadside cairn — with a bobbing hint icon. */
+  drawFieldObject(ctx, g, e) {
+    const { x, y, r } = e;
+    const flash = e.flash > 0;
+    ctx.save();
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+    ctx.beginPath();
+    ctx.ellipse(x, y + r * 0.8, r * 1.1, r * 0.4, 0, 0, TAU);
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#1d1a17';
+    let icon;
+    if (e.def.object === 'oil') {
+      icon = '🔥';
+      // Round-bellied jar with a dark, glistening mouth.
+      ctx.fillStyle = flash ? '#fff3d6' : '#8a5a32';
+      ctx.beginPath();
+      ctx.ellipse(x, y, r * 0.95, r, 0, 0, TAU);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#5e3a1e';
+      ctx.fillRect(x - r * 0.95, y - r * 0.1, r * 1.9, r * 0.25);
+      ctx.fillStyle = '#2b1d14';
+      ctx.beginPath();
+      ctx.ellipse(x, y - r * 0.85, r * 0.45, r * 0.2, 0, 0, TAU);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(255, 210, 120, 0.7)';
+      ctx.beginPath();
+      ctx.ellipse(x - r * 0.4, y - r * 0.3, r * 0.15, r * 0.3, -0.4, 0, TAU);
+      ctx.fill();
+    } else if (e.def.object === 'drum') {
+      icon = '🥁';
+      // Barrel drum on a little stand, red body, pale skin, 태극 on the head.
+      ctx.strokeStyle = '#3b2a1c';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(x - r * 0.8, y + r);
+      ctx.lineTo(x - r * 0.5, y + r * 0.3);
+      ctx.moveTo(x + r * 0.8, y + r);
+      ctx.lineTo(x + r * 0.5, y + r * 0.3);
+      ctx.stroke();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#1d1a17';
+      ctx.fillStyle = flash ? '#fff3d6' : '#b3261e';
+      ctx.fillRect(x - r, y - r * 0.6, r * 2, r * 1.1);
+      ctx.strokeRect(x - r, y - r * 0.6, r * 2, r * 1.1);
+      ctx.fillStyle = '#f0e2c0';
+      ctx.beginPath();
+      ctx.ellipse(x, y - r * 0.6, r, r * 0.35, 0, 0, TAU);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#c0392b';
+      ctx.beginPath();
+      ctx.ellipse(x, y - r * 0.6, r * 0.35, r * 0.13, 0, Math.PI, TAU);
+      ctx.fill();
+      ctx.fillStyle = '#2d5a9c';
+      ctx.beginPath();
+      ctx.ellipse(x, y - r * 0.6, r * 0.35, r * 0.13, 0, 0, Math.PI);
+      ctx.fill();
+      for (const sx of [-0.6, 0, 0.6]) {
+        ctx.fillStyle = '#e8c060';
+        ctx.beginPath();
+        ctx.arc(x + sx * r, y - r * 0.1, 2, 0, TAU);
+        ctx.fill();
+      }
+    } else {
+      icon = '✨';
+      // A cairn of stones with coloured cloth strips (서낭당).
+      const stones = [[0, 0.55, 1, 0.42], [-0.05, 0.05, 0.75, 0.36], [0.05, -0.38, 0.52, 0.3], [0, -0.75, 0.3, 0.22]];
+      for (const [sx, sy, w, h] of stones) {
+        ctx.fillStyle = flash ? '#fff3d6' : '#8d8a80';
+        ctx.beginPath();
+        ctx.ellipse(x + sx * r, y + sy * r, w * r, h * r, 0, 0, TAU);
+        ctx.fill();
+        ctx.stroke();
+      }
+      const t = g.time;
+      [['#c0392b', -0.7], ['#2d5a9c', 0.75], ['#e8c060', -0.3], ['#3f8f66', 0.4]].forEach(([c, sx], i) => {
+        ctx.strokeStyle = c;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(x + sx * r * 0.6, y - r * 0.2);
+        ctx.quadraticCurveTo(x + sx * r * 1.2, y + r * 0.1 + Math.sin(t * 3 + i) * 3, x + sx * r * 1.4, y + r * 0.5);
+        ctx.stroke();
+      });
+    }
+    // Hint icon bobbing above, so it reads as "break me".
+    const bob = Math.sin(g.time * 3 + x * 0.01) * 3;
+    ctx.font = '16px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.globalAlpha = 0.9;
+    ctx.fillText(icon, x, y - r - 16 + bob);
+    ctx.restore();
+  }
+
   /** A small speech bubble with a tail pointing down. */
   drawShout(ctx, x, y, text, alpha) {
     ctx.save();
@@ -371,6 +468,7 @@ export class Renderer {
   }
 
   drawEnemy(ctx, g, e) {
+    if (e.def.object) return this.drawFieldObject(ctx, g, e);
     if (e.def.behavior === 'static') {
       drawCart(ctx, e.x, e.y, e.r, e.flash > 0);
       return;

@@ -160,5 +160,6 @@ function heroStatus(g) {
     if (allies('maguni')) chips.push(`👹 마구니 ${allies('maguni')}`);
     if (Object.keys(p.subs).length) chips.push('☄️ 금강저');
   }
+  if (p.drumUntil) chips.push(`🥁 전고 ${Math.ceil(p.drumUntil - g.time)}초`);
   return chips.map((c) => `<span>${c}</span>`).join('');
 }
