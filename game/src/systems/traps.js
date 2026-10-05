@@ -25,6 +25,7 @@ export function updateTraps(g, dt) {
     g.trapCd = TRAP.every[lv];
     if (g.traps.length >= TRAP.max[lv]) g.traps.shift(); // oldest makes way
     g.traps.push({ x: p.x, y: p.y, t: 0 });
+    g.sfx('dig');
   }
   for (const tr of g.traps) {
     tr.t += dt;

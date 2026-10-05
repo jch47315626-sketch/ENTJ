@@ -4,6 +4,7 @@ import { Input } from './core/input.js';
 import { Hud } from './ui/hud.js';
 import { Tutorial } from './ui/tutorial.js';
 import { Sound } from './audio/sound.js';
+import { themeFor } from './audio/music.js';
 import { showScreen, renderIntro, renderChoices, renderResult } from './ui/screens.js';
 import { renderHome, renderHeroes, renderGrow, renderMap, renderPrep, renderCodex, setCodexTab } from './ui/menu.js';
 import { loadSave, writeSave, outfitOf, treeOf, encodeSave, decodeSave } from './core/save.js';
@@ -74,13 +75,18 @@ function newGame(daily = null) {
   // First battle ever: guided steps. After that, no hints — the player knows the controls.
   if (!save.tutorialDone) tutor.start();
   else tutor.stop();
-  sound.startMusic();
   sound.setIntensity(0);
+  sound.startMusic(themeFor(stageId));
+  if (runDaily) sound.sfx('daily');
 }
 
 function onState(state, g) {
   if (state === 'levelup') {
-    renderChoices(g.choices, (i) => g.choose(i));
+    renderChoices(g.choices, (i) => {
+      sound.sfx('pick');
+      g.choose(i);
+    });
+    sound.sfx('flip');
     showScreen('levelup');
     tutor.onLevelup(g);
   } else if (state === 'paused') {
@@ -88,7 +94,7 @@ function onState(state, g) {
     hud.fillPause(g);
     showScreen('pause');
   } else if (state === 'play') {
-    sound.startMusic();
+    sound.startMusic(); // resume this field's theme
     showScreen(null);
     tutor.onPick(g);
   } else if (state === 'over' || state === 'clear') {
@@ -131,6 +137,10 @@ function onState(state, g) {
       g.resultExtra = { dailyBonus, unlocks: unlocked.map((a) => `${a.icon} ${a.name}`), newFoes: Object.keys(g.killsBy).filter((id) => !known.has(id)).length };
     }
     renderResult(g, state === 'clear', g.resultExtra);
+    if (g.resultExtra?.unlocks.length && !g.achieveSounded) {
+      g.achieveSounded = true;
+      setTimeout(() => sound.sfx('achieve'), 1900);
+    }
     showScreen('result');
   }
 }
@@ -144,7 +154,8 @@ let menu = 'home';
 function toMenu(name = 'home') {
   game = null;
   tutor.stop();
-  sound.stopMusic();
+  sound.setIntensity(0);
+  sound.startMusic('menu');
   hud.show(false);
   hud.clearBanner();
   go(name);
@@ -182,7 +193,10 @@ const spend = (cost) => {
 /** 업적 met outside battle (buying, forging): toast them. */
 function checkMenuAchievements() {
   const fresh = checkAchievements(save);
-  if (fresh.length) toast(`🏆 업적 달성! ${fresh.map((a) => a.name).join(', ')} — 도감에서 보상 받기`);
+  if (fresh.length) {
+    toast(`🏆 업적 달성! ${fresh.map((a) => a.name).join(', ')} — 도감에서 보상 받기`);
+    setTimeout(() => sound.sfx('achieve'), 250);
+  }
   updateBadge();
 }
 
@@ -193,12 +207,12 @@ function updateBadge() {
   b.dataset.badge = n ? String(n) : '';
 }
 
-/** Saves, plays the coin sound and redraws. */
-function done() {
+/** Saves, plays a purchase sound and redraws. */
+function done(sfx = 'buy') {
   checkMenuAchievements();
   writeSave(save);
   sound.unlock();
-  sound.sfx('coin');
+  sound.sfx(sfx);
   refresh();
 }
 
@@ -227,7 +241,7 @@ const act = {
   wear(item) {
     if (item.hero !== sel.hero) return;
     outfitOf(save, sel.hero)[item.slot] = item.id;
-    done();
+    done('click');
   },
   forge(item) {
     const lv = save.forge[item.id] ?? 0;
@@ -237,7 +251,7 @@ const act = {
     checkMenuAchievements();
     writeSave(save);
     sound.unlock();
-    sound.sfx(ok ? 'coin' : 'hit');
+    sound.sfx(ok ? 'forgeOk' : 'forgeFail');
     refresh();
     toast(ok ? `🔨 제련 성공! ${item.name} +${lv + 1}` : `제련 실패… ${item.name}은(는) +${lv} 그대로`, ok);
   },
@@ -277,7 +291,7 @@ const act = {
     if (!got) return;
     writeSave(save);
     sound.unlock();
-    sound.sfx('coin');
+    sound.sfx('achieve');
     updateBadge();
     refresh();
     toast(`🏆 보상 +${got.toLocaleString()}냥`);
@@ -288,7 +302,7 @@ const act = {
     if (!got) return;
     writeSave(save);
     sound.unlock();
-    sound.sfx('coin');
+    sound.sfx('achieve');
     updateBadge();
     refresh();
     toast(`🏆 보상 모두 받기 +${got.toLocaleString()}냥`);
@@ -340,7 +354,10 @@ input.on('key', (k) => {
   }
   if (k === 'p' || k === 'escape') game.togglePause();
   if (k === 'm') setMuted(!sound.muted);
-  if (game.state === 'levelup' && ['1', '2', '3'].includes(k)) game.choose(Number(k) - 1);
+  if (game.state === 'levelup' && ['1', '2', '3'].includes(k)) {
+    sound.sfx('pick');
+    game.choose(Number(k) - 1);
+  }
   if ((game.state === 'over' || game.state === 'clear') && k === 'enter') newGame(runDaily);
 });
 
@@ -382,6 +399,36 @@ document.addEventListener('pointerdown', (e) => {
   $('muteBtn').setAttribute('aria-expanded', 'false');
 });
 $('muteToggle').addEventListener('click', () => setMuted(!sound.muted));
+const bindSlider = (id, get, set) => {
+  const input = $(id);
+  const show = () => ($(`${id}Text`).textContent = input.value);
+  input.value = String(Math.round(get() * 100));
+  show();
+  input.addEventListener('input', () => {
+    set(Number(input.value) / 100);
+    show();
+  });
+};
+bindSlider('musicVol', () => sound.musicVol, (v) => sound.setMusicVolume(v));
+bindSlider('sfxVol', () => sound.sfxVol, (v) => {
+  sound.setSfxVolume(v);
+  sound.sfx('coin'); // a sample at the new level
+});
+
+// Browsers only allow sound after the first tap or key: start the 군영 music then.
+const firstGesture = () => {
+  sound.unlock();
+  if (!game) sound.startMusic('menu');
+};
+document.addEventListener('pointerdown', firstGesture, { once: true, capture: true });
+document.addEventListener('keydown', firstGesture, { once: true, capture: true });
+// A soft tick on menu buttons (purchases and battle buttons have their own sounds).
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b || game?.state === 'play') return;
+  if (b.matches('.buy-btn, .forge-btn, .ach-claim, .ach-claim-all, .pick-card, .wear-btn')) return;
+  sound.sfx('click');
+});
 $('soundOn').addEventListener('change', (e) => setMuted(!e.target.checked));
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && game?.state === 'play') game.togglePause();
@@ -492,6 +539,9 @@ function frame(now) {
     renderer.render(game, input, dt);
     hud.update(game, dt);
     sound.setIntensity(game.boss ? 2 : Math.min(1, game.time / game.stage.bossAt) * 1.0);
+    // Low health: a heartbeat under everything.
+    const p = game.player;
+    if (game.state === 'play' && p.hp > 0 && p.hp < p.stats.maxHp * 0.25) sound.sfx('heartbeat');
   }
   requestAnimationFrame(frame);
 }

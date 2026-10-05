@@ -40,7 +40,9 @@
       <button id="muteBtn" class="icon-btn" type="button" aria-expanded="false" aria-label="소리 조절">🔊</button>
       <button id="pauseBtn" class="icon-btn" type="button" aria-label="일시정지">⏸</button>
       <div id="soundPanel" class="sound-panel" hidden>
-        <label>🔉 <input id="volume" type="range" min="0" max="100" step="5" aria-label="소리 크기"> <b id="volumeText">80</b></label>
+        <label>🔉 전체 <input id="volume" type="range" min="0" max="100" step="5" aria-label="전체 소리 크기"> <b id="volumeText">80</b></label>
+        <label>🎵 음악 <input id="musicVol" type="range" min="0" max="100" step="5" aria-label="배경음악 크기"> <b id="musicVolText">70</b></label>
+        <label>💥 효과 <input id="sfxVol" type="range" min="0" max="100" step="5" aria-label="효과음 크기"> <b id="sfxVolText">90</b></label>
         <button id="muteToggle" class="plain-btn small" type="button">소리 끄기</button>
       </div>
     </div>
