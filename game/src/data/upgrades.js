@@ -6,6 +6,9 @@ import { GWANSIM, TIER_NAMES, SHIN, HORSE, CHAIN } from './skills.js';
  * so player.upgrades[id] already holds the new level.
  * Categories: 무예 (weapon), 병법 (troops), 지세 (field), 보급 (fallback).
  */
+/** 견훤 혈투, by level: health per foe struck (share of max HP), foes counted per swing. */
+export const LIFESTEAL = [null, { share: 0.008, cap: 4 }, { share: 0.012, cap: 5 }, { share: 0.016, cap: 6 }];
+
 export const UPGRADES = [
   {
     id: 'weapon', category: '무예', maxLevel: 99, weight: 20,
@@ -90,9 +93,12 @@ export const UPGRADES = [
     apply: (g) => g.syncArcherAllies(),
   },
   {
-    // 견훤 대신: 발밑에 묻는 폭약 함정. 밟은 적 주변이 터진다.
-    id: 'traps', name: '함정', category: '병법', maxLevel: 3, weight: 8, heroes: ['gyeonhwon'],
-    describe: (g) => (g.player.upgrades.traps ? '함정 위력·범위 증가, 더 자주 더 많이 설치' : '몇 초마다 발밑에 함정을 묻는다 — 적이 밟으면 펑! 주변 적에게 큰 피해'),
+    // 견훤 대신: 붙어 싸우는 만큼 버티도록, 벨 때마다 체력을 되찾는다.
+    id: 'lifesteal', name: '혈투', category: '병법', maxLevel: 3, weight: 9, heroes: ['gyeonhwon'],
+    describe: (g) => {
+      const L = LIFESTEAL[(g.player.upgrades.lifesteal ?? 0) + 1];
+      return `대도로 벤 적 하나마다 최대 체력의 ${+(L.share * 100).toFixed(1)}% 회복 (한 번 휘두를 때 ${L.cap}명까지)`;
+    },
     apply: () => {},
   },
   {

@@ -21,7 +21,7 @@ export function runFacts(g, won, save) {
     bossSeen: !!g.runStats.bossSeen,
     hurtInBoss: Math.round(g.runStats.hurtInBoss),
     gearWorn: SLOTS.filter((sl) => outfit[sl.id]).length,
-    trapBlasts: g.runStats.trapBlasts,
+    drained: Math.round(g.runStats.drained),
     crowCalls: g.runStats.crowCalls,
     crowBest: g.runStats.crowBest,
   };
@@ -30,7 +30,7 @@ export function runFacts(g, won, save) {
 /** Adds a battle's numbers to the lifetime stats. */
 export function recordRun(save, run) {
   const st = save.stats;
-  st.trapBlasts = (st.trapBlasts ?? 0) + run.trapBlasts;
+  st.drained = (st.drained ?? 0) + run.drained;
   st.crowCalls = (st.crowCalls ?? 0) + run.crowCalls;
   st.crowBest = Math.max(st.crowBest ?? 0, run.crowBest);
   if (run.won) {

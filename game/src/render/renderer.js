@@ -1,7 +1,6 @@
 import { GROUNDS } from './ground.js';
 import { drawUnit, drawCart, drawCoin, drawRice, drawProjectile } from './sprites.js';
 import { clamp, TAU } from '../core/math.js';
-import { TRAP } from '../systems/traps.js';
 
 const ALLY_LOOKS = {
   soldier: { body: '#3e5a7a', accent: '#1f2d3d', hat: 'helmetBlue', weapon: 'spear', skin: '#e3c39c' },
@@ -135,7 +134,6 @@ export class Renderer {
     ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
     if (g.arena) this.drawArenaFloor(ctx, g, v);
     this.drawCaltrops(ctx, g);
-    this.drawTraps(ctx, g);
     this.drawZones(ctx, g);
     this.drawHalos(ctx, g);
 
@@ -242,6 +240,30 @@ export class Renderer {
       ctx.fillText('王', a.x + 7, a.y - 38);
       ctx.globalAlpha = 1;
     }
+    if (a.kind === 'shin' && a.shout > 0) this.drawShout(ctx, a.x, a.y - 74, '내가 왕건이다!', Math.min(1, a.shout * 3));
+  }
+
+  /** A small speech bubble with a tail pointing down. */
+  drawShout(ctx, x, y, text, alpha) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.font = '400 15px "Jua", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const w = ctx.measureText(text).width + 18, h = 26;
+    ctx.fillStyle = 'rgba(28, 24, 44, 0.9)';
+    ctx.strokeStyle = 'rgba(255, 213, 107, 0.9)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(x - w / 2, y - h / 2, w, h, 12);
+    ctx.moveTo(x - 6, y + h / 2);
+    ctx.lineTo(x, y + h / 2 + 8);
+    ctx.lineTo(x + 6, y + h / 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#ffe08a';
+    ctx.fillText(text, x, y + 1);
+    ctx.restore();
   }
 
   drawZones(ctx, g) {
@@ -562,39 +584,6 @@ export class Renderer {
     ctx.arc(11, -6.5, 1, 0, TAU);
     ctx.fill();
     ctx.restore();
-  }
-
-  /** 견훤's 함정: a buried pot with a fuse that glows once armed. */
-  drawTraps(ctx, g) {
-    for (const tr of g.traps) {
-      const armed = tr.t >= TRAP.arm;
-      const fade = Math.min(1, (TRAP.life - tr.t) / 2);
-      ctx.globalAlpha = Math.max(0.2, fade);
-      ctx.fillStyle = 'rgba(30, 22, 16, 0.55)';
-      ctx.beginPath();
-      ctx.ellipse(tr.x, tr.y + 3, 14, 7, 0, 0, TAU);
-      ctx.fill();
-      ctx.fillStyle = '#5a3d2a';
-      ctx.beginPath();
-      ctx.arc(tr.x, tr.y, 9, 0, TAU);
-      ctx.fill();
-      ctx.strokeStyle = '#2b1d14';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      const blink = armed ? 0.55 + 0.45 * Math.sin(g.time * 8 + tr.x) : 0.25;
-      ctx.fillStyle = `rgba(255, 120, 60, ${blink})`;
-      ctx.beginPath();
-      ctx.arc(tr.x + 4, tr.y - 7, 3.5, 0, TAU);
-      ctx.fill();
-      if (armed) {
-        ctx.strokeStyle = `rgba(255, 140, 70, ${0.25 * blink})`;
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.arc(tr.x, tr.y, TRAP.trigger + 6, 0, TAU);
-        ctx.stroke();
-      }
-      ctx.globalAlpha = 1;
-    }
   }
 
   drawArenaFloor(ctx, g, v) {

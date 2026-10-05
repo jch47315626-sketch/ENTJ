@@ -42,7 +42,7 @@ function dash(p, angle, speed, time, then) {
 function strike(g, mul, arc) {
   const p = g.player;
   const lv = currentWeaponLevel(p);
-  hitArc(g, p.x, p.y, p.facing, (lv.range + 10) * p.stats.area, arc, weaponDamage(p) * mul * p.stats.might, 140, 'chop');
+  g.heroDrain(hitArc(g, p.x, p.y, p.facing, (lv.range + 10) * p.stats.area, arc, weaponDamage(p) * mul * p.stats.might, 140, 'chop'));
 }
 
 /** 패공: called right after each main-weapon swing. */
@@ -125,7 +125,7 @@ export function onHurt(g) {
   g.later(C.delay, () => {
     p.countering = false;
     if (g.state !== 'play') return;
-    hitArc(g, p.x, p.y, 0, radius * p.stats.area, 360, weaponDamage(p) * mul * p.stats.might, C.knockback, 'paewang', { stun: C.stun });
+    g.heroDrain(hitArc(g, p.x, p.y, 0, radius * p.stats.area, 360, weaponDamage(p) * mul * p.stats.might, C.knockback, 'paewang', { stun: C.stun }));
     g.shake(6);
     g.sfx('quake');
     g.texts.push({ x: p.x, y: p.y - 44, v: '💥 반격!', t: 0, life: 0.8, order: true });

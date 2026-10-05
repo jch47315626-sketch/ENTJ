@@ -51,8 +51,8 @@ export const ACHIEVEMENTS = [
   { id: 'naked', group: 'feat', icon: '🎽', name: '맨몸의 영웅', desc: '장비를 하나도 차지 않고 ★2 이상 전장을 평정한다', reward: 2000, check: (s, r) => r && r.won && r.stars >= 2 && r.gearWorn === 0 },
 
   // 전장 활용
-  { id: 'trap1', group: 'field', icon: '💣', name: '펑!', desc: '견훤의 함정을 처음 터뜨린다', reward: 200, check: (s) => (s.stats.trapBlasts ?? 0) >= 1 },
-  { id: 'trap100', group: 'field', icon: '🧨', name: '함정의 달인', desc: '함정을 모두 합쳐 100번 터뜨린다', reward: 1000, goal: (s) => [s.stats.trapBlasts ?? 0, 100] },
+  { id: 'drainRun', group: 'field', icon: '🩸', name: '피의 투지', desc: '견훤의 혈투로 한 판에 체력 300을 되찾는다', reward: 800, check: (s, r) => r && r.drained >= 300 },
+  { id: 'drain5k', group: 'field', icon: '🪓', name: '불사의 패왕', desc: '혈투로 모두 합쳐 체력 5,000을 되찾는다', reward: 1500, goal: (s) => [Math.round(s.stats.drained ?? 0), 5000] },
   { id: 'crow1', group: 'field', icon: '🐦‍⬛', name: '까마귀 친구', desc: '감나무 가지를 주워 까마귀를 부른다', reward: 200, check: (s) => (s.stats.crowCalls ?? 0) >= 1 },
   { id: 'crow50', group: 'field', icon: '🪙', name: '까마귀 대박', desc: '까마귀 한 번에 엽전 50개를 모은다', reward: 800, check: (s) => (s.stats.crowBest ?? 0) >= 50 },
   { id: 'crow20', group: 'field', icon: '🌳', name: '감나무 지기', desc: '까마귀를 모두 합쳐 20번 부른다', reward: 800, goal: (s) => [s.stats.crowCalls ?? 0, 20] },

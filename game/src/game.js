@@ -4,7 +4,7 @@ import { BOSSES } from './data/bosses.js';
 import { afterSwing, onHurt, updateBuild } from './systems/builds.js';
 import { STAGES, scaleStage } from './data/stages.js';
 import { enemyHpScale, enemyDamageScale, ENEMY_BOOST, ENEMY_ARMOR, BOSS_BOOST, HP_REGEN } from './data/balance.js';
-import { UPGRADES, FALLBACKS } from './data/upgrades.js';
+import { UPGRADES, FALLBACKS, LIFESTEAL } from './data/upgrades.js';
 import { baseReward, REWARD_BY_STARS, BOSS_REWARD } from './data/meta.js';
 import { SpatialGrid } from './core/grid.js';
 import { clamp, rand, TAU, dist2, angleDiff } from './core/math.js';
@@ -12,7 +12,6 @@ import { updateWeapon, hitArc } from './systems/weapons.js';
 import { SPECIALS } from './systems/specials.js';
 import { BEHAVIORS } from './systems/enemyAI.js';
 import { updateAllies } from './systems/allies.js';
-import { updateTraps } from './systems/traps.js';
 import { planCrows, updateCrows, callCrow, CROW } from './systems/crows.js';
 import { applyDaily } from './data/daily.js';
 import { Spawner } from './systems/spawner.js';
@@ -107,10 +106,8 @@ export class Game {
     this.enemies = [];
     this.projectiles = [];
     this.allies = [];
-    this.traps = []; // 견훤's 함정: { x, y, t }
-    this.trapCd = 1.5;
     // Per-battle counts for 업적 (core/achieve.js).
-    this.runStats = { trapBlasts: 0, crowCalls: 0, crowBest: 0, hurtInBoss: 0 };
+    this.runStats = { drained: 0, crowCalls: 0, crowBest: 0, hurtInBoss: 0 };
     planCrows(this);
     this.pickups = [];
     this.fx = [];
@@ -344,6 +341,29 @@ export class Game {
       this.allies.push({ kind: 'retinue', role, idx: roles.filter((r, j) => r === role && j < i).length, x: this.player.x, y: this.player.y, r: 11, cd: 0, facing: 0 });
       this.orders[role] ??= { t: 2 + Object.keys(this.orders).length * 1.3 };
     });
+  }
+
+  /**
+   * 견훤 혈투: each foe struck by his own blade gives back a little health
+   * (a share of max HP per foe, a few foes per swing at most).
+   */
+  heroDrain(hits) {
+    const lv = this.player.upgrades.lifesteal ?? 0;
+    if (!lv || !hits) return;
+    const L = LIFESTEAL[lv];
+    const p = this.player;
+    const before = p.hp;
+    p.heal(Math.min(hits, L.cap) * L.share * p.stats.maxHp);
+    const got = p.hp - before;
+    if (got <= 0) return;
+    this.runStats.drained += got;
+    // Show the healing as one number every half second, not per hit.
+    this.drainShown = (this.drainShown ?? 0) + got;
+    if (this.time - (this.drainAt ?? -9) > 0.5 && this.drainShown >= 1) {
+      this.texts.push({ x: p.x, y: p.y - 30, v: `+${Math.round(this.drainShown)}`, t: 0, life: 0.7, heal: true });
+      this.drainShown = 0;
+      this.drainAt = this.time;
+    }
   }
 
   /** After each main-weapon swing (견훤 패공의 길 lunges and dashes). */
@@ -647,7 +667,6 @@ export class Game {
     updateWeapon(this, dt);
     updateSkills(this, dt);
     updateAllies(this, dt);
-    updateTraps(this, dt);
     updateCrows(this, dt);
     this.taunts = this.allies.filter((a) => a.lure && !a.dead);
     this.updateEnemies(dt);

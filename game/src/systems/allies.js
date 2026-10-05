@@ -52,13 +52,36 @@ export function updateAllies(g, dt) {
         g.fx.push({ type: 'ink', x: a.x, y: a.y, t: 0, life: 1, size: 22, seed: 0.7 });
       }
     } else if (a.kind === 'shin') {
-      // 신숭겸 holds his ground with the royal banner and cuts at whoever reaches him.
+      // 신숭겸 in the king's armour charges the nearest foes, crying that he is the king.
       a.life -= dt;
       a.cd -= dt;
       a.hurtFlash = (a.hurtFlash ?? 0) - dt;
-      const target = g.nearestEnemy(a.x, a.y, a.r + 46);
+      a.shout = (a.shout ?? 0) - dt;
+      a.nextShout = (a.nextShout ?? 0) - dt;
+      if (a.nextShout <= 0) {
+        a.shout = SHIN_AI.shoutFor;
+        a.nextShout = SHIN_AI.shoutEvery;
+      }
+      const target = g.nearestEnemy(a.x, a.y, SHIN_AI.seek);
       if (target) {
         a.facing = Math.atan2(target.y - a.y, target.x - a.x);
+        const d = Math.hypot(target.x - a.x, target.y - a.y);
+        const reach = a.r + target.r + 22;
+        if (d > reach) {
+          const step = Math.min(d - reach, SHIN_AI.speed * dt);
+          a.x += Math.cos(a.facing) * step;
+          a.y += Math.sin(a.facing) * step;
+        }
+      } else {
+        // Nobody near: fall back beside the real king.
+        const dx = p.x - a.x, dy = p.y - a.y, d = Math.hypot(dx, dy);
+        if (d > 70) {
+          a.facing = Math.atan2(dy, dx);
+          a.x += (dx / d) * SHIN_AI.speed * dt;
+          a.y += (dy / d) * SHIN_AI.speed * dt;
+        }
+      }
+      if (target && Math.hypot(target.x - a.x, target.y - a.y) < a.r + target.r + 30) {
         if (a.cd <= 0) {
           a.cd = 0.8 * p.stats.haste;
           g.damageEnemy(target, a.damage * p.stats.might, a.x, a.y, 70);
@@ -281,6 +304,9 @@ function updateRetinue(g, a, dt) {
     }
   }
 }
+
+/** 신숭겸: how far he looks for a fight, how fast he runs, how often he shouts. */
+const SHIN_AI = { seek: 320, speed: 175, shoutEvery: 4.5, shoutFor: 1.8 };
 
 /** 통솔 spearmen. */
 const SOLDIER = { damage: 14, cooldown: 0.5, speed: 195 };

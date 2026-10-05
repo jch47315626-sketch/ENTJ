@@ -45,7 +45,7 @@ export const PATTERNS = {
     fire(g, p, lv, s) {
       const range = lv.range * s.area;
       const aim = aimAngle(g, p, range);
-      hitArc(g, p.x, p.y, aim, range, lv.arc, lv.damage * s.might, lv.knockback, 'chop');
+      g.heroDrain(hitArc(g, p.x, p.y, aim, range, lv.arc, lv.damage * s.might, lv.knockback, 'chop'));
       if (lv.crack) {
         const d = range * 0.7;
         g.zones.push({
@@ -66,14 +66,14 @@ export const PATTERNS = {
       w.combo = w.combo ?? 0;
       if (w.combo < 2) {
         const side = w.combo === 0 ? -0.35 : 0.35;
-        hitArc(g, p.x, p.y, aim + side, range, lv.arc, lv.damage * s.might, lv.knockback, 'chop');
+        g.heroDrain(hitArc(g, p.x, p.y, aim + side, range, lv.arc, lv.damage * s.might, lv.knockback, 'chop'));
         w.combo++;
         w.timer = lv.comboGap * s.haste;
         g.sfx('chop');
         return;
       }
       w.combo = 0;
-      hitArc(g, p.x, p.y, aim, range * 0.8, 70, lv.damage * 1.2 * s.might, lv.knockback * 1.5, 'chop', { stun: lv.wave.stun });
+      g.heroDrain(hitArc(g, p.x, p.y, aim, range * 0.8, 70, lv.damage * 1.2 * s.might, lv.knockback * 1.5, 'chop', { stun: lv.wave.stun }));
       const W = lv.wave;
       g.projectiles.push({
         team: 'player', kind: 'quake', x: p.x, y: p.y,
@@ -229,16 +229,20 @@ function aimAngle(g, p, range) {
 }
 
 /** Damages every enemy inside a circular sector and leaves an effect. */
+/** Strikes every foe in an arc; returns how many were hit. */
 export function hitArc(g, x, y, angle, range, arcDeg, damage, knockback, style, opts) {
   const half = (arcDeg * Math.PI) / 360;
+  let hits = 0;
   g.grid.query(x, y, range + 40, (e) => {
     if (e.dead) return;
     const dx = e.x - x, dy = e.y - y;
     const d = Math.hypot(dx, dy);
     if (d > range + e.r) return;
     if (arcDeg < 360 && d > e.r + 8 && Math.abs(angleDiff(Math.atan2(dy, dx), angle)) > half + e.r / Math.max(d, 1)) return;
+    if (!g.isCharmed(e)) hits++;
     g.damageEnemy(e, damage, x, y, knockback, opts);
   });
   const life = { royal: 0.28, burst: 0.4, chop: 0.22, blast: 0.6 }[style] ?? 0.2;
   g.fx.push({ type: style, x, y, angle, range, arc: arcDeg, t: 0, life });
+  return hits;
 }
