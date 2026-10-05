@@ -43,7 +43,6 @@ export const STAGES = {
     intro: '927년 가을, 팔공산 동수. 경주를 친 견훤의 군대가 돌아오는 길목에서 고려군을 에워싼다.',
     ground: 'autumnHills',
     difficulty: { label: '보통', stars: 2, enemyHp: 1.45, enemyDamage: 1.4, spawnRate: 1.2, eliteBonus: 0.1, bossHp: 1.35, bossDamage: 1.3 },
-    require: { grade: 2, count: 3 }, // gear needed to march here
     clearText: '공산의 포위를 뚫고 살아남았다. 팔공산이라는 이름은 이날 목숨을 바친 여덟 장수에게서 왔다고 전한다.',
     next: 'gochang',
     bossAt: 300,
@@ -73,7 +72,6 @@ export const STAGES = {
     intro: '930년 정월, 고창의 얼어붙은 강가. 견훤의 주력과 고려군이 맞붙고, 고을 호족들이 어느 편에 설지 지켜본다.',
     ground: 'winterRiver',
     difficulty: { label: '어려움', stars: 3, enemyHp: 1.5, enemyDamage: 1.5, spawnRate: 1.15, eliteBonus: 0.08, bossHp: 1.6, bossDamage: 1.45 },
-    require: { grade: 3, count: 3 }, // gear needed to march here
     clearText: '고창의 겨울 들판에서 승부가 갈렸다. 이 고을 호족 셋은 훗날 안동의 삼태사로 기려진다.',
     next: 'cheorwon',
     bossAt: 300,
@@ -104,7 +102,6 @@ export const STAGES = {
     intro: '918년 6월, 철원의 궁성. 네 장수가 왕건을 추대하고 궁문을 연다. 미륵을 자처한 왕 궁예는 아직 궁 안에 있다.',
     ground: 'palaceCourt',
     difficulty: { label: '매우 어려움', stars: 4, enemyHp: 2.0, enemyDamage: 1.85, spawnRate: 1.25, eliteBonus: 0.15, bossHp: 1.4, bossDamage: 1.65, xpScale: 0.4 },
-    require: { grade: 4, count: 3 }, // gear needed to march here
     clearText: '궁성이 열리고 왕건이 즉위한다. 나라 이름은 고려, 연호는 천수(天授).',
     next: 'illicheon',
     bossAt: 300,
@@ -134,7 +131,6 @@ export const STAGES = {
     intro: '936년 가을, 일리천. 고려군 8만 7천이 강가 벌판에 진을 친다. 아들에게 쫓겨난 늙은 견훤이 고려 편에서 옛 부하들을 바라본다. 삼한의 마지막 싸움이다.',
     ground: 'riverPlain',
     difficulty: { label: '극악', stars: 5, enemyHp: 3.6, enemyDamage: 3.0, spawnRate: 1.35, eliteBonus: 0.22, bossHp: 1.9, bossDamage: 2.0, xpScale: 0.3 },
-    require: { grade: 5, count: 2 }, // gear needed to march here
     clearText: '후백제가 무너지고 삼한이 하나가 된다.',
     ending: {
       seal: '統\n一',

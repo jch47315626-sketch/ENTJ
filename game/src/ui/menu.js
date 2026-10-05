@@ -415,7 +415,7 @@ export function renderMap(save, sel, act) {
     <ul class="sd-rows">
       <li><span>🪙 보상</span><b>×${REWARD_BY_STARS[st.difficulty.stars]}</b></li>
       <li><span>⚔️ 적장</span><b>${boss.name}</b></li>
-      <li><span>🛡️ 필요 장비</span><b class="${gate.ok ? 'ok' : 'bad'}">${st.require ? `${GRADES[st.require.grade].name} ${st.require.count}부위 (지금 ${gate.have})` : '없음'}</b></li>
+      <li><span>🛡️ 권장 장비</span><b>${st.difficulty.stars > 1 ? `${GRADES[st.difficulty.stars].name} 이상` : '없어도 OK'}</b></li>
       <li><span>🏆 기록</span><b>${cleared ? '평정함' : '아직'}</b></li>
     </ul>`;
   card.append(button('출진 준비 ▶', 'seal-btn', () => act.go('prep')));
