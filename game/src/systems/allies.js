@@ -103,7 +103,8 @@ export function updateAllies(g, dt) {
       archerStep(g, a, tx, ty, !!target, dt);
       if (target) a.facing = Math.atan2(target.y - a.y, target.x - a.x);
       if (target && a.cd <= 0) {
-        a.cd = 1.4 * p.stats.haste;
+        // 왕건's own 궁수대 loose three times as often as the archers that join for a stage event.
+        a.cd = (a.maxLife ? 1.4 : 1.4 / 3) * p.stats.haste;
         const s = 440;
         g.projectiles.push({
           team: 'player', kind: 'arrow', x: a.x, y: a.y,
@@ -129,7 +130,7 @@ export const ORDERS = {
 };
 const RET = {
   spear: { damage: 12, cooldown: 0.6, reach: 170, charge: { speed: 540, distance: 250, damage: 26, knockback: 220 } },
-  archer: { damage: 6, cooldown: 0.45, range: 360, volley: { arrows: 6, gap: 0.07, damage: 9 } },
+  archer: { damage: 6, cooldown: 0.15, range: 360, volley: { arrows: 6, gap: 0.07, damage: 9 } },
   guard: { damage: 8, cooldown: 0.9, radius: 52, ward: { radius: 120, damage: 18, knockback: 280, time: 2 } },
 };
 const allyMul = (p) => p.stats.might * (1 + (p.meta.allyMul ?? 0));
