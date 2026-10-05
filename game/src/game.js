@@ -239,9 +239,9 @@ export class Game {
     if (this.enemies.length >= MAX_ENEMIES && ENEMIES[id]?.behavior !== 'static') return null;
     const def = ENEMIES[id];
     const diff = this.stage.difficulty;
-    const scale = def.noScaling ? 1 : enemyHpScale(this.time) * diff.enemyHp * ENEMY_BOOST.hp;
-    const late = this.stage.endless ? 1 + Math.max(0, this.time - 300) / ENDLESS.damageGrowth : 1;
-    const dmgScale = enemyDamageScale(this.time) * diff.enemyDamage * ENEMY_BOOST.damage * late;
+    const scale = def.noScaling ? 1 : enemyHpScale(this.time) * diff.enemyHp * ENEMY_BOOST.hp * (1 + (this.stage.endless ? Math.max(0, this.time - ENDLESS.rampFrom) / ENDLESS.hpGrowth : 0));
+    const over = this.stage.endless ? Math.max(0, this.time - ENDLESS.rampFrom) : 0;
+    const dmgScale = enemyDamageScale(this.time) * diff.enemyDamage * ENEMY_BOOST.damage * (1 + over / ENDLESS.damageGrowth);
     const v = elite ? VETERAN : null;
     const hp = def.hp * scale * (v ? v.hpMul : 1);
     const e = {

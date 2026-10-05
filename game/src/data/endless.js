@@ -6,10 +6,12 @@
  */
 export const ENDLESS = {
   bossEvery: 180, // seconds between bosses
-  bossHpStep: 0.5, // each later boss: +50% health
-  bossDamageStep: 0.2, // … and +20% damage
-  spawnGrowth: 600, // spawn rate ×(1 + t / spawnGrowth)
-  damageGrowth: 600, // after 5:00, enemy damage ×(1 + (t − 300) / damageGrowth)
+  bossHpStep: 0.8, // each later boss: +80% health
+  bossDamageStep: 0.3, // … and +30% damage
+  spawnGrowth: 300, // spawn rate ×(1 + t / spawnGrowth)
+  rampFrom: 240, // after 4:00 the waves harden:
+  damageGrowth: 240, // enemy damage ×(1 + (t − rampFrom) / damageGrowth)
+  hpGrowth: 300, // enemy health ×(1 + (t − rampFrom) / hpGrowth)
   bossBounty: 0.5, // share of the normal boss reward paid per boss felled
 };
 
