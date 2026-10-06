@@ -14,8 +14,8 @@ import { hitArc, currentWeaponLevel } from './weapons.js';
  */
 const PAEGONG = {
   lunge: { reach: 210, speed: 620, time: 0.1 },
-  rush: { cooldown: 1.4, delay: 0.16, range: 250, speed: 760, mul: 1.2, arc: 150, back: 0.12, backSpeed: 420 },
-  wave: { speed: 620, life: 0.45, mul: 0.9, radius: 20 },
+  rush: { cooldown: 1.4, delay: 0.16, range: 250, speed: 760, mul: 0.95, arc: 150, back: 0.12, backSpeed: 420 },
+  wave: { speed: 620, life: 0.45, mul: 0.7, radius: 20 },
 };
 const BANGYEOK = {
   wall: { radius: 100, perFoe: 0.6, max: 4 },
