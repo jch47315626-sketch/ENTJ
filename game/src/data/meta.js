@@ -47,16 +47,16 @@ export const GRADES = [
 ];
 export const TOP_GRADE = 8;
 
-/** 갑주 → share of damage blocked: armor / (armor + 10), at most 70%. */
-export const armorCut = (armor) => Math.min(0.7, Math.max(0, armor) / (Math.max(0, armor) + 10));
+/** 갑주 → share of damage blocked: armor / (armor + 12), at most 80%. */
+export const armorCut = (armor) => Math.min(0.8, Math.max(0, armor) / (Math.max(0, armor) + 12));
 
 /**
  * Every piece, whatever its slot, gives 공격력 (might) and 방어력 (armor)
  * by grade; the slot adds its own speciality on top, scaled by grade.
  */
 const GRADE_CORE = [null,
-  { might: 0.01, armor: 0.2 }, { might: 0.02, armor: 0.4 }, { might: 0.03, armor: 0.7 }, { might: 0.04, armor: 1 },
-  { might: 0.05, armor: 1.4 }, { might: 0.065, armor: 1.8 }, { might: 0.08, armor: 2.1 }, { might: 0.1, armor: 2.5 }];
+  { might: 0.01, armor: 0.2 }, { might: 0.025, armor: 0.5 }, { might: 0.045, armor: 1 }, { might: 0.07, armor: 1.6 },
+  { might: 0.1, armor: 2.4 }, { might: 0.14, armor: 3.4 }, { might: 0.19, armor: 4.6 }, { might: 0.25, armor: 6 }];
 const GRADE_SCALE = [0, 0.1, 0.2, 0.3, 0.42, 0.55, 0.7, 0.85, 1];
 const GRADE_PRICE = [0, 120, 500, 1500, 4000, 9000, 20000, 42000, 85000];
 /** Slot speciality at 국보 (grade 8), and the slot's price factor. */
