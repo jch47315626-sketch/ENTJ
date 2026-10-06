@@ -110,7 +110,7 @@ export function updateAllies(g, dt) {
         g.projectiles.push({
           team: 'player', kind: 'arrow', x: a.x, y: a.y,
           vx: Math.cos(a.facing) * s, vy: Math.sin(a.facing) * s,
-          r: 5, damage: 10 * p.stats.might * (1 + (p.meta.allyMul ?? 0)), knockback: 25, life: 0.5, pierce: 1, hit: new Set(), angle: a.facing,
+          r: 5, damage: 17 * p.stats.might * (1 + (p.meta.allyMul ?? 0)), knockback: 25, life: 0.5, pierce: 1, hit: new Set(), angle: a.facing,
         });
       }
     }
@@ -131,7 +131,7 @@ export const ORDERS = {
 };
 const RET = {
   spear: { damage: 12, cooldown: 0.6, reach: 170, charge: { speed: 540, distance: 250, damage: 26, knockback: 220 } },
-  archer: { damage: 6, cooldown: 0.15, range: 180, volley: { arrows: 6, gap: 0.07, damage: 9 } },
+  archer: { damage: 10, cooldown: 0.15, range: 180, volley: { arrows: 6, gap: 0.07, damage: 15 } },
   guard: { damage: 8, cooldown: 0.9, radius: 52, ward: { radius: 120, damage: 18, knockback: 280, time: 2 } },
 };
 const allyMul = (p) => p.stats.might * (1 + (p.meta.allyMul ?? 0));
