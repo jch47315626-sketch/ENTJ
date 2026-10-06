@@ -42,6 +42,11 @@ export function updateFieldObjects(g, dt) {
   if (g.enemies.filter((e) => !e.dead && e.def.object).length >= F.max) return;
   const a = rand(0, TAU), d = rand(230, 360);
   g.spawnEnemy(pick(F.weights), p.x + Math.cos(a) * d, p.y + Math.sin(a) * d);
+  // The very first object ever: say what it is (in the battle, without pausing).
+  if (g.opts.objectsTip && !g.objectsTipShown) {
+    g.objectsTipShown = true;
+    g.banner('🔥 전장 오브젝트가 나타났다!\n항아리·북·돌탑을 쳐서 부수면 효과가 나요', 'crow');
+  }
 }
 
 /** Called when a field object is broken. */

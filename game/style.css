@@ -1091,3 +1091,13 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 .ic-opt.special { padding: 4px 8px; border-radius: 10px; background: rgba(201, 168, 255, 0.14); border: 1px solid rgba(201, 168, 255, 0.45); }
 .ic-opt.special .io-text { color: #e2d2ff; font-family: "Jua", sans-serif; font-size: 13px; line-height: 1.35; }
 .ic-opt.special .io-text::before { content: '비기 '; color: var(--candy-lilac); font-size: 11px; }
+
+/* 📘 새 기능 안내 카드 · 도움말 */
+.tip-card { text-align: left; }
+.tip-card .confirm-icon, .tip-card .confirm-text { text-align: center; }
+.tip-text { margin: 4px 0 14px; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.5; color: var(--hanji); }
+.tip-foot { display: block; margin-top: 10px; text-align: center; font-size: 11.5px; color: var(--hanji-dim); }
+.help-box { display: flex; flex-direction: column; gap: 10px; }
+.help-card { text-align: left; padding: 12px 14px; border-radius: 16px; background: linear-gradient(180deg, #2c2742, #221d34); border: 1px solid rgba(255, 255, 255, 0.08); }
+.help-card h4 { margin: 0 0 6px; font: 400 18px "Jua", sans-serif; color: var(--candy-lemon); }
+.help-card ul { margin: 0; padding-left: 1.2em; text-align: left; display: flex; flex-direction: column; gap: 4px; font-size: 13.5px; line-height: 1.5; color: var(--hanji); }

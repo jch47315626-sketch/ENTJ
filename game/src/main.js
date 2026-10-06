@@ -17,6 +17,7 @@ import { NANSE_CARDS, NANSE_MILESTONES, milestoneBonus, nanseLevel } from './dat
 import { metaBonus, FORGE, forgeCost, gradeOpen, entryCheck, EQUIPMENT, RELICS } from './data/meta.js';
 import { ensureGearOptions, rollOptions, rerollLine, engraveCost, lineText, NAMES } from './data/gearOptions.js';
 import { UPGRADES } from './data/upgrades.js';
+import { helpById } from './data/help.js';
 import { STAGES } from './data/stages.js';
 import { HEROES } from './data/heroes.js';
 
@@ -74,6 +75,7 @@ function newGame(mode = null) {
     daily: runDaily,
     endless: runEndless,
     nanse,
+    objectsTip: !save.tipsSeen?.objects,
     quick: !runDaily && !runEndless && $('quickMode').checked,
     onBanner: (t, size) => hud.banner(t, size),
     onState,
@@ -123,6 +125,7 @@ function onState(state, g) {
     // Bank the run's money and records once.
     if (g.reward && !g.rewardBanked) {
       g.rewardBanked = true;
+      if (g.objectsTipShown) (save.tipsSeen ??= {}).objects = true;
       const known = new Set(Object.keys(save.codex.kills));
       save.money += g.reward.total;
       if (state === 'clear') save.best[g.stage.id] = Math.max(save.best[g.stage.id] ?? 0, g.reward.stars);
@@ -218,6 +221,51 @@ function go(name) {
   RENDER[name](save, sel, act);
   showScreen(name);
   $(name).scrollTop = 0;
+  menuTips(name);
+}
+
+// ------------------------------------------------------------ 새 기능 안내
+
+/** One-time explainer cards, shown the first time each system comes into view. */
+const tipQueue = [];
+function showTip(id) {
+  save.tipsSeen ??= {};
+  if (save.tipsSeen[id] || tipQueue.includes(id)) return;
+  tipQueue.push(id);
+  if (tipQueue.length === 1) openTip();
+}
+function openTip() {
+  const h = helpById(tipQueue[0]);
+  if (!h) return tipQueue.shift();
+  $('tipIcon').textContent = h.icon;
+  $('tipTitle').textContent = h.title;
+  $('tipText').innerHTML = h.lines.map((l) => `<li>${l}</li>`).join('');
+  $('tipBox').hidden = false;
+}
+$('tipOk').addEventListener('click', () => {
+  const id = tipQueue.shift();
+  save.tipsSeen ??= {};
+  save.tipsSeen[id] = true;
+  writeSave(save);
+  $('tipBox').hidden = true;
+  if (tipQueue.length) openTip();
+});
+
+/** Which systems a menu screen shows, once the player can actually use them. */
+function menuTips(name) {
+  if (!save.tutorialDone) return;
+  const mine = save.owned.filter((id) => save.gearOpts?.[id] && EQUIPMENT.some((e) => e.id === id));
+  const lines = mine.flatMap((id) => save.gearOpts[id]);
+  if (name === 'home' && save.codex.runs >= 1) showTip('modes');
+  if (name === 'prep' && save.best?.[sel.stage]) showTip('nanse');
+  if (name === 'heroes' && save.codex.runs >= 1) showTip('gear');
+  if (name === 'codex' && readyCount(save)) showTip('ach');
+  if (name === 'heroes' && mine.length) {
+    showTip('gearOpts');
+    if (lines.some((l) => l.special)) showTip('bigi');
+    if (mine.some((id) => id.includes('.relic_'))) showTip('relic');
+  }
+  if (name === 'grow') showTip('tree');
 }
 
 /** Redraw the open menu in place (after buying or wearing something). */

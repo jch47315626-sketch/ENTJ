@@ -12,6 +12,7 @@ import { ACHIEVEMENTS, ACH_GROUPS, progressOf } from '../data/achievements.js';
 import { dailyFor, todayKey, untilTomorrow } from '../data/daily.js';
 import { josa } from '../core/korean.js';
 import { lineText, lineMax, engraveCost } from '../data/gearOptions.js';
+import { HELP } from '../data/help.js';
 import { NANSE_CARDS, NANSE_MAX, NANSE_MILESTONES, nanseLevel, nanseRewardMul, bestNanse, milestoneBonus } from '../data/nanse.js';
 import { SPECIALS } from '../systems/specials.js';
 import { drawUnit } from '../render/sprites.js';
@@ -594,7 +595,7 @@ export function renderCodex(save, sel, act) {
   const body = $('codexBody');
   body.innerHTML = '';
   body.append(header('📖 도감', save, act));
-  const tabs = [['ach', '🏆 업적'], ['hero', '영웅'], ['weapon', '무기'], ['gear', '장비'], ['treasure', '보물'], ['foe', '적'], ['record', '기록']];
+  const tabs = [['ach', '🏆 업적'], ['hero', '영웅'], ['weapon', '무기'], ['gear', '장비'], ['treasure', '보물'], ['foe', '적'], ['record', '기록'], ['help', '📘 도움말']];
   body.append(tabStrip(tabs, ui.codexTab, (id) => {
     ui.codexTab = id;
     renderCodex(save, sel, act);
@@ -611,6 +612,12 @@ export function renderCodex(save, sel, act) {
 
   if (ui.codexTab === 'ach') {
     body.append(achPanel(save, act));
+    return;
+  }
+  if (ui.codexTab === 'help') {
+    const box = el('div', 'help-box');
+    for (const h of HELP) box.append(el('div', 'help-card', `<h4>${h.icon} ${h.title}</h4><ul>${h.lines.map((l) => `<li>${l}</li>`).join('')}</ul>`));
+    body.append(box);
     return;
   }
   if (ui.codexTab === 'hero') {
