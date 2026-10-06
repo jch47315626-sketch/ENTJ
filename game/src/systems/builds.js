@@ -40,11 +40,11 @@ function dash(p, angle, speed, time, then) {
   p.facing = angle;
 }
 
-/** A front cut where the hero stands. */
+/** A front cut where the hero stands (연참 dashes: no 혈투 healing, it chains too fast). */
 function strike(g, mul, arc) {
   const p = g.player;
   const lv = currentWeaponLevel(p);
-  g.heroDrain(hitArc(g, p.x, p.y, p.facing, (lv.range + 10) * p.stats.area, arc, weaponDamage(p) * mul * p.stats.might, 140, 'chop'));
+  (hitArc(g, p.x, p.y, p.facing, (lv.range + 10) * p.stats.area, arc, weaponDamage(p) * mul * p.stats.might, 140, 'chop'));
 }
 
 /** 패공: called right after each main-weapon swing. */
