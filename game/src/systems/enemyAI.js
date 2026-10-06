@@ -37,7 +37,7 @@ export const BEHAVIORS = {
     e.vx = (dx / d) * e.speed * dir + (-dy / d) * e.speed * 0.35 * side;
     e.vy = (dy / d) * e.speed * dir + (dx / d) * e.speed * 0.35 * side;
     e.timer = (e.timer ?? P.fireEvery * e.seed) - dt;
-    if (e.timer <= 0 && d < P.keepMax + 120 && !(g.isCharmed(e) && g.targetFor(e) === g.player)) {
+    if (e.timer <= 0 && d < P.keepMax + 60 && !(g.isCharmed(e) && g.targetFor(e) === g.player)) {
       e.timer = P.fireEvery;
       const n = P.volley ?? 1;
       const spread = ((P.spread ?? 0) * Math.PI) / 180;
@@ -47,7 +47,7 @@ export const BEHAVIORS = {
         g.projectiles.push({
           team: charmed ? 'charm' : 'enemy', kind: 'arrow', x: e.x, y: e.y,
           vx: Math.cos(a) * P.arrowSpeed, vy: Math.sin(a) * P.arrowSpeed,
-          r: 5, damage: charmed ? P.arrowDamage * 3 * e.charmPower : P.arrowDamage * e.damageMul, life: 2.2, angle: a, source: e.def.id, owner: e,
+          r: 5, damage: charmed ? P.arrowDamage * 3 * e.charmPower : P.arrowDamage * e.damageMul, life: 1.1, angle: a, source: e.def.id, owner: e,
         });
       }
       if (P.retreat) e.retreat = P.retreat;

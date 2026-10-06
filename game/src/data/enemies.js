@@ -11,7 +11,7 @@ export const ENEMIES = {
   archer: {
     id: 'archer', name: '궁수', hp: 12, speed: 50, damage: 5, radius: 12, xp: 2, tier: 1,
     behavior: 'ranged', knockResist: 0,
-    params: { keepMin: 230, keepMax: 300, fireEvery: 2.4, arrowSpeed: 260, arrowDamage: 7 },
+    params: { keepMin: 115, keepMax: 150, fireEvery: 2.4, arrowSpeed: 260, arrowDamage: 7 },
     look: { body: '#5d6b4a', accent: '#2e3524', hat: 'hood', weapon: 'bow' },
   },
   bandit: {
@@ -42,7 +42,7 @@ export const ENEMIES = {
   eliteArcher: {
     id: 'eliteArcher', name: '정예 궁수', tier: 3, hp: 35, speed: 55, damage: 6, radius: 13, xp: 4,
     behavior: 'ranged', knockResist: 0.2,
-    params: { keepMin: 240, keepMax: 320, fireEvery: 3.2, arrowSpeed: 270, arrowDamage: 5, volley: 3, spread: 28, retreat: 1.0 },
+    params: { keepMin: 120, keepMax: 160, fireEvery: 3.2, arrowSpeed: 270, arrowDamage: 5, volley: 3, spread: 28, retreat: 1.0 },
     look: { body: '#7b5a2c', accent: '#3d2a12', hat: 'hood', weapon: 'bow', tassel: '#b3261e' },
   },
   eliteCavalry: {
