@@ -38,6 +38,8 @@ export const GRADES = [
   { id: 3, name: '상품', color: '#3f6fae', needStars: 2 },
   { id: 4, name: '진품', color: '#8a4fae', needStars: 3 },
   { id: 5, name: '국보', color: '#d6a63e', needStars: 4 },
+  // 신물: never sold — only found by clearing 난세 10단계 or higher (see RELICS below).
+  { id: 6, name: '신물', color: '#ff6b8a', needStars: 5 },
 ];
 
 /**
@@ -129,6 +131,31 @@ for (const heroId of Object.keys(GEAR_NAMES)) {
 }
 export const GEAR_BASE_IDS = GEAR_BASE.map((b) => b.id);
 
+/**
+ * 신물 (grade 6): one per slot for each hero, never in the shop. Found only
+ * by clearing 난세 10단계+; the fixed bonus is the 국보 piece's ×1.35, and
+ * it rolls four option lines (data/gearOptions.js).
+ */
+const RELIC_NAMES = {
+  wanggeon: { body: '해동청룡갑', head: '태조 일월관', charm: '여의보주', wrist: '사해 팔찌', belt: '천하일통대', feet: '파도 가르는 신' },
+  gyeonhwon: { body: '패왕 흑룡갑', head: '후백제 패왕관', charm: '범의 혼 목걸이', wrist: '피의 맹세 팔찌', belt: '완산 금룡대', feet: '천리 질주화' },
+  gungye: { body: '미륵 금란가사', head: '미륵의 금관', charm: '천안 구슬', wrist: '금강 염주', belt: '법왕의 띠', feet: '연화 보행화' },
+};
+const RELIC_TINT = { wanggeon: '#5aa8ff', gyeonhwon: '#ff5a4a', gungye: '#b48aff' };
+for (const heroId of Object.keys(RELIC_NAMES)) {
+  for (const slot of ['head', 'body', 'charm', 'wrist', 'belt', 'feet']) {
+    const top = GEAR_BASE.find((b) => b.slot === slot && b.grade === 5);
+    const bonus = {};
+    for (const [k, v] of Object.entries(top.bonus)) bonus[k] = k === 'maxHp' ? Math.round(v * 1.35) : k === 'armor' ? Math.ceil(v * 1.35) : Math.round(v * 1.35 * 100) / 100;
+    EQUIPMENT.push({
+      id: `${heroId}.relic_${slot}`, slot, grade: 6, hero: heroId, relic: true, price: 60000,
+      name: RELIC_NAMES[heroId][slot], bonus, icon: top.icon ?? top.id, tint: RELIC_TINT[heroId],
+      note: '난세 10단계 이상을 평정하면 얻는 신물.',
+    });
+  }
+}
+export const RELICS = EQUIPMENT.filter((e) => e.relic);
+
 const BONUS_TEXT = {
   maxHp: (v) => `최대 체력 +${Math.round(v)}`,
   armor: (v) => `갑주 +${+v.toFixed(1)}`,
@@ -212,7 +239,11 @@ export function metaBonus(save, heroId) {
   const outfit = save.equipped[heroId] ?? {};
   for (const slot of SLOTS) {
     const item = EQUIPMENT.find((e) => e.id === outfit[slot.id]);
-    if (item && item.hero === heroId) add(itemBonus(item, save.forge?.[item.id] ?? 0));
+    if (item && item.hero === heroId) {
+      add(itemBonus(item, save.forge?.[item.id] ?? 0));
+      // 장비 옵션 (data/gearOptions.js): random lines rolled when the piece was obtained.
+      for (const l of save.gearOpts?.[item.id] ?? []) add({ [l.k]: l.v });
+    }
   }
   for (const t of TRAINING) {
     const lv = save.training[t.id] ?? 0;

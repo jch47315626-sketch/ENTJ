@@ -14,7 +14,8 @@ import { ACHIEVEMENTS } from './data/achievements.js';
 import { dailyFor, dailyHeroBonus, todayKey } from './data/daily.js';
 import { josa } from './core/korean.js';
 import { NANSE_CARDS, NANSE_MILESTONES, milestoneBonus, nanseLevel } from './data/nanse.js';
-import { metaBonus, FORGE, forgeCost, gradeOpen, entryCheck } from './data/meta.js';
+import { metaBonus, FORGE, forgeCost, gradeOpen, entryCheck, EQUIPMENT, RELICS } from './data/meta.js';
+import { ensureGearOptions, rollOptions, rerollLine, engraveCost, lineText } from './data/gearOptions.js';
 import { STAGES } from './data/stages.js';
 import { HEROES } from './data/heroes.js';
 
@@ -29,6 +30,7 @@ const tutor = new Tutorial();
 let game = null;
 const sel = { hero: 'wanggeon', stage: 'seonamhae' };
 const save = loadSave();
+ensureGearOptions(save, EQUIPMENT); // older saves: every owned piece gets its option lines
 writeSave(save); // persist any format migration right away
 let introTimer = 0;
 /** The 오늘의 전장 being played (so 다시 출진 replays it), or null. */
@@ -149,7 +151,17 @@ function onState(state, g) {
         save.money += bonus;
         c.earned += bonus;
         save.stats.nanseBest = Math.max(save.stats.nanseBest ?? 0, lv);
-        nanseInfo = { level: lv, isNew, bonus };
+        // 신물: clearing 난세 10+ may grant one of this hero's relics not yet owned.
+        let relic = null;
+        const missing = RELICS.filter((r) => r.hero === g.player.hero.id && !save.owned.includes(r.id));
+        if (lv >= 10 && missing.length && Math.random() < Math.min(0.9, 0.3 + 0.03 * (lv - 10))) {
+          relic = missing[Math.floor(Math.random() * missing.length)];
+          save.owned.push(relic.id);
+          save.gearOpts ??= {};
+          save.gearOpts[relic.id] = rollOptions(relic);
+          save.stats.relics = (save.stats.relics ?? 0) + 1;
+        }
+        nanseInfo = { level: lv, isNew, bonus, relic: relic?.name };
       }
       const run = runFacts(g, state === 'clear', save);
       recordRun(save, run);
@@ -283,9 +295,11 @@ const act = {
   },
   // Gear belongs to one hero only.
   buy(item) {
-    if (item.hero !== sel.hero || save.owned.includes(item.id)) return;
+    if (item.hero !== sel.hero || item.relic || save.owned.includes(item.id)) return;
     if (!gradeOpen(save, item) || !spend(item.price)) return;
     save.owned.push(item.id);
+    save.gearOpts ??= {};
+    save.gearOpts[item.id] = rollOptions(item);
     outfitOf(save, sel.hero)[item.slot] = item.id;
     done();
   },
@@ -337,6 +351,18 @@ const act = {
     outfitOf(save, sel.hero).treasure = item.id;
     done();
   },
+  /** 각인: reroll one option line of an owned piece for 냥. */
+  engrave(item, index) {
+    const lines = save.gearOpts?.[item.id];
+    if (!lines?.[index] || !spend(engraveCost(item))) return;
+    const before = lineText(lines[index]);
+    save.gearOpts[item.id] = rerollLine(item, lines, index);
+    writeSave(save);
+    sound.unlock();
+    sound.sfx('forgeOk');
+    refresh();
+    toast(`🔁 각인 — ${before} → ${lineText(save.gearOpts[item.id][index])}`);
+  },
   claimAch(id) {
     const got = claimAchievement(save, id);
     if (!got) return;
@@ -376,6 +402,7 @@ const act = {
     // Replace the save in place: other code keeps a reference to `save`.
     for (const k of Object.keys(save)) delete save[k];
     Object.assign(save, next);
+    ensureGearOptions(save, EQUIPMENT);
     checkAchievements(save);
     updateBadge();
     writeSave(save);

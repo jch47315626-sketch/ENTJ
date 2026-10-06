@@ -72,6 +72,9 @@ export const ACHIEVEMENTS = [
   { id: 'nanse10', group: 'war', icon: '🌋', name: '난세의 영웅', desc: '난세 10단계 이상으로 전장을 평정한다', reward: 4000, check: (s) => (s.stats.nanseBest ?? 0) >= 10 },
   { id: 'nanse20', group: 'war', icon: '☄️', name: '천하를 뒤흔든 자', desc: '난세 20단계 이상으로 전장을 평정한다', reward: 10000, check: (s) => (s.stats.nanseBest ?? 0) >= 20 },
 
+  // 장비 옵션 · 신물
+  { id: 'relic1', group: 'camp', icon: '🌟', name: '신물의 주인', desc: '난세 10단계 이상을 평정해 신물을 처음 얻는다', reward: 3000, check: (s) => (s.stats.relics ?? 0) >= 1 },
+
   // 군영
   { id: 'fullSet', group: 'camp', icon: '🧥', name: '완전 무장', desc: '한 영웅이 장비 6부위를 모두 찬다', reward: 500,
     check: (s) => Object.values(s.equipped ?? {}).some((o) => SLOTS.every((sl) => o?.[sl.id])) },

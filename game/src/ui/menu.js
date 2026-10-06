@@ -11,6 +11,7 @@ import { SKILL_TREES, TREASURES } from '../data/trees.js';
 import { ACHIEVEMENTS, ACH_GROUPS, progressOf } from '../data/achievements.js';
 import { dailyFor, todayKey, untilTomorrow } from '../data/daily.js';
 import { josa } from '../core/korean.js';
+import { lineText, lineMax, engraveCost } from '../data/gearOptions.js';
 import { NANSE_CARDS, NANSE_MAX, NANSE_MILESTONES, nanseLevel, nanseRewardMul, bestNanse, milestoneBonus } from '../data/nanse.js';
 import { SPECIALS } from '../systems/specials.js';
 import { drawUnit } from '../render/sprites.js';
@@ -311,9 +312,25 @@ function itemCard(save, h, item, act) {
   card.style.setProperty('--grade', GRADES[item.grade].color);
   card.append(iconCanvas(open || owned ? item.id : `empty:${item.slot}`, 40, 'row-icon'));
   const txt = el('div', 'ic-text');
-  txt.innerHTML = `<b>${gradeTag(item.grade)} ${open || owned ? itemName(save, item) : '???'}</b>
-    <span>${open || owned ? bonusText(itemBonus(item, lv)) : `★${GRADES[item.grade].needStars} 전장을 깨면 풀려요`}</span>`;
+  const sub = item.relic && !owned ? '🔥 난세 10단계 이상을 평정하면 얻을 수 있어요' : open || owned ? bonusText(itemBonus(item, lv)) : `★${GRADES[item.grade].needStars} 전장을 깨면 풀려요`;
+  txt.innerHTML = `<b>${gradeTag(item.grade)} ${open || owned ? itemName(save, item) : '???'}</b><span>${sub}</span>`;
   card.append(txt);
+  // 장비 옵션: random lines; each can be rerolled (각인) for 냥.
+  const lines = owned ? save.gearOpts?.[item.id] ?? [] : [];
+  let opts = null;
+  if (lines.length) {
+    opts = el('div', 'ic-opts');
+    const cost = engraveCost(item);
+    lines.forEach((l, i) => {
+      const q = l.v / Math.max(1e-9, lineMax(l.k, item.grade));
+      const row = el('div', `ic-opt${q >= 0.9 ? ' top' : ''}`);
+      row.append(el('span', 'io-text', lineText(l)));
+      const b = button(`🔁 <small>${fmt(cost)}</small>`, 'io-btn', () => act.engrave(item, i), save.money < cost);
+      b.title = `각인: 이 줄을 새로 뽑아요 (${fmt(cost)}냥)`;
+      row.append(b);
+      opts.append(row);
+    });
+  }
   const ctrl = el('div', 'ic-ctrl');
   if (owned) {
     ctrl.append(worn ? tag('착용 중') : button('착용', 'wear-btn', () => act.wear(item)));
@@ -326,12 +343,15 @@ function itemCard(save, h, item, act) {
       ctrl.append(fb);
       ctrl.append(el('small', 'forge-cost', `🪙 ${fmt(cost)}`));
     } else ctrl.append(tag('+5 완성'));
+  } else if (item.relic) {
+    ctrl.append(tag('🔥 난세 전용', 'locked'));
   } else if (open) {
     ctrl.append(priceBtn(item.price, save.money, () => act.buy(item)));
   } else {
     ctrl.append(tag('🔒', 'locked'));
   }
   card.append(ctrl);
+  if (opts) card.append(opts); // full-width row under the controls
   return card;
 }
 

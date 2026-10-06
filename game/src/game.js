@@ -362,7 +362,7 @@ export class Game {
     const L = LIFESTEAL[lv];
     const p = this.player;
     const before = p.hp;
-    p.heal(Math.min(hits, L.cap) * L.share * p.stats.maxHp);
+    p.heal(Math.min(hits, L.cap) * L.share * (1 + (p.meta.drainMul ?? 0)) * p.stats.maxHp);
     const got = p.hp - before;
     if (got <= 0) return;
     this.runStats.drained += got;

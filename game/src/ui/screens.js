@@ -111,6 +111,7 @@ export function renderResult(g, won, extra = {}) {
   if (extra.dailyBonus) rows.push(['📅', '오늘의 전장 보상', `+${extra.dailyBonus.toLocaleString()}`]);
   if (extra.nanse) rows.push(['🔥', `난세 ${extra.nanse.level}단계 평정`, extra.nanse.isNew ? '최고 기록!' : '']);
   if (extra.nanse?.bonus) rows.push(['🏮', '난세 돌파 보상', `+${extra.nanse.bonus.toLocaleString()}`]);
+  if (extra.nanse?.relic) rows.push(['🌟', `신물 획득 · ${extra.nanse.relic}`, '획득!']);
   if (en) rows.push(['♾️', '적장 격파', `${en.bosses}명`]);
   rows.push(['⭐', '공훈', `Lv ${g.player.level}`]);
   rows.push(['⚔️', '처치', `${g.kills}`]);
