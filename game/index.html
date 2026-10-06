@@ -71,52 +71,15 @@
       <div class="topbar">
         <span class="coin-pill">🪙 <b id="homeMoney">0</b></span>
         <span class="topbar-right">
-          <button id="homeSave" class="plain-btn small save-btn" type="button" title="기록을 코드로 저장하거나 불러오기">💾 저장</button>
-          <label class="mini-toggle"><input id="soundOn" type="checkbox" checked> 🔊</label>
+          <span class="tb-row">
+            <button id="homeSave" class="plain-btn small save-btn" type="button" title="기록을 코드로 저장하거나 불러오기">💾 저장</button>
+            <label class="mini-toggle"><input id="soundOn" type="checkbox" checked> 🔊</label>
+          </span>
+          <button id="installBtn" class="plain-btn small install-mini" type="button">📲 핸드폰에 설치</button>
         </span>
       </div>
       <h1 class="game-title home-title"><span class="hanja">三韓亂世</span><span class="hangul">삼한난세</span></h1>
       <div id="homeBody"></div>
-      <button id="installBtn" class="install-card" type="button" hidden>
-        <img src="icons/icon-192.png" alt="" width="52" height="52">
-        <span><b>📲 앱으로 설치하기</b><small>홈 화면에서 바로 실행 · 인터넷 없이도 OK</small></span>
-      </button>
-      <section class="howto" aria-label="조작법">
-        <h3 class="howto-title"><span>🎮</span> 튜토리얼</h3>
-        <button id="tutorReplay" class="plain-btn small replay-btn" type="button">▶ 첫 판 튜토리얼 다시 보기</button>
-        <div class="howto-grid">
-          <div class="howto-tile move">
-            <span class="ht-badge">🏃 이동</span>
-            <div class="ht-touch"><span class="touch-pad" aria-hidden="true"><span class="tp-ring"></span><span class="tp-knob"></span><span class="tp-finger">👆</span></span><small>화면을 꾹 누른 채<br>끌면 움직여요</small></div>
-            <div class="ht-keys">
-              <span class="keypad"><i></i><kbd class="key">W</kbd><i></i><kbd class="key">A</kbd><kbd class="key">S</kbd><kbd class="key">D</kbd></span>
-              <span class="ht-or">또는</span>
-              <span class="keypad"><i></i><kbd class="key">↑</kbd><i></i><kbd class="key">←</kbd><kbd class="key">↓</kbd><kbd class="key">→</kbd></span>
-            </div>
-          </div>
-          <div class="howto-tile attack">
-            <span class="ht-badge">⚔️ 공격</span>
-            <div class="ht-auto"><span class="auto-bubble">자동!</span></div>
-            <small>가까운 적을 알아서 쳐요.<br>나는 피하고 엽전만 줍기 🪙</small>
-          </div>
-          <div class="howto-tile pick">
-            <span class="ht-badge">📜 책략</span>
-            <div class="ht-cards"><span>1</span><span>2</span><span>3</span></div>
-            <small>레벨업하면 카드 3장!<br>누르거나 <kbd class="key sm">1</kbd><kbd class="key sm">2</kbd><kbd class="key sm">3</kbd></small>
-          </div>
-          <div class="howto-tile pause">
-            <span class="ht-badge">⏸ 쉬기</span>
-            <div class="ht-pausebtn">⏸</div>
-            <small>오른쪽 위 버튼 또는<br><kbd class="key sm">P</kbd> <kbd class="key sm">Esc</kbd></small>
-          </div>
-          <div class="howto-tile save">
-            <span class="ht-badge">💾 저장</span>
-            <div class="ht-save">✅</div>
-            <small><b>자동 저장</b>돼요!<br>다른 기기로 옮길 땐<br>위의 <b>💾 저장</b> → 코드 복사</small>
-            <button id="howtoSave" class="plain-btn small" type="button">저장 코드 열기</button>
-          </div>
-        </div>
-      </section>
       <label class="quick"><input id="quickMode" type="checkbox"> 빠른 시험 모드 (1분 뒤 보스)</label>
     </div>
   </section>
@@ -148,12 +111,12 @@
   <div id="iosGuide" class="confirm-back" hidden>
     <div class="confirm-card ios-guide" role="dialog" aria-labelledby="iosGuideTitle">
       <p id="iosGuideTitle" class="confirm-text">📲 아이폰에 설치하기</p>
-      <ol>
+      <ol id="iosGuideSteps">
         <li>Safari 아래쪽의 <b>공유 버튼</b> <span class="ios-share" aria-hidden="true">⬆︎</span> 누르기</li>
         <li>목록을 내려 <b>홈 화면에 추가</b> 누르기</li>
         <li>오른쪽 위 <b>추가</b> 누르면 끝!</li>
       </ol>
-      <small>Safari에서만 돼요. 다른 앱 안의 브라우저라면 Safari로 열어 주세요.</small>
+      <small id="iosGuideNote">Safari에서만 돼요. 다른 앱 안의 브라우저라면 Safari로 열어 주세요.</small>
       <div class="row-btns"><button id="iosGuideClose" class="seal-btn" type="button">알겠어요</button></div>
     </div>
   </div>

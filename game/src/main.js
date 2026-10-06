@@ -493,8 +493,9 @@ input.on('key', (k) => {
 
 for (const b of $('bottomNav').querySelectorAll('button')) b.addEventListener('click', () => go(b.dataset.go));
 // 💾 저장: straight to the save code (도감 → 기록).
-$('howtoSave').addEventListener('click', () => $('homeSave').click());
-$('tutorReplay').addEventListener('click', () => {
+// 도감 → 도움말: replay the first-battle tutorial.
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#tutorReplay')) return;
   save.tutorialDone = false;
   writeSave(save);
   toast('🎮 다음 출진에서 튜토리얼이 나와요!');
@@ -626,21 +627,30 @@ if (topLevel && 'serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
+/** Where the game can actually be installed from (a page inside another page cannot). */
+const PUBLIC_URL = 'https://jch47315626-sketch.github.io/ENTJ/';
 let installPrompt = null;
 const installBtn = $('installBtn');
+// Already running as the installed app: nothing to install.
+installBtn.hidden = standalone();
 // Android / desktop Chrome: the browser offers installation; keep it for our button.
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   installPrompt = e;
-  installBtn.hidden = standalone();
 });
 window.addEventListener('appinstalled', () => {
   installPrompt = null;
   installBtn.hidden = true;
   toast('📲 설치 완료! 홈 화면에서 삼한난세를 눌러 보세요');
 });
-// iPhone: no install prompt exists, so the button shows the Safari steps instead.
-if (topLevel && isIos && !standalone()) installBtn.hidden = false;
+
+/** The install guide card, with steps for this situation. */
+function installGuide(title, steps, note) {
+  $('iosGuideTitle').textContent = title;
+  $('iosGuideSteps').innerHTML = steps.map((s) => `<li>${s}</li>`).join('');
+  $('iosGuideNote').innerHTML = note;
+  $('iosGuide').hidden = false;
+}
 installBtn.addEventListener('click', async () => {
   if (installPrompt) {
     installPrompt.prompt();
@@ -649,7 +659,27 @@ installBtn.addEventListener('click', async () => {
     installPrompt = null;
     return;
   }
-  $('iosGuide').hidden = false;
+  if (!topLevel) {
+    // Inside a preview (e.g. claude.ai): installing only works from the public address.
+    installGuide('📲 핸드폰에 설치하기', [
+      `휴대폰에서 이 주소를 열어요<br><b class="ig-url">${PUBLIC_URL}</b>`,
+      '그 화면 오른쪽 위 <b>📲 핸드폰에 설치</b>를 누르면 끝!',
+    ], '지금 보고 있는 화면은 다른 페이지 안이라 여기서는 설치할 수 없어요.');
+    return;
+  }
+  if (isIos) {
+    installGuide('📲 아이폰에 설치하기', [
+      'Safari 아래쪽의 <b>공유 버튼</b> <span class="ios-share" aria-hidden="true">⬆︎</span> 누르기',
+      '목록을 내려 <b>홈 화면에 추가</b> 누르기',
+      '오른쪽 위 <b>추가</b> 누르면 끝!',
+    ], 'Safari에서만 돼요. 다른 앱 안의 브라우저라면 Safari로 열어 주세요.');
+    return;
+  }
+  installGuide('📲 핸드폰에 설치하기', [
+    '브라우저 오른쪽 위 <b>⋮ 메뉴</b> 누르기',
+    '<b>앱 설치</b> 또는 <b>홈 화면에 추가</b> 누르기',
+    '<b>설치</b>를 누르면 홈 화면에 삼한난세 아이콘이 생겨요',
+  ], '이미 설치했다면 홈 화면의 아이콘으로 열어 주세요.');
 });
 $('iosGuideClose').addEventListener('click', () => ($('iosGuide').hidden = true));
 

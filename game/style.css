@@ -1118,3 +1118,10 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 .ns-stage:disabled { opacity: 0.45; cursor: default; }
 .bottom-nav button b { font-size: 16px; }
 .bottom-nav button span { font-size: 27px; }
+
+/* 홈 오른쪽 위: 저장·소리 아래 📲 핸드폰에 설치 */
+.topbar { align-items: flex-start; }
+.topbar-right { flex-direction: column; align-items: flex-end; gap: 6px; }
+.tb-row { display: flex; align-items: center; gap: 8px; }
+.install-mini { border-radius: 999px; border-color: rgba(156, 207, 255, 0.6); color: var(--candy-sky); }
+.ig-url { display: inline-block; margin-top: 4px; padding: 4px 8px; border-radius: 8px; background: rgba(156, 207, 255, 0.12); color: var(--candy-sky); font-size: 13px; word-break: break-all; user-select: all; }

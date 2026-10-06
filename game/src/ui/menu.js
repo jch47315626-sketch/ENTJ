@@ -654,6 +654,9 @@ export function renderCodex(save, sel, act) {
   }
   if (ui.codexTab === 'help') {
     const box = el('div', 'help-box');
+    const replay = button('▶ 첫 판 튜토리얼 다시 보기', 'plain-btn small replay-btn');
+    replay.id = 'tutorReplay';
+    box.append(replay);
     for (const h of HELP) box.append(el('div', 'help-card', `<h4>${h.icon} ${h.title}</h4><ul>${h.lines.map((l) => `<li>${l}</li>`).join('')}</ul>`));
     body.append(box);
     return;
