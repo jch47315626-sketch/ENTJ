@@ -57,32 +57,35 @@ export const PATTERNS = {
     },
   },
 
-  // 견훤 진화: 횡베기 → 횡베기 → 대지 가르기 (관통 충격파 + 기절)
+  // 견훤 진화: 횡베기 → 횡베기 → 내려베기, 벨 때마다 붉은 검기 (좁고 길게, 관통)
   comboChop: {
     fire(g, p, lv, s) {
       const w = p.weapon;
       const range = lv.range * s.area;
       const aim = aimAngle(g, p, range);
+      const W = lv.wave;
+      const qi = (big) => g.projectiles.push({
+        team: 'player', kind: 'redSlash', x: p.x + Math.cos(aim) * 20, y: p.y + Math.sin(aim) * 20,
+        vx: Math.cos(aim) * W.speed, vy: Math.sin(aim) * W.speed,
+        r: W.thick, span: (big ? W.bigSpan : W.span) * s.area, big,
+        damage: lv.damage * (big ? W.damage : W.small) * s.might, knockback: big ? 160 : 60,
+        life: W.life, pierce: Infinity, hit: new Set(), angle: aim, stun: big ? W.stun : 0,
+      });
       w.combo = w.combo ?? 0;
       if (w.combo < 2) {
         const side = w.combo === 0 ? -0.35 : 0.35;
         g.heroDrain(hitArc(g, p.x, p.y, aim + side, range, lv.arc, lv.damage * s.might, lv.knockback, 'chop'));
+        qi(false);
         w.combo++;
         w.timer = lv.comboGap * s.haste;
-        g.sfx('chop');
+        g.sfx('slash');
         return;
       }
       w.combo = 0;
-      g.heroDrain(hitArc(g, p.x, p.y, aim, range * 0.8, 70, lv.damage * 1.2 * s.might, lv.knockback * 1.5, 'chop', { stun: lv.wave.stun }));
-      const W = lv.wave;
-      g.projectiles.push({
-        team: 'player', kind: 'quake', x: p.x, y: p.y,
-        vx: Math.cos(aim) * W.speed, vy: Math.sin(aim) * W.speed,
-        r: W.radius * s.area, damage: lv.damage * W.damage * s.might, knockback: 160,
-        life: W.life, pierce: Infinity, hit: new Set(), angle: aim, stun: W.stun,
-      });
-      g.shake(6);
-      g.sfx('quake');
+      g.heroDrain(hitArc(g, p.x, p.y, aim, range * 0.8, 70, lv.damage * 1.2 * s.might, lv.knockback * 1.5, 'chop', { stun: W.stun }));
+      qi(true);
+      g.shake(5);
+      g.sfx('royal');
     },
   },
 

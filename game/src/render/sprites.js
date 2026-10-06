@@ -740,6 +740,30 @@ export function drawProjectile(ctx, p) {
     ctx.lineTo(-p.r * 0.4, p.r * 0.3);
     ctx.lineTo(p.r * 0.8, -p.r * 0.2);
     ctx.stroke();
+  } else if (p.kind === 'redSlash') {
+    // 붉은 검기: a thin upright crescent, glowing red, with a faint trail.
+    const a = Math.min(1, p.life * 4);
+    const sp = p.span;
+    ctx.globalAlpha = a;
+    ctx.fillStyle = 'rgba(255, 60, 40, 0.18)';
+    ctx.beginPath();
+    ctx.ellipse(-sp * 0.9, 0, sp * 0.9, sp * 0.55, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowColor = '#ff2a1a';
+    ctx.shadowBlur = p.big ? 18 : 12;
+    ctx.fillStyle = p.big ? '#ff3a24' : '#e8321e';
+    ctx.beginPath();
+    ctx.arc(-sp * 0.9, 0, sp * 1.25, -0.9, 0.9);
+    ctx.arc(-sp * 1.2, 0, sp * 1.25, 0.84, -0.84, true);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(255, 214, 200, 0.95)';
+    ctx.lineWidth = p.big ? 2.5 : 1.8;
+    ctx.beginPath();
+    ctx.arc(-sp * 0.95, 0, sp * 1.22, -0.8, 0.8);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
   } else if (p.kind === 'wave') {
     const a = Math.min(1, p.life * 3);
     ctx.fillStyle = `rgba(246, 226, 160, ${0.85 * a})`;

@@ -5,7 +5,7 @@ import { ENEMIES } from '../data/enemies.js';
 import { WEAPONS } from '../data/weapons.js';
 import {
   SLOTS, EQUIPMENT, TRAINING, SECRETS, REWARD_BY_STARS, GRADES, FORGE,
-  forgeCost, gradeOpen, itemBonus, bonusText, metaBonus, entryCheck,
+  forgeCost, gradeOpen, itemBonus, bonusText, metaBonus, entryCheck, armorCut,
 } from '../data/meta.js';
 import { SKILL_TREES, TREASURES } from '../data/trees.js';
 import { ACHIEVEMENTS, ACH_GROUPS, progressOf } from '../data/achievements.js';
@@ -273,7 +273,7 @@ export function renderHeroes(save, sel, act) {
   else body.append(treasurePanel(save, h, act));
 }
 
-/** Paper doll around the hero, then the chosen slot's five grades. */
+/** Paper doll around the hero, then the chosen slot's grades. */
 function gearPanel(save, h, act) {
   const box = el('div', 'gear-panel');
   const wear = outfit(save, h.id);
@@ -547,7 +547,7 @@ export function renderPrep(save, sel, act) {
   const secrets = SECRETS.filter((s) => s.hero === h.id && save.secrets.includes(s.id)).map((s) => s.name);
   sec('비전', secrets.length ? `📜 ${secrets.join(', ')}` : '없음', () => act.go('grow'));
   sec('전장', `${starText(st.difficulty.stars)} ${st.name} · 적장 ${boss.name}`, () => act.go('map'));
-  sec('전투력', `❤️ ${Math.round(h.stats.maxHp + (m.maxHp ?? 0))} · ⚔️ ×${(h.stats.might * (1 + (m.might ?? 0))).toFixed(2)} · 🛡️ ${(h.stats.armor + (m.armor ?? 0)).toFixed(0)}`);
+  sec('전투력', `❤️ ${Math.round(h.stats.maxHp + (m.maxHp ?? 0))} · ⚔️ ×${(h.stats.might * (1 + (m.might ?? 0))).toFixed(2)} · 🛡️ ${+(h.stats.armor + (m.armor ?? 0)).toFixed(1)} (피해 −${Math.round(armorCut(h.stats.armor + (m.armor ?? 0)) * 100)}%)`);
   body.append(card);
 
   if (!gate.ok) {

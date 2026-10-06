@@ -4,8 +4,8 @@ import { BOSSES } from './data/bosses.js';
 import { afterSwing, onHurt, updateBuild } from './systems/builds.js';
 import { STAGES, scaleStage } from './data/stages.js';
 import { enemyHpScale, enemyDamageScale, ENEMY_BOOST, ENEMY_ARMOR, BOSS_BOOST, HP_REGEN } from './data/balance.js';
-import { UPGRADES, FALLBACKS, LIFESTEAL } from './data/upgrades.js';
-import { baseReward, REWARD_BY_STARS, BOSS_REWARD } from './data/meta.js';
+import { UPGRADES, FALLBACKS, LIFESTEAL, evolutionStatus } from './data/upgrades.js';
+import { baseReward, REWARD_BY_STARS, BOSS_REWARD, armorCut } from './data/meta.js';
 import { SpatialGrid } from './core/grid.js';
 import { clamp, rand, TAU, dist2, angleDiff } from './core/math.js';
 import { updateWeapon, hitArc } from './systems/weapons.js';
@@ -527,7 +527,7 @@ export class Game {
     if (p.mount && this.time < p.mount.invulnUntil) return false;
     // Armour cuts 7% per point (max 50%), so it helps against big hits and small ones alike.
     // 철벽 (견훤 반격의 길) adds armour for every foe close by.
-    let dmg = Math.max(1, amount * (1 - Math.min(0.5, 0.07 * (p.stats.armor + (p.wall ?? 0)))));
+    let dmg = Math.max(1, amount * (1 - armorCut(p.stats.armor + (p.wall ?? 0))));
     // 호위진: the bodyguards take a share of every blow.
     if (p.wardUntil > this.time) dmg = Math.max(1, dmg * 0.6);
     this.damageLog[source] = (this.damageLog[source] ?? 0) + dmg;
@@ -603,6 +603,9 @@ export class Game {
       choices.push(rest.splice(Math.min(i, rest.length - 1), 1)[0]);
     }
     for (const f of FALLBACKS) if (choices.length < count) choices.push(f);
+    // Cards that move an evolution forward get marked (진화 재료).
+    const evoNeed = {};
+    for (const e of evolutionStatus(this)) for (const c of e.checks) if (!c.done) (evoNeed[c.id] ??= []).push({ name: e.name, now: c.now, need: c.need });
     return choices.map((u) => ({
       up: u,
       id: u.id,
@@ -612,6 +615,7 @@ export class Game {
       level: u.id === 'weapon' ? p.weapon.level + 2 : u.maxLevel === Infinity ? null : lvl(u) + 1,
       maxLevel: u.id === 'weapon' ? null : u.maxLevel,
       evolution: !!u.isEvolution?.(this),
+      evoFor: u.isEvolution?.(this) ? null : evoNeed[u.id] ?? null,
       sub: !!u.subWeapon,
     }));
   }
@@ -889,10 +893,9 @@ export class Game {
           pr.life = 0;
         }
       } else {
-        this.grid.query(pr.x, pr.y, pr.r + 30, (e) => {
+        this.grid.query(pr.x, pr.y, pr.r + (pr.span ?? 0) + 30, (e) => {
           if (pr.life <= 0 || e.dead || pr.hit.has(e) || this.isCharmed(e)) return;
-          const rr = pr.r + e.r;
-          if (dist2(pr.x, pr.y, e.x, e.y) < rr * rr) {
+          if (pr.span ? hitsBlade(pr, e) : dist2(pr.x, pr.y, e.x, e.y) < (pr.r + e.r) ** 2) {
             pr.hit.add(e);
             this.damageEnemy(e, pr.damage, pr.x - pr.vx * 0.05, pr.y - pr.vy * 0.05, pr.knockback, pr.stun ? { stun: pr.stun } : undefined);
             if (pr.burst) hitArc(this, e.x, e.y, 0, pr.burst.radius, 360, pr.burst.damage, 30, 'burst');
@@ -1057,4 +1060,11 @@ export class Game {
       bossPhase: !!this.boss,
     };
   }
+}
+
+/** A blade-shaped projectile: thin along its flight (`r`), wide across it (`span` each side). */
+function hitsBlade(pr, e) {
+  const c = Math.cos(pr.angle), sn = Math.sin(pr.angle);
+  const dx = e.x - pr.x, dy = e.y - pr.y;
+  return Math.abs(dx * c + dy * sn) < pr.r + e.r && Math.abs(-dx * sn + dy * c) < pr.span + e.r;
 }

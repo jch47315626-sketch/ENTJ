@@ -33,7 +33,7 @@ export const GEAR_OPTIONS = [
  *   cap   — a 책략 can go one level higher
  *   node  — a skill-tree node works without buying it
  *   proc  — a new technique (see Game: 낙뢰 · 사기충천 · 수호 깃발 · 연환)
- * Found on 진품 (35%) and 국보 (50%) pieces; every 신물 has one.
+ * Found on 진품 (35%) up to 국보 (50%) pieces; every 신물 has one.
  */
 export const SPECIAL = {
   grant: {
@@ -61,7 +61,7 @@ export const PROCS = {
   lastStand: { icon: '🚩', name: '수호 깃발', desc: '체력이 30% 아래로 떨어지면 3초간 무적 (60초마다)' },
   echo: { icon: '🔁', name: '연환', desc: '주무기를 휘두를 때 20% 확률로 곧바로 한 번 더' },
 };
-const SPECIAL_CHANCE = [0, 0, 0, 0, 0.35, 0.5, 1];
+const SPECIAL_CHANCE = [0, 0, 0, 0, 0, 0.35, 0.4, 0.45, 0.5, 1];
 
 /** Names for 비기 text, filled in by the game at start-up (avoids an import cycle). */
 export const NAMES = { upgrade: {}, node: {} };
@@ -86,9 +86,9 @@ function pct(v) {
   return `${Math.round(v * 100)}%`;
 }
 
-/** Roll strength and number of lines by grade (index = grade 1–6). */
-const GRADE_FACTOR = [0, 0.5, 0.75, 1, 1.3, 1.6, 2.2];
-const LINES = [0, 1, 1, 2, 2, 3, 4];
+/** Roll strength and number of lines by grade (index = grade 1–9, see meta.js GRADES). */
+const GRADE_FACTOR = [0, 0.5, 0.75, 1, 1.15, 1.3, 1.45, 1.55, 1.7, 2.2];
+const LINES = [0, 1, 1, 2, 2, 2, 3, 3, 3, 4];
 
 const optionPool = (item) => GEAR_OPTIONS.filter((o) => !o.hero || o.hero === item.hero);
 

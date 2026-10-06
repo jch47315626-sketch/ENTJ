@@ -46,7 +46,7 @@ export function renderChoices(choices, onPick) {
   choices.forEach((c, i) => {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = `pick-card${c.evolution ? ' evo' : ''}`;
+    b.className = `pick-card${c.evolution ? ' evo' : c.evoFor ? ' evo-need' : ''}`;
     b.dataset.cat = c.category;
     b.style.setProperty('--i', i);
     const lvl = c.evolution
@@ -62,7 +62,8 @@ export function renderChoices(choices, onPick) {
       <span class="pc-icon">${c.evolution ? '🌟' : CAT[c.category] ?? '✨'}</span>
       <b class="pc-name">${c.name}</b>
       <span class="pc-lvl">${lvl}</span>
-      <span class="pc-desc">${c.desc}</span>`;
+      <span class="pc-desc">${c.desc}</span>${c.evoFor ? c.evoFor.map((e) => `
+      <span class="pc-evo">🌟 진화 재료 · ${e.name}<em>${e.now} → ${e.now + 1} / ${e.need}</em></span>`).join('') : ''}`;
     b.addEventListener('click', () => onPick(i));
     box.appendChild(b);
   });

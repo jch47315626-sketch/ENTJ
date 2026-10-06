@@ -33,9 +33,11 @@ export const WEAPONS = {
         crack: { radius: 54, dps: 30, life: 1.2 },
         desc: '찍은 자리에 땅이 갈라져 1초간 피해를 준다.' },
       { name: '백제의 대도', pattern: 'comboChop', damage: 48, cooldown: 0.9, range: 110, arc: 160, knockback: 120,
-        comboGap: 0.45, wave: { damage: 1.4, speed: 520, life: 0.55, radius: 26, stun: 1.0 }, evolution: true,
+        comboGap: 0.45, evolution: true,
+        // 붉은 검기: a narrow upright slash that flies far in a straight line.
+        wave: { small: 0.6, damage: 1.5, speed: 760, life: 0.85, span: 34, bigSpan: 50, thick: 9, stun: 1.0 },
         requires: { upgrade: 'might', level: 3 },
-        desc: '횡베기 두 번 뒤 대지를 갈라 일직선 충격파를 날린다. 셋째 타격은 적을 기절시킨다.' },
+        desc: '벨 때마다 붉은 검기가 일직선으로 멀리 날아간다. 셋째 베기의 큰 검기는 적을 기절시킨다.' },
     ],
   },
 

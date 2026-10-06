@@ -78,7 +78,7 @@ export const ACHIEVEMENTS = [
   // 군영
   { id: 'fullSet', group: 'camp', icon: '🧥', name: '완전 무장', desc: '한 영웅이 장비 6부위를 모두 찬다', reward: 500,
     check: (s) => Object.values(s.equipped ?? {}).some((o) => SLOTS.every((sl) => o?.[sl.id])) },
-  { id: 'kukbo', group: 'camp', icon: '🏺', name: '국보를 품다', desc: '국보 등급 장비를 처음 손에 넣는다', reward: 2000, check: (s) => s.owned.some((id) => grade(id) === 5) },
+  { id: 'kukbo', group: 'camp', icon: '🏺', name: '국보를 품다', desc: '국보 등급 장비를 처음 손에 넣는다', reward: 2000, check: (s) => s.owned.some((id) => grade(id) === 8) },
   { id: 'forge5', group: 'camp', icon: '🔨', name: '명장의 손', desc: '장비 하나를 +5까지 제련한다', reward: 2500, check: (s) => Object.values(s.forge ?? {}).some((lv) => lv >= 5) },
   { id: 'rich', group: 'camp', icon: '💰', name: '거부', desc: '모두 합쳐 100,000냥을 번다', reward: 5000, goal: (s) => [s.codex.earned ?? 0, 100000] },
 ];

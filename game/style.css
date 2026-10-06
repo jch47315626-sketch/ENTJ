@@ -1141,3 +1141,12 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 @keyframes evoPulse { 50% { transform: scale(1.07); } }
 @media (max-width: 520px) { .evo-hint { font-size: 12px; } .evo-name { font-size: 14px; } }
 @media (prefers-reduced-motion: reduce) { .evo-go { animation: none; } }
+
+/* 진화 재료 카드: extra gold frame (double ring + dashed inner border) */
+.pick-card.evo-need {
+  box-shadow: 0 0 0 3px var(--c2), 0 0 0 7px #ffe08a, 0 0 18px 6px rgba(255, 210, 110, 0.55), 0 6px 0 7px rgba(0, 0, 0, 0.45), 0 14px 24px rgba(0, 0, 0, 0.4);
+}
+.pick-card.evo-need::before { content: ''; position: absolute; inset: 6px; border: 2px dashed rgba(255, 224, 138, 0.75); border-radius: 17px; pointer-events: none; }
+.pc-evo { display: block; margin-top: 4px; padding: 3px 8px; border-radius: 999px; background: #ffe08a; color: #2a1d10; font-size: 12px; font-weight: 700; line-height: 1.35; }
+.pc-evo em { display: block; font-style: normal; font-variant-numeric: tabular-nums; color: #a8321e; }
+@media (max-width: 720px) { .pc-evo em { display: inline; margin-left: 6px; } }
