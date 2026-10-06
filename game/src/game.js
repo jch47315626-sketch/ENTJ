@@ -16,6 +16,7 @@ import { planCrows, updateCrows, callCrow, CROW } from './systems/crows.js';
 import { updateFieldObjects, breakObject } from './systems/fieldObjects.js';
 import { applyDaily } from './data/daily.js';
 import { ENDLESS, makeEndless } from './data/endless.js';
+import { applyNanse } from './data/nanse.js';
 import { Spawner } from './systems/spawner.js';
 import { updateSkills } from './systems/skills.js';
 
@@ -104,7 +105,9 @@ export class Game {
     const hero = HEROES[opts.heroId];
     // 오늘의 전장: the day's rules are folded into the stage's difficulty.
     // ♾️ 무한 전장: the same field, with no end (data/endless.js).
-    const base = opts.daily ? applyDaily(STAGES[opts.stageId], opts.daily) : opts.endless ? makeEndless(STAGES[opts.stageId]) : STAGES[opts.stageId];
+    // 난세 단계: the chosen hardship cards fold into the stage (data/nanse.js).
+    const raw = STAGES[opts.stageId];
+    const base = opts.daily ? applyDaily(raw, opts.daily) : opts.endless ? makeEndless(raw) : opts.nanse ? applyNanse(raw, opts.nanse) : raw;
     this.endlessBosses = 0;
     this.stage = scaleStage(base, opts.quick ? 0.2 : 1);
     this.player = new Player(hero, opts.meta);
@@ -450,7 +453,7 @@ export class Game {
       this.addMomentum(MOMENTUM.perKill);
     }
     if (e.xp > 0) this.dropCoin(e.x, e.y, e.xp);
-    if (e.def.drop === 'rice') this.pickups.push({ kind: 'rice', x: e.x, y: e.y, heal: 25, magnet: false, t: 0 });
+    if (e.def.drop === 'rice') this.pickups.push({ kind: 'rice', x: e.x, y: e.y, heal: 25 * (this.stage.difficulty.riceMul ?? 1), magnet: false, t: 0 });
     if (e.isBoss && (e.def.minion || this.bosses.some((o) => !o.dead && !o.def.minion))) {
       // A clone, or one of several generals: the fight goes on.
       this.banner(`${e.def.name} 쓰러짐`, 'small');
@@ -553,7 +556,9 @@ export class Game {
     const evo = pool.find((u) => u.isEvolution?.(this));
     if (evo) choices.push(evo);
     const rest = pool.filter((u) => u !== evo);
-    while (choices.length < 3 && rest.length) {
+    // 궁핍 (난세 패): fewer cards to choose from.
+    const count = this.stage.difficulty.choiceCount ?? 3;
+    while (choices.length < count && rest.length) {
       let total = 0;
       const w = rest.map((u) => {
         const x = u.weight * (u.category === p.hero.favoredCategory ? 1.5 : 1);
@@ -565,7 +570,7 @@ export class Game {
       while (r > w[i]) r -= w[i++];
       choices.push(rest.splice(Math.min(i, rest.length - 1), 1)[0]);
     }
-    for (const f of FALLBACKS) if (choices.length < 3) choices.push(f);
+    for (const f of FALLBACKS) if (choices.length < count) choices.push(f);
     return choices.map((u) => ({
       up: u,
       id: u.id,

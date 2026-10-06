@@ -13,6 +13,7 @@ import { runFacts, recordRun, checkAchievements, claimAchievement, readyCount } 
 import { ACHIEVEMENTS } from './data/achievements.js';
 import { dailyFor, dailyHeroBonus, todayKey } from './data/daily.js';
 import { josa } from './core/korean.js';
+import { NANSE_CARDS, NANSE_MILESTONES, milestoneBonus, nanseLevel } from './data/nanse.js';
 import { metaBonus, FORGE, forgeCost, gradeOpen, entryCheck } from './data/meta.js';
 import { STAGES } from './data/stages.js';
 import { HEROES } from './data/heroes.js';
@@ -50,6 +51,8 @@ function newGame(mode = null) {
   // Remember the choice so the next visit opens on the same hero and field.
   if (!runDaily) save.sel = { hero: sel.hero, stage: sel.stage };
   writeSave(save);
+  // 난세 단계: only on a battlefield already pacified, in a normal run.
+  const nanse = !runDaily && !runEndless && save.best?.[stageId] && nanseLevel(save.nanseCards) > 0 ? { ...save.nanseCards } : null;
   const meta = metaBonus(save, heroId);
   if (runDaily) {
     const hb = dailyHeroBonus(runDaily);
@@ -64,6 +67,7 @@ function newGame(mode = null) {
     stageId,
     daily: runDaily,
     endless: runEndless,
+    nanse,
     quick: !runDaily && !runEndless && $('quickMode').checked,
     onBanner: (t, size) => hud.banner(t, size),
     onState,
@@ -75,7 +79,7 @@ function newGame(mode = null) {
   renderer.render(game, input, 0);
   hud.show(true);
   hud.update(game, 0, true);
-  renderIntro(STAGES[stageId], runDaily, runEndless);
+  renderIntro(game.stage, runDaily, runEndless);
   showScreen('intro');
   introTimer = 2.6;
   // First battle ever: guided steps. After that, no hints — the player knows the controls.
@@ -130,6 +134,23 @@ function onState(state, g) {
         if (isNew) save.endless[g.stage.id] = { time: Math.floor(g.time), kills: g.kills, bosses: g.endlessBosses, hero: g.player.hero.id };
         endless = { time: g.time, bosses: g.endlessBosses, isNew, best: save.endless[g.stage.id] };
       }
+      // 난세 단계: best 단계 per field and hero, and one-time milestone bonuses.
+      let nanseInfo = null;
+      if (g.stage.nanse && state === 'clear') {
+        const lv = g.stage.nanse.level;
+        save.nanse ??= {};
+        const rec = (save.nanse[g.stage.id] ??= {});
+        const prevBest = Math.max(0, ...Object.values(rec));
+        const isNew = lv > (rec[g.player.hero.id] ?? 0);
+        if (isNew) rec[g.player.hero.id] = lv;
+        let bonus = 0;
+        for (const m of NANSE_MILESTONES) if (lv >= m && prevBest < m) bonus += milestoneBonus(m, g.stage.difficulty.stars);
+        bonus = Math.round(bonus);
+        save.money += bonus;
+        c.earned += bonus;
+        save.stats.nanseBest = Math.max(save.stats.nanseBest ?? 0, lv);
+        nanseInfo = { level: lv, isNew, bonus };
+      }
       const run = runFacts(g, state === 'clear', save);
       recordRun(save, run);
       // 오늘의 전장: the first win of that day pays its bonus once.
@@ -149,7 +170,7 @@ function onState(state, g) {
       writeSave(save);
       updateBadge();
       // What this run added to the 도감, for the result card.
-      g.resultExtra = { dailyBonus, endless, unlocks: unlocked.map((a) => `${a.icon} ${a.name}`), newFoes: Object.keys(g.killsBy).filter((id) => !known.has(id)).length };
+      g.resultExtra = { dailyBonus, endless, nanse: nanseInfo, unlocks: unlocked.map((a) => `${a.icon} ${a.name}`), newFoes: Object.keys(g.killsBy).filter((id) => !known.has(id)).length };
     }
     renderResult(g, state === 'clear', g.resultExtra);
     if (g.resultExtra?.unlocks.length && !g.achieveSounded) {
@@ -238,6 +259,20 @@ const act = {
   start: () => newGame(),
   startDaily: () => newGame(dailyFor(todayKey())),
   startEndless: () => newGame(ENDLESS_RUN),
+  /** 난세 패: change one card's rank (clamped), remembered for the next runs. */
+  setNanse(id, rank) {
+    const card = NANSE_CARDS.find((c) => c.id === id);
+    if (!card) return;
+    save.nanseCards ??= {};
+    save.nanseCards[id] = Math.max(0, Math.min(card.ranks, rank));
+    writeSave(save);
+    refresh();
+  },
+  clearNanse() {
+    save.nanseCards = {};
+    writeSave(save);
+    refresh();
+  },
   pickHero(id) {
     sel.hero = id;
     refresh();

@@ -1,5 +1,6 @@
 import { drawUnit } from '../render/sprites.js';
 import { GRADES } from '../data/meta.js';
+import { NANSE_CARDS } from '../data/nanse.js';
 
 const $ = (id) => document.getElementById(id);
 const MENUS = ['home', 'heroes', 'grow', 'map', 'prep', 'codex'];
@@ -26,12 +27,13 @@ export function drawPortrait(canvas, hero) {
 }
 
 export function renderIntro(stage, daily = null, endless = false) {
-  const tag = daily ? '📅 오늘의 전장 · ' : endless ? '♾️ 무한 전장 · ' : '';
+  const tag = daily ? '📅 오늘의 전장 · ' : endless ? '♾️ 무한 전장 · ' : stage.nanse ? `🔥 난세 ${stage.nanse.level}단계 · ` : '';
   $('introYear').textContent = `${tag}${stage.year} · ${stage.place} · 난이도 ${stage.difficulty.label}`;
   $('introName').textContent = stage.name;
   $('introText').textContent = daily
     ? daily.rules.map((r) => `${r.icon} ${r.name} — ${r.desc}`).join('\n')
-    : endless ? '끝이 없는 전장. 적은 갈수록 많아지고, 적장은 3분마다 더 강해져 돌아온다.\n쓰러질 때까지 버텨라!' : stage.intro;
+    : endless ? '끝이 없는 전장. 적은 갈수록 많아지고, 적장은 3분마다 더 강해져 돌아온다.\n쓰러질 때까지 버텨라!'
+    : stage.nanse ? NANSE_CARDS.filter((c) => stage.nanse.cards[c.id]).map((c) => `${c.icon} ${c.name} — ${c.desc(stage.nanse.cards[c.id])}`).join('\n') : stage.intro;
 }
 
 /** Icon and colour per 책략 category. */
@@ -107,6 +109,8 @@ export function renderResult(g, won, extra = {}) {
   if (r) rows.push(['🪙', '냥', `<span class="count-up" data-to="${r.total}">+0</span>`]);
   if (r?.bossBonus) rows.push(['👑', '적장 토벌 보상', `+${r.bossBonus.toLocaleString()}`]);
   if (extra.dailyBonus) rows.push(['📅', '오늘의 전장 보상', `+${extra.dailyBonus.toLocaleString()}`]);
+  if (extra.nanse) rows.push(['🔥', `난세 ${extra.nanse.level}단계 평정`, extra.nanse.isNew ? '최고 기록!' : '']);
+  if (extra.nanse?.bonus) rows.push(['🏮', '난세 돌파 보상', `+${extra.nanse.bonus.toLocaleString()}`]);
   if (en) rows.push(['♾️', '적장 격파', `${en.bosses}명`]);
   rows.push(['⭐', '공훈', `Lv ${g.player.level}`]);
   rows.push(['⚔️', '처치', `${g.kills}`]);

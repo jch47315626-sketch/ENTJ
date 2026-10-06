@@ -1050,3 +1050,29 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 .ec-btns .plain-btn { flex: none; border-radius: 999px; }
 .endless-btn { flex: 1; border: 0; padding: 12px; border-radius: 999px; background: linear-gradient(180deg, #b7dcff, #79aee6); color: #1f2a40; font: 400 19px "Jua", sans-serif; box-shadow: 0 4px 0 #4f7fb8; cursor: pointer; }
 .endless-btn:active { transform: translateY(2px); }
+
+/* 🔥 난세 단계 */
+.nanse-box { display: flex; flex-direction: column; gap: 10px; margin: 14px 0; padding: 14px; border-radius: 20px; background: linear-gradient(180deg, #2c2742, #221d34); border: 2px solid rgba(255, 138, 90, 0.55); }
+.nanse-box.locked { border-color: rgba(255, 255, 255, 0.12); opacity: 0.85; }
+.nb-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.nb-head b { font: 400 21px "Jua", sans-serif; color: #ffb48a; }
+.nb-head b em { font-style: normal; font-size: 28px; color: #ff8a5a; }
+.nb-head b small { font-size: 14px; color: var(--hanji-dim); }
+.nb-head span { font-size: 13px; color: var(--hanji-dim); }
+.nb-note { margin: 0; font-size: 13px; line-height: 1.5; color: var(--hanji-dim); text-align: left; }
+.nb-note b { color: var(--candy-lemon); }
+.nb-list { display: flex; flex-direction: column; gap: 6px; }
+.nb-card { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 14px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.06); }
+.nb-card.on { background: rgba(255, 138, 90, 0.12); border-color: rgba(255, 138, 90, 0.5); }
+.nb-icon { font-size: 22px; width: 32px; text-align: center; }
+.nb-text { min-width: 0; text-align: left; }
+.nb-text b { display: block; font: 400 16px/1.25 "Jua", sans-serif; color: var(--hanji); }
+.nb-text b small { font-size: 11.5px; color: #ffb48a; margin-left: 4px; }
+.nb-text span { display: block; font-size: 12.5px; color: var(--hanji-dim); }
+.nb-pips { display: flex !important; gap: 4px; margin-top: 4px; }
+.nb-pips i { width: 14px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.15); }
+.nb-pips i.on { background: #ff8a5a; }
+.nb-ctl { display: flex; gap: 6px; }
+.nb-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.08); color: var(--hanji); font: 400 20px "Jua", sans-serif; cursor: pointer; }
+.nb-btn:disabled { opacity: 0.3; cursor: default; }
+.nb-clear { align-self: center; }

@@ -11,6 +11,7 @@ import { SKILL_TREES, TREASURES } from '../data/trees.js';
 import { ACHIEVEMENTS, ACH_GROUPS, progressOf } from '../data/achievements.js';
 import { dailyFor, todayKey, untilTomorrow } from '../data/daily.js';
 import { josa } from '../core/korean.js';
+import { NANSE_CARDS, NANSE_MAX, NANSE_MILESTONES, nanseLevel, nanseRewardMul, bestNanse, milestoneBonus } from '../data/nanse.js';
 import { SPECIALS } from '../systems/specials.js';
 import { drawUnit } from '../render/sprites.js';
 import { iconCanvas } from '../render/icons.js';
@@ -525,7 +526,46 @@ export function renderPrep(save, sel, act) {
       act.go('heroes');
     }));
   }
-  body.append(button('⚔️ 출진', 'seal-btn cta', act.start, !gate.ok));
+  const cleared = !!save.best?.[sel.stage];
+  body.append(nansePanel(save, sel, act, cleared));
+  const lv = cleared ? nanseLevel(save.nanseCards) : 0;
+  body.append(button(lv ? `🔥 난세 ${lv}단계 출진` : '⚔️ 출진', 'seal-btn cta', act.start, !gate.ok));
+}
+
+/** 🔥 난세 단계: stack hardship cards on a pacified field for more 냥 and a record. */
+function nansePanel(save, sel, act, cleared) {
+  const box = el('div', 'nanse-box');
+  const st = STAGES[sel.stage];
+  if (!cleared) {
+    box.classList.add('locked');
+    box.append(el('div', 'nb-head', `<b>🔥 난세 단계</b><span>🔒 ${josa(st.name, '을')} 평정하면 열려요</span>`));
+    box.append(el('p', 'nb-note', '전장을 한 번 평정하면, 출진 전에 고난 카드를 골라 더 어려운 싸움에 도전할 수 있어요. 단계가 높을수록 냥을 더 받아요.'));
+    return box;
+  }
+  const cards = save.nanseCards ?? {};
+  const lv = nanseLevel(cards);
+  const mine = bestNanse(save, sel.stage, sel.hero);
+  const any = bestNanse(save, sel.stage);
+  const next = NANSE_MILESTONES.find((m) => m > any);
+  box.append(el('div', 'nb-head', `<b>🔥 난세 <em>${lv}</em><small> / ${NANSE_MAX}</small></b>
+    <span>냥 ×${nanseRewardMul(lv).toFixed(1)} · ${HEROES[sel.hero].name} 최고 ${mine}단계</span>`));
+  if (next) box.append(el('p', 'nb-note', `🏮 이 전장에서 처음으로 난세 ${next}단계를 평정하면 돌파 보상 <b>${fmt(Math.round(milestoneBonus(next, st.difficulty.stars)))}냥</b>`));
+  const list = el('div', 'nb-list');
+  for (const c of NANSE_CARDS) {
+    const r = Math.min(c.ranks, cards[c.id] ?? 0);
+    const row = el('div', `nb-card${r ? ' on' : ''}`);
+    row.append(el('span', 'nb-icon', c.icon));
+    const pips = c.ranks > 1 ? `<span class="nb-pips">${Array.from({ length: c.ranks }, (_, i) => `<i class="${i < r ? 'on' : ''}"></i>`).join('')}</span>` : '';
+    row.append(el('div', 'nb-text', `<b>${c.name} <small>+${c.points}점${c.ranks > 1 ? ' / 단' : ''}</small></b><span>${c.desc(Math.max(1, r))}</span>${pips}`));
+    const ctl = el('div', 'nb-ctl');
+    ctl.append(button('−', 'nb-btn', () => act.setNanse(c.id, r - 1), r === 0));
+    ctl.append(button('+', 'nb-btn', () => act.setNanse(c.id, r + 1), r >= c.ranks));
+    row.append(ctl);
+    list.append(row);
+  }
+  box.append(list);
+  if (lv) box.append(button('모두 끄기', 'plain-btn small nb-clear', () => act.clearNanse()));
+  return box;
 }
 
 // =================================================================== 도감

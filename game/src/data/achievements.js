@@ -67,6 +67,11 @@ export const ACHIEVEMENTS = [
   { id: 'endless10', group: 'war', icon: '⏳', name: '불굴', desc: '무한 전장에서 10분을 버틴다', reward: 2500, check: (s) => (s.stats.endlessBest ?? 0) >= 600 },
   { id: 'endlessBoss3', group: 'war', icon: '👹', name: '적장 셋을 넘어', desc: '무한 전장 한 판에서 적장을 3번 쓰러뜨린다', reward: 3000, check: (s) => (s.stats.endlessBosses ?? 0) >= 3 },
 
+  // 난세 단계
+  { id: 'nanse5', group: 'war', icon: '🔥', name: '난세의 문턱', desc: '난세 5단계 이상으로 전장을 평정한다', reward: 1500, check: (s) => (s.stats.nanseBest ?? 0) >= 5 },
+  { id: 'nanse10', group: 'war', icon: '🌋', name: '난세의 영웅', desc: '난세 10단계 이상으로 전장을 평정한다', reward: 4000, check: (s) => (s.stats.nanseBest ?? 0) >= 10 },
+  { id: 'nanse20', group: 'war', icon: '☄️', name: '천하를 뒤흔든 자', desc: '난세 20단계 이상으로 전장을 평정한다', reward: 10000, check: (s) => (s.stats.nanseBest ?? 0) >= 20 },
+
   // 군영
   { id: 'fullSet', group: 'camp', icon: '🧥', name: '완전 무장', desc: '한 영웅이 장비 6부위를 모두 찬다', reward: 500,
     check: (s) => Object.values(s.equipped ?? {}).some((o) => SLOTS.every((sl) => o?.[sl.id])) },

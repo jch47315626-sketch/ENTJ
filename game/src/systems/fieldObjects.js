@@ -35,7 +35,7 @@ export function updateFieldObjects(g, dt) {
     p.drumUntil = 0;
     p.recalc();
   }
-  if (g.boss) return; // nothing new turns up during a boss fight
+  if (g.boss || g.stage.difficulty.noObjects) return; // none during a boss fight, or under 황무지
   g.objectTimer = (g.objectTimer ?? F.first) - dt;
   if (g.objectTimer > 0) return;
   g.objectTimer = rand(F.every[0], F.every[1]);
