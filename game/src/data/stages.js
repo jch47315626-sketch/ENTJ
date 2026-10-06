@@ -71,7 +71,7 @@ export const STAGES = {
     year: '930',
     intro: '930년 정월, 고창의 얼어붙은 강가. 견훤의 주력과 고려군이 맞붙고, 고을 호족들이 어느 편에 설지 지켜본다.',
     ground: 'winterRiver',
-    difficulty: { label: '어려움', stars: 3, enemyHp: 2.0, enemyDamage: 1.85, spawnRate: 1.15, eliteBonus: 0.08, bossHp: 2.1, bossDamage: 1.75, xpScale: 0.3 },
+    difficulty: { label: '어려움', stars: 3, enemyHp: 1.8, enemyDamage: 1.7, spawnRate: 1.15, eliteBonus: 0.08, bossHp: 1.9, bossDamage: 1.6, xpScale: 0.375 },
     clearText: '고창의 겨울 들판에서 승부가 갈렸다. 이 고을 호족 셋은 훗날 안동의 삼태사로 기려진다.',
     next: 'cheorwon',
     bossAt: 300,
