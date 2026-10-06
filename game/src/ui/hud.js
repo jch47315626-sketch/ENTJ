@@ -1,4 +1,4 @@
-import { UPGRADES, evolutionHint } from '../data/upgrades.js';
+import { UPGRADES, evolutionStatus } from '../data/upgrades.js';
 import { currentWeaponLevel } from '../systems/weapons.js';
 import { WEAPONS } from '../data/weapons.js';
 import { ORDERS, orderEvery } from '../systems/allies.js';
@@ -83,9 +83,13 @@ export class Hud {
     const key = JSON.stringify([p.weapon.level, p.upgrades]);
     if (key === this.evoKey) return;
     this.evoKey = key;
-    const hint = evolutionHint(g);
-    this.el.evo.hidden = !hint;
-    this.el.evo.textContent = hint ? `진화 조건 — ${hint}` : '';
+    const list = evolutionStatus(g);
+    this.el.evo.hidden = !list.length;
+    this.el.evo.innerHTML = list
+      .map((e) => `<div class="evo-row${e.ready ? ' ready' : ''}"><b class="evo-name">🌟 ${e.name}</b>${e.checks
+        .map((c) => `<span class="evo-check${c.done ? ' done' : ''}"><i>${c.done ? '✔' : ''}</i>${c.label} <em>${c.now}/${c.need}</em></span>`)
+        .join('')}${e.ready ? '<span class="evo-go">다음 레벨업에 진화!</span>' : ''}</div>`)
+      .join('');
   }
 
   /** Pause screen: the weapons and 책략 taken so far (kept off the battle HUD). */

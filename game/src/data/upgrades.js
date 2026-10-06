@@ -196,23 +196,38 @@ function canUpgradeWeapon(g) {
   return (g.player.upgrades[next.requires.upgrade] ?? 0) >= next.requires.level;
 }
 
-/** Human-readable requirements for pending evolutions, or null. */
-export function evolutionHint(g) {
+/**
+ * Checklist for every evolution the hero can still reach in this battle:
+ * [{ name, checks: [{ label, now, need, done }], ready }]. An evolution
+ * appears once its item is owned and disappears after it happens.
+ */
+export function evolutionStatus(g) {
   const p = g.player;
-  const hints = [];
-  const check = (next) => {
-    if (!next?.requires) return;
-    if ((p.upgrades[next.requires.upgrade] ?? 0) >= next.requires.level) return;
-    const up = UPGRADES.find((u) => u.id === next.requires.upgrade);
-    hints.push(`${next.name}: ${up.name} Lv${next.requires.level} 필요`);
+  const list = [];
+  const upName = (id) => {
+    const u = UPGRADES.find((x) => x.id === id);
+    return u?.title ?? (typeof u?.name === 'function' ? u.name(g) : u?.name ?? id);
   };
-  check(nextWeaponLevel(g));
-  if (p.upgrades.shin) check(SHIN[p.upgrades.shin]);
-  if (p.upgrades.horse) check(HORSE[p.upgrades.horse]);
-  if (p.upgrades.chain) check(CHAIN[p.upgrades.chain]);
+  // `levels`: the item's level table; `have`: levels already taken (1 = first level).
+  const add = (levels, have, label) => {
+    const E = levels.findIndex((l) => l?.evolution);
+    if (E < 0 || have > E) return;
+    const evo = levels[E];
+    const checks = [{ label, now: Math.min(have, E), need: E, done: have >= E }];
+    if (evo.requires) {
+      const now = p.upgrades[evo.requires.upgrade] ?? 0;
+      checks.push({ label: upName(evo.requires.upgrade), now: Math.min(now, evo.requires.level), need: evo.requires.level, done: now >= evo.requires.level });
+    }
+    list.push({ name: evo.name, checks, ready: checks.every((c) => c.done) });
+  };
+  const W = WEAPONS[p.weapon.id].levels;
+  add(W, p.weapon.level + 1, W[0].name);
+  if (p.upgrades.shin) add(SHIN, p.upgrades.shin, SHIN[0].name);
+  if (p.upgrades.horse) add(HORSE, p.upgrades.horse, HORSE[0].name);
+  if (p.upgrades.chain) add(CHAIN, p.upgrades.chain, CHAIN[0].name);
   for (const id of p.hero.subWeapons ?? []) {
     const lv = p.upgrades[id] ?? 0;
-    if (lv > 0) check(WEAPONS[id].levels[lv]);
+    if (lv > 0) add(WEAPONS[id].levels, lv, WEAPONS[id].levels[0].name);
   }
-  return hints.length ? hints.join(' · ') : null;
+  return list;
 }
