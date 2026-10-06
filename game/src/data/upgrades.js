@@ -7,7 +7,8 @@ import { GWANSIM, TIER_NAMES, SHIN, HORSE, CHAIN } from './skills.js';
  * Categories: 무예 (weapon), 병법 (troops), 지세 (field), 보급 (fallback).
  */
 /** 견훤 혈투, by level: health per foe struck (share of max HP), foes counted per swing. */
-export const LIFESTEAL = [null, { share: 0.005, cap: 3 }, { share: 0.0075, cap: 4 }, { share: 0.01, cap: 5 }];
+// Index 4 is reached only with a 한계 돌파 비기 on gear.
+export const LIFESTEAL = [null, { share: 0.005, cap: 3 }, { share: 0.0075, cap: 4 }, { share: 0.01, cap: 5 }, { share: 0.0125, cap: 6 }];
 
 export const UPGRADES = [
   {

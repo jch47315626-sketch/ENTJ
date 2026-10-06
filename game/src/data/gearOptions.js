@@ -27,6 +27,61 @@ export const GEAR_OPTIONS = [
   { key: 'specialArea', icon: '👁️', text: (v) => `관심법 범위 +${pct(v)}`, max: 0.2, hero: 'gungye' },
 ];
 
+/**
+ * 비기 lines: instead of a number, they change how the hero fights.
+ *   grant — start every battle already holding a 책략 at Lv1
+ *   cap   — a 책략 can go one level higher
+ *   node  — a skill-tree node works without buying it
+ *   proc  — a new technique (see Game: 낙뢰 · 사기충천 · 수호 깃발 · 연환)
+ * Found on 진품 (35%) and 국보 (50%) pieces; every 신물 has one.
+ */
+export const SPECIAL = {
+  grant: {
+    any: ['caltrops', 'swift'],
+    wanggeon: ['shin', 'horse', 'archers', 'guard'],
+    gyeonhwon: ['chain', 'fury', 'lifesteal'],
+    gungye: ['vajra', 'gwansim', 'maguni'],
+  },
+  cap: {
+    any: ['might', 'haste', 'area', 'swift', 'vitality'],
+    wanggeon: ['archers', 'guard'],
+    gyeonhwon: ['lifesteal', 'fury'],
+    gungye: ['maguni'],
+  },
+  node: {
+    wanggeon: ['wg_a1', 'wg_a2', 'wg_b1', 'wg_b2'],
+    gyeonhwon: ['gh_a1', 'gh_a2', 'gh_b1', 'gh_b2'],
+    gungye: ['gy_a1', 'gy_a2', 'gy_b1', 'gy_b2'],
+  },
+  proc: ['thunder', 'rally', 'lastStand', 'echo'],
+};
+export const PROCS = {
+  thunder: { icon: '⚡', name: '낙뢰', desc: '적을 쓰러뜨리면 15% 확률로 그 자리에 벼락이 떨어진다' },
+  rally: { icon: '🥁', name: '사기충천', desc: '적을 10명 쓰러뜨릴 때마다 체력 2% 회복' },
+  lastStand: { icon: '🚩', name: '수호 깃발', desc: '체력이 30% 아래로 떨어지면 3초간 무적 (60초마다)' },
+  echo: { icon: '🔁', name: '연환', desc: '주무기를 휘두를 때 20% 확률로 곧바로 한 번 더' },
+};
+const SPECIAL_CHANCE = [0, 0, 0, 0, 0.35, 0.5, 1];
+
+/** Names for 비기 text, filled in by the game at start-up (avoids an import cycle). */
+export const NAMES = { upgrade: {}, node: {} };
+
+function rollSpecial(item, takenKinds = []) {
+  const kinds = ['grant', 'cap', 'node', 'proc'].filter((k) => !takenKinds.includes(k));
+  const kind = kinds[Math.floor(Math.random() * kinds.length)];
+  const S = SPECIAL[kind];
+  const pool = kind === 'proc' ? S : kind === 'node' ? S[item.hero] ?? [] : [...(S.any ?? []), ...(S[item.hero] ?? [])];
+  return { k: kind, v: pool[Math.floor(Math.random() * pool.length)], special: true };
+}
+
+export const specialText = (l) => {
+  if (l.k === 'grant') return `📜 출진할 때 「${NAMES.upgrade[l.v] ?? l.v}」 Lv1`;
+  if (l.k === 'cap') return `⬆️ 「${NAMES.upgrade[l.v] ?? l.v}」 최대 레벨 +1`;
+  if (l.k === 'node') return `🌳 스킬 「${NAMES.node[l.v] ?? l.v}」 전수`;
+  const p = PROCS[l.v];
+  return p ? `${p.icon} ${p.name} — ${p.desc}` : l.v;
+};
+
 function pct(v) {
   return `${Math.round(v * 100)}%`;
 }
@@ -51,17 +106,27 @@ export function rollLine(item, taken = []) {
   return { k: o.key, v: rollValue(o, item.grade) };
 }
 
-/** A full set of lines for a newly obtained piece. */
+/** A full set of lines for a newly obtained piece (the last may be a 비기). */
 export function rollOptions(item) {
   const lines = [];
-  for (let i = 0; i < LINES[item.grade]; i++) lines.push(rollLine(item, lines.map((l) => l.k)));
+  const n = LINES[item.grade];
+  const special = Math.random() < SPECIAL_CHANCE[item.grade];
+  for (let i = 0; i < n - (special ? 1 : 0); i++) lines.push(rollLine(item, lines.map((l) => l.k)));
+  if (special) lines.push(rollSpecial(item));
   return lines;
 }
 
-/** 각인: replace line `index` with a fresh roll (a different key than the other lines). */
+/** 각인: replace line `index` with a fresh roll. A 비기 line stays a 비기 (new kind or technique). */
 export function rerollLine(item, lines, index) {
-  const others = lines.filter((_, i) => i !== index).map((l) => l.k);
   const next = lines.slice();
+  if (lines[index].special) {
+    let fresh;
+    do fresh = rollSpecial(item);
+    while (fresh.k === lines[index].k && fresh.v === lines[index].v);
+    next[index] = fresh;
+    return next;
+  }
+  const others = lines.filter((l, i) => i !== index && !l.special).map((l) => l.k);
   next[index] = rollLine(item, others);
   return next;
 }
@@ -76,6 +141,7 @@ export const lineMax = (key, grade) => {
 };
 
 export const lineText = (l) => {
+  if (l.special) return specialText(l);
   const o = GEAR_OPTIONS.find((x) => x.key === l.k);
   return o ? `${o.icon} ${o.text(l.v)}` : l.k;
 };

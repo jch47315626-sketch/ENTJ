@@ -9,7 +9,7 @@ import { THEMES } from './music.js';
 const PENTA = [392, 440, 523.3, 587.3, 659.3, 784, 880]; // G-A-C-D-E 평조 계열
 
 // Minimum seconds between two plays of the same effect.
-const THROTTLE = { hit: 0.045, coin: 0.05, kill: 0.04, slash: 0.05, chop: 0.05, swing: 0.05, hurt: 0.15, heal: 0.1, levelup: 0.25, click: 0.04, flip: 0.05, dig: 0.3, heartbeat: 0.6, crow: 0.4 };
+const THROTTLE = { hit: 0.045, coin: 0.05, kill: 0.04, slash: 0.05, chop: 0.05, swing: 0.05, hurt: 0.15, heal: 0.1, levelup: 0.25, click: 0.04, flip: 0.05, dig: 0.3, heartbeat: 0.6, crow: 0.4, thunder: 0.12 };
 
 const readNum = (key, def) => {
   try {

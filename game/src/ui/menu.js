@@ -322,8 +322,8 @@ function itemCard(save, h, item, act) {
     opts = el('div', 'ic-opts');
     const cost = engraveCost(item);
     lines.forEach((l, i) => {
-      const q = l.v / Math.max(1e-9, lineMax(l.k, item.grade));
-      const row = el('div', `ic-opt${q >= 0.9 ? ' top' : ''}`);
+      const q = l.special ? 0 : l.v / Math.max(1e-9, lineMax(l.k, item.grade));
+      const row = el('div', `ic-opt${l.special ? ' special' : q >= 0.9 ? ' top' : ''}`);
       row.append(el('span', 'io-text', lineText(l)));
       const b = button(`🔁 <small>${fmt(cost)}</small>`, 'io-btn', () => act.engrave(item, i), save.money < cost);
       b.title = `각인: 이 줄을 새로 뽑아요 (${fmt(cost)}냥)`;

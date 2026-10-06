@@ -1087,3 +1087,7 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 .io-btn small { color: var(--candy-lemon); font-size: 11px; }
 .io-btn:disabled { opacity: 0.4; cursor: default; }
 .item-card[style*="#ff6b8a"] { box-shadow: 0 0 14px rgba(255, 107, 138, 0.25); }
+/* 비기 lines: they change how the hero fights, not just a number */
+.ic-opt.special { padding: 4px 8px; border-radius: 10px; background: rgba(201, 168, 255, 0.14); border: 1px solid rgba(201, 168, 255, 0.45); }
+.ic-opt.special .io-text { color: #e2d2ff; font-family: "Jua", sans-serif; font-size: 13px; line-height: 1.35; }
+.ic-opt.special .io-text::before { content: '비기 '; color: var(--candy-lilac); font-size: 11px; }

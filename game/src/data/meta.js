@@ -232,6 +232,8 @@ export const SECRETS = [
 /** Sums every owned bonus for one hero into a single object. */
 export function metaBonus(save, heroId) {
   const treeGrants = [];
+  const gearGrants = [];
+  const gearNodes = [];
   const total = {};
   const add = (b) => {
     for (const k in b) total[k] = (total[k] ?? 0) + b[k];
@@ -242,7 +244,14 @@ export function metaBonus(save, heroId) {
     if (item && item.hero === heroId) {
       add(itemBonus(item, save.forge?.[item.id] ?? 0));
       // 장비 옵션 (data/gearOptions.js): random lines rolled when the piece was obtained.
-      for (const l of save.gearOpts?.[item.id] ?? []) add({ [l.k]: l.v });
+      for (const l of save.gearOpts?.[item.id] ?? []) {
+        if (!l.special) add({ [l.k]: l.v });
+        // 비기 lines (data/gearOptions.js SPECIAL).
+        else if (l.k === 'grant') gearGrants.push(l.v);
+        else if (l.k === 'cap') total.caps = { ...(total.caps ?? {}), [l.v]: (total.caps?.[l.v] ?? 0) + 1 };
+        else if (l.k === 'node') gearNodes.push(l.v);
+        else if (l.k === 'proc') total[l.v] = 1;
+      }
     }
   }
   for (const t of TRAINING) {
@@ -252,7 +261,8 @@ export function metaBonus(save, heroId) {
   // Hero build: skill-tree nodes and the equipped treasure.
   const bought = save.trees?.[heroId]?.nodes ?? [];
   for (const node of treeNodes(heroId)) {
-    if (!bought.includes(node.id)) continue;
+    // A node bought in the tree, or passed on by a piece of gear (counted once).
+    if (!bought.includes(node.id) && !gearNodes.includes(node.id)) continue;
     add(node.bonus);
     treeGrants.push(...(node.grants ?? []));
   }
@@ -260,5 +270,5 @@ export function metaBonus(save, heroId) {
   if (treasure) add(treasure.bonus);
 
   const grants = SECRETS.filter((s) => s.hero === heroId && save.secrets.includes(s.id)).map((s) => s.grant);
-  return { ...total, grants: [...new Set([...grants, ...treeGrants])] };
+  return { ...total, grants: [...new Set([...grants, ...treeGrants, ...gearGrants])] };
 }

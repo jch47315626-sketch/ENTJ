@@ -15,7 +15,8 @@ import { dailyFor, dailyHeroBonus, todayKey } from './data/daily.js';
 import { josa } from './core/korean.js';
 import { NANSE_CARDS, NANSE_MILESTONES, milestoneBonus, nanseLevel } from './data/nanse.js';
 import { metaBonus, FORGE, forgeCost, gradeOpen, entryCheck, EQUIPMENT, RELICS } from './data/meta.js';
-import { ensureGearOptions, rollOptions, rerollLine, engraveCost, lineText } from './data/gearOptions.js';
+import { ensureGearOptions, rollOptions, rerollLine, engraveCost, lineText, NAMES } from './data/gearOptions.js';
+import { UPGRADES } from './data/upgrades.js';
 import { STAGES } from './data/stages.js';
 import { HEROES } from './data/heroes.js';
 
@@ -30,6 +31,9 @@ const tutor = new Tutorial();
 let game = null;
 const sel = { hero: 'wanggeon', stage: 'seonamhae' };
 const save = loadSave();
+// Display names for gear 비기 lines (data/gearOptions.js).
+for (const u of UPGRADES) NAMES.upgrade[u.id] = u.title ?? (typeof u.name === 'string' ? u.name : u.id);
+for (const t of Object.values(SKILL_TREES)) for (const n of [t.root, ...t.branches.flatMap((b) => b.nodes)]) NAMES.node[n.id] = n.name;
 ensureGearOptions(save, EQUIPMENT); // older saves: every owned piece gets its option lines
 writeSave(save); // persist any format migration right away
 let introTimer = 0;

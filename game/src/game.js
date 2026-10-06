@@ -378,6 +378,12 @@ export class Game {
   /** After each main-weapon swing (견훤 패공의 길 lunges and dashes). */
   afterSwing() {
     afterSwing(this);
+    // 연환 (gear 비기): now and then the blade comes round again at once.
+    const w = this.player.weapon;
+    if (this.player.meta.echo && !w.echoed && Math.random() < 0.2) {
+      w.timer = Math.min(w.timer, 0.12);
+      w.echoed = true;
+    } else w.echoed = false;
   }
 
   /** 마구니: one orbiting spirit per level of the upgrade. */
@@ -451,6 +457,7 @@ export class Game {
       this.killsBy[e.def.id] = (this.killsBy[e.def.id] ?? 0) + 1;
       this.kills++;
       this.addMomentum(MOMENTUM.perKill);
+      this.killProcs(e);
     }
     if (e.xp > 0) this.dropCoin(e.x, e.y, e.xp);
     if (e.def.drop === 'rice') this.pickups.push({ kind: 'rice', x: e.x, y: e.y, heal: 25 * (this.stage.difficulty.riceMul ?? 1), magnet: false, t: 0 });
@@ -492,6 +499,22 @@ export class Game {
     this.banner(`${e.def.name} 격파! (${this.endlessBosses}번째) — 다음 적장까지 ${ENDLESS.bossEvery / 60}분`, 'big');
   }
 
+  /** Gear 비기 techniques that fire when a foe falls: 낙뢰, 사기충천. */
+  killProcs(e) {
+    const p = this.player;
+    const m = p.meta;
+    if (m.thunder && !e.isBoss && Math.random() < 0.15) {
+      hitArc(this, e.x, e.y, 0, 80, 360, 30 * p.stats.might, 60, 'burst');
+      this.fx.push({ type: 'spark', x: e.x, y: e.y, t: 0, life: 0.3 });
+      this.sfx('thunder');
+    }
+    if (m.rally && this.kills % 10 === 0) {
+      const before = p.hp;
+      p.heal(p.stats.maxHp * 0.02);
+      if (p.hp > before) this.texts.push({ x: p.x, y: p.y - 30, v: `+${Math.round(p.hp - before)}`, t: 0, life: 0.6, heal: true });
+    }
+  }
+
   dropCoin(x, y, value) {
     const tier = value >= 5 ? 'gold' : value >= 3 ? 'silver' : 'bronze';
     this.pickups.push({ kind: 'coin', tier, value, x: x + rand(-4, 4), y: y + rand(-4, 4), magnet: false, t: 0 });
@@ -517,6 +540,13 @@ export class Game {
     this.sfx('hurt');
     this.texts.push({ x: p.x, y: p.y - 20, v: Math.round(dmg), t: 0, life: 0.7, hurt: true });
     onHurt(this, attacker);
+    // 수호 깃발 (gear 비기): a moment of safety when health runs low.
+    if (p.meta.lastStand && p.hp > 0 && p.hp < p.stats.maxHp * 0.3 && this.time >= (p.lastStandReady ?? 0)) {
+      p.lastStandReady = this.time + 60;
+      p.invuln = Math.max(p.invuln, 3);
+      this.banner('🚩 수호 깃발 — 3초 동안 무적!', 'small');
+      this.sfx('gong');
+    }
     if (p.hp <= 0) {
       p.hp = 0;
       this.state = 'dying';
@@ -551,7 +581,9 @@ export class Game {
   buildChoices() {
     const p = this.player;
     const lvl = (u) => p.upgrades[u.id] ?? 0;
-    const pool = UPGRADES.filter((u) => (!u.heroes || u.heroes.includes(p.hero.id)) && (!u.needs || p.meta[u.needs]) && (u.available ? u.available(this) : lvl(u) < u.maxLevel));
+    // 한계 돌파 (gear 비기): some 책략 may go one level higher.
+    const cap = (u) => u.maxLevel + (p.meta.caps?.[u.id] ?? 0);
+    const pool = UPGRADES.filter((u) => (!u.heroes || u.heroes.includes(p.hero.id)) && (!u.needs || p.meta[u.needs]) && (u.available ? u.available(this) : lvl(u) < cap(u)));
     const choices = [];
     const evo = pool.find((u) => u.isEvolution?.(this));
     if (evo) choices.push(evo);
