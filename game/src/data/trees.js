@@ -55,8 +55,8 @@ export const SKILL_TREES = {
         id: 'A', name: '패공의 길', style: '돌진해 베고, 빠졌다가, 다른 적에게 다시 들이친다. 전장을 가로지르며 싸운다.',
         nodes: [
           { id: 'gh_a1', name: '기습', price: 900, bonus: { lunge: 1, might: 0.05 }, desc: '칠 때마다 적에게 짧게 돌진한다' },
-          { id: 'gh_a2', name: '연참', price: 1950, bonus: { rush: 1 }, desc: '베고 나면 다른 적에게 돌진해 한 번 더 베고 빠진다 (1.4초마다)' },
-          { id: 'gh_a3', name: '패왕의 대도', price: 3900, bonus: { rushWave: 1, might: 0.1 }, desc: '연참 돌진 베기가 검기를 날린다, 피해 +10%' },
+          { id: 'gh_a2', name: '연참', price: 1950, bonus: { rush: 1 }, desc: '베고 나면 다른 적에게 돌진해 한 번 더 베고 빠진다 (2초마다)' },
+          { id: 'gh_a3', name: '패왕의 대도', price: 3900, bonus: { rushWave: 1, might: 0.05 }, desc: '연참 돌진 베기가 검기를 날린다, 피해 +5%' },
         ],
       },
       {
