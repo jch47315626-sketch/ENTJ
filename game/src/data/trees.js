@@ -52,11 +52,11 @@ export const SKILL_TREES = {
     root: { id: 'gh_root', name: '후백제의 왕', price: 360, bonus: { might: 0.1 }, desc: '모든 공격 피해 +10%' },
     branches: [
       {
-        id: 'A', name: '패공의 길', style: '돌진해 베고, 빠졌다가, 다른 적에게 다시 들이친다. 전장을 가로지르며 싸운다.',
+        id: 'A', name: '패공의 길', style: '긴 대도로 멀리서 베고, 몸을 돌려 다른 적까지 연달아 벤다. 직접 움직이며 싸운다.',
         nodes: [
-          { id: 'gh_a1', name: '기습', price: 900, bonus: { lunge: 1, might: 0.05 }, desc: '칠 때마다 적에게 짧게 돌진한다' },
-          { id: 'gh_a2', name: '연참', price: 1950, bonus: { rush: 1 }, desc: '베고 나면 다른 적에게 돌진해 한 번 더 베고 빠진다 (2초마다)' },
-          { id: 'gh_a3', name: '패왕의 대도', price: 3900, bonus: { rushWave: 1, might: 0.05 }, desc: '연참 돌진 베기가 검기를 날린다, 피해 +5%' },
+          { id: 'gh_a1', name: '기습', price: 900, bonus: { area: 0.15, might: 0.05 }, desc: '대도가 더 멀리 닿는다: 공격 범위 +15%, 피해 +5%' },
+          { id: 'gh_a2', name: '연참', price: 1950, bonus: { rush: 1 }, desc: '베고 나면 그 자리에서 몸을 돌려 다른 적을 한 번 더 벤다 (2초마다)' },
+          { id: 'gh_a3', name: '패왕의 대도', price: 3900, bonus: { rushWave: 1, might: 0.05 }, desc: '연참 베기가 검기를 날린다, 피해 +5%' },
         ],
       },
       {

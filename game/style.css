@@ -523,7 +523,7 @@ button.doll-slot:hover, button.doll-slot:focus-visible { border-color: var(--gol
 .menu-screen .menu-wrap { width: min(640px, 100%); gap: 12px; padding-block: 0; }
 .bottom-nav {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(5, 1fr);
   padding: 6px max(8px, env(safe-area-inset-left)) calc(6px + env(safe-area-inset-bottom));
   background: rgba(32, 25, 42, 0.96); border-top: 1px solid rgba(255, 203, 107, 0.25);
   backdrop-filter: blur(6px);
@@ -1101,3 +1101,20 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 .help-card { text-align: left; padding: 12px 14px; border-radius: 16px; background: linear-gradient(180deg, #2c2742, #221d34); border: 1px solid rgba(255, 255, 255, 0.08); }
 .help-card h4 { margin: 0 0 6px; font: 400 18px "Jua", sans-serif; color: var(--candy-lemon); }
 .help-card ul { margin: 0; padding-left: 1.2em; text-align: left; display: flex; flex-direction: column; gap: 4px; font-size: 13.5px; line-height: 1.5; color: var(--hanji); }
+
+/* 출진 준비: 영웅 바꾸기 · 난세 요약 / 난세 탭 */
+.prep-pick { display: flex; gap: 8px; justify-content: center; margin: 4px 0 10px; }
+.pp-hero { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1; max-width: 110px; padding: 6px 4px; border-radius: 16px; border: 2px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.05); color: var(--hanji); cursor: pointer; }
+.pp-hero b { font: 400 15px "Jua", sans-serif; }
+.pp-hero.on { border-color: var(--candy-lemon); background: rgba(255, 213, 107, 0.12); }
+.prep-nanse { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 10px 0; padding: 10px 14px; border-radius: 16px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); font-size: 14px; color: var(--hanji-dim); text-align: left; }
+.prep-nanse.on { border-color: rgba(255, 138, 90, 0.6); background: rgba(255, 138, 90, 0.1); color: var(--hanji); }
+.prep-nanse b { color: #ff8a5a; font-family: "Jua", sans-serif; font-weight: 400; font-size: 17px; }
+.nanse-stages { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; margin-bottom: 4px; }
+.ns-stage { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 12px; border-radius: 14px; border: 2px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.05); color: var(--hanji); text-align: left; cursor: pointer; }
+.ns-stage b { font: 400 15px "Jua", sans-serif; }
+.ns-stage small { font-size: 11.5px; color: var(--hanji-dim); }
+.ns-stage.on { border-color: #ff8a5a; background: rgba(255, 138, 90, 0.12); }
+.ns-stage:disabled { opacity: 0.45; cursor: default; }
+.bottom-nav button b { font-size: 16px; }
+.bottom-nav button span { font-size: 27px; }

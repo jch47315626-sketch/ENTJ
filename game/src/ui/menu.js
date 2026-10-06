@@ -508,6 +508,16 @@ export function renderPrep(save, sel, act) {
   const { boss, gate } = stageInfo(save, sel, st);
   const m = metaBonus(save, h.id);
 
+  // Switch hero right here, without going back to the 영웅 screen.
+  const pick = el('div', 'prep-pick');
+  for (const hh of Object.values(HEROES)) {
+    const b = button('', `pp-hero${hh.id === sel.hero ? ' on' : ''}`, () => act.pickHero(hh.id), !hh.available);
+    b.append(portrait(hh, 44));
+    b.append(el('b', '', hh.name));
+    pick.append(b);
+  }
+  body.append(pick);
+
   const card = el('div', 'prep-card');
   const top = el('div', 'prep-hero');
   top.append(portrait(h, 96));
@@ -548,9 +558,37 @@ export function renderPrep(save, sel, act) {
     }));
   }
   const cleared = !!save.best?.[sel.stage];
-  body.append(nansePanel(save, sel, act, cleared));
   const lv = cleared ? nanseLevel(save.nanseCards) : 0;
+  // 난세 단계: chosen on its own tab; here just what will apply.
+  const nr = el('div', `prep-nanse${lv ? ' on' : ''}`);
+  nr.append(el('span', 'pn-text', !cleared ? `🔥 난세 — 🔒 ${josa(st.name, '을')} 평정하면 열려요`
+    : lv ? `🔥 난세 <b>${lv}단계</b> · 냥 ×${nanseRewardMul(lv).toFixed(1)}` : '🔥 난세 꺼짐 — 보통 난이도'));
+  if (cleared) nr.append(button(lv ? '바꾸기' : '고르기', 'plain-btn small', () => act.go('nanse')));
+  body.append(nr);
   body.append(button(lv ? `🔥 난세 ${lv}단계 출진` : '⚔️ 출진', 'seal-btn cta', act.start, !gate.ok));
+}
+
+// =================================================================== 난세
+
+/** 🔥 난세 tab: pick the battlefield and stack hardship cards before setting out. */
+export function renderNanse(save, sel, act) {
+  const body = $('nanseBody');
+  body.innerHTML = '';
+  body.append(header('🔥 난세 단계', save, act));
+  // Battlefield chips: only pacified ones can carry 난세.
+  const row = el('div', 'nanse-stages');
+  for (const id of STAGE_ORDER) {
+    const st = STAGES[id];
+    const ok = !!save.best?.[id];
+    const best = bestNanse(save, id);
+    const b = button(`<b>${st.numeral} ${st.name}</b><small>${ok ? (best ? `최고 ${best}단계` : '평정 완료') : '🔒 미평정'}</small>`,
+      `ns-stage${id === sel.stage ? ' on' : ''}`, () => act.selectStage(id), !ok);
+    row.append(b);
+  }
+  body.append(row);
+  const cleared = !!save.best?.[sel.stage];
+  body.append(nansePanel(save, sel, act, cleared));
+  if (cleared) body.append(button('⚔️ 이 난세로 출진 준비', 'seal-btn cta', () => act.go('prep')));
 }
 
 /** 🔥 난세 단계: stack hardship cards on a pacified field for more 냥 and a record. */

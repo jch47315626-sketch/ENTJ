@@ -6,7 +6,7 @@ import { Tutorial } from './ui/tutorial.js';
 import { Sound } from './audio/sound.js';
 import { themeFor } from './audio/music.js';
 import { showScreen, renderIntro, renderChoices, renderResult } from './ui/screens.js';
-import { renderHome, renderHeroes, renderGrow, renderMap, renderPrep, renderCodex, setCodexTab } from './ui/menu.js';
+import { renderHome, renderHeroes, renderGrow, renderMap, renderPrep, renderNanse, renderCodex, setCodexTab } from './ui/menu.js';
 import { loadSave, writeSave, outfitOf, treeOf, encodeSave, decodeSave } from './core/save.js';
 import { SKILL_TREES } from './data/trees.js';
 import { runFacts, recordRun, checkAchievements, claimAchievement, readyCount } from './core/achieve.js';
@@ -202,7 +202,7 @@ function onState(state, g) {
 
 // ------------------------------------------------------------------ menus
 
-const RENDER = { home: renderHome, heroes: renderHeroes, grow: renderGrow, map: renderMap, prep: renderPrep, codex: renderCodex };
+const RENDER = { home: renderHome, heroes: renderHeroes, grow: renderGrow, map: renderMap, prep: renderPrep, nanse: renderNanse, codex: renderCodex };
 let menu = 'home';
 
 /** Leaves any run and opens a menu screen. */
@@ -257,7 +257,7 @@ function menuTips(name) {
   const mine = save.owned.filter((id) => save.gearOpts?.[id] && EQUIPMENT.some((e) => e.id === id));
   const lines = mine.flatMap((id) => save.gearOpts[id]);
   if (name === 'home' && save.codex.runs >= 1) showTip('modes');
-  if (name === 'prep' && save.best?.[sel.stage]) showTip('nanse');
+  if ((name === 'nanse' || name === 'prep') && save.best?.[sel.stage]) showTip('nanse');
   if (name === 'heroes' && save.codex.runs >= 1) showTip('gear');
   if (name === 'codex' && readyCount(save)) showTip('ach');
   if (name === 'heroes' && mine.length) {

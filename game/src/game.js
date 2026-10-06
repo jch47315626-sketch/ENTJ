@@ -375,7 +375,7 @@ export class Game {
     }
   }
 
-  /** After each main-weapon swing (견훤 패공의 길 lunges and dashes). */
+  /** After each main-weapon swing (견훤 패공의 길 연참, gear 연환). */
   afterSwing() {
     afterSwing(this);
     // 연환 (gear 비기): now and then the blade comes round again at once.
@@ -710,7 +710,7 @@ export class Game {
       p.vy = move.y * spd;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
-      if (!p.dash) p.facing = Math.atan2(move.y, move.x);
+      p.facing = Math.atan2(move.y, move.x);
     }
     updateBuild(this, dt);
     if (this.arena) {
