@@ -22,7 +22,7 @@ export const GEAR_OPTIONS = [
   { key: 'orderHaste', icon: '📯', text: (v) => `군령 주기 −${pct(v)}`, max: 0.08, hero: 'wanggeon' },
   { key: 'shinHpMul', icon: '🚩', text: (v) => `신숭겸 체력 +${pct(v)}`, max: 0.3, hero: 'wanggeon' },
   { key: 'counterMul', icon: '💢', text: (v) => `반격 피해 +${pct(v)}`, max: 0.25, hero: 'gyeonhwon' },
-  { key: 'drainMul', icon: '🩸', text: (v) => `혈투 회복 +${pct(v)}`, max: 0.3, hero: 'gyeonhwon' },
+  { key: 'daedoCd', icon: '🪓', text: (v) => `대도 재사용 −${pct(v)}`, max: 0.08, hero: 'gyeonhwon' },
   { key: 'focusFill', icon: '☄️', text: (v) => `법력 집중 속도 +${pct(v)}`, max: 0.3, hero: 'gungye' },
   { key: 'specialArea', icon: '👁️', text: (v) => `관심법 범위 +${pct(v)}`, max: 0.2, hero: 'gungye' },
 ];
@@ -39,13 +39,13 @@ export const SPECIAL = {
   grant: {
     any: ['caltrops', 'swift'],
     wanggeon: ['shin', 'horse', 'archers', 'guard'],
-    gyeonhwon: ['chain', 'fury', 'lifesteal'],
+    gyeonhwon: ['chain', 'fury'],
     gungye: ['vajra', 'gwansim', 'maguni'],
   },
   cap: {
     any: ['might', 'haste', 'area', 'swift', 'vitality'],
     wanggeon: ['archers', 'guard'],
-    gyeonhwon: ['lifesteal', 'fury'],
+    gyeonhwon: ['fury'],
     gungye: ['maguni'],
   },
   node: {
@@ -146,12 +146,30 @@ export const lineText = (l) => {
   return o ? `${o.icon} ${o.text(l.v)}` : l.k;
 };
 
-/** Every owned piece gets its lines (older saves: rolled once, for free). */
+/** Whether a line still means something (options and 책략 get removed over time). */
+function lineValid(item, l) {
+  if (!l.special) return GEAR_OPTIONS.some((o) => o.key === l.k && (!o.hero || o.hero === item.hero));
+  const S = SPECIAL[l.k];
+  if (!S) return false;
+  if (l.k === 'proc') return S.includes(l.v);
+  if (l.k === 'node') return (S[item.hero] ?? []).includes(l.v);
+  return [...(S.any ?? []), ...(S[item.hero] ?? [])].includes(l.v);
+}
+
+/** Every owned piece gets its lines (older saves: rolled once, for free); stale lines are rerolled. */
 export function ensureGearOptions(save, EQUIPMENT) {
   save.gearOpts ??= {};
   for (const id of save.owned ?? []) {
-    if (save.gearOpts[id]) continue;
     const item = EQUIPMENT.find((e) => e.id === id);
-    if (item) save.gearOpts[id] = rollOptions(item);
+    if (!item) continue;
+    if (!save.gearOpts[id]) {
+      save.gearOpts[id] = rollOptions(item);
+      continue;
+    }
+    const lines = save.gearOpts[id];
+    lines.forEach((l, i) => {
+      if (lineValid(item, l)) return;
+      lines[i] = l.special ? rollSpecial(item) : rollLine(item, lines.filter((x, j) => j !== i && !x.special).map((x) => x.k));
+    });
   }
 }

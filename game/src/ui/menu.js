@@ -264,11 +264,12 @@ export function renderHeroes(save, sel, act) {
     <small class="kit">고유기 <b>${SPECIALS[h.special].name}</b> · 무기 ${WEAPONS[h.weapon].levels.map((w) => w.name).join(' → ')}</small>`;
   body.append(styleCard);
 
-  body.append(tabStrip([['gear', '🛡️ 장비'], ['skill', '📜 스킬'], ['treasure', '💎 보물']], ui.heroTab, (id) => {
+  body.append(tabStrip([['gear', '🛡️ 장비'], ['forge', '🔨 제련'], ['skill', '📜 스킬'], ['treasure', '💎 보물']], ui.heroTab, (id) => {
     ui.heroTab = id;
     renderHeroes(save, sel, act);
   }));
   if (ui.heroTab === 'gear') body.append(gearPanel(save, h, act));
+  else if (ui.heroTab === 'forge') body.append(forgePanel(save, h, act));
   else if (ui.heroTab === 'skill') body.append(skillPanel(save, h, view, act));
   else body.append(treasurePanel(save, h, act));
 }
@@ -335,15 +336,6 @@ function itemCard(save, h, item, act) {
   const ctrl = el('div', 'ic-ctrl');
   if (owned) {
     ctrl.append(worn ? tag('착용 중') : button('착용', 'wear-btn', () => act.wear(item)));
-    if (lv < FORGE.max) {
-      const cost = forgeCost(item, lv);
-      const chance = FORGE.chance[lv];
-      const stars = '★'.repeat(Math.round(chance * 5)) + '☆'.repeat(5 - Math.round(chance * 5));
-      const fb = button(`🔨 +${lv}→+${lv + 1} <small>${stars}</small>`, 'forge-btn', () => act.forge(item), save.money < cost);
-      fb.title = `제련 비용 ${fmt(cost)}냥 · 성공률 ${Math.round(chance * 100)}% · 실패해도 장비는 그대로`;
-      ctrl.append(fb);
-      ctrl.append(el('small', 'forge-cost', `🪙 ${fmt(cost)}`));
-    } else ctrl.append(tag('+5 완성'));
   } else if (item.relic) {
     ctrl.append(tag('🔥 난세 전용', 'locked'));
   } else if (open) {
@@ -354,6 +346,42 @@ function itemCard(save, h, item, act) {
   card.append(ctrl);
   if (opts) card.append(opts); // full-width row under the controls
   return card;
+}
+
+/** 제련 (대장간): every piece this hero owns, worn ones first, with what the next level gives. */
+function forgePanel(save, h, act) {
+  const box = el('div', 'forge-panel');
+  box.append(el('p', 'hint', `냥을 써서 장비를 +1~+${FORGE.max}까지 강화해요. 한 단계마다 기본 능력치 +${Math.round(FORGE.step * 100)}%. 실패해도 장비는 그대로예요.`));
+  const wear = outfit(save, h.id);
+  const worn = new Set(Object.values(wear));
+  const mine = EQUIPMENT.filter((e) => e.hero === h.id && save.owned.includes(e.id))
+    .sort((a, b) => worn.has(b.id) - worn.has(a.id) || b.grade - a.grade);
+  if (!mine.length) {
+    box.append(el('p', 'empty-note', '아직 가진 장비가 없어요. 🛡️ 장비 탭에서 먼저 사 주세요.'));
+    return box;
+  }
+  for (const item of mine) {
+    const lv = forgeLv(save, item);
+    const card = el('div', `item-card forge-card${worn.has(item.id) ? ' worn' : ''}`);
+    card.style.setProperty('--grade', GRADES[item.grade].color);
+    card.append(iconCanvas(item.id, 40, 'row-icon'));
+    const txt = el('div', 'ic-text');
+    const pips = Array.from({ length: FORGE.max }, (_, i) => `<i class="${i < lv ? 'on' : ''}"></i>`).join('');
+    const next = lv < FORGE.max ? `<span class="fc-next">다음 +${lv + 1} → ${bonusText(itemBonus(item, lv + 1))}</span>` : '';
+    txt.innerHTML = `<b>${gradeTag(item.grade)} ${itemName(save, item)}${worn.has(item.id) ? ' <small class="fc-worn">착용 중</small>' : ''}</b>
+      <span class="fc-pips">${pips}</span><span>${bonusText(itemBonus(item, lv))}</span>${next}`;
+    card.append(txt);
+    const ctrl = el('div', 'ic-ctrl');
+    if (lv < FORGE.max) {
+      const cost = forgeCost(item, lv);
+      const fb = button(`🔨 +${lv + 1} 제련`, 'forge-btn', () => act.forge(item), save.money < cost);
+      ctrl.append(fb);
+      ctrl.append(el('small', 'forge-cost', `🪙 ${fmt(cost)} · 성공 ${Math.round(FORGE.chance[lv] * 100)}%`));
+    } else ctrl.append(tag(`+${FORGE.max} 완성`));
+    card.append(ctrl);
+    box.append(card);
+  }
+  return box;
 }
 
 /** Root node, then the viewed build's three steps. */

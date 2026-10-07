@@ -12,9 +12,8 @@ export const SPECIALS = {
     name: '통솔',
     fire(g) {
       const p = g.player;
-      // Twice the spearmen they used to be.
-      const count = 2 * (2 + p.stats.guard + (p.meta.guardBonus ?? 0));
-      const life = 12 + 2 * p.stats.guard + (p.meta.tongsolLife ?? 0);
+      const count = 3 + p.stats.guard + (p.meta.guardBonus ?? 0);
+      const life = 10 + 1.5 * p.stats.guard + (p.meta.tongsolLife ?? 0);
       for (let i = 0; i < count; i++) {
         const a = (i / count) * TAU + rand(-0.2, 0.2);
         const ring = 40 + (i % 2) * 22;
@@ -36,7 +35,7 @@ export const SPECIALS = {
       const target = g.nearestEnemy(p.x, p.y, 320);
       const aim = target ? Math.atan2(target.y - p.y, target.x - p.x) : p.facing;
       p.facing = aim;
-      const dmg = Math.max(lv.damage, 30) * 5 * p.stats.might * p.stats.specialMul;
+      const dmg = Math.max(lv.damage, 30) * 4 * p.stats.might * p.stats.specialMul;
       hitArc(g, p.x, p.y, aim, 240 * p.stats.area * p.stats.specialArea, 160, dmg, 320, 'paewang', { stun: 0.8 + p.stats.specialStun });
       g.shake(10);
       g.banner('패왕의 일격', 'small');

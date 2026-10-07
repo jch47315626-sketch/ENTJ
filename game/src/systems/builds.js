@@ -32,11 +32,11 @@ const HONRAN = { every: 1.5, radius: 150, time: 3, maxTier: 2, power: 2 };
 
 const weaponDamage = (p) => Math.max(currentWeaponLevel(p).damage, 30);
 
-/** A front cut where the hero stands (연참: no 혈투 healing, it chains too fast). */
+/** A front cut where the hero stands (연참). */
 function strike(g, mul, arc) {
   const p = g.player;
   const lv = currentWeaponLevel(p);
-  (hitArc(g, p.x, p.y, p.facing, (lv.range + 10) * p.stats.area, arc, weaponDamage(p) * mul * p.stats.might, 140, 'chop'));
+  hitArc(g, p.x, p.y, p.facing, (lv.range + 10) * p.stats.area, arc, weaponDamage(p) * mul * p.stats.might, 140, 'chop');
 }
 
 /**
@@ -99,7 +99,6 @@ export function onHurt(g, attacker) {
   p.counterReadyAt = g.time + C.cooldown * Math.max(0.3, 1 - (m.counterCd ?? 0));
   const dmg = weaponDamage(p) * C.mul * (1 + (m.counterMul ?? 0) + 0.25 * drill) * p.stats.might;
   g.damageEnemy(target, dmg, p.x, p.y, C.knockback, { stun: C.stun });
-  g.heroDrain(1);
   g.fx.push({ type: 'spark', x: target.x, y: target.y, t: 0, life: 0.3 });
   g.fx.push({ type: 'thrust', x: p.x, y: p.y, angle: Math.atan2(target.y - p.y, target.x - p.x), t: 0, life: 0.15 });
   g.texts.push({ x: target.x, y: target.y - target.r - 18, v: '💥 반격!', t: 0, life: 0.7, order: true });

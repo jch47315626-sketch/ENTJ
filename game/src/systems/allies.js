@@ -304,7 +304,7 @@ function updateRetinue(g, a, dt) {
 const SHIN_AI = { seek: 600, speed: 175, shoutEvery: 4.5, shoutFor: 1.8 };
 
 /** 통솔 spearmen. */
-const SOLDIER = { damage: 14, cooldown: 0.5, speed: 195 };
+const SOLDIER = { damage: 11, cooldown: 0.5, speed: 195 };
 
 /** 마구니: tuning. Blocks recharge so a dense volley can still get through. */
 const MAGUNI = { orbit: 64, spin: 2.6, damage: 7, hitEvery: 0.45, rest: 0.5 };

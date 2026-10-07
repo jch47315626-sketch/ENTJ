@@ -45,7 +45,7 @@ export const PATTERNS = {
     fire(g, p, lv, s) {
       const range = lv.range * s.area;
       const aim = aimAngle(g, p, range);
-      g.heroDrain(hitArc(g, p.x, p.y, aim, range, lv.arc, lv.damage * s.might, lv.knockback, 'chop'));
+      hitArc(g, p.x, p.y, aim, range, lv.arc, lv.damage * s.might, lv.knockback, 'chop');
       if (lv.crack) {
         const d = range * 0.7;
         g.zones.push({
@@ -74,7 +74,7 @@ export const PATTERNS = {
       w.combo = w.combo ?? 0;
       if (w.combo < 2) {
         const side = w.combo === 0 ? -0.35 : 0.35;
-        g.heroDrain(hitArc(g, p.x, p.y, aim + side, range, lv.arc, lv.damage * s.might, lv.knockback, 'chop'));
+        hitArc(g, p.x, p.y, aim + side, range, lv.arc, lv.damage * s.might, lv.knockback, 'chop');
         qi(false);
         w.combo++;
         w.timer = lv.comboGap * s.haste;
@@ -82,7 +82,7 @@ export const PATTERNS = {
         return;
       }
       w.combo = 0;
-      g.heroDrain(hitArc(g, p.x, p.y, aim, range * 0.8, 70, lv.damage * 1.2 * s.might, lv.knockback * 1.5, 'chop', { stun: W.stun }));
+      hitArc(g, p.x, p.y, aim, range * 0.8, 70, lv.damage * 1.2 * s.might, lv.knockback * 1.5, 'chop', { stun: W.stun });
       qi(true);
       g.shake(5);
       g.sfx('royal');

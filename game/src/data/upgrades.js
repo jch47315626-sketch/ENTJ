@@ -6,10 +6,6 @@ import { GWANSIM, TIER_NAMES, SHIN, HORSE, CHAIN } from './skills.js';
  * so player.upgrades[id] already holds the new level.
  * Categories: 무예 (weapon), 병법 (troops), 지세 (field), 보급 (fallback).
  */
-/** 견훤 혈투, by level: health per foe struck (share of max HP), foes counted per swing. */
-// Index 4 is reached only with a 한계 돌파 비기 on gear.
-export const LIFESTEAL = [null, { share: 0.005, cap: 3 }, { share: 0.0075, cap: 4 }, { share: 0.01, cap: 5 }, { share: 0.0125, cap: 6 }];
-
 export const UPGRADES = [
   {
     id: 'weapon', category: '무예', maxLevel: 99, weight: 20,
@@ -92,15 +88,6 @@ export const UPGRADES = [
     id: 'archers', name: '궁수대', category: '병법', maxLevel: 3, weight: 8, heroes: ['wanggeon'],
     describe: () => '곁을 따르며 활을 쏘는 아군 궁수 +1',
     apply: (g) => g.syncArcherAllies(),
-  },
-  {
-    // 견훤 대신: 붙어 싸우는 만큼 버티도록, 벨 때마다 체력을 되찾는다.
-    id: 'lifesteal', name: '혈투', category: '병법', maxLevel: 3, weight: 12, heroes: ['gyeonhwon'],
-    describe: (g) => {
-      const L = LIFESTEAL[(g.player.upgrades.lifesteal ?? 0) + 1];
-      return `대도로 벤 적 하나마다 최대 체력의 ${+(L.share * 100).toFixed(1)}% 회복 (한 번 휘두를 때 ${L.cap}명까지)`;
-    },
-    apply: () => {},
   },
   {
     // 궁예 대신: 몸 주위를 도는 마구니가 날아오는 화살을 막고 닿는 적을 할퀸다.

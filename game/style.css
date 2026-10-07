@@ -1150,3 +1150,12 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 .pc-evo { display: block; margin-top: 4px; padding: 3px 8px; border-radius: 999px; background: #ffe08a; color: #2a1d10; font-size: 12px; font-weight: 700; line-height: 1.35; }
 .pc-evo em { display: block; font-style: normal; font-variant-numeric: tabular-nums; color: #a8321e; }
 @media (max-width: 720px) { .pc-evo em { display: inline; margin-left: 6px; } }
+
+/* 제련 탭 */
+.forge-card .ic-text > span { display: block; }
+.fc-pips { display: flex !important; gap: 4px; margin: 3px 0; }
+.fc-pips i { width: 14px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.15); }
+.fc-pips i.on { background: var(--candy-lemon); box-shadow: 0 0 6px rgba(255, 224, 138, 0.6); }
+.fc-next { color: #8fe0a8; font-size: 12px; }
+.fc-worn { font-size: 11px; color: var(--candy-mint); font-weight: normal; }
+.empty-note { color: var(--hanji-dim); text-align: center; padding: 18px 0; }
