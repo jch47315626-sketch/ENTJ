@@ -5,6 +5,7 @@ import { afterSwing, onHurt, updateBuild } from './systems/builds.js';
 import { STAGES, scaleStage } from './data/stages.js';
 import { enemyHpScale, enemyDamageScale, ENEMY_BOOST, ENEMY_ARMOR, BOSS_BOOST, HP_REGEN } from './data/balance.js';
 import { UPGRADES, FALLBACKS, evolutionStatus } from './data/upgrades.js';
+import { MAGUNI_LV } from './data/skills.js';
 import { baseReward, REWARD_BY_STARS, BOSS_REWARD, armorCut } from './data/meta.js';
 import { SpatialGrid } from './core/grid.js';
 import { clamp, rand, TAU, dist2, angleDiff } from './core/math.js';
@@ -15,7 +16,7 @@ import { updateAllies } from './systems/allies.js';
 import { planCrows, updateCrows, callCrow, CROW } from './systems/crows.js';
 import { updateFieldObjects, breakObject } from './systems/fieldObjects.js';
 import { applyDaily } from './data/daily.js';
-import { ENDLESS, makeEndless } from './data/endless.js';
+import { ENDLESS, makeEndless, endlessSurge } from './data/endless.js';
 import { applyNanse } from './data/nanse.js';
 import { Spawner } from './systems/spawner.js';
 import { updateSkills } from './systems/skills.js';
@@ -61,7 +62,7 @@ class Player {
       maxHp,
       // 전고 (war drum object): faster steps and swings while it beats.
       speed: b.speed * (1 + 0.08 * u('swift') + (m.speed ?? 0)) * (this.drumUntil ? 1.2 : 1),
-      might: b.might * (1 + 0.15 * u('might') + (m.might ?? 0) + rage),
+      might: b.might * (1 + 0.15 * u('might') + (m.might ?? 0) + rage) * (this.tiger ? this.tiger.mul : 1),
       haste: b.haste * (1 - 0.1 * u('haste') - (m.haste ?? 0) - (rage ? 0.2 : 0)) * (this.drumUntil ? 0.75 : 1),
       area: b.area * (1 + 0.12 * u('area') + (m.area ?? 0)),
       pickup: b.pickup * (1 + 0.35 * u('magnet') + (m.pickup ?? 0)),
@@ -244,7 +245,7 @@ export class Game {
     const diff = this.stage.difficulty;
     const scale = def.noScaling ? 1 : enemyHpScale(this.time) * diff.enemyHp * ENEMY_BOOST.hp * (1 + (this.stage.endless ? Math.max(0, this.time - ENDLESS.rampFrom) / ENDLESS.hpGrowth : 0));
     const over = this.stage.endless ? Math.max(0, this.time - ENDLESS.rampFrom) : 0;
-    const dmgScale = enemyDamageScale(this.time) * diff.enemyDamage * ENEMY_BOOST.damage * (1 + over / ENDLESS.damageGrowth);
+    const dmgScale = enemyDamageScale(this.time) * diff.enemyDamage * ENEMY_BOOST.damage * (1 + over / ENDLESS.damageGrowth) * (this.stage.endless ? endlessSurge(this.time) : 1);
     const v = elite ? VETERAN : null;
     const hp = def.hp * scale * (v ? v.hpMul : 1);
     const e = {
@@ -363,16 +364,6 @@ export class Game {
     } else w.echoed = false;
   }
 
-  /** 마구니: one orbiting spirit per level of the upgrade. */
-  syncMaguni() {
-    const want = this.player.upgrades.maguni ?? 0;
-    let have = this.allies.filter((a) => a.kind === 'maguni').length;
-    while (have < want) {
-      this.allies.push({ kind: 'maguni', x: this.player.x, y: this.player.y, r: 10, facing: 0, rest: 0, hitAt: new WeakMap() });
-      have++;
-    }
-  }
-
   syncArcherAllies() {
     const want = this.player.upgrades.archers ?? 0;
     let have = this.allies.filter((a) => a.kind === 'archer' && !a.maxLife).length; // event archers don't count
@@ -454,7 +445,8 @@ export class Game {
   /** Later endless bosses are tougher: ×(1 + step × bosses already felled). */
   endlessBossMul(kind) {
     if (!this.stage.endless) return 1;
-    return 1 + this.endlessBosses * (kind === 'hp' ? ENDLESS.bossHpStep : ENDLESS.bossDamageStep);
+    if (kind === 'hp') return 1 + this.endlessBosses * ENDLESS.bossHpStep;
+    return (1 + this.endlessBosses * ENDLESS.bossDamageStep) * endlessSurge(this.time);
   }
 
   /** 무한 전장: a boss fell — the field opens again and the next one is on its way. */
@@ -867,7 +859,9 @@ export class Game {
         if (pr.life <= 0) continue;
         const rr = pr.r + p.r;
         if (dist2(pr.x, pr.y, p.x, p.y) < rr * rr) {
-          this.hurtPlayer(pr.damage, pr.source ?? pr.kind, pr.owner);
+          // 마구니 결계: shots that reach 궁예 inside the ring hurt far less.
+          const ward = MAGUNI_LV[(p.upgrades.maguni ?? 0) - 1]?.ward;
+          this.hurtPlayer(pr.damage * (ward ? 1 - ward.reduce : 1), pr.source ?? pr.kind, pr.owner);
           pr.life = 0;
         }
       } else {

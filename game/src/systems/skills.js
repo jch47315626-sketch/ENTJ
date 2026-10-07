@@ -1,4 +1,5 @@
-import { SHIN, HORSE, CHAIN } from '../data/skills.js';
+import { SHIN, HORSE, CHAIN, TIGER } from '../data/skills.js';
+import { hitArc, currentWeaponLevel } from './weapons.js';
 import { enemyHpScale } from '../data/balance.js';
 import { rand } from '../core/math.js';
 
@@ -52,9 +53,43 @@ ACTIVE_SKILLS.chain = {
   },
 };
 
+// 견훤 — 호랑이 젖먹기: a burst of fury (all damage ×mul); the last tier adds 무자식이 상팔자.
+ACTIVE_SKILLS.tiger = {
+  levels: TIGER,
+  fire(g, L) {
+    const p = g.player;
+    p.tiger = { mul: L.mul, until: g.time + L.duration };
+    p.recalc();
+    g.fx.push({ type: 'puff', x: p.x, y: p.y, t: 0, life: 0.6, size: 34, tone: 'light' });
+    g.sfx('paewang');
+    if (!L.eight) {
+      g.banner(`🐯 ${L.name} — ${L.duration}초 동안 피해 ${L.mul}배`, 'small');
+      return;
+    }
+    // 무자식이 상팔자: wild swings tracing a huge 八 / ∞ across the field.
+    const E = L.eight;
+    const radius = E.radius * Math.sqrt(p.stats.area);
+    const dmg = Math.max(currentWeaponLevel(p).damage, 30) * E.damage;
+    g.banner('🐯 무자식이 상팔자!', 'big');
+    g.fx.push({ type: 'eight', x: p.x, y: p.y, range: radius, angle: p.facing, t: 0, life: 1.2 });
+    for (let i = 0; i < E.swings; i++) {
+      g.later(i * E.gap, () => {
+        hitArc(g, p.x, p.y, 0, radius, 360, dmg * p.stats.might, 140, 'eightHit', { stun: E.stun });
+        g.shake(7);
+        g.sfx('chop');
+      });
+    }
+  },
+};
+
 /** Counts down each owned skill and casts it when ready. */
 export function updateSkills(g, dt) {
   const p = g.player;
+  // 호랑이 젖먹기 wears off.
+  if (p.tiger && g.time >= p.tiger.until) {
+    p.tiger = null;
+    p.recalc();
+  }
   for (const id in ACTIVE_SKILLS) {
     const lv = p.upgrades[id];
     if (!lv) continue;

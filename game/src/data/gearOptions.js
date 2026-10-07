@@ -39,14 +39,14 @@ export const SPECIAL = {
   grant: {
     any: ['caltrops', 'swift'],
     wanggeon: ['shin', 'horse', 'archers', 'guard'],
-    gyeonhwon: ['chain', 'fury'],
+    gyeonhwon: ['chain', 'fury', 'tiger'],
     gungye: ['vajra', 'gwansim', 'maguni'],
   },
   cap: {
     any: ['might', 'haste', 'area', 'swift', 'vitality'],
     wanggeon: ['archers', 'guard'],
     gyeonhwon: ['fury'],
-    gungye: ['maguni'],
+    gungye: [],
   },
   node: {
     wanggeon: ['wg_a1', 'wg_a2', 'wg_b1', 'wg_b2'],

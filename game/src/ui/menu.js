@@ -216,8 +216,8 @@ function dailyCard(save, act) {
     <span class="dc-rule hard">${hard.icon} <b>${hard.name}</b> ${hard.desc}</span>
     <span class="dc-rule boon">${boon.icon} <b>${boon.name}</b> ${boon.desc}</span>`));
   card.append(el('p', 'dc-reward', done
-    ? '✅ 오늘 보상을 받았어요 — 다시 도전은 언제든 자유!'
-    : `첫 승리 보상 <b>🪙 ${fmt(d.reward)}</b> <small>(판 보상과 별도)</small>`));
+    ? `✅ 오늘의 첫 승리 보상 🪙 ${fmt(d.reward)}은 받았어요. 다시 도전하면 <b>판 보상(냥)만</b> 받아요 — 첫 승리 보상은 내일 다시!`
+    : `첫 승리 보상 <b>🪙 ${fmt(d.reward)}</b> <small>(하루 한 번 · 판 보상과 별도, 지면 다시 도전 가능)</small>`));
   card.append(button(done ? '🔁 다시 도전하기' : '📅 도전하기', 'daily-btn', () => act.startDaily()));
   return card;
 }

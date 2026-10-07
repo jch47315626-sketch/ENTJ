@@ -156,11 +156,13 @@ function heroStatus(g) {
     if (!p.meta.proxArmor) chips.push(`🛡️ 갑주 ${Math.round(p.stats.armor)}`);
     if (p.upgrades.fury) chips.push(`🔥 패기 ${p.upgrades.fury}`);
     if (ready('chain')) chips.push(`⛓️ 철쇄 ${ready('chain')}`);
+    if (p.tiger) chips.push(`🐯 ${p.tiger.mul}배 ${Math.ceil(p.tiger.until - g.time)}초`);
+    else if (ready('tiger')) chips.push(`🐯 호랑이 ${ready('tiger')}`);
   } else if (p.hero.id === 'gungye') {
     const swayed = g.enemies.filter((e) => !e.dead && g.isCharmed(e)).length;
     chips.push(`🌀 홀린 적 ${swayed}`);
     chips.push(...buildStatus(g));
-    if (allies('maguni')) chips.push(`👹 마구니 ${allies('maguni')}`);
+    if (p.upgrades.maguni) chips.push(`👹 마구니 ${allies('maguni')}/4`);
     if (Object.keys(p.subs).length) chips.push('☄️ 금강저');
   }
   if (p.drumUntil) chips.push(`🥁 전고 ${Math.ceil(p.drumUntil - g.time)}초`);

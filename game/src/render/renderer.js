@@ -189,7 +189,8 @@ export class Renderer {
     drawUnit(ctx, { ...look, body: look.robe, mount: m ? '#f2ede0' : undefined },
       p.x, p.y, p.r, p.facing, {
         alpha: blink ? 0.45 : 1,
-        aura: shielded ? `rgba(240, 200, 110, ${0.35 + 0.15 * Math.sin(g.time * 20)})`
+        aura: p.tiger ? `rgba(255, 110, 20, ${0.45 + 0.2 * Math.sin(g.time * 16)})`
+          : shielded ? `rgba(240, 200, 110, ${0.35 + 0.15 * Math.sin(g.time * 20)})`
           : p.wardUntil > g.time ? `rgba(110, 160, 230, ${0.28 + 0.1 * Math.sin(g.time * 10)})`
           : p.focus > 0.15 ? `rgba(255, 210, 110, ${0.12 + 0.3 * p.focus + (p.focus >= 1 ? 0.1 * Math.sin(g.time * 12) : 0)})` : undefined,
       });
@@ -203,6 +204,17 @@ export class Renderer {
 
   drawAlly(ctx, a) {
     if (a.kind === 'maguni') return drawMaguni(ctx, a);
+    if (a.kind === 'maguniBomb') {
+      // 마구니 폭탄: a swollen, red-hot 마구니 with a glow.
+      const glow = ctx.createRadialGradient(a.x, a.y, 0, a.x, a.y, a.r * 2.4);
+      glow.addColorStop(0, 'rgba(255, 120, 200, 0.55)');
+      glow.addColorStop(1, 'rgba(160, 40, 200, 0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(a.x, a.y, a.r * 2.4, 0, TAU);
+      ctx.fill();
+      return drawMaguni(ctx, a);
+    }
     const fade = a.maxLife ? clamp(a.life / 1.2, 0, 1) : 1;
     if (a.kind === 'shin') {
       // Faint ring showing how far his banner draws the enemy.
@@ -381,16 +393,27 @@ export class Renderer {
         }
         ctx.stroke();
       } else if (z.kind === 'hoof') {
-        // Churned earth with a hoofprint, glowing faintly while it still burns.
-        ctx.fillStyle = `rgba(120, 82, 48, ${0.35 * a})`;
+        // Burning hoofprints: a scorched patch with bright, licking flames.
+        const flick = 0.8 + 0.2 * Math.sin(g.time * 22 + z.x * 0.3);
+        const glow = ctx.createRadialGradient(z.x, z.y, 0, z.x, z.y, z.r * 1.15);
+        glow.addColorStop(0, `rgba(255, 210, 90, ${0.75 * a * flick})`);
+        glow.addColorStop(0.45, `rgba(255, 110, 30, ${0.6 * a})`);
+        glow.addColorStop(1, 'rgba(200, 40, 10, 0)');
+        ctx.fillStyle = glow;
         ctx.beginPath();
-        ctx.arc(z.x, z.y, z.r * 0.8, 0, TAU);
+        ctx.arc(z.x, z.y, z.r * 1.15, 0, TAU);
         ctx.fill();
-        ctx.strokeStyle = `rgba(230, 150, 70, ${0.55 * a})`;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(z.x, z.y, z.r * 0.35, z.angle + 0.6, z.angle + TAU - 0.6);
-        ctx.stroke();
+        for (let k = 0; k < 3; k++) {
+          const ox = Math.sin(z.x * 0.7 + k * 2.1) * z.r * 0.45;
+          const h = z.r * (0.7 + 0.35 * Math.sin(g.time * 14 + k * 1.7 + z.y)) * a;
+          ctx.fillStyle = k === 1 ? `rgba(255, 236, 160, ${0.9 * a})` : `rgba(255, 140, 40, ${0.85 * a})`;
+          ctx.beginPath();
+          ctx.moveTo(z.x + ox - 6, z.y + 4);
+          ctx.quadraticCurveTo(z.x + ox - 7, z.y - h * 0.5, z.x + ox, z.y - h);
+          ctx.quadraticCurveTo(z.x + ox + 7, z.y - h * 0.5, z.x + ox + 6, z.y + 4);
+          ctx.closePath();
+          ctx.fill();
+        }
       } else if (z.kind === 'fire') {
         // Burning pitch from a fire pot, flickering.
         const flick = 0.85 + 0.15 * Math.sin(g.time * 18 + z.x);
@@ -787,6 +810,41 @@ export class Renderer {
           ctx.beginPath();
           ctx.arc(f.x, f.y, f.range, a0, a1);
           ctx.stroke();
+          break;
+        }
+        case 'eight': {
+          // 무자식이 상팔자: a huge figure-eight of blade light plus a brushed 八.
+          const a = 1 - p;
+          const R = f.range;
+          const draw = Math.min(1, p / 0.45);
+          ctx.save();
+          ctx.translate(f.x, f.y);
+          ctx.rotate(f.angle);
+          ctx.lineCap = 'round';
+          for (const [w, col] of [[34, `rgba(255, 60, 30, ${0.35 * a})`], [14, `rgba(255, 170, 60, ${0.85 * a})`], [5, `rgba(255, 245, 210, ${a})`]]) {
+            ctx.strokeStyle = col;
+            ctx.lineWidth = w;
+            ctx.beginPath();
+            const steps = 90;
+            for (let i = 0; i <= steps * draw; i++) {
+              const t = (i / steps) * TAU;
+              const d = 1 + Math.sin(t) ** 2;
+              const x = (R * Math.cos(t)) / d, y = (R * Math.sin(t) * Math.cos(t)) / d;
+              if (i === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+          }
+          ctx.rotate(-f.angle);
+          ctx.font = `bold ${Math.round(R * 0.5)}px 'Nanum Brush Script', serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = `rgba(255, 220, 160, ${0.8 * a})`;
+          ctx.strokeStyle = `rgba(120, 20, 10, ${0.8 * a})`;
+          ctx.lineWidth = 4;
+          ctx.strokeText('八', 0, -R * 0.05);
+          ctx.fillText('八', 0, -R * 0.05);
+          ctx.restore();
           break;
         }
         case 'burst': {

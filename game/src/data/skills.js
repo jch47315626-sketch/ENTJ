@@ -67,3 +67,41 @@ export const CHAIN = [
     requires: { upgrade: 'fury', level: 2 },
     desc: '다섯을 끌어와 땅에 내리꽂는다. 떨어진 자리 주변 적까지 피해를 입는다.' },
 ];
+
+/**
+ * 호랑이 젖먹기 (견훤's frenzy skill, gained from level-ups). On cooldown he
+ * goes berserk: every blow deals `mul`× damage for `duration` seconds. The
+ * last tier, 무자식이 상팔자, also has him swing wildly in a huge
+ * figure-eight (八) that cuts across most of the field.
+ */
+export const TIGER = [
+  { name: '호랑이 젖먹기', cooldown: 30, duration: 3, mul: 2,
+    desc: '3초 동안 모든 피해 2배.' },
+  { name: '호랑이 젖먹기 · 중', cooldown: 30, duration: 5, mul: 3,
+    desc: '5초 동안 모든 피해 3배.' },
+  { name: '호랑이 젖먹기 · 극', cooldown: 30, duration: 7, mul: 5,
+    desc: '7초 동안 모든 피해 5배.' },
+  { name: '무자식이 상팔자', cooldown: 30, duration: 7, mul: 5, evolution: true,
+    eight: { radius: 560, damage: 1.6, swings: 4, gap: 0.16, stun: 0.8 },
+    desc: '7초 동안 피해 5배, 그리고 칼을 마구 휘둘러 커다란 팔(八)자 참격으로 전장 대부분을 벤다.' },
+];
+
+/**
+ * 마구니 (궁예's guardian spirits, gained from level-ups). One appears every
+ * `every` seconds, up to `max`. Just before an enemy shot reaches 궁예, a
+ * 마구니 cancels it and vanishes. When all are out and nothing came, the next
+ * one turns into a 마구니 폭탄 that flies into the thick of the enemy and
+ * bursts. The last tier, 마구니 결계, keeps all four for good: inside their
+ * ring shots hurt 90% less, and foes they brush are nudged back and hurt.
+ */
+export const MAGUNI_LV = [
+  { name: '마구니', every: 10, max: 4, bomb: { damage: 70, radius: 110 },
+    desc: '10초마다 마구니가 하나씩 생겨(최대 4) 날아오는 원거리 공격을 막아 주고 사라진다. 넷이 다 찬 뒤 10초가 더 지나면 마구니 폭탄이 되어 적진 한가운데서 터진다.' },
+  { name: '마구니 · 떼', every: 10, max: 4, bomb: { damage: 110, radius: 125 },
+    desc: '마구니 폭탄이 더 크고 세게 터진다.' },
+  { name: '마구니 · 업화', every: 10, max: 4, bomb: { damage: 160, radius: 140 },
+    desc: '마구니 폭탄이 훨씬 세다.' },
+  { name: '마구니 결계', every: 10, max: 4, bomb: { damage: 160, radius: 140 }, evolution: true,
+    ward: { reduce: 0.9, damage: 14, push: 70, hitEvery: 0.4 },
+    desc: '마구니 넷이 늘 곁을 돈다. 그 안에서는 원거리 공격 피해 90% 감소, 닿는 적은 살짝 밀려나며 피해를 입는다. 폭탄도 계속 나간다.' },
+];

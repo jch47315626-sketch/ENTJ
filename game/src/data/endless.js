@@ -13,6 +13,10 @@ export const ENDLESS = {
   damageGrowth: 240, // enemy damage ×(1 + (t − rampFrom) / damageGrowth)
   hpGrowth: 300, // enemy health ×(1 + (t − rampFrom) / hpGrowth)
   bossBounty: 0.5, // share of the normal boss reward paid per boss felled
+  // From 7:00 the climb itself steepens: every minute adds a bigger step of
+  // enemy damage than the one before (+8%, +16%, +24% … on top).
+  surgeFrom: 420,
+  surgeStep: 0.08,
 };
 
 /** A copy of `stage` set up for endless play. */
@@ -24,4 +28,10 @@ export function makeEndless(stage) {
     phases: stage.phases.map((p) => ({ ...p })),
     events: stage.events.map((e) => ({ ...e })),
   };
+}
+
+/** Extra enemy-damage multiplier in endless mode from the 7:00 surge (1 before then). */
+export function endlessSurge(t) {
+  const x = Math.max(0, t - ENDLESS.surgeFrom) / 60;
+  return 1 + ENDLESS.surgeStep * (x * (x + 1)) / 2;
 }

@@ -1,5 +1,5 @@
 import { WEAPONS } from './weapons.js';
-import { GWANSIM, TIER_NAMES, SHIN, HORSE, CHAIN } from './skills.js';
+import { GWANSIM, TIER_NAMES, SHIN, HORSE, CHAIN, TIGER, MAGUNI_LV } from './skills.js';
 
 /**
  * Level-up choices (책략). `apply` runs after the level has been increased,
@@ -68,6 +68,7 @@ export const UPGRADES = [
   skillUpgrade('shin', SHIN, ['wanggeon'], '병법', 14),
   skillUpgrade('horse', HORSE, ['wanggeon'], '지세', 13),
   skillUpgrade('chain', CHAIN, ['gyeonhwon'], '무예', 14),
+  skillUpgrade('tiger', TIGER, ['gyeonhwon'], '무예', 13),
   {
     id: 'fury', name: '패기', category: '무예', maxLevel: 4, weight: 9, heroes: ['gyeonhwon'],
     describe: () => '패왕의 일격 피해 +30%, 기절 +0.2초',
@@ -89,12 +90,7 @@ export const UPGRADES = [
     describe: () => '곁을 따르며 활을 쏘는 아군 궁수 +1',
     apply: (g) => g.syncArcherAllies(),
   },
-  {
-    // 궁예 대신: 몸 주위를 도는 마구니가 날아오는 화살을 막고 닿는 적을 할퀸다.
-    id: 'maguni', name: '마구니', category: '병법', maxLevel: 4, weight: 9, heroes: ['gungye'],
-    describe: () => '주위를 도는 마구니 +1 — 날아오는 화살·투사체를 막고, 닿은 적에게 약한 피해',
-    apply: (g) => g.syncMaguni(),
-  },
+  skillUpgrade('maguni', MAGUNI_LV, ['gungye'], '병법', 10),
   {
     id: 'momentum', name: '기세', category: '병법', maxLevel: 3, weight: 7,
     describe: () => '기세 충전 속도 +25%',
@@ -212,6 +208,8 @@ export function evolutionStatus(g) {
   if (p.upgrades.shin) add('shin', SHIN, p.upgrades.shin, SHIN[0].name);
   if (p.upgrades.horse) add('horse', HORSE, p.upgrades.horse, HORSE[0].name);
   if (p.upgrades.chain) add('chain', CHAIN, p.upgrades.chain, CHAIN[0].name);
+  if (p.upgrades.tiger) add('tiger', TIGER, p.upgrades.tiger, TIGER[0].name);
+  if (p.upgrades.maguni) add('maguni', MAGUNI_LV, p.upgrades.maguni, MAGUNI_LV[0].name);
   for (const id of p.hero.subWeapons ?? []) {
     const lv = p.upgrades[id] ?? 0;
     if (lv > 0) add(id, WEAPONS[id].levels, lv, WEAPONS[id].levels[0].name);
