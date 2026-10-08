@@ -1,18 +1,9 @@
+import { MODELS, drawModelBackHair, drawModelHead } from './heroModel.js';
+
 const INK = '#1d1a17';
 const HANJI = '#f1e8d2';
 const UNIT_SCALE = 1.35;
 
-/** Painted heads (assets/ui/hero, cut from the key art), loaded once and drawn when ready. */
-const HEADS = {};
-function headImage(src) {
-  if (typeof Image === 'undefined') return null;
-  let im = HEADS[src];
-  if (!im) {
-    im = HEADS[src] = new Image();
-    im.src = src;
-  }
-  return im.complete && im.naturalWidth ? im : null;
-}
 
 /** Soft ground shadow under every unit. */
 export function drawShadow(ctx, x, y, r) {
@@ -128,7 +119,9 @@ export function drawUnit(ctx, look, x, y, r, facing, o = {}) {
     ctx.fill();
     ctx.stroke();
   }
-  if (look.hair && (back || !look.headImg)) drawLongHair(ctx, look, r, sx, phase, o.flash);
+  const model = look.model && MODELS[look.model];
+  if (model) drawModelBackHair(ctx, model, r, sx, phase, o.flash, back);
+  else if (look.hair) drawLongHair(ctx, look, r, sx, phase, o.flash);
   if (weaponFirst && look.weapon) weapon();
 
   // Feet patter in turn.
@@ -153,6 +146,17 @@ export function drawUnit(ctx, look, x, y, r, facing, o = {}) {
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
+  if (look.model && !o.flash) {
+    ctx.save();
+    ctx.clip();
+    const g = ctx.createLinearGradient(-r * 0.5 * bulk, 0, r * 0.6 * bulk, r * 0.5);
+    g.addColorStop(0, 'rgba(255, 255, 255, 0.18)');
+    g.addColorStop(0.5, 'rgba(0, 0, 0, 0)');
+    g.addColorStop(1, 'rgba(0, 0, 0, 0.3)');
+    ctx.fillStyle = g;
+    ctx.fillRect(-r, -r * 0.2, r * 2, r);
+    ctx.restore();
+  }
   if (look.plates) {
     ctx.strokeStyle = 'rgba(210, 214, 218, 0.6)';
     for (const k of [0.15, 0.35, 0.52]) {
@@ -465,8 +469,8 @@ function drawHead(ctx, look, r, flash, sx, back, phase) {
   const fill = (c) => (flash ? HANJI : c);
   const skin = fill(look.skin ?? '#e6c49c');
 
-  // Halo behind the head (궁예).
-  if (look.hat === 'monk') {
+  // Halo behind the head (궁예's old look and the 무당; his model goes bare-headed).
+  if (look.hat === 'monk' && !look.model) {
     ctx.strokeStyle = look.trim ?? '#e0b24c';
     ctx.lineWidth = Math.max(1.5, r * 0.12);
     ctx.globalAlpha *= 0.9;
@@ -488,16 +492,9 @@ function drawHead(ctx, look, r, flash, sx, back, phase) {
     ctx.stroke();
   }
 
-  // The heroes wear their painted faces from the key art; the back view stays drawn.
-  const im = !back && look.headImg && headImage(look.headImg);
-  if (im) {
-    const w = hr * (look.headScale ?? 2.3), h = (w * im.naturalHeight) / im.naturalWidth;
-    ctx.save();
-    ctx.translate(0, hy - hr * (look.headLift ?? 0.3));
-    if (sx < 0) ctx.scale(-1, 1);
-    if (flash) ctx.filter = 'brightness(1.8)';
-    ctx.drawImage(im, -w / 2, -h / 2, w, h);
-    ctx.restore();
+  // The three heroes have their own drawn models (render/heroModel.js).
+  if (look.model) {
+    drawModelHead(ctx, MODELS[look.model], r, sx, back, flash, phase);
     return;
   }
 

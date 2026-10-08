@@ -105,14 +105,24 @@ function header(title, save, act, seal = '') {
   return h;
 }
 
-/** A hero's painted bust from the key art, in a round gold frame. */
+/** Banner colour behind each hero's portrait (as on the key art's flags). */
+const HERO_BG = { wanggeon: ['#4f7fd8', '#16285a'], gyeonhwon: ['#d8513e', '#5a120c'], gungye: ['#f2c860', '#7a5414'] };
+
+/** A hero's bust, drawn from their model, in a round gold frame. */
 function portrait(hero, px) {
-  const im = el('img', 'portrait bust');
-  im.src = `${UI}/hero/${hero.id}.webp`;
-  im.alt = hero.name;
-  im.decoding = 'async';
-  im.style.width = im.style.height = `${px}px`;
-  return im;
+  const c = el('canvas', 'portrait bust');
+  const W = (c.width = c.height = px * 2);
+  c.style.width = c.style.height = `${px}px`;
+  const ctx = c.getContext('2d');
+  const [hi, lo] = HERO_BG[hero.id] ?? ['#6e5634', '#1a120c'];
+  const g = ctx.createRadialGradient(W * 0.5, W * 0.35, W * 0.05, W * 0.5, W * 0.5, W * 0.7);
+  g.addColorStop(0, hi);
+  g.addColorStop(1, lo);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, W);
+  const r = W * 0.42;
+  drawUnit(ctx, { ...hero.look, body: hero.look.robe }, W * 0.5, W * 0.58 + r * 0.66, r, 0.35, { scale: 1 });
+  return c;
 }
 
 /** Row of the six worn gear icons. */
