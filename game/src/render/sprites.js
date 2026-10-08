@@ -61,11 +61,43 @@ export function drawUnit(ctx, look, x, y, r, facing, o = {}) {
 
   const bulk = look.bulk ?? 1;
   const weaponFirst = back;
+  // Attack swing (o.swing = { k: 0..1, style, dir }): the weapon arm moves with the blow.
+  const sw = o.swing;
+  let swingRot = 0, reach = 0, swingScale = 1;
+  if (sw) {
+    const k = Math.min(1, Math.max(0, sw.k));
+    const ease = 1 - (1 - k) ** 3;
+    if (sw.style === 'slash') {
+      // 왕건: a quick sweep from one side across to the other.
+      swingRot = sw.dir * (-1.5 + 3 * ease);
+      reach = Math.sin(k * Math.PI) * 0.25;
+    } else if (sw.style === 'spin') {
+      // 태조의 검: a full turn.
+      swingRot = sw.dir * Math.PI * 2 * ease;
+      reach = 0.3;
+    } else if (sw.style === 'chop') {
+      // 견훤: heave the blade up and back, then slam it down hard.
+      swingRot = k < 0.35 ? -1.9 * (k / 0.35) : -1.9 + 2.9 * Math.min(1, (k - 0.35) / 0.2);
+      swingRot *= sw.dir;
+      reach = k < 0.35 ? -0.1 : 0.35 * (1 - (k - 0.35) / 0.65);
+      swingScale = k > 0.35 && k < 0.6 ? 1.12 : 1;
+    } else if (sw.style === 'cast') {
+      // 궁예: thrust the staff forward.
+      reach = Math.sin(k * Math.PI) * 0.6;
+      swingRot = -sw.dir * 0.4 * Math.sin(k * Math.PI);
+    }
+  }
+  const handAt = () => {
+    const a = facing + swingRot;
+    const sxh = sx * r * 0.55 * bulk, syh = r * 0.15;
+    return { x: sxh + Math.cos(a) * r * reach, y: syh + Math.sin(a) * r * reach };
+  };
   const weapon = () => {
     ctx.save();
-    ctx.translate(sx * r * 0.55 * bulk, r * 0.15);
-    ctx.rotate(facing);
-    ctx.scale(0.8, 0.8);
+    const h = handAt();
+    ctx.translate(h.x, h.y);
+    ctx.rotate(facing + swingRot);
+    ctx.scale(0.8 * swingScale, 0.8 * swingScale);
     ctx.translate(-r * 0.2, -r * 0.66);
     ctx.lineWidth = 1.6;
     drawWeapon(ctx, look.weapon, r, look);
@@ -136,11 +168,25 @@ export function drawUnit(ctx, look, x, y, r, facing, o = {}) {
     ctx.fillStyle = look.tassel;
     ctx.fillRect(-sx * r * 0.55, r * 0.2, r * 0.18, r * 0.3);
   }
-  // Little round hands.
+  // Little round hands; mid-swing the weapon hand follows the blade on a short arm.
   ctx.fillStyle = fill(look.skin ?? '#e6c49c');
   for (const k of [-1, 1]) {
+    let hx = k * r * 0.55 * bulk, hy = r * 0.25;
+    if (sw && k === sx) {
+      const h = handAt();
+      hx = h.x;
+      hy = h.y + r * 0.1;
+      ctx.strokeStyle = fill(look.body);
+      ctx.lineWidth = r * 0.22;
+      ctx.beginPath();
+      ctx.moveTo(sx * r * 0.35 * bulk, r * 0.05);
+      ctx.lineTo(hx, hy);
+      ctx.stroke();
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = Math.max(1.2, r * 0.09);
+    }
     ctx.beginPath();
-    ctx.arc(k * r * 0.55 * bulk, r * 0.25, r * 0.13, 0, Math.PI * 2);
+    ctx.arc(hx, hy, r * 0.13, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
   }

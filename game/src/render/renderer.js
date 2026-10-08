@@ -250,8 +250,10 @@ export class Renderer {
     const blink = p.invuln > 0 && Math.floor(g.time * 30) % 2 === 0;
     const m = p.mount;
     const shielded = m && g.time < m.invulnUntil;
+    const sw = p.swing && g.time - p.swing.at < p.swing.dur ? { k: (g.time - p.swing.at) / p.swing.dur, style: p.swing.style, dir: p.swing.dir } : null;
     drawUnit(ctx, { ...look, body: look.robe, mount: m ? '#f2ede0' : undefined },
       p.x, p.y, p.r, p.facing, {
+        swing: sw,
         alpha: blink ? 0.45 : 1,
         aura: p.tiger ? `rgba(255, 110, 20, ${0.45 + 0.2 * Math.sin(g.time * 16)})`
           : shielded ? `rgba(240, 200, 110, ${0.35 + 0.15 * Math.sin(g.time * 20)})`

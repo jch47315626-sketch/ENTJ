@@ -216,7 +216,12 @@ export function updateWeapon(g, dt) {
     // A pattern may return a shorter wait (e.g. nothing was in reach).
     const wait = pat.fire(g, p, lv, s);
     if (typeof wait === 'number') w.timer = wait;
-    else if (main) g.afterSwing();
+    else if (main) {
+      g.afterSwing();
+      // The hero's arm swings with the blow (drawn in render/sprites.js drawUnit).
+      const style = lv.pattern === 'royalSword' ? 'spin' : { sword: 'slash', greatsword: 'chop', staff: 'cast' }[p.hero.look.weapon] ?? 'slash';
+      p.swing = { at: g.time, dur: style === 'chop' ? 0.42 : style === 'spin' ? 0.32 : 0.24, style, dir: -(p.swing?.dir ?? -1) };
+    }
   }
 }
 
