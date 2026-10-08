@@ -116,6 +116,7 @@ export function drawUnit(ctx, look, x, y, r, facing, o = {}) {
     ctx.fill();
     ctx.stroke();
   }
+  if (look.hair) drawLongHair(ctx, look, r, sx, phase, o.flash);
   if (weaponFirst && look.weapon) weapon();
 
   // Feet patter in turn.
@@ -168,6 +169,49 @@ export function drawUnit(ctx, look, x, y, r, facing, o = {}) {
     ctx.fillStyle = look.tassel;
     ctx.fillRect(-sx * r * 0.55, r * 0.2, r * 0.18, r * 0.3);
   }
+  if (look.beads) {
+    // 염주: a loop of dark beads with one gold bead at the bottom.
+    for (let i = 0; i <= 8; i++) {
+      const t = i / 8 - 0.5;
+      const big = i === 4;
+      ctx.fillStyle = fill(big ? look.trim ?? '#e0b24c' : look.beads);
+      ctx.beginPath();
+      ctx.arc(t * r * 0.72 * bulk, r * 0.04 + (1 - (2 * t) ** 2) * r * 0.36, r * (big ? 0.1 : 0.075), 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  if (look.pauldrons) {
+    // Gold shoulder plates.
+    for (const k of [-1, 1]) {
+      ctx.fillStyle = fill(look.pauldrons);
+      ctx.beginPath();
+      ctx.ellipse(k * r * 0.46 * bulk, r * 0.02, r * 0.24, r * 0.17, k * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255, 244, 200, 0.75)';
+      ctx.lineWidth = Math.max(1, r * 0.05);
+      ctx.beginPath();
+      ctx.arc(k * r * 0.46 * bulk, r * 0.06, r * 0.14, Math.PI * 1.15, Math.PI * 1.85);
+      ctx.stroke();
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = Math.max(1.2, r * 0.09);
+    }
+  }
+  if (look.fur) {
+    // White fur collar, fluffy round tufts across the shoulders.
+    ctx.fillStyle = fill(look.fur);
+    ctx.strokeStyle = 'rgba(120, 110, 100, 0.7)';
+    ctx.lineWidth = Math.max(1, r * 0.05);
+    for (let i = 0; i < 6; i++) {
+      const t = i / 5 - 0.5;
+      ctx.beginPath();
+      ctx.arc(t * r * 0.86 * bulk, -r * 0.08 + Math.abs(t) * r * 0.06, r * 0.15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = Math.max(1.2, r * 0.09);
+  }
   // Little round hands; mid-swing the weapon hand follows the blade on a short arm.
   ctx.fillStyle = fill(look.skin ?? '#e6c49c');
   for (const k of [-1, 1]) {
@@ -194,6 +238,50 @@ export function drawUnit(ctx, look, x, y, r, facing, o = {}) {
   drawHead(ctx, look, r, o.flash, sx, back, phase);
   if (!weaponFirst && look.weapon) weapon();
   ctx.restore();
+}
+
+/** Long hair falling down the back (hero looks with `hair`; `hairTint` adds streaks). */
+function drawLongHair(ctx, look, r, sx, phase, flash) {
+  const hr = r * 0.66, hy = -r * 0.62;
+  const sway = Math.sin(phase * 0.5) * r * 0.06;
+  const drift = -sx * r * 0.28 + sway; // hair streams behind the way he runs
+  const bottom = r * 0.32;
+  ctx.fillStyle = fillOr(flash, look.hair);
+  ctx.beginPath();
+  // A wild, spiky mane that flares out toward the shoulders.
+  const side = (k, t) => [k * (hr * 1.1 + t * hr * 0.4) + drift * t, hy + (bottom - hy) * t];
+  ctx.moveTo(hr * 1.08, hy);
+  ctx.arc(0, hy, hr * 1.08, 0, Math.PI, true);
+  for (let i = 1; i <= 4; i++) {
+    const [x, y] = side(-1, i / 4);
+    ctx.lineTo(x - hr * 0.22, y - hr * 0.15);
+    ctx.lineTo(x + hr * 0.08, y);
+  }
+  for (let i = 1; i <= 4; i++) {
+    const x = -hr * 1.5 + (hr * 3 * i) / 4 + drift;
+    ctx.lineTo(x - hr * 0.35, bottom - r * 0.18);
+    ctx.lineTo(x, bottom + r * 0.06);
+  }
+  for (let i = 3; i >= 0; i--) {
+    const [x, y] = side(1, i / 4);
+    ctx.lineTo(x + hr * 0.22, y + hr * 0.1);
+    ctx.lineTo(x - hr * 0.08, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  if (look.hairTint && !flash) {
+    ctx.strokeStyle = look.hairTint;
+    ctx.lineWidth = Math.max(1.2, r * 0.08);
+    for (const k of [-0.7, 0.75]) {
+      ctx.beginPath();
+      ctx.moveTo(k * hr, hy + hr * 0.3);
+      ctx.quadraticCurveTo(k * hr * 1.25, bottom * 0.1, k * hr * 0.9 + drift, bottom - r * 0.08);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = Math.max(1.2, r * 0.09);
+  }
 }
 
 function drawWeapon(ctx, kind, r, look) {
@@ -398,7 +486,7 @@ function drawHead(ctx, look, r, flash, sx, back, phase) {
   if (back) {
     // Back of the head: hair, no face.
     if (!['monk', 'hood', 'hoodBlue', 'pirateBoss'].includes(look.hat)) {
-      ctx.fillStyle = fill('#2a211b');
+      ctx.fillStyle = fill(look.hair ?? '#2a211b');
       ctx.beginPath();
       ctx.arc(0, hy, hr * 0.92, Math.PI * 0.1, Math.PI * 0.9, true);
       ctx.fill();
@@ -432,6 +520,14 @@ function drawFace(ctx, look, r, hr, hy, sx, flash) {
       ctx.beginPath();
       ctx.ellipse(cx, ey, eyeR * 1.6, eyeR * 1.35, 0, 0, Math.PI * 2);
       ctx.fill();
+      if (look.patchTrim && !flash) {
+        ctx.strokeStyle = look.patchTrim;
+        ctx.lineWidth = Math.max(1, r * 0.05);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx, ey, eyeR * 0.55, 0, Math.PI * 2);
+        ctx.stroke();
+      }
       ctx.strokeStyle = INK;
       ctx.lineWidth = Math.max(1, r * 0.06);
       ctx.beginPath();
@@ -459,6 +555,10 @@ function drawFace(ctx, look, r, hr, hy, sx, flash) {
       if (look.brows === 'angry') {
         ctx.moveTo(cx - k * eyeR * 1.6, ey - eyeR * 2.6);
         ctx.lineTo(cx + k * eyeR * 1.2, ey - eyeR * 1.7);
+      } else if (look.brows === 'stern') {
+        // Straight, slightly knitted: calm but resolute.
+        ctx.moveTo(cx - k * eyeR * 1.5, ey - eyeR * 2.3);
+        ctx.lineTo(cx + k * eyeR * 1.2, ey - eyeR * 1.85);
       } else {
         ctx.arc(cx, ey - eyeR * 1.2, eyeR * 1.3, Math.PI * 1.2, Math.PI * 1.8);
       }
@@ -467,7 +567,7 @@ function drawFace(ctx, look, r, hr, hy, sx, flash) {
   }
   // Mouth.
   ctx.beginPath();
-  if (look.brows === 'angry') {
+  if (look.brows === 'angry' || look.brows === 'stern') {
     ctx.moveTo(look2 - hr * 0.12, ey + hr * 0.42);
     ctx.lineTo(look2 + hr * 0.12, ey + hr * 0.38);
   } else {
@@ -639,11 +739,132 @@ function drawHat(ctx, look, r, hr, hy, sx, flash, phase) {
       ctx.beginPath();
       ctx.ellipse(-hr * 0.35, hy - hr * 0.55, hr * 0.25, hr * 0.14, -0.5, 0, Math.PI * 2);
       ctx.fill();
-      // A dot of wisdom (백호) on the forehead.
-      ctx.fillStyle = f(look.trim ?? '#e0b24c');
+      if (look.sunMark) {
+        // 궁예: a sun drawn on the forehead.
+        const cy = hy - hr * 0.45;
+        ctx.strokeStyle = f(look.sunMark);
+        ctx.fillStyle = f(look.sunMark);
+        ctx.lineWidth = Math.max(1, r * 0.05);
+        ctx.beginPath();
+        ctx.arc(0, cy, hr * 0.13, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, cy, hr * 0.05, 0, Math.PI * 2);
+        ctx.fill();
+        for (let i = 0; i < 8; i++) {
+          const a = (i / 8) * Math.PI * 2;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(a) * hr * 0.19, cy + Math.sin(a) * hr * 0.19);
+          ctx.lineTo(Math.cos(a) * hr * 0.27, cy + Math.sin(a) * hr * 0.27);
+          ctx.stroke();
+        }
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = Math.max(1.2, r * 0.09);
+      } else {
+        // A dot of wisdom (백호) on the forehead.
+        ctx.fillStyle = f(look.trim ?? '#e0b24c');
+        ctx.beginPath();
+        ctx.arc(0, hy - hr * 0.3, hr * 0.09, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (look.earrings) {
+        // Big gold hoops.
+        ctx.strokeStyle = f(look.earrings);
+        ctx.lineWidth = Math.max(1.2, r * 0.07);
+        for (const k of [-1, 1]) {
+          ctx.beginPath();
+          ctx.arc(k * hr * 0.98, hy + hr * 0.38, hr * 0.15, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = Math.max(1.2, r * 0.09);
+      }
+      break;
+    }
+    case 'royal': {
+      // 왕건: black hair with swept bangs, a topknot and a small gold crown with a blue jewel.
+      const hair = f(look.hair ?? '#1a1720');
+      ctx.fillStyle = hair;
       ctx.beginPath();
-      ctx.arc(0, hy - hr * 0.3, hr * 0.09, 0, Math.PI * 2);
+      ctx.arc(0, hy, hr * 1.05, Math.PI * 1.02, -Math.PI * 0.02);
+      // Spiky bangs swept toward the way he faces.
+      for (let i = 0; i <= 8; i++) {
+        const x = hr * (1.0 - i * 0.25);
+        const tip = i % 2 === 1;
+        ctx.lineTo(x + (tip ? sx * hr * 0.16 : 0), hy - hr * (tip ? (i === 3 || i === 5 ? -0.05 : 0.12) : 0.42));
+      }
+      ctx.closePath();
       ctx.fill();
+      ctx.stroke();
+      if (look.hairTint && !flash) {
+        ctx.strokeStyle = look.hairTint;
+        ctx.lineWidth = Math.max(1, r * 0.06);
+        ctx.beginPath();
+        ctx.arc(0, hy, hr * 0.8, Math.PI * 1.25, Math.PI * 1.55);
+        ctx.stroke();
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = Math.max(1.2, r * 0.09);
+      }
+      // Topknot.
+      ctx.fillStyle = hair;
+      ctx.beginPath();
+      ctx.arc(0, hy - hr * 1.1, hr * 0.3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      // Crown around the knot.
+      const gold = f(look.trim ?? '#e8c060');
+      ctx.fillStyle = gold;
+      ctx.beginPath();
+      ctx.moveTo(-hr * 0.5, hy - hr * 0.82);
+      ctx.lineTo(-hr * 0.55, hy - hr * 1.25);
+      ctx.lineTo(-hr * 0.25, hy - hr * 1.02);
+      ctx.lineTo(0, hy - hr * 1.5);
+      ctx.lineTo(hr * 0.25, hy - hr * 1.02);
+      ctx.lineTo(hr * 0.55, hy - hr * 1.25);
+      ctx.lineTo(hr * 0.5, hy - hr * 0.82);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = f(look.jewel ?? '#2f6fe0');
+      ctx.beginPath();
+      ctx.moveTo(0, hy - hr * 1.18);
+      ctx.lineTo(hr * 0.13, hy - hr * 1.0);
+      ctx.lineTo(0, hy - hr * 0.84);
+      ctx.lineTo(-hr * 0.13, hy - hr * 1.0);
+      ctx.closePath();
+      ctx.fill();
+      break;
+    }
+    case 'warband': {
+      // 견훤: a wild mane of hair with a red band and trailing ribbons.
+      ctx.fillStyle = f(look.hair ?? '#3a2418');
+      ctx.beginPath();
+      ctx.arc(0, hy, hr * 1.06, Math.PI * 1.02, -Math.PI * 0.02);
+      for (let i = 0; i <= 6; i++) ctx.lineTo(hr * (1.05 - i * 0.35), hy - hr * (i % 2 ? 0.95 : 1.18) + (i === 0 || i === 6 ? hr * 1.1 : 0));
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      const band = f(look.band ?? '#c0392b');
+      ctx.fillStyle = band;
+      ctx.beginPath();
+      ctx.rect(-hr * 1.02, hy - hr * 0.5, hr * 2.04, hr * 0.24);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = f(look.trim ?? '#f0c050');
+      ctx.beginPath();
+      ctx.arc(0, hy - hr * 0.38, hr * 0.13, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = band;
+      ctx.lineWidth = Math.max(1.5, r * 0.11);
+      for (const d of [0, 0.25]) {
+        ctx.beginPath();
+        ctx.moveTo(-sx * hr * 0.95, hy - hr * 0.38);
+        ctx.quadraticCurveTo(-sx * hr * 1.5, hy - hr * (0.2 - d) + Math.sin(phase + d * 6) * r * 0.08, -sx * hr * (1.9 - d), hy + hr * (0.2 + d));
+        ctx.stroke();
+      }
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = Math.max(1.2, r * 0.09);
       break;
     }
     case 'hero': {

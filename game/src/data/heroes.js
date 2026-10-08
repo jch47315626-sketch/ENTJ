@@ -15,7 +15,8 @@ export const HEROES = {
     weapon: 'goryeoSword',
     special: 'tongsol',
     favoredCategory: '병법',
-    look: { hat: 'hero', weapon: 'sword', robe: '#2d5a9c', accent: '#1e2a48', trim: '#e8c060', plume: '#e0392b', skin: '#f2d2ac', cape: '#c0392b', brows: 'kind', mustache: '#3a2a1c' },
+    // Key art: long black hair with blue sheen, a small gold crown with a blue jewel, blue armour, white fur.
+    look: { hat: 'royal', weapon: 'sword', robe: '#1f4596', accent: '#14244a', trim: '#e8c060', skin: '#f2d2ac', cape: '#2a5cc0', brows: 'stern', hair: '#1a1720', hairTint: '#3a6ad8', jewel: '#2f6fe0', fur: '#f4f1ea', pauldrons: '#d9a940' },
   },
   gyeonhwon: {
     id: 'gyeonhwon',
@@ -29,7 +30,8 @@ export const HEROES = {
     weapon: 'daedo',
     special: 'paewang',
     favoredCategory: '무예',
-    look: { hat: 'crown', weapon: 'greatsword', robe: '#8e2a20', accent: '#2e120e', trim: '#f0c050', plume: '#1d1a17', skin: '#e0b88e', beard: '#1d1a17', brows: 'angry', bulk: 1.25, cape: '#2e120e' },
+    // Key art: a wild brown mane and beard, red headband, black-and-gold armour, white fur, red cloak.
+    look: { hat: 'warband', weapon: 'greatsword', robe: '#2a2321', accent: '#160f0c', trim: '#e0aa3a', skin: '#d9ad80', beard: '#3a2418', hair: '#3a2418', band: '#c0392b', brows: 'angry', bulk: 1.25, cape: '#a8241c', fur: '#f1ece2', pauldrons: '#c9952e' },
   },
   gungye: {
     id: 'gungye',
@@ -44,7 +46,8 @@ export const HEROES = {
     subWeapons: ['vajra'],
     special: 'gwansim',
     favoredCategory: '지세',
-    look: { hat: 'monk', weapon: 'staff', robe: '#6a3f8e', accent: '#2e1a40', trim: '#f0c050', plume: '#e0b24c', skin: '#f0d0aa', eyepatch: true, cape: '#e0b24c' },
+    // Key art: shaved head with a sun on the brow, gold-rimmed eyepatch, golden robe, prayer beads, gold hoops.
+    look: { hat: 'monk', weapon: 'staff', robe: '#d9a531', accent: '#5a3a14', trim: '#f6d77a', skin: '#f0d0aa', eyepatch: true, patchTrim: '#e0b24c', sunMark: '#3a2a14', cape: '#b8862a', brows: 'stern', beads: '#2a1e14', earrings: '#e0b24c' },
   },
 };
 

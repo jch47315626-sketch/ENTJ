@@ -31,7 +31,7 @@ export const BOSSES = {
     hanja: '甄萱',
     epithet: '후백제의 대왕',
     hp: 3200, speed: 78, radius: 32, damage: 16, knockResist: 0.95, xp: 0,
-    look: { body: '#8e2a20', accent: '#2e120e', hat: 'crown', weapon: 'greatsword', trim: '#f0c050', skin: '#e0b88e', beard: '#1d1a17', brows: 'angry', bulk: 1.25, cape: '#2e120e' },
+    look: { body: '#2a2321', accent: '#160f0c', hat: 'warband', weapon: 'greatsword', trim: '#e0aa3a', skin: '#d9ad80', beard: '#3a2418', hair: '#3a2418', band: '#c0392b', brows: 'angry', bulk: 1.25, cape: '#a8241c', fur: '#f1ece2', pauldrons: '#c9952e' },
     patterns: [
       { type: 'chase', time: 2.0 },
       { type: 'spin', windup: 0.9, radius: 150, damage: 22 },
@@ -120,7 +120,7 @@ export const BOSSES = {
     hanja: '弓裔',
     epithet: '미륵을 자처한 태봉의 왕',
     hp: 6000, speed: 80, radius: 30, damage: 16, knockResist: 0.95, xp: 0,
-    look: { body: '#6a3f8e', accent: '#1d1a17', hat: 'monk', weapon: 'staff', trim: '#f0c050', plume: '#e0b24c', skin: '#f0d0aa', eyepatch: true, brows: 'angry', cape: '#e0b24c', bulk: 1.1 },
+    look: { body: '#d9a531', accent: '#5a3a14', hat: 'monk', weapon: 'staff', trim: '#f6d77a', skin: '#f0d0aa', eyepatch: true, patchTrim: '#e0b24c', sunMark: '#3a2a14', brows: 'angry', cape: '#b8862a', beads: '#2a1e14', earrings: '#e0b24c', bulk: 1.1 },
     patterns: [
       { type: 'chase', time: 1.6, keep: 230 },
       { type: 'lightning', windup: 0.9, count: 3, spread: 120, radius: 70, damage: 26, lead: 0.7 },
@@ -241,7 +241,7 @@ export const BOSSES = {
     hanja: '王建',
     epithet: '고려 태조 · 삼한을 하나로',
     hp: 8000, speed: 88, radius: 30, damage: 16, knockResist: 0.96, xp: 0,
-    look: { body: '#2d5a9c', accent: '#151c2c', hat: 'hero', weapon: 'sword', trim: '#e8c060', plume: '#e0392b', skin: '#f2d2ac', cape: '#c0392b', brows: 'kind', mustache: '#3a2a1c' },
+    look: { body: '#1f4596', accent: '#14244a', hat: 'royal', weapon: 'sword', trim: '#e8c060', skin: '#f2d2ac', cape: '#2a5cc0', brows: 'stern', hair: '#1a1720', hairTint: '#3a6ad8', jewel: '#2f6fe0', fur: '#f4f1ea', pauldrons: '#d9a940' },
     patterns: [
       { type: 'chase', time: 1.6 },
       { type: 'spin', windup: 0.75, radius: 150, damage: 24 },
@@ -253,7 +253,7 @@ export const BOSSES = {
     phase2: {
       below: 0.5, speedMul: 1.15, invuln: 1.6,
       banner: '태조의 검 — 왕건이 검을 뽑아 든다!',
-      look: { body: '#1e3a78', accent: '#0e1424', hat: 'crown', weapon: 'sword', trim: '#ffd76a', plume: '#ffd76a', skin: '#f2d2ac', mount: '#f2ede0', cape: '#c0392b', brows: 'angry', mustache: '#3a2a1c' },
+      look: { body: '#173a80', accent: '#0e1424', hat: 'royal', weapon: 'sword', trim: '#ffd76a', skin: '#f2d2ac', mount: '#f2ede0', cape: '#2a5cc0', brows: 'angry', hair: '#1a1720', hairTint: '#3a6ad8', jewel: '#2f6fe0', fur: '#f4f1ea', pauldrons: '#ffd76a' },
       patterns: [
         { type: 'chase', time: 1.0 },
         { type: 'spin', windup: 0.6, radius: 165, damage: 26, repeat: 2 },
