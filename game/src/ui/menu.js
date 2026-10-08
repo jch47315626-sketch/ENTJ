@@ -10,6 +10,7 @@ import {
 import { SKILL_TREES, TREASURES } from '../data/trees.js';
 import { ACHIEVEMENTS, ACH_GROUPS, progressOf } from '../data/achievements.js';
 import { heroUltimates } from '../data/upgrades.js';
+import { GYEOLGI, gyeolgiCost } from '../data/gyeolgi.js';
 import { dailyFor, todayKey, untilTomorrow } from '../data/daily.js';
 import { josa } from '../core/korean.js';
 import { lineText, lineMax, engraveCost } from '../data/gearOptions.js';
@@ -188,7 +189,7 @@ function endlessCard(save, sel, act) {
   who.append(portrait(h, 56));
   who.append(el('div', 'dc-where', `<b>${josa(h.name, '으로')} 출전</b><span>${starText(st.difficulty.stars)} ${st.numeral} ${st.name}</span>`));
   card.append(who);
-  card.append(el('p', 'ec-rule', '적이 갈수록 많아지고, 적장은 <b>3분마다</b> 더 강해져 돌아와요. 영웅과 전장은 위에서 고른 그대로예요.'));
+  card.append(el('p', 'ec-rule', '적이 갈수록 많아지고, 적장은 <b>3분마다</b> 더 강해져 돌아와요. 냥 대신 <b>💎 결기수정</b>이 떨어져요 — 오래 버틸수록, 어려운 전장일수록 많이! 영웅과 전장은 위에서 고른 그대로예요.'));
   card.append(el('p', 'ec-best', best
     ? `🏆 이 전장 최고 기록 <b>${mmss(best.time)}</b> · 적장 ${best.bosses}명 · ${HEROES[best.hero]?.name ?? ''}`
     : '아직 기록이 없어요 — 첫 기록을 세워 보세요!'));
@@ -465,6 +466,21 @@ export function renderGrow(save, sel, act) {
     train.append(row);
   }
   grid.append(train);
+
+  // 결기 상점: 무한 전장's 결기수정 buy permanent stacks.
+  const gy = el('div', 'grow-card gyeolgi-card');
+  gy.append(el('h3', '', `💎 결기 상점 <small>모든 영웅 · 무한 전장에서 모은 결기수정 <b class="gy-have">💎 ${fmt(save.crystals ?? 0)}</b></small>`));
+  for (const g of GYEOLGI) {
+    const lv = save.gyeolgi?.[g.id] ?? 0;
+    const cost = gyeolgiCost(g, lv);
+    const row = el('div', `grow-row${lv ? ' on' : ''}`);
+    row.innerHTML = `<span class="gr-icon">${g.icon}</span><div class="gr-text"><b>${g.name} <i>${lv}스택</i></b><span>스택마다 ${g.text}</span><small>다음 스택 ×${g.grow}씩 비싸져요</small></div>`;
+    const b = button(`💎 ${fmt(cost)}`, 'buy-btn gy-btn', () => act.buyGyeolgi(g), (save.crystals ?? 0) < cost);
+    row.append(b);
+    gy.append(row);
+  }
+  if (!(save.crystals ?? 0) && !Object.keys(save.gyeolgi ?? {}).length) gy.append(el('p', 'hint', '♾️ 무한 전장에서는 냥 대신 결기수정이 떨어져요. 오래 버틸수록, 어려운 전장일수록 많이 모여요.'));
+  grid.append(gy);
 
   const sec = el('div', 'grow-card');
   sec.append(el('h3', '', '📜 비전 <small>영웅별 · 출진할 때 이 스킬을 들고 시작</small>'));

@@ -15,8 +15,9 @@ import { BEHAVIORS } from './systems/enemyAI.js';
 import { updateAllies } from './systems/allies.js';
 import { planCrows, updateCrows, callCrow, CROW } from './systems/crows.js';
 import { updateFieldObjects, breakObject } from './systems/fieldObjects.js';
+import { planFieldItems, updateFieldItems, takeFieldItem, ITEM_LIFE } from './systems/fieldItems.js';
 import { applyDaily } from './data/daily.js';
-import { ENDLESS, makeEndless, endlessSurge } from './data/endless.js';
+import { ENDLESS, makeEndless, endlessSurge, crystalsOwed } from './data/endless.js';
 import { applyNanse } from './data/nanse.js';
 import { Spawner } from './systems/spawner.js';
 import { updateSkills } from './systems/skills.js';
@@ -120,6 +121,7 @@ export class Game {
     // Per-battle counts for 업적 (core/achieve.js).
     this.runStats = { crowCalls: 0, crowBest: 0, hurtInBoss: 0 };
     planCrows(this);
+    planFieldItems(this);
     this.pickups = [];
     this.fx = [];
     this.texts = [];
@@ -430,6 +432,11 @@ export class Game {
       this.killProcs(e);
     }
     if (e.xp > 0) this.dropCoin(e.x, e.y, e.xp);
+    // 무한 전장: 결기수정 drop from the fallen as the run earns them.
+    if (this.stage.endless && (this.crystalsDropped ?? 0) < Math.floor(crystalsOwed(this.time, this.stage.difficulty.stars))) {
+      this.crystalsDropped = (this.crystalsDropped ?? 0) + 1;
+      this.pickups.push({ kind: 'crystal', x: e.x, y: e.y, magnet: false, t: 0 });
+    }
     if (e.def.drop === 'rice') this.pickups.push({ kind: 'rice', x: e.x, y: e.y, heal: 25 * (this.stage.difficulty.riceMul ?? 1), magnet: false, t: 0 });
     if (e.isBoss && (e.def.minion || this.bosses.some((o) => !o.dead && !o.def.minion))) {
       // A clone, or one of several generals: the fight goes on.
@@ -609,12 +616,15 @@ export class Game {
 
   /** 냥 earned so far this run, before any victory bonus (shown in the HUD). */
   liveReward() {
+    if (this.stage.endless) return 0; // 무한 전장 pays in 결기수정 only
     const base = baseReward({ kills: this.kills, seconds: this.time, won: false, bossKilled: false });
     return Math.round(base * REWARD_BY_STARS[this.stage.difficulty.stars] * (1 + (this.opts.meta?.reward ?? 0)) * (this.stage.difficulty.rewardMul ?? 1));
   }
 
   /** 냥 for this run: base by performance, scaled by stage stars and 재물운. */
   computeReward(won) {
+    // 무한 전장: no 냥 at all — the reward is the 결기수정 picked up.
+    if (this.stage.endless) return { base: 0, mul: 0, total: 0, stars: this.stage.difficulty.stars, bossBonus: 0, crystals: this.runStats.crystals ?? 0 };
     const stars = this.stage.difficulty.stars;
     const base = baseReward({ kills: this.kills, seconds: this.time, won, bossKilled: won });
     const mul = REWARD_BY_STARS[stars] * (1 + (this.opts.meta?.reward ?? 0)) * (this.stage.difficulty.rewardMul ?? 1);
@@ -721,6 +731,7 @@ export class Game {
     updateAllies(this, dt);
     updateCrows(this, dt);
     updateFieldObjects(this, dt);
+    updateFieldItems(this, dt);
     this.taunts = this.allies.filter((a) => a.lure && !a.dead);
     this.updateEnemies(dt);
     updateTerrain(this);
@@ -980,6 +991,14 @@ export class Game {
       const dx = p.x - k.x, dy = p.y - k.y;
       const d2 = dx * dx + dy * dy;
       // 감나무 가지 must be walked onto; it is not pulled in.
+      // 전장 아이템 (함정·노루고기·등유) are walked onto too.
+      if (k.kind === 'item') {
+        if (d2 < (p.r + 22) ** 2) {
+          k.taken = true;
+          takeFieldItem(this, k);
+        } else if (k.t > ITEM_LIFE) k.taken = true;
+        continue;
+      }
       if (k.kind === 'crowFeed') {
         if (d2 < (p.r + 22) ** 2) {
           k.taken = true;
@@ -998,6 +1017,11 @@ export class Game {
           if (k.kind === 'coin') {
             this.gainXp(k.value);
             this.sfx('coin');
+          }
+          else if (k.kind === 'crystal') {
+            this.runStats.crystals = (this.runStats.crystals ?? 0) + 1;
+            this.texts.push({ x: p.x, y: p.y - 30, v: '💎 +1', t: 0, life: 0.8, order: true });
+            this.sfx('buy');
           }
           else if (k.kind === 'rice') {
             p.heal(k.heal);

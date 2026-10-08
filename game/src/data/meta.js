@@ -1,6 +1,7 @@
 import { treeNodes, TREASURES } from './trees.js';
 import { STAGES } from './stages.js';
 import { josa } from '../core/korean.js';
+import { gyeolgiBonus } from './gyeolgi.js';
 
 /**
  * Progression between runs: money (냥) earned per run, equipment bought
@@ -323,6 +324,8 @@ export function metaBonus(save, heroId) {
     const lv = save.training[t.id] ?? 0;
     if (lv) add(t.bonus(lv));
   }
+  // 결기 상점 (무한 전장's 결기수정).
+  add(gyeolgiBonus(save));
   // Hero build: skill-tree nodes and the equipped treasure.
   const bought = save.trees?.[heroId]?.nodes ?? [];
   for (const node of treeNodes(heroId)) {

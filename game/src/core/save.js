@@ -10,7 +10,7 @@ const KEY = 'samhan-save-v1';
 
 // equipped: { [heroId]: { [slotId]: itemId } } — each hero wears their own gear.
 // trees: { [heroId]: { nodes: [nodeId] } } — skill-tree purchases (both paths may be learned).
-const fresh = () => ({ money: 0, owned: [], equipped: {}, training: {}, secrets: [], best: {}, trees: {}, forge: {}, codex: { kills: {}, runs: 0, wins: 0, earned: 0 }, ach: {}, stats: {} });
+const fresh = () => ({ money: 0, crystals: 0, gyeolgi: {}, owned: [], equipped: {}, training: {}, secrets: [], best: {}, trees: {}, forge: {}, codex: { kills: {}, runs: 0, wins: 0, earned: 0 }, ach: {}, stats: {} });
 // codex: lifetime record for the 도감 — kills by enemy/boss id, runs, wins, 냥 earned.
 // forge: { [itemId]: 0..5 } — 제련 level of each owned item.
 

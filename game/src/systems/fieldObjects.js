@@ -11,7 +11,7 @@ import { hitArc } from './weapons.js';
 import { MOMENTUM } from '../data/heroes.js';
 
 export const FIELD_OBJECTS = {
-  every: [20, 30], // seconds between drops
+  every: [14, 22], // seconds between drops
   first: 18,
   max: 3, // on the field at once
   weights: { oilJar: 45, warDrum: 30, shrine: 25 },

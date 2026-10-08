@@ -35,3 +35,11 @@ export function endlessSurge(t) {
   const x = Math.max(0, t - ENDLESS.surgeFrom) / 60;
   return 1 + ENDLESS.surgeStep * (x * (x + 1)) / 2;
 }
+
+/**
+ * 결기수정 (무한 전장's only reward): the total owed after `t` seconds grows
+ * faster than the time survived (t^1.6), more on harder fields. About 3–5 for
+ * a hero with no gear (★1, ~4 min), 50–70 with 명품 gear (★3, ~10 min).
+ */
+export const CRYSTAL = { a: 0.31, pow: 1.6, byStars: { 1: 1, 2: 2.6, 3: 4.9, 4: 7, 5: 9.5, 6: 12 } };
+export const crystalsOwed = (t, stars) => CRYSTAL.a * (t / 60) ** CRYSTAL.pow * (CRYSTAL.byStars[stars] ?? 1);

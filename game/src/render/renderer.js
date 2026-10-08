@@ -138,11 +138,42 @@ export class Renderer {
     this.drawCaltrops(ctx, g);
     this.drawZones(ctx, g);
     drawRocks(ctx, g, v);
+    this.drawBigTraps(ctx, g);
     this.drawHalos(ctx, g);
 
     for (const k of g.pickups) {
       if (k.kind === 'coin') drawCoin(ctx, k.x, k.y, k.tier, k.t);
       else if (k.kind === 'crowFeed') this.drawCrowFeed(ctx, k, g.time);
+      else if (k.kind === 'item') this.drawFieldItem(ctx, k, g.time);
+      else if (k.kind === 'crystal') {
+        // 결기수정: a small violet-blue gem with a glint.
+        const bob = Math.sin(g.time * 5 + k.x) * 2;
+        const glow = ctx.createRadialGradient(k.x, k.y, 1, k.x, k.y, 22);
+        glow.addColorStop(0, 'rgba(150, 120, 255, 0.6)');
+        glow.addColorStop(1, 'rgba(150, 120, 255, 0)');
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(k.x, k.y, 22, 0, TAU);
+        ctx.fill();
+        ctx.fillStyle = '#9b8cff';
+        ctx.strokeStyle = '#2b2060';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(k.x, k.y - 11 + bob);
+        ctx.lineTo(k.x + 8, k.y - 2 + bob);
+        ctx.lineTo(k.x, k.y + 10 + bob);
+        ctx.lineTo(k.x - 8, k.y - 2 + bob);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.beginPath();
+        ctx.moveTo(k.x - 2, k.y - 8 + bob);
+        ctx.lineTo(k.x + 2, k.y - 3 + bob);
+        ctx.lineTo(k.x - 3, k.y - 1 + bob);
+        ctx.closePath();
+        ctx.fill();
+      }
       else drawRice(ctx, k.x, k.y, k.t);
     }
 
@@ -165,7 +196,7 @@ export class Renderer {
     if (g.arena) this.drawArenaBanners(ctx, g);
     this.drawNight(ctx, g, v);
     for (const c of g.crows) this.drawCrow(ctx, c);
-    for (const k of g.pickups) if (k.kind === 'crowFeed') this.drawFeedPointer(ctx, k, g.time, v);
+    for (const k of g.pickups) if (k.kind === 'crowFeed' || k.kind === 'item') this.drawFeedPointer(ctx, k, g.time, v);
     this.drawTexts(ctx, g);
     ctx.restore();
 
@@ -471,7 +502,7 @@ export class Renderer {
           ctx.closePath();
           ctx.fill();
         }
-      } else if (z.kind === 'fire') {
+      } else if (z.kind === 'fire' || z.kind === 'kero') {
         // Burning pitch from a fire pot, flickering.
         const flick = 0.85 + 0.15 * Math.sin(g.time * 18 + z.x);
         ctx.fillStyle = `rgba(200, 70, 20, ${0.35 * a * flick})`;
@@ -677,6 +708,68 @@ export class Renderer {
    * Where the 감나무 가지 is: a bouncing marker above it, or an arrow at the
    * screen edge pointing to it when it is off-screen.
    */
+  /** 전장 아이템 on the ground: a glowing disc with its picture. */
+  drawFieldItem(ctx, k, time) {
+    const ICON = { trap: '🪤', venison: '🍖', kerosene: '🛢️' };
+    const COL = { trap: '220, 80, 60', venison: '230, 140, 90', kerosene: '255, 170, 50' };
+    const bob = Math.sin(time * 4 + k.x) * 3;
+    const glow = ctx.createRadialGradient(k.x, k.y, 2, k.x, k.y, 34);
+    glow.addColorStop(0, `rgba(${COL[k.item]}, 0.55)`);
+    glow.addColorStop(1, `rgba(${COL[k.item]}, 0)`);
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(k.x, k.y, 34, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(28, 24, 40, 0.85)';
+    ctx.strokeStyle = `rgba(${COL[k.item]}, 0.95)`;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(k.x, k.y - 6 + bob, 18, 0, TAU);
+    ctx.fill();
+    ctx.stroke();
+    ctx.font = '20px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(ICON[k.item] ?? '❔', k.x, k.y - 5 + bob);
+  }
+
+  /** 함정: the blast ring and a fuse counting down. */
+  drawBigTraps(ctx, g) {
+    for (const t of g.bigTraps ?? []) {
+      const k = 1 - t.t / t.fuse;
+      const pulse = 0.5 + 0.5 * Math.sin(g.time * (6 + k * 18));
+      ctx.fillStyle = `rgba(200, 60, 40, ${0.06 + 0.12 * k})`;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, t.r, 0, TAU);
+      ctx.fill();
+      ctx.strokeStyle = `rgba(255, 110, 70, ${0.5 + 0.4 * pulse})`;
+      ctx.lineWidth = 3;
+      ctx.setLineDash([14, 10]);
+      ctx.lineDashOffset = -g.time * 30;
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.lineDashOffset = 0;
+      // The trap itself with a burning fuse ring.
+      ctx.fillStyle = '#3a2a1c';
+      ctx.strokeStyle = '#1d1a17';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, 16, 0, TAU);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = `rgba(255, 200, 80, ${0.7 + 0.3 * pulse})`;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, 22, -Math.PI / 2, -Math.PI / 2 + TAU * (1 - k));
+      ctx.stroke();
+      ctx.fillStyle = '#fff3d0';
+      ctx.font = 'bold 18px "Jua", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(Math.ceil(t.t)), t.x, t.y + 1);
+    }
+  }
+
   drawFeedPointer(ctx, k, time, v) {
     const m = 50;
     const inside = k.x > v.x0 + m && k.x < v.x1 - m && k.y > v.y0 + m && k.y < v.y1 - m;
@@ -727,7 +820,7 @@ export class Renderer {
     ctx.font = '20px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('🐦‍⬛', 0, 1);
+    ctx.fillText(k.kind === 'item' ? ({ trap: '🪤', venison: '🍖', kerosene: '🛢️' }[k.item] ?? '❔') : '🐦‍⬛', 0, 1);
     ctx.rotate(ang);
     ctx.fillStyle = '#ffd56b';
     ctx.beginPath();

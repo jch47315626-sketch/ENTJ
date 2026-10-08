@@ -107,7 +107,8 @@ export function renderResult(g, won, extra = {}) {
   $('nextBtn').hidden = !(won && g.stage.next) || !!g.stage.daily || !!en;
   const r = g.reward;
   const rows = [];
-  if (r) rows.push(['🪙', '냥', `<span class="count-up" data-to="${r.total}">+0</span>`]);
+  if (r && en) rows.push(['💎', '결기수정', `<span class="count-up" data-to="${r.crystals ?? 0}">+0</span>`]);
+  else if (r) rows.push(['🪙', '냥', `<span class="count-up" data-to="${r.total}">+0</span>`]);
   if (r?.bossBonus) rows.push(['👑', '적장 토벌 보상', `+${r.bossBonus.toLocaleString()}`]);
   if (extra.dailyBonus) rows.push(['📅', '오늘의 전장 보상', `+${extra.dailyBonus.toLocaleString()}`]);
   if (extra.nanse) rows.push(['🔥', `난세 ${extra.nanse.level}단계 평정`, extra.nanse.isNew ? '최고 기록!' : '']);

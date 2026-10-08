@@ -5,6 +5,7 @@ import { ORDERS, orderEvery } from '../systems/allies.js';
 import { buildStatus } from '../systems/builds.js';
 
 import { CROW } from '../systems/crows.js';
+import { FIELD_ITEMS, ITEM_LIFE } from '../systems/fieldItems.js';
 
 const $ = (id) => document.getElementById(id);
 /** Screen direction (east first, clockwise, y down) as an arrow. */
@@ -48,7 +49,7 @@ export class Hud {
     e.hpText.textContent = `❤️ ${Math.ceil(h.hp)} / ${Math.round(h.maxHp)}`;
     e.mom.style.width = `${h.momentum * 100}%`;
     e.momBar.classList.toggle('full', h.momentum > 0.9);
-    e.loot.textContent = `🪙 +${g.liveReward().toLocaleString()}`;
+    e.loot.textContent = g.stage.endless ? `💎 결기수정 ${g.runStats.crystals ?? 0}` : `🪙 +${g.liveReward().toLocaleString()}`;
     e.timer.textContent = fmt(h.time);
     e.timerSub.textContent = h.bossPhase ? '적장을 쓰러뜨려라' : `적장 출현까지 ${fmt(h.remaining)}`;
     e.bossBar.hidden = !h.boss;
@@ -58,12 +59,15 @@ export class Hud {
     }
     e.status.innerHTML = heroStatus(g);
     // 🌳 A branch is waiting on the ground: keep reminding until it is picked up.
-    const feed = g.pickups.find((k) => k.kind === 'crowFeed');
+    const feed = g.pickups.find((k) => k.kind === 'crowFeed') ?? g.pickups.find((k) => k.kind === 'item');
     $('crowAlert').hidden = !feed;
     if (feed) {
       const p = g.player;
       const dir = ARROWS[Math.round(((Math.atan2(feed.y - p.y, feed.x - p.x) + Math.PI * 2) % (Math.PI * 2)) / (Math.PI / 4)) % 8];
-      $('crowAlert').textContent = `🐦‍⬛ 감나무 가지 ${dir} 주우러 가요! ${Math.max(0, Math.ceil(CROW.feedLife - feed.t))}초`;
+      const it = feed.kind === 'item' ? FIELD_ITEMS[feed.item] : null;
+      $('crowAlert').textContent = it
+        ? `${it.icon} ${it.name} ${dir} 주우러 가요! ${Math.max(0, Math.ceil(ITEM_LIFE - feed.t))}초`
+        : `🐦‍⬛ 감나무 가지 ${dir} 주우러 가요! ${Math.max(0, Math.ceil(CROW.feedLife - feed.t))}초`;
     }
     // 🏯 군령: fills toward the next order of any troop kind; flashes just before.
     const orders = Object.entries(g.orders ?? {});
@@ -166,5 +170,6 @@ function heroStatus(g) {
     if (Object.keys(p.subs).length) chips.push('☄️ 금강저');
   }
   if (p.drumUntil) chips.push(`🥁 전고 ${Math.ceil(p.drumUntil - g.time)}초`);
+  if (p.keroseneUntil > g.time) chips.push(`🛢️ 불길 ${Math.ceil(p.keroseneUntil - g.time)}초`);
   return chips.map((c) => `<span>${c}</span>`).join('');
 }

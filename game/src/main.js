@@ -14,6 +14,7 @@ import { ACHIEVEMENTS } from './data/achievements.js';
 import { dailyFor, dailyHeroBonus, todayKey } from './data/daily.js';
 import { josa } from './core/korean.js';
 import { NANSE_CARDS, NANSE_MILESTONES, milestoneBonus, nanseLevel } from './data/nanse.js';
+import { gyeolgiCost } from './data/gyeolgi.js';
 import { metaBonus, FORGE, forgeCost, gradeOpen, entryCheck, EQUIPMENT, RELICS } from './data/meta.js';
 import { ensureGearOptions, rollOptions, rerollLine, engraveCost, lineText, NAMES } from './data/gearOptions.js';
 import { UPGRADES } from './data/upgrades.js';
@@ -128,6 +129,7 @@ function onState(state, g) {
       if (g.objectsTipShown) (save.tipsSeen ??= {}).objects = true;
       const known = new Set(Object.keys(save.codex.kills));
       save.money += g.reward.total;
+      if (g.reward.crystals) save.crystals = (save.crystals ?? 0) + g.reward.crystals;
       if (state === 'clear') save.best[g.stage.id] = Math.max(save.best[g.stage.id] ?? 0, g.reward.stars);
       const c = save.codex;
       c.runs += 1;
@@ -376,6 +378,15 @@ const act = {
     const lv = save.training[t.id] ?? 0;
     if (lv >= t.max || !spend(t.price(lv))) return;
     save.training[t.id] = lv + 1;
+    done();
+  },
+  buyGyeolgi(gy) {
+    const lv = save.gyeolgi?.[gy.id] ?? 0;
+    const cost = gyeolgiCost(gy, lv);
+    if ((save.crystals ?? 0) < cost) return;
+    save.crystals -= cost;
+    (save.gyeolgi ??= {})[gy.id] = lv + 1;
+    sound.sfx('forgeOk');
     done();
   },
   learn(sc) {
