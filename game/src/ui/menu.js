@@ -9,6 +9,7 @@ import {
 } from '../data/meta.js';
 import { SKILL_TREES, TREASURES } from '../data/trees.js';
 import { ACHIEVEMENTS, ACH_GROUPS, progressOf } from '../data/achievements.js';
+import { heroUltimates } from '../data/upgrades.js';
 import { dailyFor, todayKey, untilTomorrow } from '../data/daily.js';
 import { josa } from '../core/korean.js';
 import { lineText, lineMax, engraveCost } from '../data/gearOptions.js';
@@ -263,6 +264,14 @@ export function renderHeroes(save, sel, act) {
     <p>${BUILD_ICON[h.id][view]} ${br.style}</p>
     <small class="kit">고유기 <b>${SPECIALS[h.special].name}</b> · 무기 ${WEAPONS[h.weapon].levels.map((w) => w.name).join(' → ')}</small>`;
   body.append(styleCard);
+  // 궁극기: every hero has three; each shows what unlocks it.
+  const ults = heroUltimates(h);
+  const ultCard = el('div', 'ult-card');
+  ultCard.append(el('b', 'ult-title', `🌟 궁극기 ${ults.length}`));
+  for (const u of ults) {
+    ultCard.append(el('div', 'ult-row', `<b>${u.name}</b><span class="ult-need">${u.need.map((n) => `☐ ${n}`).join(' · ')}</span><small>${u.desc}</small>`));
+  }
+  body.append(ultCard);
 
   body.append(tabStrip([['gear', '🛡️ 장비'], ['forge', '🔨 제련'], ['skill', '📜 스킬'], ['treasure', '💎 보물']], ui.heroTab, (id) => {
     ui.heroTab = id;

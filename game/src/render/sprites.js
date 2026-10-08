@@ -814,16 +814,20 @@ export function drawProjectile(ctx, p) {
     ctx.stroke();
     ctx.globalAlpha = 1;
   } else if (p.kind === 'wave') {
+    // 왕건's 검기: a glowing blue-white crescent.
     const a = Math.min(1, p.life * 3);
-    ctx.fillStyle = `rgba(246, 226, 160, ${0.85 * a})`;
-    ctx.strokeStyle = `rgba(29, 26, 23, ${0.6 * a})`;
-    ctx.lineWidth = 1.2;
+    ctx.shadowColor = 'rgba(120, 190, 255, 0.9)';
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = `rgba(200, 230, 255, ${0.9 * a})`;
+    ctx.strokeStyle = `rgba(70, 130, 220, ${0.8 * a})`;
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.arc(-p.r * 0.6, 0, p.r * 1.2, -1.1, 1.1);
     ctx.arc(-p.r * 1.0, 0, p.r * 1.0, 1.0, -1.0, true);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
+    ctx.shadowBlur = 0;
   }
   ctx.restore();
 }

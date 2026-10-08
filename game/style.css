@@ -1169,3 +1169,12 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 .war-map .river { fill: none; stroke: #6f93a8; stroke-width: 2.2; stroke-linecap: round; }
 .chapter-sub { font-size: 13px; color: var(--hanji-dim); text-align: center; margin: 6px 0 8px; }
 .sub-tab small { opacity: 0.75; font-size: 11px; }
+
+/* 영웅 화면: 궁극기 3 */
+.ult-card { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; padding: 10px 12px; border-radius: 16px; background: linear-gradient(160deg, #3d3220, #2a2236); border: 2px solid rgba(255, 224, 138, 0.5); }
+.ult-title { color: var(--candy-lemon); font-family: var(--font-brush); font-size: 18px; font-weight: normal; }
+.ult-row { display: flex; flex-direction: column; gap: 1px; padding: 6px 8px; border-radius: 10px; background: rgba(0, 0, 0, 0.2); }
+.ult-row b { color: #ffe08a; font-size: 15px; }
+.ult-need { font-size: 12px; color: #ffb3a8; }
+.ult-row small { font-size: 12px; color: var(--hanji-dim); }
+.evo-row.off { opacity: 0.55; }

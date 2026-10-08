@@ -69,10 +69,11 @@ export function afterSwing(g) {
         // 패왕의 대도: the last cut throws a sword wave toward that foe.
         if (m.rushWave && i === cuts.length - 1) {
           const W = PAEGONG.wave;
+          // 견훤's 검기 is red and upright (same look as 백제의 대도).
           g.projectiles.push({
-            team: 'player', kind: 'wave', x: p.x, y: p.y,
+            team: 'player', kind: 'redSlash', x: p.x, y: p.y,
             vx: Math.cos(angle) * W.speed, vy: Math.sin(angle) * W.speed,
-            r: W.radius * p.stats.area, damage: weaponDamage(p) * W.mul * p.stats.might, knockback: 80,
+            r: 9, span: W.radius * 1.4 * p.stats.area, damage: weaponDamage(p) * W.mul * p.stats.might, knockback: 80,
             life: W.life, pierce: Infinity, hit: new Set(), angle,
           });
         }

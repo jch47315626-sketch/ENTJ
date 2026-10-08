@@ -12,9 +12,9 @@ export const PATTERNS = {
     fire(g, p, lv, s) {
       const range = lv.range * s.area;
       const aim = aimAngle(g, p, range);
-      hitArc(g, p.x, p.y, aim, range, lv.arc, lv.damage * s.might, lv.knockback, 'slash');
+      hitArc(g, p.x, p.y, aim, range, lv.arc, lv.damage * s.might, lv.knockback, 'kingSlash');
       if (lv.double) {
-        g.later(0.15, () => hitArc(g, p.x, p.y, aim + Math.PI, range, lv.arc, lv.damage * s.might, lv.knockback, 'slash'));
+        g.later(0.15, () => hitArc(g, p.x, p.y, aim + Math.PI, range, lv.arc, lv.damage * s.might, lv.knockback, 'kingSlash'));
       }
       g.sfx('slash');
     },
@@ -245,7 +245,7 @@ export function hitArc(g, x, y, angle, range, arcDeg, damage, knockback, style, 
     if (!g.isCharmed(e)) hits++;
     g.damageEnemy(e, damage, x, y, knockback, opts);
   });
-  const life = { royal: 0.28, burst: 0.4, chop: 0.22, blast: 0.6 }[style] ?? 0.2;
+  const life = { royal: 0.3, kingSlash: 0.24, burst: 0.4, chop: 0.34, blast: 0.6 }[style] ?? 0.2;
   g.fx.push({ type: style, x, y, angle, range, arc: arcDeg, t: 0, life });
   return hits;
 }

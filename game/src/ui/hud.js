@@ -86,7 +86,7 @@ export class Hud {
     const list = evolutionStatus(g);
     this.el.evo.hidden = !list.length;
     this.el.evo.innerHTML = list
-      .map((e) => `<div class="evo-row${e.ready ? ' ready' : ''}"><b class="evo-name">🌟 ${e.name}</b>${e.checks
+      .map((e) => `<div class="evo-row${e.ready ? ' ready' : ''}${e.owned ? '' : ' off'}"><b class="evo-name">🌟 ${e.name}</b>${e.checks
         .map((c) => `<span class="evo-check${c.done ? ' done' : ''}"><i>${c.done ? '✔' : ''}</i>${c.label} <em>${c.now}/${c.need}</em></span>`)
         .join('')}${e.ready ? '<span class="evo-go">다음 레벨업에 진화!</span>' : ''}</div>`)
       .join('');

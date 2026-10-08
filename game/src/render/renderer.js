@@ -879,9 +879,90 @@ export class Renderer {
     for (const f of g.fx) {
       const p = f.t / f.life;
       switch (f.type) {
+        case 'kingSlash':
+        case 'royal': {
+          // 왕건 — 청룡 검광: three thin, glowing blue-white sword trails sweep fast,
+          // with sparkles riding the leading edge (gold for 태조의 검).
+          const full = f.arc >= 360;
+          const half = full ? Math.PI : (f.arc * Math.PI) / 360;
+          const sweep = Math.min(1, p / 0.3);
+          const a0 = f.angle - half, a1 = f.angle - half + 2 * half * sweep;
+          const alpha = 1 - Math.max(0, (p - 0.3) / 0.7);
+          const gold = f.type === 'royal';
+          ctx.save();
+          ctx.lineCap = 'round';
+          ctx.shadowColor = gold ? 'rgba(255, 210, 110, 0.9)' : 'rgba(120, 190, 255, 0.9)';
+          ctx.shadowBlur = 12;
+          [[1, 4, gold ? '255, 236, 170' : '220, 240, 255'], [0.86, 2.5, gold ? '255, 200, 90' : '130, 190, 255'], [0.72, 1.6, gold ? '250, 170, 60' : '80, 140, 230']].forEach(([k, w, c], i) => {
+            ctx.strokeStyle = `rgba(${c}, ${alpha * (1 - i * 0.18)})`;
+            ctx.lineWidth = w;
+            ctx.beginPath();
+            ctx.arc(f.x, f.y, f.range * k, a0 + i * 0.05, a1);
+            ctx.stroke();
+          });
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+          for (let i = 0; i < 3; i++) {
+            const r = f.range * (0.78 + i * 0.1);
+            const x = f.x + Math.cos(a1) * r, y = f.y + Math.sin(a1) * r;
+            const s = 3 - i * 0.6;
+            ctx.beginPath();
+            ctx.moveTo(x, y - s * 2);
+            ctx.lineTo(x + s * 0.6, y);
+            ctx.lineTo(x, y + s * 2);
+            ctx.lineTo(x - s * 0.6, y);
+            ctx.closePath();
+            ctx.fill();
+          }
+          ctx.restore();
+          break;
+        }
+        case 'chop': {
+          // 견훤 — 패왕 내려찍기: no sweep. A heavy crimson wedge lands at once,
+          // the ground cracks where the blade bites and stone chips fly out.
+          const full = f.arc >= 360;
+          const half = full ? Math.PI : (f.arc * Math.PI) / 360;
+          const a = 1 - p;
+          const grow = 0.85 + 0.15 * Math.min(1, p * 4);
+          const R = f.range * grow;
+          const grd = ctx.createRadialGradient(f.x, f.y, R * 0.2, f.x, f.y, R);
+          grd.addColorStop(0, `rgba(90, 14, 10, ${0.1 * a})`);
+          grd.addColorStop(0.65, `rgba(180, 34, 20, ${0.55 * a})`);
+          grd.addColorStop(1, `rgba(255, 120, 40, ${0.75 * a})`);
+          ctx.fillStyle = grd;
+          ctx.beginPath();
+          ctx.moveTo(f.x, f.y);
+          ctx.arc(f.x, f.y, R, f.angle - half, f.angle + half);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = `rgba(40, 6, 4, ${0.9 * a})`;
+          ctx.lineWidth = 5;
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, R, f.angle - half, f.angle + half);
+          ctx.stroke();
+          // Cracks from the point of impact.
+          const ix = f.x + Math.cos(f.angle) * R * 0.75, iy = f.y + Math.sin(f.angle) * R * 0.75;
+          ctx.strokeStyle = `rgba(30, 18, 10, ${0.85 * a})`;
+          ctx.lineWidth = 2.5;
+          for (let i = 0; i < 5; i++) {
+            const ca = f.angle + (i - 2) * 0.7 + Math.sin(f.x + i) * 0.2;
+            const len = R * (0.25 + 0.12 * ((i * 37 + Math.round(f.x)) % 5) / 5);
+            ctx.beginPath();
+            ctx.moveTo(ix, iy);
+            ctx.lineTo(ix + Math.cos(ca + 0.3) * len * 0.5, iy + Math.sin(ca + 0.3) * len * 0.5);
+            ctx.lineTo(ix + Math.cos(ca) * len, iy + Math.sin(ca) * len);
+            ctx.stroke();
+          }
+          // Flying stone chips.
+          ctx.fillStyle = `rgba(110, 90, 70, ${a})`;
+          for (let i = 0; i < 6; i++) {
+            const ca = f.angle + (i - 2.5) * 0.45;
+            const d = 10 + p * 60 + i * 4;
+            ctx.fillRect(ix + Math.cos(ca) * d - 2.5, iy + Math.sin(ca) * d - 2.5 - Math.sin(p * Math.PI) * 14, 5, 5);
+          }
+          break;
+        }
         case 'slash':
-        case 'royal':
-        case 'chop':
         case 'paewang': {
           const st = ARC_STYLE[f.type];
           const full = f.arc >= 360;

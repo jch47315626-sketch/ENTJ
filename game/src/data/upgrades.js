@@ -179,6 +179,33 @@ function canUpgradeWeapon(g) {
   return (g.player.upgrades[next.requires.upgrade] ?? 0) >= next.requires.level;
 }
 
+/** Skill lines that end in a 궁극기 (data/skills.js). */
+const SKILL_LINES = { shin: SHIN, horse: HORSE, chain: CHAIN, tiger: TIGER, maguni: MAGUNI_LV };
+
+const upTitle = (id) => {
+  const u = UPGRADES.find((x) => x.id === id);
+  return u?.title ?? (typeof u?.name === 'string' ? u.name : id);
+};
+
+/** A hero's three 궁극기 for the hero screen: [{ name, from, need, desc }]. */
+export function heroUltimates(hero) {
+  const out = [];
+  const add = (levels, from) => {
+    const E = levels.findIndex((l) => l?.evolution);
+    if (E < 0) return;
+    const evo = levels[E];
+    const need = [`${from} ${E}단계`];
+    if (evo.requires) need.push(`${upTitle(evo.requires.upgrade)} Lv${evo.requires.level}`);
+    out.push({ name: evo.name, from, need, desc: evo.desc });
+  };
+  add(WEAPONS[hero.weapon].levels, `${WEAPONS[hero.weapon].levels[0].name}(주무기)`);
+  for (const id of hero.subWeapons ?? []) add(WEAPONS[id].levels, WEAPONS[id].levels[0].name);
+  for (const [id, L] of Object.entries(SKILL_LINES)) {
+    if (UPGRADES.find((u) => u.id === id)?.heroes?.includes(hero.id)) add(L, L[0].name);
+  }
+  return out;
+}
+
 /**
  * Checklist for every evolution the hero can still reach in this battle:
  * [{ name, checks: [{ id, label, now, need, done }], ready }] (`id`: the 책략 that raises it). An evolution
@@ -201,18 +228,15 @@ export function evolutionStatus(g) {
       const now = p.upgrades[evo.requires.upgrade] ?? 0;
       checks.push({ id: evo.requires.upgrade, label: upName(evo.requires.upgrade), now: Math.min(now, evo.requires.level), need: evo.requires.level, done: now >= evo.requires.level });
     }
-    list.push({ name: evo.name, checks, ready: checks.every((c) => c.done) });
+    list.push({ name: evo.name, checks, ready: checks.every((c) => c.done), owned: have > 0 });
   };
   const W = WEAPONS[p.weapon.id].levels;
   add('weapon', W, p.weapon.level + 1, W[0].name);
-  if (p.upgrades.shin) add('shin', SHIN, p.upgrades.shin, SHIN[0].name);
-  if (p.upgrades.horse) add('horse', HORSE, p.upgrades.horse, HORSE[0].name);
-  if (p.upgrades.chain) add('chain', CHAIN, p.upgrades.chain, CHAIN[0].name);
-  if (p.upgrades.tiger) add('tiger', TIGER, p.upgrades.tiger, TIGER[0].name);
-  if (p.upgrades.maguni) add('maguni', MAGUNI_LV, p.upgrades.maguni, MAGUNI_LV[0].name);
-  for (const id of p.hero.subWeapons ?? []) {
-    const lv = p.upgrades[id] ?? 0;
-    if (lv > 0) add(id, WEAPONS[id].levels, lv, WEAPONS[id].levels[0].name);
+  // Every 궁극기 the hero can reach shows from the start (dim until its 책략 is taken).
+  for (const id of p.hero.subWeapons ?? []) add(id, WEAPONS[id].levels, p.upgrades[id] ?? 0, WEAPONS[id].levels[0].name);
+  for (const [id, L] of Object.entries(SKILL_LINES)) {
+    if (!UPGRADES.find((u) => u.id === id)?.heroes?.includes(p.hero.id)) continue;
+    add(id, L, p.upgrades[id] ?? 0, L[0].name);
   }
   return list;
 }
