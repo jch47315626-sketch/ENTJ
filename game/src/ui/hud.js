@@ -1,4 +1,4 @@
-import { UPGRADES, evolutionStatus } from '../data/upgrades.js';
+import { UPGRADES, FALLBACKS, evolutionStatus } from '../data/upgrades.js';
 import { currentWeaponLevel } from '../systems/weapons.js';
 import { WEAPONS } from '../data/weapons.js';
 import { ORDERS, orderEvery } from '../systems/allies.js';
@@ -102,7 +102,7 @@ export class Hud {
     const p = g.player;
     const parts = [`<span class="weapon">${currentWeaponLevel(p).name}</span>`];
     for (const w of Object.values(p.subs)) parts.push(`<span class="weapon">${WEAPONS[w.id].levels[w.level].name}</span>`);
-    for (const u of UPGRADES) {
+    for (const u of [...UPGRADES, ...FALLBACKS]) {
       const lv = p.upgrades[u.id];
       if (!lv || u.subWeapon) continue;
       parts.push(u.ownedName ? `<span class="weapon">${u.ownedName(g)}</span>` : `<span>${u.name} ${lv}</span>`);

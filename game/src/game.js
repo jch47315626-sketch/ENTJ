@@ -65,11 +65,12 @@ class Player {
       maxHp,
       // 전고 (war drum object): faster steps and swings while it beats.
       speed: b.speed * (1 + 0.08 * u('swift') + (m.speed ?? 0)) * (this.drumUntil ? 1.2 : 1),
-      might: b.might * (1 + 0.15 * u('might') + (m.might ?? 0) + rage) * (this.tiger ? this.tiger.mul : 1),
+      might: b.might * (1 + 0.15 * u('might') + 0.02 * u('bMight') + (m.might ?? 0) + rage) * (this.tiger ? this.tiger.mul : 1),
       haste: b.haste * (1 - 0.1 * u('haste') - (m.haste ?? 0) - (rage ? 0.2 : 0)) * (this.drumUntil ? 0.75 : 1),
       area: b.area * (1 + 0.12 * u('area') + (m.area ?? 0)),
       pickup: b.pickup * (1 + 0.35 * u('magnet') + (m.pickup ?? 0)),
-      armor: b.armor + (m.armor ?? 0),
+      armor: (b.armor + (m.armor ?? 0)) * (1 + 0.02 * u('bArmor')),
+      leech: (m.leech ?? 0) + 0.0001 * u('bLeech'),
       momentumMul: 1 + 0.25 * u('momentum') + (m.momentum ?? 0),
       xpMul: 1 + (m.xp ?? 0),
       guard: u('guard'),
@@ -404,7 +405,7 @@ export class Game {
     if (opts?.stun) e.stun = Math.max(e.stun ?? 0, opts.stun * (e.isBoss ? 0.25 : 1));
     e.hp -= amount;
     // 결기 · 피 회복: a sliver of the damage dealt comes back as health.
-    const leech = this.player.meta.leech;
+    const leech = this.player.stats.leech;
     if (leech && !opts?.byEnemy) {
       const p = this.player;
       p.leechBank = (p.leechBank ?? 0) + Math.min(amount, Math.max(0, e.hp + amount)) * leech;
@@ -602,7 +603,7 @@ export class Game {
       category: u.category,
       name: typeof u.name === 'function' ? u.name(this) : u.name,
       desc: u.describe(this),
-      level: u.id === 'weapon' ? p.weapon.level + 2 : u.maxLevel === Infinity ? null : lvl(u) + 1,
+      level: u.id === 'weapon' ? p.weapon.level + 2 : u.maxLevel === Infinity ? (u.stack ? lvl(u) + 1 : null) : lvl(u) + 1,
       maxLevel: u.id === 'weapon' ? null : u.maxLevel,
       evolution: !!u.isEvolution?.(this),
       evoFor: u.isEvolution?.(this) ? null : evoNeed[u.id] ?? null,
@@ -613,7 +614,7 @@ export class Game {
   choose(index) {
     if (this.state !== 'levelup' || !this.choices?.[index]) return;
     const c = this.choices[index];
-    if (c.id !== 'weapon' && c.up.maxLevel !== Infinity) {
+    if (c.id !== 'weapon' && (c.up.maxLevel !== Infinity || c.up.stack)) {
       this.player.upgrades[c.id] = (this.player.upgrades[c.id] ?? 0) + 1;
     }
     c.up.apply(this);
@@ -763,7 +764,7 @@ export class Game {
   updateEnemies(dt) {
     const p = this.player;
     const slowR = 120;
-    const slow = 1 - 0.15 * p.stats.caltrops;
+    const slow = Math.max(0.2, 1 - 0.15 * p.stats.caltrops);
     for (const e of this.enemies) {
       if (e.dead) continue;
       const charmed = this.isCharmed(e);

@@ -6,7 +6,7 @@
  *                everything in a wide ring (about 50 soldiers' worth).
  *   🍖 노루고기 — half of max health back.
  *   🛢️ 등유    — for 3 s, every step leaves fire that lasts 10 s and burns
- *                foes (only foes) for twice the hero's attack each second.
+ *                foes (only foes) for three times the hero's attack each second.
  * In 무한 전장 the roll is made again every 5 minutes.
  */
 import { rand, TAU } from '../core/math.js';
@@ -19,7 +19,7 @@ export const FIELD_ITEMS = {
 };
 export const ITEM_LIFE = 40; // seconds an item waits on the ground
 export const BIG_TRAP = { fuse: 5, radius: 330, hpShare: 0.6, flat: 300, bossShare: 0.08 };
-export const KEROSENE = { time: 3, fireLife: 10, radius: 30, every: 0.07, mul: 2 };
+export const KEROSENE = { time: 3, fireLife: 10, radius: 30, every: 0.07, mul: 3 };
 
 /** Rolls which items drop in the window [from, to] and when. */
 function plan(g, from, to) {
