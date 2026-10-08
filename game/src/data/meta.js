@@ -7,7 +7,7 @@ import { treeNodes, TREASURES } from './trees.js';
  */
 
 /** Reward multiplier by difficulty stars (1–5). */
-export const REWARD_BY_STARS = { 1: 1, 2: 1.8, 3: 3, 4: 4.5, 5: 6.5 };
+export const REWARD_BY_STARS = { 1: 1, 2: 1.8, 3: 3, 4: 4.5, 5: 6.5, 6: 10 };
 
 /** Base 냥 for felling the boss (before the stage multiplier). */
 export const BOSS_REWARD = 400;
@@ -252,6 +252,11 @@ export function itemBonus(item, lv = 0) {
  * hero to wear at least `count` pieces of that grade or better.
  */
 export function entryCheck(save, heroId, stage) {
+  // A field that opens only after another is cleared (치악산 after 일리천).
+  if (stage.unlockAfter && !save.best?.[stage.unlockAfter]) {
+    const text = '일리천을 평정하면 열려요';
+    return { ok: false, have: 0, need: 1, text, locked: true };
+  }
   const req = stage.require;
   if (!req) return { ok: true };
   const outfit = save.equipped[heroId] ?? {};

@@ -32,6 +32,7 @@ export const ACHIEVEMENTS = [
   { id: 'star3', group: 'war', icon: '🌟', name: '고창의 승전보', desc: '★3 전장을 평정한다', reward: 1500, check: (s) => bestStars(s) >= 3 },
   { id: 'star4', group: 'war', icon: '💫', name: '철원의 주인', desc: '★4 전장을 평정한다', reward: 4000, check: (s) => bestStars(s) >= 4 },
   { id: 'star5', group: 'war', icon: '👑', name: '삼한 통일', desc: '★5 일리천을 평정한다', reward: 10000, check: (s) => bestStars(s) >= 5 },
+  { id: 'star6', group: 'war', icon: '🏔️', name: '초적왕 토벌', desc: '치악산 북원에서 돌아온 양길을 쓰러뜨린다', reward: 25000, check: (s) => bestStars(s) >= 6 },
   { id: 'kills1k', group: 'war', icon: '🗡️', name: '천인참', desc: '적을 모두 합쳐 1,000명 쓰러뜨린다', reward: 500, goal: (s) => [totalKills(s), 1000] },
   { id: 'kills10k', group: 'war', icon: '⚔️', name: '만인적', desc: '적을 모두 합쳐 10,000명 쓰러뜨린다', reward: 4000, goal: (s) => [totalKills(s), 10000] },
   { id: 'bosses10', group: 'war', icon: '💀', name: '적장 사냥꾼', desc: '적장을 10번 쓰러뜨린다', reward: 1500, goal: (s) => [s.stats.bosses ?? 0, 10] },

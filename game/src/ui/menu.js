@@ -481,7 +481,11 @@ const MAP_POS = {
   gochang: [74, 44],
   cheorwon: [44, 14],
   illicheon: [58, 56],
+  bukwon: [62, 27],
 };
+
+/** Gear grade worth wearing for each difficulty (data/meta.js GRADES). */
+const REC_GRADE = { 2: 3, 3: 5, 4: 6, 5: 8, 6: 8 };
 
 export function renderMap(save, sel, act) {
   const body = $('mapBody');
@@ -517,7 +521,7 @@ export function renderMap(save, sel, act) {
     <ul class="sd-rows">
       <li><span>🪙 보상</span><b>×${REWARD_BY_STARS[st.difficulty.stars]}</b></li>
       <li><span>⚔️ 적장</span><b>${boss.name}</b></li>
-      <li><span>🛡️ 권장 장비</span><b>${st.difficulty.stars > 1 ? `${GRADES[st.difficulty.stars].name} 이상` : '없어도 OK'}</b></li>
+      <li><span>🛡️ 권장 장비</span><b>${st.difficulty.stars > 1 ? `${GRADES[REC_GRADE[st.difficulty.stars]].name}${st.difficulty.stars > 5 ? ' +제련' : ' 이상'}` : '없어도 OK'}</b></li>
       <li><span>🏆 기록</span><b>${cleared ? '평정함' : '아직'}</b></li>
     </ul>`;
   card.append(button('출진 준비 ▶', 'seal-btn', () => act.go('prep')));

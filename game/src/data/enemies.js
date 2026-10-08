@@ -52,6 +52,43 @@ export const ENEMIES = {
     look: { body: '#7a2e24', accent: '#2e1410', hat: 'heavyHelmet', weapon: 'spear', mount: '#2d241c' },
   },
 
+  // ---- 양길의 북원 초적 (치악산 전장): different patterns from the rest ----
+  slinger: {
+    id: 'slinger', name: '투석병', tier: 2, hp: 22, speed: 52, damage: 5, radius: 12, xp: 3,
+    behavior: 'lobber', knockResist: 0.1,
+    // Hurls a stone where the hero is heading; it lands after `flight` on a warned spot.
+    params: { keepMin: 200, keepMax: 290, fireEvery: 3.0, flight: 1.0, radius: 46, rockDamage: 13, lead: 0.8 },
+    look: { body: '#5c4a3a', accent: '#2a2018', hat: 'band', weapon: 'knife' },
+  },
+  axeman: {
+    id: 'axeman', name: '도끼 광전사', tier: 3, hp: 72, speed: 64, damage: 10, radius: 15, xp: 5,
+    behavior: 'whirl', knockResist: 0.6,
+    // Closes in, winds up, then whirls his axes while still walking at you.
+    params: { trigger: 115, windup: 0.55, spinTime: 1.5, spinRadius: 64, spinDamage: 9, spinEvery: 0.3, spinSpeed: 0.75, cooldown: 3.2 },
+    look: { body: '#6e2f22', accent: '#2a120c', hat: 'band', weapon: 'glaive', bulk: 1.12 },
+  },
+  trapper: {
+    id: 'trapper', name: '덫꾼', tier: 2, hp: 26, speed: 84, damage: 5, radius: 12, xp: 3,
+    behavior: 'trapper', knockResist: 0,
+    // Runs close, plants a spike trap in your path, then runs away.
+    params: { plantRange: 150, cooldown: 4.5, trapRadius: 30, trapDps: 28, trapSlow: 0.5, trapLife: 14, flee: 1.4 },
+    look: { body: '#4f5a3a', accent: '#232a18', hat: 'hood', weapon: 'knife' },
+  },
+  shaman: {
+    id: 'shaman', name: '무당', tier: 3, hp: 42, speed: 46, damage: 4, radius: 13, xp: 6,
+    behavior: 'shaman', knockResist: 0.2,
+    // Stays back; every few seconds heals the foes around her and speeds them up.
+    params: { keepMin: 250, keepMax: 330, every: 4.5, radius: 210, heal: 0.2, buff: 4 },
+    look: { body: '#e8dfd0', accent: '#8a2a4a', hat: 'monk', weapon: 'staff', trim: '#c0392b' },
+  },
+  mole: {
+    id: 'mole', name: '땅굴병', tier: 3, hp: 40, speed: 60, damage: 9, radius: 13, xp: 5,
+    behavior: 'burrow', knockResist: 0.3,
+    // Burrows (untouchable), tunnels toward the hero, bursts out under a warned circle.
+    params: { underTime: 2.4, underSpeed: 165, warn: 0.75, popRadius: 54, popDamage: 16, surfaceTime: 3.0 },
+    look: { body: '#6b5236', accent: '#2e2216', hat: 'helmet', weapon: 'spear' },
+  },
+
   cart: {
     id: 'cart', name: '군량 수레', hp: 25, speed: 0, damage: 0, radius: 20, xp: 0,
     behavior: 'static', knockResist: 1, drop: 'rice', noScaling: true,

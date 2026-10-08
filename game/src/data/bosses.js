@@ -268,4 +268,42 @@ export const BOSSES = {
     ],
     enrage: { below: 0.2, speedMul: 1.15, cooldownMul: 0.75, banner: '왕건 — "삼한은 하나가 되어야 한다!"' },
   },
+
+  // 치악산 북원: 궁예를 거두었던 옛 주인, 사라졌던 초적왕이 돌아온다.
+  yanggil: {
+    id: 'yanggil',
+    name: '양길',
+    hanja: '梁吉',
+    epithet: '돌아온 북원의 초적왕',
+    hp: 12000, speed: 84, radius: 34, damage: 19, knockResist: 0.97, xp: 0,
+    look: { body: '#3c4a2e', accent: '#1d2416', hat: 'heavyHelmet', weapon: 'glaive', trim: '#b8a070', skin: '#d8b896', beard: '#8a8a86', brows: 'angry', bulk: 1.3, cape: '#5a1a14' },
+    patterns: [
+      { type: 'chase', time: 1.5 },
+      { type: 'rockfall', windup: 1.0, count: 6, spread: 230, radius: 50, damage: 24, life: 14 },
+      { type: 'chase', time: 1.1 },
+      { type: 'spin', windup: 0.65, radius: 175, damage: 26, repeat: 2 },
+      { type: 'summon', enemy: 'axeman', count: 4, banner: '양길 — "도끼를 들어라!"' },
+      { type: 'dash', windup: 0.55, speed: 640, distance: 460, damage: 26, repeat: 3 },
+      { type: 'fan', windup: 0.5, count: 9, spread: 90, speed: 330, damage: 14, kind: 'arrow' },
+    ],
+    phase2: {
+      below: 0.5, speedMul: 1.2, invuln: 1.6,
+      banner: '양길이 산을 울린다 — 치악산이 무너져 내린다!',
+      look: { body: '#4a2a1c', accent: '#1d1410', hat: 'heavyHelmet', weapon: 'greatsword', trim: '#d8b46a', skin: '#d8b896', beard: '#9a9a96', brows: 'angry', bulk: 1.38, cape: '#7a1a10', blush: 'rgba(200, 40, 30, 0.5)' },
+      patterns: [
+        { type: 'rockfall', windup: 0.9, count: 10, spread: 300, radius: 52, damage: 26, life: 16 },
+        { type: 'chase', time: 0.9 },
+        { type: 'spin', windup: 0.55, radius: 185, damage: 28, repeat: 3 },
+        { type: 'firePots', windup: 0.7, count: 6, spread: 180, radius: 60, dps: 26, life: 3.2 },
+        { type: 'dash', windup: 0.5, speed: 660, distance: 460, damage: 28, repeat: 3 },
+        { type: 'summon', enemy: 'mole', count: 5, banner: '땅이 꺼진다 — 땅굴병이 솟는다!' },
+      ],
+    },
+    summons: [
+      { atHpRatio: 0.8, enemy: 'shaman', count: 3, banner: '무당들이 양길을 위해 굿을 벌인다!' },
+      { atHpRatio: 0.6, enemy: 'trapper', count: 6, banner: '덫꾼들이 사방에 덫을 깐다!' },
+      { atHpRatio: 0.3, enemy: 'slinger', count: 8, banner: '산등성이의 투석병들!' },
+    ],
+    enrage: { below: 0.2, speedMul: 1.2, cooldownMul: 0.7, banner: '양길 — "궁예 그놈을 키운 것이 내 평생의 한이다!"' },
+  },
 };

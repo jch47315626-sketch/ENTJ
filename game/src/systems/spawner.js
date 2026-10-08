@@ -1,5 +1,6 @@
 import { pickWeighted, rand, lerp, TAU } from '../core/math.js';
 import { ENDLESS } from '../data/endless.js';
+import { rockfall } from './terrain.js';
 
 /** Drives the stage timeline: spawn rates, events, supply carts and the boss. */
 export class Spawner {
@@ -112,6 +113,14 @@ export class Spawner {
         e.hp = e.maxHp;
         g.fx.push({ type: 'eye', x: e.x, y: e.y - e.r - 6, t: 0, life: 1, follow: e, size: 9 });
       }
+    } else if (ev.type === 'rockslide') {
+      // 낙석: boulders rain down around the hero; each stays as an obstacle.
+      const spots = [];
+      for (let i = 0; i < ev.count; i++) {
+        const a = rand(0, TAU), d = i === 0 ? 0 : rand(80, 380);
+        spots.push({ x: p.x + Math.cos(a) * d, y: p.y + Math.sin(a) * d });
+      }
+      rockfall(g, spots, { warn: 1.3, radius: ev.radius, damage: ev.damage * (g.stage.difficulty.enemyDamage ?? 1), life: 18 });
     } else if (ev.type === 'night') {
       // 관심법의 밤: sight shrinks; an assassin squad slips in under it.
       g.darkTotal = ev.life;

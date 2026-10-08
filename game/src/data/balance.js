@@ -22,4 +22,4 @@ export const BOSS_BOOST = { hp: 1.6, damage: 1.3 };
 export const HP_REGEN = 0.001;
 
 /** Enemy armour by stage stars: share of every hit that is shrugged off. */
-export const ENEMY_ARMOR = { 1: 0.05, 2: 0.1, 3: 0.15, 4: 0.2, 5: 0.25 };
+export const ENEMY_ARMOR = { 1: 0.05, 2: 0.1, 3: 0.15, 4: 0.2, 5: 0.25, 6: 0.3 };

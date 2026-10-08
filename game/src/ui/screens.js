@@ -5,7 +5,7 @@ import { NANSE_CARDS } from '../data/nanse.js';
 const $ = (id) => document.getElementById(id);
 const MENUS = ['home', 'heroes', 'grow', 'map', 'prep', 'nanse', 'codex'];
 const SCREENS = [...MENUS, 'intro', 'levelup', 'pause', 'result'];
-export const starText = (n) => '★'.repeat(n) + '☆'.repeat(5 - n);
+export const starText = (n) => (n > 5 ? '★★★★★💀' : '★'.repeat(n) + '☆'.repeat(5 - n));
 
 /** Shows one overlay screen (or none during play). The bottom menu shows on menu screens. */
 export function showScreen(name) {

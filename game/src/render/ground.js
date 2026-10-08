@@ -404,4 +404,51 @@ export const GROUNDS = {
       }
     }
   },
+
+  /** 치악산 북원: dark mountain scree, moss, pine litter and drifting mist. */
+  mountainPass(ctx, v, time) {
+    ctx.fillStyle = '#4a4d42';
+    ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
+    const tx0 = Math.floor(v.x0 / TILE) - 1, tx1 = Math.floor(v.x1 / TILE) + 1;
+    const ty0 = Math.floor(v.y0 / TILE) - 1, ty1 = Math.floor(v.y1 / TILE) + 1;
+    for (let tx = tx0; tx <= tx1; tx++) {
+      for (let ty = ty0; ty <= ty1; ty++) {
+        const ox = tx * TILE, oy = ty * TILE;
+        const h = hash2(tx, ty, 601);
+        // Moss and bare earth.
+        ctx.fillStyle = h < 0.5 ? 'rgba(84, 104, 60, 0.45)' : 'rgba(96, 82, 62, 0.35)';
+        ctx.beginPath();
+        ctx.ellipse(ox + hash2(tx, ty, 602) * TILE, oy + hash2(tx, ty, 603) * TILE, 60 + h * 80, 34 + h * 30, h * 3, 0, Math.PI * 2);
+        ctx.fill();
+        // Scree: little grey stones.
+        ctx.fillStyle = 'rgba(150, 146, 136, 0.55)';
+        for (let i = 0; i < 6; i++) {
+          const x = ox + hash2(tx, ty, 610 + i) * TILE, y = oy + hash2(tx, ty, 620 + i) * TILE;
+          ctx.beginPath();
+          ctx.ellipse(x, y, 3 + hash2(tx, ty, 630 + i) * 5, 2 + hash2(tx, ty, 640 + i) * 3, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // Pine needles.
+        ctx.strokeStyle = 'rgba(110, 72, 40, 0.5)';
+        ctx.lineWidth = 1.2;
+        for (let i = 0; i < 5; i++) {
+          const x = ox + hash2(tx, ty, 650 + i) * TILE, y = oy + hash2(tx, ty, 660 + i) * TILE, a = hash2(tx, ty, 670 + i) * 3;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + Math.cos(a) * 9, y + Math.sin(a) * 9);
+          ctx.stroke();
+        }
+      }
+    }
+    // Mountain mist drifting across.
+    for (let k = 0; k < 3; k++) {
+      const y = v.y0 + ((k * 0.37 + time * 0.01) % 1) * (v.y1 - v.y0);
+      const x = v.x0 + ((k * 0.61 + time * 0.02) % 1) * (v.x1 - v.x0);
+      const grd = ctx.createRadialGradient(x, y, 0, x, y, 260);
+      grd.addColorStop(0, 'rgba(220, 224, 230, 0.12)');
+      grd.addColorStop(1, 'rgba(220, 224, 230, 0)');
+      ctx.fillStyle = grd;
+      ctx.fillRect(x - 260, y - 260, 520, 520);
+    }
+  },
 };

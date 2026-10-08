@@ -1,4 +1,5 @@
 import { GROUNDS } from './ground.js';
+import { drawBogs, drawRocks } from './terrain.js';
 import { drawUnit, drawCart, drawCoin, drawRice, drawProjectile } from './sprites.js';
 import { clamp, TAU } from '../core/math.js';
 
@@ -129,12 +130,14 @@ export class Renderer {
     ctx.translate(-cam.x, -cam.y);
 
     GROUNDS[g.stage.ground](ctx, v, g.time);
+    drawBogs(ctx, g, v);
     // Soft dusk tint: keeps the field calm so units and pickups stand out.
     ctx.fillStyle = 'rgba(24, 20, 36, 0.18)';
     ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
     if (g.arena) this.drawArenaFloor(ctx, g, v);
     this.drawCaltrops(ctx, g);
     this.drawZones(ctx, g);
+    drawRocks(ctx, g, v);
     this.drawHalos(ctx, g);
 
     for (const k of g.pickups) {
@@ -378,6 +381,30 @@ export class Renderer {
   drawZones(ctx, g) {
     for (const z of g.zones) {
       const a = 1 - z.t / z.life;
+      if (z.kind === 'spikes') {
+        // 덫꾼's spike trap: a dark ring of iron spikes.
+        const al = Math.min(1, a * 4);
+        ctx.fillStyle = `rgba(60, 20, 16, ${0.45 * al})`;
+        ctx.beginPath();
+        ctx.arc(z.x, z.y, z.r, 0, TAU);
+        ctx.fill();
+        ctx.strokeStyle = `rgba(200, 60, 40, ${0.8 * al})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = `rgba(190, 190, 200, ${0.95 * al})`;
+        for (let i = 0; i < 7; i++) {
+          const ang = (i / 7) * TAU + z.x * 0.01;
+          const rr = i === 0 ? 0 : z.r * 0.6;
+          const x = z.x + Math.cos(ang) * rr, y = z.y + Math.sin(ang) * rr;
+          ctx.beginPath();
+          ctx.moveTo(x, y - 7);
+          ctx.lineTo(x - 4, y + 3);
+          ctx.lineTo(x + 4, y + 3);
+          ctx.closePath();
+          ctx.fill();
+        }
+        continue;
+      }
       if (z.kind === 'crack') {
         ctx.fillStyle = `rgba(40, 28, 20, ${0.35 * a})`;
         ctx.beginPath();
@@ -496,8 +523,24 @@ export class Renderer {
       drawCart(ctx, e.x, e.y, e.r, e.flash > 0);
       return;
     }
-    const windup = e.state === 'windup' || (e.isBoss && e.ps === 'windup');
+    if (e.hidden) {
+      // 땅굴병 underground: only a moving mound of earth shows.
+      const w = Math.sin(g.time * 20 + e.seed * 9) * 2;
+      ctx.fillStyle = 'rgba(92, 70, 44, 0.9)';
+      ctx.beginPath();
+      ctx.ellipse(e.x, e.y + 4, e.r * 1.2 + w, e.r * 0.6, 0, Math.PI, TAU);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(60, 44, 28, 0.9)';
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.arc(e.x - e.r + i * e.r, e.y + 4 - Math.abs(Math.sin(g.time * 14 + i)) * 6, 3, 0, TAU);
+        ctx.fill();
+      }
+      return;
+    }
+    const windup = e.state === 'windup' || e.state === 'rise' || (e.isBoss && e.ps === 'windup');
     let aura;
+    if (e.hasteUntil > g.time) aura = `rgba(230, 90, 160, ${0.3 + 0.12 * Math.sin(g.time * 10 + e.seed * 6)})`;
     if (e.isBoss && e.enraged) aura = `rgba(179, 38, 30, ${0.18 + 0.08 * Math.sin(g.time * 8)})`;
     const charmed = g.isCharmed(e);
     if (charmed) aura = `rgba(150, 100, 210, ${0.3 + 0.12 * Math.sin(g.time * 6 + e.seed * 6)})`;
@@ -809,6 +852,48 @@ export class Renderer {
           ctx.lineWidth = st.width;
           ctx.beginPath();
           ctx.arc(f.x, f.y, f.range, a0, a1);
+          ctx.stroke();
+          break;
+        }
+        case 'lob': {
+          // 투석병's stone arcing through the air.
+          const k = Math.min(1, p);
+          const x = f.x + (f.x1 - f.x) * k, y = f.y + (f.y1 - f.y) * k - Math.sin(k * Math.PI) * 90;
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+          ctx.beginPath();
+          ctx.ellipse(f.x + (f.x1 - f.x) * k, f.y + (f.y1 - f.y) * k, 6, 3, 0, 0, TAU);
+          ctx.fill();
+          ctx.fillStyle = '#7a7268';
+          ctx.strokeStyle = '#26231f';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(x, y, 7, 0, TAU);
+          ctx.fill();
+          ctx.stroke();
+          break;
+        }
+        case 'whirl': {
+          // 도끼 광전사's whirl: a ring of blurred axe blades.
+          const a = 1 - p;
+          ctx.strokeStyle = `rgba(200, 60, 40, ${0.7 * a})`;
+          ctx.lineWidth = 6;
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, f.range * 0.85, f.angle, f.angle + Math.PI * 1.4);
+          ctx.stroke();
+          ctx.strokeStyle = `rgba(230, 230, 220, ${0.8 * a})`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, f.range * 0.85, f.angle + 0.3, f.angle + Math.PI * 1.2);
+          ctx.stroke();
+          break;
+        }
+        case 'pulse': {
+          // 무당's blessing spreading out.
+          const a = 1 - p;
+          ctx.strokeStyle = `rgba(230, 90, 160, ${0.75 * a})`;
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, f.range * (0.2 + 0.8 * p), 0, TAU);
           ctx.stroke();
           break;
         }

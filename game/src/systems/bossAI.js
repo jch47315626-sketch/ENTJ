@@ -1,3 +1,4 @@
+import { rockfall } from './terrain.js';
 /**
  * Boss pattern runner. A boss cycles through BossDef.patterns; every
  * attacking pattern has a wind-up with a visible telegraph.
@@ -153,6 +154,25 @@ const PRED = (g, lead) => {
 };
 
 Object.assign(BOSS_PATTERNS, {
+  /** 낙석: boulders crash on warned spots around the hero and stay as obstacles a while. */
+  rockfall: {
+    start(g, b, P) {
+      const p = g.player;
+      b.pt = P.windup * b.cooldownMul;
+      const spots = [{ x: p.x + p.vx * 0.5, y: p.y + p.vy * 0.5 }];
+      for (let i = 1; i < P.count; i++) {
+        const a = Math.random() * Math.PI * 2, d = P.spread * (0.35 + 0.65 * Math.random());
+        spots.push({ x: p.x + Math.cos(a) * d, y: p.y + Math.sin(a) * d });
+      }
+      rockfall(g, spots, { warn: b.pt, radius: P.radius, damage: P.damage * b.damageMul, life: P.life });
+    },
+    update(g, b, P, dt) {
+      b.vx = b.vy = 0;
+      b.pt -= dt;
+      return b.pt <= 0;
+    },
+  },
+
   /** Calls a squad in a ring around the boss (capped so it cannot snowball). */
   summon: {
     start(g, b, P) {

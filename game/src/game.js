@@ -20,6 +20,7 @@ import { ENDLESS, makeEndless, endlessSurge } from './data/endless.js';
 import { applyNanse } from './data/nanse.js';
 import { Spawner } from './systems/spawner.js';
 import { updateSkills } from './systems/skills.js';
+import { updateTerrain, inBog } from './systems/terrain.js';
 
 /** 공훈 needed for the next level: gentle at first, steeper and steeper later on. */
 export const XP_TO_NEXT = (lv) => Math.floor((5 + 3 * lv + Math.floor(0.2 * lv * lv)) * (1 + 0.045 * Math.max(0, lv - 10)));
@@ -217,7 +218,7 @@ export class Game {
   nearestEnemy(x, y, maxR) {
     let best = null, bd = maxR * maxR;
     this.grid.query(x, y, maxR, (e) => {
-      if (e.dead || e.def.behavior === 'static' || this.isCharmed(e)) return;
+      if (e.dead || e.hidden || e.def.behavior === 'static' || this.isCharmed(e)) return;
       const d = dist2(x, y, e.x, e.y);
       if (d < bd) {
         bd = d;
@@ -230,7 +231,7 @@ export class Game {
   nearestEnemies(x, y, maxR, n) {
     const found = [];
     this.grid.query(x, y, maxR, (e) => {
-      if (e.dead || e.def.behavior === 'static' || this.isCharmed(e)) return;
+      if (e.dead || e.hidden || e.def.behavior === 'static' || this.isCharmed(e)) return;
       const d = dist2(x, y, e.x, e.y);
       if (d <= maxR * maxR) found.push({ e, d });
     });
@@ -377,7 +378,7 @@ export class Game {
   // ----------------------------------------------------------------- combat
 
   damageEnemy(e, amount, sx, sy, knockback = 0, opts) {
-    if (e.dead) return;
+    if (e.dead || e.hidden) return; // 땅굴병 underground
     if (e.isBoss && this.bossIntro > 0) return;
     // Charmed units only take blows from other enemies; the hero spares them.
     if (this.isCharmed(e) && !opts?.byEnemy) return;
@@ -681,6 +682,9 @@ export class Game {
       for (const z of this.zones) {
         if (z.team === 'enemy' && z.slow && dist2(z.x, z.y, p.x, p.y) < z.r * z.r) spd *= 1 - z.slow;
       }
+      // 늪: the hero's feet sink (not on horseback).
+      p.inBog = !p.mount && inBog(this, p.x, p.y);
+      if (p.inBog) spd *= 1 - (this.stage.terrain.bogSlow ?? 0.4);
       p.vx = move.x * spd;
       p.vy = move.y * spd;
       p.x += p.vx * dt;
@@ -719,6 +723,7 @@ export class Game {
     updateFieldObjects(this, dt);
     this.taunts = this.allies.filter((a) => a.lure && !a.dead);
     this.updateEnemies(dt);
+    updateTerrain(this);
     this.updateProjectiles(dt);
     this.updateZones(dt);
     this.updatePickups(dt);
@@ -756,6 +761,8 @@ export class Game {
         BEHAVIORS[e.def.behavior](this, e, dt);
       }
       let mul = 1;
+      // 무당's blessing: faster for a while.
+      if (e.hasteUntil > this.time) mul *= 1.35;
       if (p.stats.caltrops && !e.isBoss && dist2(e.x, e.y, p.x, p.y) < slowR * slowR) mul = slow;
       for (const z of this.zones) {
         if (z.team === 'player' && z.slow && dist2(z.x, z.y, e.x, e.y) < z.r * z.r) mul *= e.isBoss ? 1 - z.slow * 0.4 : 1 - z.slow;
@@ -821,7 +828,7 @@ export class Game {
       }
 
       // Contact damage.
-      const dmg = e.contactDamage ?? e.damage;
+      const dmg = e.hidden ? 0 : e.contactDamage ?? e.damage;
       if (dmg > 0 && !charmed) {
         const rr = e.r + p.r - 2;
         if (dist2(e.x, e.y, p.x, p.y) < rr * rr && this.hurtPlayer(dmg, e.isBoss ? 'boss' : e.def.id, e) && p.meta.thorns) {
@@ -867,7 +874,7 @@ export class Game {
         }
       } else {
         this.grid.query(pr.x, pr.y, pr.r + (pr.span ?? 0) + 30, (e) => {
-          if (pr.life <= 0 || e.dead || pr.hit.has(e) || this.isCharmed(e)) return;
+          if (pr.life <= 0 || e.dead || e.hidden || pr.hit.has(e) || this.isCharmed(e)) return;
           if (pr.span ? hitsBlade(pr, e) : dist2(pr.x, pr.y, e.x, e.y) < (pr.r + e.r) ** 2) {
             pr.hit.add(e);
             this.damageEnemy(e, pr.damage, pr.x - pr.vx * 0.05, pr.y - pr.vy * 0.05, pr.knockback, pr.stun ? { stun: pr.stun } : undefined);
@@ -944,7 +951,7 @@ export class Game {
         z.tick = (z.tick ?? 0) - dt;
         if (z.tick <= 0) {
           z.tick = 0.5;
-          this.hurtPlayer(z.dps * 0.5, 'boss');
+          this.hurtPlayer(z.dps * 0.5, z.source ?? 'boss');
         }
       }
       if (z.team === 'player' && z.dps) {
