@@ -116,7 +116,7 @@ export const UPGRADES = [
   },
   {
     id: 'magnet', name: '수습', category: '지세', maxLevel: 3, weight: 7,
-    describe: () => '엽전을 끌어오는 거리 +35%',
+    describe: () => '아이템 끌어오는 거리 +35%',
     apply: (g) => g.player.recalc(),
   },
 ];
