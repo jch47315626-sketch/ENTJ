@@ -69,7 +69,9 @@ class Player {
       haste: b.haste * (1 - 0.1 * u('haste') - (m.haste ?? 0) - (rage ? 0.2 : 0)) * (this.drumUntil ? 0.75 : 1),
       area: b.area * (1 + 0.12 * u('area') + (m.area ?? 0)),
       pickup: b.pickup * (1 + 0.35 * u('magnet') + (m.pickup ?? 0)),
-      armor: (b.armor + (m.armor ?? 0)) * (1 + 0.02 * u('bArmor')),
+      armor: b.armor + (m.armor ?? 0),
+      // 단단한 갑옷: each stack takes 2% off what is left of every blow.
+      taken: 0.98 ** u('bArmor'),
       leech: (m.leech ?? 0) + 0.0001 * u('bLeech'),
       momentumMul: 1 + 0.25 * u('momentum') + (m.momentum ?? 0),
       xpMul: 1 + (m.xp ?? 0),
@@ -519,6 +521,7 @@ export class Game {
     let dmg = Math.max(1, amount * (1 - armorCut(p.stats.armor + (p.wall ?? 0))));
     // 호위진: the bodyguards take a share of every blow.
     if (p.wardUntil > this.time) dmg = Math.max(1, dmg * 0.6);
+    dmg = Math.max(1, dmg * p.stats.taken);
     // 신의 분노 goes straight through armour and guards.
     if (opts?.pierce) dmg = amount;
     this.damageLog[source] = (this.damageLog[source] ?? 0) + dmg;
@@ -764,7 +767,7 @@ export class Game {
   updateEnemies(dt) {
     const p = this.player;
     const slowR = 120;
-    const slow = Math.max(0.2, 1 - 0.15 * p.stats.caltrops);
+    const slow = 1 - 0.15 * p.stats.caltrops;
     for (const e of this.enemies) {
       if (e.dead) continue;
       const charmed = this.isCharmed(e);

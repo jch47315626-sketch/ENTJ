@@ -110,7 +110,7 @@ export const UPGRADES = [
     },
   },
   {
-    id: 'caltrops', name: '마름쇠', category: '지세', maxLevel: 5, weight: 7,
+    id: 'caltrops', name: '마름쇠', category: '지세', maxLevel: 3, weight: 7,
     describe: () => '주변 적의 이동 속도 −15%',
     apply: (g) => g.player.recalc(),
   },
@@ -124,7 +124,7 @@ export const UPGRADES = [
 /** Offered only when every other 책략 is maxed: small stats that stack without end. */
 export const FALLBACKS = [
   { id: 'bMight', name: '단련', category: '보급', maxLevel: Infinity, stack: true, describe: () => '공격력 +2%', apply: (g) => g.player.recalc() },
-  { id: 'bArmor', name: '단단한 갑옷', category: '보급', maxLevel: Infinity, stack: true, describe: () => '방어력 +2%', apply: (g) => g.player.recalc() },
+  { id: 'bArmor', name: '단단한 갑옷', category: '보급', maxLevel: Infinity, stack: true, describe: () => '받는 피해 −2%', apply: (g) => g.player.recalc() },
   { id: 'bLeech', name: '흡혈', category: '보급', maxLevel: Infinity, stack: true, describe: () => '피 회복 +0.01% (준 피해의 일부만큼 체력 회복)', apply: (g) => g.player.recalc() },
 ];
 
