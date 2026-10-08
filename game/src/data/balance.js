@@ -13,7 +13,7 @@ export const enemyDamageScale = (t) => 0.45 + 0.55 * Math.min(1, t / 240);
  * Global toughness on top of every stage's own multipliers (applies to
  * regular enemies and bosses alike). Does not raise the 공훈 they drop.
  */
-export const ENEMY_BOOST = { hp: 1.3, damage: 1.45 };
+export const ENEMY_BOOST = { hp: 1.3, damage: 1.6 };
 
 /** Extra toughness for bosses only, on top of ENEMY_BOOST. */
 export const BOSS_BOOST = { hp: 1.6, damage: 1.3 };

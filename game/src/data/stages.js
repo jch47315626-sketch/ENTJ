@@ -13,7 +13,7 @@ export const STAGES = {
     intro: '903년, 왕건의 수군이 나주에 닿는다. 서남해의 해적 두령 능창이 갯벌에서 기다린다.',
     ground: 'tidalFlat',
     // Stage-wide multipliers on top of the time curves in data/balance.js.
-    difficulty: { label: '쉬움', stars: 1, enemyHp: 1.45, enemyDamage: 1.32, spawnRate: 1.2, eliteBonus: 0.06, bossHp: 1.35, bossDamage: 1.35 },
+    difficulty: { label: '쉬움', stars: 1, enemyHp: 1.45, enemyDamage: 1.2, spawnRate: 1.2, eliteBonus: 0.06, bossHp: 1.35, bossDamage: 1.35 },
     clearText: '서남해의 뱃길이 고려에 열린다.',
     next: 'gongsan',
     bossAt: 300,

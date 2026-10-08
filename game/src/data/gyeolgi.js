@@ -11,11 +11,13 @@ export const GYEOLGI = [
   { id: 'gSpeed', icon: '👣', name: '결기 · 신속', per: { speed: 0.02 }, grow: 1.4, text: '이동 +2%' },
   { id: 'gMomentum', icon: '🔥', name: '결기 · 기세', per: { momentum: 0.04 }, grow: 1.3, text: '기세 충전 +4%' },
   { id: 'gXp', icon: '⭐', name: '결기 · 공훈', per: { xp: 0.03 }, grow: 1.4, text: '공훈 +3%' },
+  // 피 회복: a flat 500 per stack, at most 10 stacks (0.1% of damage dealt in all).
+  { id: 'gLeech', icon: '🩸', name: '결기 · 피 회복', per: { leech: 0.0001 }, cost: 500, max: 10, text: '준 피해의 0.01%만큼 체력 회복' },
 ];
 export const GYEOLGI_FIRST = 100;
 
 /** 결기수정 needed for the next stack of `g` at level `lv`. */
-export const gyeolgiCost = (g, lv) => Math.round(GYEOLGI_FIRST * g.grow ** lv);
+export const gyeolgiCost = (g, lv) => g.cost ?? Math.round(GYEOLGI_FIRST * g.grow ** lv);
 
 /** Every stack bought, as one bonus object (added in data/meta.js metaBonus). */
 export function gyeolgiBonus(save) {

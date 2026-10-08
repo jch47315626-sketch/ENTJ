@@ -455,6 +455,22 @@ export function renderGrow(save, sel, act) {
   body.append(header('📈 성장', save, act));
   const grid = el('div', 'grow-grid');
 
+  // 결기 상점: 무한 전장's 결기수정 buy permanent stacks.
+  const gy = el('div', 'grow-card gyeolgi-card');
+  gy.id = 'gyeolgiShop';
+  gy.append(el('h3', '', `💎 결기 상점 <small>모든 영웅 · 무한 전장에서 모은 결기수정 <b class="gy-have">💎 ${fmt(save.crystals ?? 0)}</b></small>`));
+  for (const g of GYEOLGI) {
+    const lv = save.gyeolgi?.[g.id] ?? 0;
+    const cost = gyeolgiCost(g, lv);
+    const row = el('div', `grow-row${lv ? ' on' : ''}`);
+    row.innerHTML = `<span class="gr-icon">${g.icon}</span><div class="gr-text"><b>${g.name} <i>${lv}${g.max ? `/${g.max}` : ''}스택</i></b><span>스택마다 ${g.text}</span><small>${g.max ? `스택마다 💎 ${g.cost} · 최대 ${g.max}스택` : `다음 스택 ×${g.grow}씩 비싸져요`}</small></div>`;
+    if (g.max && lv >= g.max) row.append(tag('완료'));
+    else row.append(button(`💎 ${fmt(cost)}`, 'buy-btn gy-btn', () => act.buyGyeolgi(g), (save.crystals ?? 0) < cost));
+    gy.append(row);
+  }
+  if (!(save.crystals ?? 0) && !Object.keys(save.gyeolgi ?? {}).length) gy.append(el('p', 'hint', '♾️ 무한 전장에서는 냥 대신 결기수정이 떨어져요. 오래 버틸수록, 어려운 전장일수록 많이 모여요.'));
+  grid.append(gy);
+
   const train = el('div', 'grow-card');
   train.append(el('h3', '', '🥋 수련 <small>모든 영웅 · 영구 성장</small>'));
   for (const t of TRAINING) {
@@ -467,20 +483,6 @@ export function renderGrow(save, sel, act) {
   }
   grid.append(train);
 
-  // 결기 상점: 무한 전장's 결기수정 buy permanent stacks.
-  const gy = el('div', 'grow-card gyeolgi-card');
-  gy.append(el('h3', '', `💎 결기 상점 <small>모든 영웅 · 무한 전장에서 모은 결기수정 <b class="gy-have">💎 ${fmt(save.crystals ?? 0)}</b></small>`));
-  for (const g of GYEOLGI) {
-    const lv = save.gyeolgi?.[g.id] ?? 0;
-    const cost = gyeolgiCost(g, lv);
-    const row = el('div', `grow-row${lv ? ' on' : ''}`);
-    row.innerHTML = `<span class="gr-icon">${g.icon}</span><div class="gr-text"><b>${g.name} <i>${lv}스택</i></b><span>스택마다 ${g.text}</span><small>다음 스택 ×${g.grow}씩 비싸져요</small></div>`;
-    const b = button(`💎 ${fmt(cost)}`, 'buy-btn gy-btn', () => act.buyGyeolgi(g), (save.crystals ?? 0) < cost);
-    row.append(b);
-    gy.append(row);
-  }
-  if (!(save.crystals ?? 0) && !Object.keys(save.gyeolgi ?? {}).length) gy.append(el('p', 'hint', '♾️ 무한 전장에서는 냥 대신 결기수정이 떨어져요. 오래 버틸수록, 어려운 전장일수록 많이 모여요.'));
-  grid.append(gy);
 
   const sec = el('div', 'grow-card');
   sec.append(el('h3', '', '📜 비전 <small>영웅별 · 출진할 때 이 스킬을 들고 시작</small>'));

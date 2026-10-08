@@ -403,6 +403,16 @@ export class Game {
     if (e.def.behavior !== 'static') amount = Math.max(1, amount * (1 - (ENEMY_ARMOR[this.stage.difficulty.stars] ?? 0)));
     if (opts?.stun) e.stun = Math.max(e.stun ?? 0, opts.stun * (e.isBoss ? 0.25 : 1));
     e.hp -= amount;
+    // 결기 · 피 회복: a sliver of the damage dealt comes back as health.
+    const leech = this.player.meta.leech;
+    if (leech && !opts?.byEnemy) {
+      const p = this.player;
+      p.leechBank = (p.leechBank ?? 0) + Math.min(amount, Math.max(0, e.hp + amount)) * leech;
+      if (p.leechBank >= 1) {
+        p.heal(Math.floor(p.leechBank));
+        p.leechBank -= Math.floor(p.leechBank);
+      }
+    }
     this.sfx('hit');
     e.flash = 0.1;
     const dx = e.x - sx, dy = e.y - sy;

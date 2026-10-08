@@ -383,7 +383,7 @@ const act = {
   buyGyeolgi(gy) {
     const lv = save.gyeolgi?.[gy.id] ?? 0;
     const cost = gyeolgiCost(gy, lv);
-    if ((save.crystals ?? 0) < cost) return;
+    if ((save.crystals ?? 0) < cost || (gy.max && lv >= gy.max)) return;
     save.crystals -= cost;
     (save.gyeolgi ??= {})[gy.id] = lv + 1;
     sound.sfx('forgeOk');
