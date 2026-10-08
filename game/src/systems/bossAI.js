@@ -154,6 +154,71 @@ const PRED = (g, lead) => {
 };
 
 Object.assign(BOSS_PATTERNS, {
+  /** 궁극기 · 치악산 부수기: a huge ring around the boss, then the mountain cracks. */
+  smash: {
+    start(g, b, P) {
+      b.pt = P.windup * b.cooldownMul;
+      g.fx.push({ type: 'ringWarn', x: b.x, y: b.y, range: P.radius, t: 0, life: b.pt, follow: b });
+      g.banner('⛰️ 치악산 부수기!', 'big');
+      g.sfx('horn');
+    },
+    update(g, b, P, dt) {
+      b.vx = b.vy = 0;
+      b.pt -= dt;
+      if (b.pt > 0) return false;
+      const p = g.player;
+      if ((p.x - b.x) ** 2 + (p.y - b.y) ** 2 < (P.radius + p.r * 0.5) ** 2) g.hurtPlayer(P.damage * b.damageMul, 'boss', b);
+      g.fx.push({ type: 'smash', x: b.x, y: b.y, range: P.radius, t: 0, life: 0.9 });
+      // The mountain cracks: a few boulders fall around the rim and stay.
+      if (P.rocks) {
+        g.tempRocks ??= [];
+        for (let i = 0; i < P.rocks; i++) {
+          const a = (i / P.rocks) * Math.PI * 2 + Math.random() * 0.4;
+          const d = P.radius * (0.75 + 0.2 * Math.random());
+          g.tempRocks.push({ x: b.x + Math.cos(a) * d, y: b.y + Math.sin(a) * d, r: 30, seed: Math.random(), until: g.time + 12, fallen: true });
+        }
+      }
+      g.shake(16);
+      g.sfx('quake');
+      return true;
+    },
+  },
+
+  /** 궁극기 · 꿩의 전설: a column of pheasants streaks down a warned lane (or several). */
+  pheasants: {
+    start(g, b, P) {
+      b.pt = P.windup * b.cooldownMul;
+      const p = g.player;
+      const aim = Math.atan2(p.y - b.y, p.x - b.x);
+      const lanes = P.lanes ?? 1;
+      b.lanes = [];
+      for (let i = 0; i < lanes; i++) {
+        const a = aim + (lanes > 1 ? (i - (lanes - 1) / 2) * (P.spread ?? 0.5) : 0);
+        b.lanes.push(a);
+        g.fx.push({ type: 'dashLine', x: b.x, y: b.y, angle: a, length: P.length, width: 46, t: 0, life: b.pt });
+      }
+      g.banner('🐦 꿩의 전설!', 'big');
+      g.sfx('crow');
+    },
+    update(g, b, P, dt) {
+      b.vx = b.vy = 0;
+      b.pt -= dt;
+      if (b.pt > 0) return false;
+      for (const a of b.lanes) {
+        for (let i = 0; i < P.count; i++) {
+          const back = i * P.gap;
+          g.projectiles.push({
+            team: 'enemy', kind: 'pheasant', x: b.x - Math.cos(a) * back, y: b.y - Math.sin(a) * back,
+            vx: Math.cos(a) * P.speed, vy: Math.sin(a) * P.speed, r: 12, damage: P.damage * b.damageMul,
+            life: (P.length + back) / P.speed, angle: a, source: 'pheasant', owner: b, flap: Math.random() * 6,
+          });
+        }
+      }
+      g.sfx('throw');
+      return true;
+    },
+  },
+
   /** 낙석: boulders crash on warned spots around the hero and stay as obstacles a while. */
   rockfall: {
     start(g, b, P) {
@@ -316,6 +381,26 @@ export function updateBoss(g, b, dt) {
   if (g.bossIntro > 0) {
     b.vx = b.vy = 0;
     return;
+  }
+
+  // 궁극기 · 복숭아 먹기: once a minute, when hurt, the boss eats a peach and heals.
+  const peach = def.peach;
+  if (peach) b.peachAt ??= g.time - peach.every + 30; // the first peach no sooner than 30 s in
+  if (peach && b.peachAt + peach.every <= g.time && b.hp < b.maxHp * (1 - peach.heal * 0.5) && !b.eating) {
+    b.eating = g.time + peach.eat;
+    b.peachAt = g.time;
+    g.banner('🍑 복숭아 먹기 — 양길이 체력을 되찾는다! 먹는 동안 몰아쳐라', 'small');
+    g.texts.push({ x: b.x, y: b.y - b.r - 30, v: '🍑', t: 0, life: peach.eat, order: true });
+  }
+  if (b.eating) {
+    b.vx = b.vy = 0;
+    if (g.time < b.eating) return;
+    b.eating = 0;
+    const before = b.hp;
+    b.hp = Math.min(b.maxHp, b.hp + b.maxHp * peach.heal);
+    g.texts.push({ x: b.x, y: b.y - b.r - 20, v: `+${Math.round(b.hp - before)}`, t: 0, life: 1, heal: true });
+    g.fx.push({ type: 'burst', x: b.x, y: b.y, range: b.r * 2, t: 0, life: 0.5 });
+    g.sfx('heal');
   }
 
   // One-shot summons at HP thresholds.

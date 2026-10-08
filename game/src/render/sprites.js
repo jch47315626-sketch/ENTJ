@@ -740,6 +740,55 @@ export function drawProjectile(ctx, p) {
     ctx.lineTo(-p.r * 0.4, p.r * 0.3);
     ctx.lineTo(p.r * 0.8, -p.r * 0.2);
     ctx.stroke();
+  } else if (p.kind === 'pheasant') {
+    // 꿩 (장끼): brown body, green neck, red cheek, long barred tail, flapping wings.
+    const flap = Math.sin(performance.now() / 45 + (p.flap ?? 0));
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.beginPath();
+    ctx.ellipse(-2, 14, 14, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#6b4a2a';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-8, 0);
+    ctx.lineTo(-30, 2);
+    ctx.stroke();
+    ctx.strokeStyle = '#2a1a10';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 4; i++) {
+      ctx.beginPath();
+      ctx.moveTo(-8 - i * 6, -2);
+      ctx.lineTo(-8 - i * 6, 3);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#a0622e';
+    ctx.strokeStyle = '#2a1a10';
+    ctx.lineWidth = 1.2;
+    for (const k of [-1, 1]) {
+      ctx.beginPath();
+      ctx.ellipse(-2, k * (5 + flap * 4), 9, 4, k * (0.4 + flap * 0.3), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#b8743a';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 10, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#2f6a4a';
+    ctx.beginPath();
+    ctx.arc(10, 0, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#d0302a';
+    ctx.beginPath();
+    ctx.arc(11, -1.5, 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#e8d8a0';
+    ctx.beginPath();
+    ctx.moveTo(14, 0);
+    ctx.lineTo(18, 1);
+    ctx.lineTo(14, 2);
+    ctx.fill();
   } else if (p.kind === 'redSlash') {
     // 붉은 검기: a thin upright crescent, glowing red, with a faint trail.
     const a = Math.min(1, p.life * 4);

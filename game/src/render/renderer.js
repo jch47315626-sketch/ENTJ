@@ -855,6 +855,29 @@ export class Renderer {
           ctx.stroke();
           break;
         }
+        case 'smash': {
+          // 치악산 부수기: a shockwave ring racing out with cracks behind it.
+          const a = 1 - p;
+          const R = f.range * (0.3 + 0.7 * Math.min(1, p * 2));
+          ctx.fillStyle = `rgba(120, 80, 40, ${0.28 * a})`;
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, R, 0, TAU);
+          ctx.fill();
+          ctx.strokeStyle = `rgba(255, 200, 120, ${0.9 * a})`;
+          ctx.lineWidth = 10 * a + 2;
+          ctx.stroke();
+          ctx.strokeStyle = `rgba(40, 26, 14, ${0.8 * a})`;
+          ctx.lineWidth = 3;
+          for (let i = 0; i < 10; i++) {
+            const ang = (i / 10) * TAU + 0.3;
+            ctx.beginPath();
+            ctx.moveTo(f.x + Math.cos(ang) * 30, f.y + Math.sin(ang) * 30);
+            ctx.lineTo(f.x + Math.cos(ang + 0.12) * R * 0.55, f.y + Math.sin(ang + 0.12) * R * 0.55);
+            ctx.lineTo(f.x + Math.cos(ang - 0.05) * R * 0.95, f.y + Math.sin(ang - 0.05) * R * 0.95);
+            ctx.stroke();
+          }
+          break;
+        }
         case 'lob': {
           // 투석병's stone arcing through the air.
           const k = Math.min(1, p);
