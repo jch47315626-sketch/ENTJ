@@ -272,23 +272,53 @@ function drawWeapon(ctx, kind, r, look) {
       ctx.arc(r * 1.05, 0, r * 0.22, 0, Math.PI * 2);
       ctx.stroke();
       break;
-    case 'greatsword':
-      ctx.strokeStyle = '#d6d4cb';
-      ctx.lineWidth = 5;
+    case 'greatsword': {
+      // 대도: a broad, heavy blade that widens toward a clipped tip.
+      const y = r * 0.7;
+      // Grip behind the guard.
+      ctx.strokeStyle = '#3a2416';
+      ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.moveTo(r * 0.5, r * 0.7);
-      ctx.lineTo(r * 2.25, r * 0.7);
+      ctx.moveTo(r * 0.12, y);
+      ctx.lineTo(r * 0.5, y);
       ctx.stroke();
-      ctx.strokeStyle = 'rgba(29,26,23,0.6)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      ctx.strokeStyle = look.trim ?? '#d8b46a';
-      ctx.lineWidth = 3.5;
+      // Blade body.
+      ctx.fillStyle = '#d9d7ce';
+      ctx.strokeStyle = 'rgba(29, 26, 23, 0.9)';
+      ctx.lineWidth = 1.4;
       ctx.beginPath();
-      ctx.moveTo(r * 0.5, r * 0.38);
-      ctx.lineTo(r * 0.5, r * 1.02);
+      ctx.moveTo(r * 0.52, y - r * 0.2);
+      ctx.lineTo(r * 1.9, y - r * 0.3);
+      ctx.quadraticCurveTo(r * 2.35, y - r * 0.3, r * 2.45, y - r * 0.05);
+      ctx.lineTo(r * 2.2, y + r * 0.26);
+      ctx.lineTo(r * 0.52, y + r * 0.2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      // Thick spine and a shine along the edge.
+      ctx.fillStyle = '#9a9890';
+      ctx.beginPath();
+      ctx.moveTo(r * 0.52, y - r * 0.2);
+      ctx.lineTo(r * 1.9, y - r * 0.3);
+      ctx.lineTo(r * 1.9, y - r * 0.18);
+      ctx.lineTo(r * 0.52, y - r * 0.1);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(r * 0.7, y + r * 0.13);
+      ctx.lineTo(r * 2.05, y + r * 0.18);
+      ctx.stroke();
+      // Heavy guard.
+      ctx.fillStyle = look.trim ?? '#d8b46a';
+      ctx.strokeStyle = 'rgba(29, 26, 23, 0.9)';
+      ctx.beginPath();
+      ctx.roundRect(r * 0.4, y - r * 0.36, r * 0.16, r * 0.72, r * 0.05);
+      ctx.fill();
       ctx.stroke();
       break;
+    }
     case 'staff': {
       // 석장: wooden staff topped by a ring hung with small rings.
       ctx.strokeStyle = '#5a3f26';
