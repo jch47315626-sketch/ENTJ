@@ -1187,3 +1187,314 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 
 /* 신의 분노 경고 */
 .wrath-chip { color: #ffd0ff; text-shadow: 0 0 8px rgba(200, 90, 255, 0.9); animation: evoPulse 0.8s ease-in-out infinite; }
+
+/* ==================================================================
+   묵화 금장 (ink & gold): dark lacquered wood, gold-rimmed frames,
+   parchment cards with painted scenes, brush titles with red seals.
+   Painted art lives in assets/ui (cut from the key screens).
+   Layered last so it wins over the earlier themes.
+   ================================================================== */
+:root {
+  --night: #120d09;
+  --wood-1: #2b1e15;
+  --wood-2: #1a120c;
+  --gold: #e3b964;
+  --gold-hi: #f8dfa0;
+  --gold-dk: #8c6528;
+  --parch-1: #f4e8cc;
+  --parch-2: #dcc69a;
+  --ink-text: #2a1a0e;
+  --ink-sub: #5c4630;
+  --lacquer: #8e2219;
+  --hanji: #f3e7cf;
+  --hanji-dim: #c7b393;
+  --seal: #b52a20;
+  --font-brush: "Nanum Brush Script", "Gowun Batang", serif;
+  --font-body: "Gowun Batang", "Noto Serif KR", serif;
+  --frame: 0 0 0 1px #0a0705, 0 0 0 3px #6e4f22, 0 0 0 4px #e3b964, 0 0 0 5px #3a2814;
+}
+body { background: var(--night); }
+/* Every menu screen: dark wood with a painted band at the top that fades into it. */
+.menu-screen, .title-screen {
+  background:
+    linear-gradient(180deg, rgba(18, 13, 9, 0) 0, rgba(18, 13, 9, 0.35) 70px, var(--night) min(46vw, 240px)),
+    var(--head, none) top center / 100% auto no-repeat,
+    radial-gradient(ellipse at 50% 40%, #241812, #120d09 70%),
+    var(--night);
+}
+#map { --head: url(assets/ui/head/map.webp); }
+#grow { --head: url(assets/ui/head/grow.webp); }
+#nanse { --head: url(assets/ui/head/nanse.webp); }
+#codex { --head: url(assets/ui/head/codex.webp); }
+#heroes, #prep { --head: url(assets/ui/head/heroes.webp); }
+.menu-screen .menu-wrap { gap: 14px; }
+
+/* ---------- page head: home medallion · brush title + seal · purse */
+.page-head { grid-template-columns: 52px 1fr auto; min-height: 64px; }
+.home-btn { width: 52px; height: 52px; padding: 0; border: 0; border-radius: 50%; background: none; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6); }
+.home-btn img { width: 100%; height: 100%; display: block; border-radius: 50%; }
+.home-btn:active { transform: scale(0.94); }
+.page-title { display: flex; justify-content: center; align-items: center; gap: 6px; font-family: var(--font-brush); font-size: clamp(44px, 12vw, 58px); line-height: 1; color: #fbf3e2;
+  -webkit-text-stroke: 2px #fbf3e2; text-shadow: 0 3px 0 #1a0f08, 0 0 18px rgba(0, 0, 0, 0.9), 0 6px 16px rgba(0, 0, 0, 0.8); letter-spacing: 0.02em; }
+.title-seal { display: inline-block; padding: 4px 3px; border-radius: 3px; text-align: center;
+  background: linear-gradient(180deg, #c8352a, #8e1d15); color: #ffe6cf; font: 700 11px/1.1 "Gowun Batang", serif; font-style: normal;
+  -webkit-text-stroke: 0; text-shadow: none; box-shadow: inset 0 0 0 1px rgba(255, 220, 190, 0.35), 0 2px 4px rgba(0, 0, 0, 0.5); align-self: center; }
+.coin-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 14px 4px 4px; border-radius: 999px; color: #f8ead0; font-size: 15px;
+  background: linear-gradient(180deg, rgba(40, 28, 20, 0.92), rgba(18, 12, 8, 0.92)); border: 1.5px solid #b98d45; box-shadow: inset 0 1px 0 rgba(255, 220, 160, 0.2), 0 3px 8px rgba(0, 0, 0, 0.55); }
+.coin-pill b { font: 700 16px "Gowun Batang", serif; font-variant-numeric: tabular-nums; }
+.coin-img { width: 26px; height: 26px; vertical-align: middle; }
+.gem-img { width: 22px; height: 22px; vertical-align: middle; }
+#home .coin-pill { padding-left: 10px; }
+
+/* ---------- tabs: dark plaques with gold rims; the open one glows gold */
+.sub-tabs { gap: 8px; }
+.sub-tab { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 12px; border: 1.5px solid #a07a3c; color: #f3e5c8; font: 700 15px "Gowun Batang", serif;
+  background: linear-gradient(180deg, #2c2016, #18110b); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 220, 160, 0.15), 0 3px 6px rgba(0, 0, 0, 0.5); }
+.sub-tab small { color: #d8c49e; font-weight: 400; }
+.sub-tab.on { color: #3a230d; border-color: #fff0c0; background: radial-gradient(ellipse at 50% 30%, #fff3cf, #f2cf7c 55%, #c8953e);
+  box-shadow: 0 0 0 1px #7a5520, 0 0 14px rgba(255, 205, 110, 0.7), inset 0 1px 0 #fff; }
+.sub-tab.on small { color: #6b4a1e; }
+.tab-img { width: 26px; height: 26px; object-fit: contain; }
+.codex-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+.codex-tabs .sub-tab { justify-content: center; padding: 8px 4px; font-size: 14px; gap: 3px; }
+.chapter-tabs { display: grid; grid-template-columns: 1fr 1fr; }
+.chapter-tabs .sub-tab { justify-content: center; padding: 9px 8px; border-radius: 14px; clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%); }
+.chapter-tabs .sub-tab b { font-size: 16px; }
+
+/* ---------- war map: the painted land with gold-ringed badges */
+.war-map { aspect-ratio: 1024 / 825; max-height: none; border-radius: 6px; background: #1b140e center / cover no-repeat; box-shadow: var(--frame), 0 10px 24px rgba(0, 0, 0, 0.6); margin: 4px 5px; }
+.war-map .route { stroke: rgba(255, 226, 160, 0.55); stroke-width: 0.9; stroke-linecap: round; stroke-dasharray: 0 2.4; fill: none; }
+.war-map .route.open { stroke: #ffe3a0; filter: drop-shadow(0 0 1px rgba(255, 200, 90, 0.9)); }
+.war-map .arw { fill: rgba(255, 226, 160, 0.55); }
+.war-map .arw.open { fill: #ffe3a0; }
+.map-node { gap: 0; color: var(--ink-text); }
+.mn-no { width: clamp(38px, 10vw, 50px); height: clamp(38px, 10vw, 50px); font: 400 clamp(22px, 6vw, 30px)/1 var(--font-brush); color: #2a1608; -webkit-text-stroke: 0.6px #2a1608;
+  background: radial-gradient(circle at 50% 40%, #fff8e6, #f0dcae 70%); border: 3px solid #d9a845; box-shadow: 0 0 0 2px #3a240e, 0 0 12px rgba(255, 196, 90, 0.75), 0 3px 6px rgba(0, 0, 0, 0.6); }
+.mn-name { margin-top: -3px; padding: 2px 9px; font: 700 clamp(10.5px, 2.8vw, 13px) "Gowun Batang", serif; color: #2a1608; border-radius: 999px;
+  background: linear-gradient(180deg, #fff6e0, #ead6a8); border: 1px solid #b48a46; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); }
+.mn-stars { font-size: clamp(9px, 2.6vw, 12px); color: #e2261c; letter-spacing: 1px; text-shadow: 0 0 2px #fff, 0 1px 1px #000; }
+.mn-stars .hell, .sd-stars .hell { font-style: normal; font-weight: 700; color: #ff5040; }
+.map-node.cleared .mn-no { background: radial-gradient(circle at 50% 40%, #fff8e6, #f3d48a 70%); border-color: #f2c55c; }
+.map-node.locked .mn-no { filter: grayscale(0.75) brightness(0.8); }
+.map-node.locked .mn-name { filter: grayscale(0.6); opacity: 0.85; }
+.map-node.on .mn-no { transform: scale(1.14); box-shadow: 0 0 0 2px #3a240e, 0 0 0 5px rgba(255, 214, 120, 0.85), 0 0 22px rgba(255, 190, 80, 0.95); }
+
+/* ---------- stage detail: dark lacquer panel, painted scene on the right */
+.stage-detail { position: relative; overflow: hidden; padding: 16px 16px 14px; border-radius: 8px; gap: 10px;
+  background: linear-gradient(90deg, rgba(20, 14, 10, 0.98) 42%, rgba(20, 14, 10, 0.5) 62%, rgba(20, 14, 10, 0.05)), var(--art) right top / 58% auto no-repeat, #1a120c;
+  box-shadow: var(--frame), 0 8px 20px rgba(0, 0, 0, 0.6); margin: 5px; }
+.sd-head { position: relative; display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 10px; align-items: center; }
+.sd-no { grid-row: span 2; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; font: 400 32px/1 var(--font-brush); color: #2a1608;
+  background: radial-gradient(circle at 50% 40%, #fff8e6, #f0d08a 70%); border: 3px solid #d9a845; box-shadow: 0 0 0 2px #3a240e, 0 0 14px rgba(255, 196, 90, 0.6); }
+.sd-head b { font: 400 34px/1 var(--font-brush); color: #fbf3e2; -webkit-text-stroke: 0.8px #fbf3e2; text-shadow: 0 2px 6px #000; }
+.sd-stars { color: #e8291e; font-size: 15px; text-shadow: 0 1px 2px #000; }
+.sd-stars em { font-style: normal; color: #f3e7cf; font-size: 13px; margin-left: 4px; }
+.sd-rows { position: relative; width: min(100%, 300px); gap: 0; }
+.sd-rows li { align-items: center; gap: 8px; padding: 7px 2px; font-size: 14.5px; color: #f3e7cf; border-bottom: 1px solid rgba(227, 185, 100, 0.18); }
+.sd-rows li span { flex: 1; }
+.sd-rows li b { color: #fff; font-family: "Gowun Batang", serif; }
+.sd-ic { width: 24px; height: 24px; object-fit: contain; flex: none; }
+.stage-detail .seal-btn { position: relative; }
+
+/* ---------- buttons */
+.seal-btn { position: relative; border: 0; border-radius: 10px; color: #fff3dc; font: 700 18px "Gowun Batang", serif; letter-spacing: 0.08em; padding: 12px 20px;
+  background: linear-gradient(180deg, #c6392b, #8a1c14 60%, #6c130d); box-shadow: 0 0 0 1px #2a0805, 0 0 0 3px #d4a54c, 0 0 0 4px #3a2412, 0 6px 14px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); animation: none; }
+.seal-btn.cta { font-size: 22px; padding: 16px 0; animation: none; background: linear-gradient(180deg, #d4483a, #9a2116 60%, #741510); box-shadow: 0 0 0 1px #2a0805, 0 0 0 3px #e7bb5c, 0 0 0 4px #3a2412, 0 0 22px rgba(230, 120, 60, 0.4), 0 6px 14px rgba(0, 0, 0, 0.6); }
+.seal-btn:active:not(:disabled) { transform: translateY(2px); }
+.buy-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; border: 0; border-radius: 0; padding: 9px 14px; color: #fff4e0; font: 700 15px "Gowun Batang", serif;
+  background: linear-gradient(180deg, #a5342a, #6e1a13); clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px), 0 9px);
+  box-shadow: inset 0 0 0 2px #d6a650, inset 0 0 0 3px #4a1a0e; text-shadow: 0 1px 2px #000; white-space: nowrap; }
+.buy-btn .coin-img, .buy-btn .gem-img { width: 20px; height: 20px; }
+.buy-btn:disabled { background: linear-gradient(180deg, #6e3a30, #44201a); color: #d8c0a8; box-shadow: inset 0 0 0 2px #9a7a48, inset 0 0 0 3px #2a120c; filter: none; cursor: default; }
+.buy-btn:disabled img { filter: saturate(0.6); opacity: 0.85; }
+.wear-btn, .forge-btn, .plain-btn { border-radius: 10px; border: 1.5px solid #b98d45; color: #f3e5c8; background: linear-gradient(180deg, #2c2016, #18110b); font-family: "Gowun Batang", serif; font-weight: 700; }
+.plain-btn.small { border-radius: 8px; }
+.done-tag { color: #8a5d16; font-weight: 700; }
+.got-tag { padding: 6px 14px; border-radius: 10px; border: 1.5px solid #b98d45; color: #e3b964; background: rgba(0, 0, 0, 0.35); font-size: 14px; }
+.done-seal { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 64px; }
+.done-seal i { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; font-style: normal; font-size: 22px; font-weight: 700; color: #f8dfa0;
+  background: radial-gradient(circle, #3a2a14, #1a120a); border: 2.5px solid #e3b964; box-shadow: 0 0 10px rgba(227, 185, 100, 0.45); }
+.done-seal em { font: 700 12.5px "Gowun Batang", serif; font-style: normal; color: #f8dfa0; padding: 2px 12px; border-radius: 8px; background: #1f160e; border: 1px solid #b98d45; }
+
+/* ---------- parchment cards (shop rows, 업적, 수련): text left, painted scene to the right */
+.grow-card { background: none; padding: 0; gap: 10px; }
+.grow-row, .ach-card { position: relative; overflow: hidden; display: grid; grid-template-columns: 72px 1fr auto; gap: 10px; align-items: center; min-height: 84px; padding: 8px 10px 8px 8px; border-radius: 8px; color: var(--ink-text);
+  background: linear-gradient(90deg, var(--parch-1) 0, var(--parch-1) 38%, rgba(244, 232, 204, 0.85) 55%, rgba(244, 232, 204, 0.25) 78%, rgba(244, 232, 204, 0.1)), var(--art, none) right center / auto 100% no-repeat, var(--parch-2);
+  box-shadow: 0 0 0 1px #3a2814, 0 0 0 2.5px #c99a4c, 0 0 0 3.5px #2a1c0e, 0 4px 10px rgba(0, 0, 0, 0.55); margin: 0 4px; text-align: left; }
+.grow-row::before, .ach-card::before { content: ''; position: absolute; inset: 3px; border: 1px solid rgba(140, 101, 40, 0.55); border-radius: 5px; pointer-events: none; }
+.grow-row > *, .ach-card > * { position: relative; }
+.grow-row.on { background-color: var(--parch-2); }
+.gr-img { width: 72px; height: 64px; object-fit: cover; border-radius: 6px; }
+.gr-scroll { width: 64px; height: 56px; object-fit: contain; }
+.gr-icon { display: grid; place-items: center; width: 64px; height: 64px; font-size: 32px; border-radius: 50%; background: radial-gradient(circle, #3a2a1a, #1a120a); }
+.gr-text b { font: 700 17px "Gowun Batang", serif; color: var(--ink-text); }
+.gr-text b i { font: 700 13px "Gowun Batang", serif; color: #c0601a; margin-left: 6px; }
+.gr-text span { font-size: 14px; color: #3a2614; }
+.gr-text small { font-size: 12px; color: var(--ink-sub); }
+.grow-row .buy-btn { min-width: 86px; }
+.grow-row.other { opacity: 0.55; filter: saturate(0.7); }
+/* 비전: darker boards, as on the key screen */
+.scroll-row { background: linear-gradient(90deg, rgba(34, 25, 18, 0.96) 45%, rgba(34, 25, 18, 0.7)), #1d150e; color: #f3e5c8; grid-template-columns: 64px 1fr auto; }
+.scroll-row::before { border-color: rgba(227, 185, 100, 0.3); }
+.scroll-row .gr-text b { color: #f6ead0; }
+.scroll-row .gr-text b i { color: #e3b964; }
+.scroll-row .gr-text span { color: #d8c7a8; }
+/* section titles: 수련 · 비전 */
+.sec-head { display: flex; align-items: center; gap: 8px; margin: 10px 4px 2px; }
+.sec-head b { font: 400 48px/1 var(--font-brush); color: #f6e7c4; -webkit-text-stroke: 1px #f6e7c4; text-shadow: 0 3px 8px #000; }
+.sec-head .title-seal { width: 16px; font-size: 9px; }
+.sec-head small { margin-left: 6px; font-size: 14px; color: #e6d6b6; }
+/* 결기 상점 banner */
+.gy-banner { position: relative; display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 12px; align-items: center; padding: 10px 14px; border-radius: 8px; color: var(--ink-text); text-align: left;
+  background: linear-gradient(90deg, var(--parch-1) 55%, rgba(244, 232, 204, 0.3)), var(--art) right center / auto 100% no-repeat, var(--parch-2);
+  box-shadow: 0 0 0 1px #3a2814, 0 0 0 3px #d4a54c, 0 0 0 4px #2a1c0e, 0 6px 14px rgba(0, 0, 0, 0.6); margin: 4px; }
+.gy-gem { grid-row: span 2; display: flex; flex-direction: column; align-items: center; }
+.gy-big { width: 58px; height: 50px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(80, 170, 255, 0.6)); }
+.gy-have { display: inline-flex; align-items: center; gap: 2px; font: 700 15px "Gowun Batang", serif; color: var(--ink-text); }
+.gy-have .gem-img { width: 18px; height: 18px; }
+.gy-banner h3 { margin: 0; font: 400 40px/1 var(--font-brush); color: #1f140a; -webkit-text-stroke: 0.8px #1f140a; }
+.gy-banner small { font-size: 13px; color: var(--ink-sub); }
+
+/* ---------- 난세: painted battlefield cards in two columns */
+.nanse-stages { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ns-stage { position: relative; display: grid; grid-template-columns: 46px 1fr; align-items: center; gap: 4px; min-height: 74px; padding: 8px 8px 8px 4px; border: 0; border-radius: 8px; text-align: left; color: var(--ink-text); overflow: hidden;
+  background: linear-gradient(90deg, var(--parch-1) 0, rgba(244, 232, 204, 0.9) 40%, rgba(244, 232, 204, 0.2) 75%, transparent), var(--art) right center / auto 100% no-repeat, var(--parch-2);
+  box-shadow: 0 0 0 1px #3a2814, 0 0 0 2.5px #c99a4c, 0 0 0 3.5px #2a1c0e, 0 4px 10px rgba(0, 0, 0, 0.5); margin: 3px; }
+.ns-no { position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: center; font: 400 32px/1 var(--font-brush); color: #fff; -webkit-text-stroke: 1px #fff; text-shadow: 0 0 2px #000; }
+.ns-no::before { content: ''; position: absolute; z-index: -1; left: -4px; top: 50%; width: 50px; height: 30px; margin-top: -16px; background: radial-gradient(ellipse at 40% 50%, #120c08 55%, rgba(18, 12, 8, 0.85) 70%, transparent 74%); transform: rotate(-14deg) skewX(-18deg); }
+.ns-lock { font-style: normal; font-size: 16px; -webkit-text-stroke: 0; margin-top: 4px; }
+.ns-text b { display: block; font: 700 15.5px/1.2 "Gowun Batang", serif; }
+.ns-text small { font-size: 12px; color: var(--ink-sub); }
+.ns-stage.on { border: 0; box-shadow: 0 0 0 1px #3a1a08, 0 0 0 2.5px #ffb54a, 0 0 0 3.5px #5a2a0a, 0 0 18px rgba(255, 150, 60, 0.75);
+  background: linear-gradient(90deg, #fbe6c4 0, rgba(251, 222, 180, 0.9) 40%, rgba(255, 200, 140, 0.25) 75%, rgba(255, 170, 90, 0.1)), var(--art) right center / auto 100% no-repeat, #f0c896; }
+.ns-stage.locked, .ns-stage:disabled { opacity: 1; color: #d8c8ac; background: linear-gradient(90deg, rgba(30, 22, 16, 0.95) 30%, rgba(30, 22, 16, 0.55)), var(--art) right center / auto 100% no-repeat, #1c140e; box-shadow: 0 0 0 1px #0a0705, 0 0 0 2.5px #6e5634, 0 0 0 3.5px #1a120a; }
+.ns-stage.locked .ns-no { color: #d8c8ac; -webkit-text-stroke: 0.6px #d8c8ac; }
+.ns-stage.locked .ns-no::before { display: none; }
+.ns-stage.locked .ns-text small { color: #a8977a; }
+.nanse-box { position: relative; display: flex; flex-direction: column; gap: 10px; padding: 14px 12px; border-radius: 8px; color: var(--ink-text); text-align: left;
+  background: linear-gradient(180deg, rgba(244, 232, 204, 0.97), rgba(220, 198, 154, 0.97)); box-shadow: 0 0 0 1px #3a2814, 0 0 0 3px #d4a54c, 0 0 0 4px #2a1c0e, 0 8px 18px rgba(0, 0, 0, 0.6); margin: 4px; }
+.nb-head { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
+.nb-flame { width: 46px; height: 52px; object-fit: contain; }
+.nb-head b { font: 400 40px/1 var(--font-brush); color: #1f140a; -webkit-text-stroke: 0.8px #1f140a; }
+.nb-head b em { font-style: normal; font-size: 46px; }
+.nb-head b small { font: 700 18px "Gowun Batang", serif; -webkit-text-stroke: 0; }
+.nb-head span { margin-left: auto; font-size: 13px; color: var(--ink-sub); }
+.nb-note { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 13.5px; color: #3a2614; }
+.nb-note b { color: #b0700c; font-size: 15px; }
+.nb-note .coin-img { width: 22px; height: 22px; flex: none; }
+.nb-list { display: flex; flex-direction: column; gap: 8px; }
+.nb-card { display: grid; grid-template-columns: 52px 1fr auto; align-items: center; gap: 10px; padding: 10px; border-radius: 8px; color: #f3e5c8;
+  background: linear-gradient(180deg, rgba(36, 26, 18, 0.95), rgba(22, 15, 10, 0.95)); box-shadow: 0 0 0 1px #0a0705, 0 0 0 2px #8c6a34, 0 3px 8px rgba(0, 0, 0, 0.5); }
+.nb-card.on { box-shadow: 0 0 0 1px #0a0705, 0 0 0 2px #f0b850, 0 0 12px rgba(240, 160, 60, 0.45); }
+.nb-icon { display: grid; place-items: center; width: 52px; height: 52px; font-size: 30px; }
+.nb-icon img { width: 52px; height: 52px; object-fit: contain; }
+.nb-text b { font: 700 17px "Gowun Batang", serif; color: #fbf1dc; }
+.nb-text b small { font-size: 13px; color: #f08a6a; margin-left: 4px; }
+.nb-text span { font-size: 13.5px; color: #d8c7a8; }
+.nb-pips { display: flex; gap: 5px; margin-top: 4px; }
+.nb-pips i { width: 20px; height: 6px; border-radius: 99px; background: rgba(255, 255, 255, 0.22); }
+.nb-pips i.on { background: linear-gradient(90deg, #ffb24a, #f06a2a); }
+.nb-ctl { display: flex; align-items: center; gap: 6px; }
+.nb-btn { width: 40px; height: 40px; border-radius: 50%; font-size: 22px; line-height: 1; color: #fff; background: radial-gradient(circle at 50% 35%, #3a2c22, #17100b); border: 2px solid #cfc2ad; padding: 0; }
+.nb-btn:disabled { opacity: 0.35; }
+.nb-count { min-width: 26px; text-align: center; font: 700 20px "Gowun Batang", serif; color: #fff2d6; }
+.nanse-box.locked { color: var(--ink-text); }
+
+/* ---------- 도감: 업적 banner, gold-ruled headings, parchment rows */
+.ach-top { position: relative; padding: 18px 16px 16px; border-radius: 8px; border: 0; color: var(--ink-text); text-align: center;
+  background: linear-gradient(90deg, rgba(244, 232, 204, 0.15), rgba(244, 232, 204, 0.95) 32%, rgba(244, 232, 204, 0.95) 68%, rgba(244, 232, 204, 0.15)),
+    url(assets/ui/row/ach-left.webp) left center / auto 100% no-repeat, url(assets/ui/row/ach-right.webp) right center / auto 100% no-repeat, var(--parch-1);
+  box-shadow: 0 0 0 1px #3a2814, 0 0 0 3px #d4a54c, 0 0 0 4px #2a1c0e, 0 8px 18px rgba(0, 0, 0, 0.6); margin: 4px; }
+.ach-count { color: var(--ink-text); font-size: 18px; }
+.ach-num { font: 700 20px "Gowun Batang", serif; }
+.ach-num b { font: 400 54px/1 var(--font-brush); color: #2a1608; -webkit-text-stroke: 1.2px #2a1608; margin-right: 4px; }
+.ach-meter { height: 16px; margin-top: 10px; border-radius: 99px; background: #1f160e; box-shadow: inset 0 0 0 1px #6e4f22; }
+.ach-meter i { background: linear-gradient(180deg, #fff1c0, #f2cd72 60%, #d6a440); border-radius: 99px; }
+.ach-claim-all { align-self: center; border-radius: 10px; background: linear-gradient(180deg, #ffe39a, #e0a840); color: #3a230d; font: 700 16px "Gowun Batang", serif; box-shadow: 0 0 0 1px #6e4f22, 0 0 14px rgba(255, 200, 90, 0.55); }
+.rule-head { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 14px 0 2px; font-weight: 400; }
+.rule-head b { font: 400 32px/1 var(--font-brush); color: #f6e7c4; -webkit-text-stroke: 0.8px #f6e7c4; text-shadow: 0 2px 6px #000; }
+.rh-line { flex: 1; max-width: 120px; height: 1px; background: linear-gradient(90deg, transparent, #c99a4c); position: relative; }
+.rh-line:last-child { background: linear-gradient(90deg, #c99a4c, transparent); }
+.rh-line::after { content: ''; position: absolute; top: -3px; width: 6px; height: 6px; border: 1px solid #e3b964; transform: rotate(45deg); }
+.rh-line:first-child::after { right: 0; }
+.rh-line:last-child::after { left: 0; }
+.rh-img { width: 34px; height: 36px; object-fit: contain; }
+.rh-emoji { font-size: 24px; }
+.ach-card { grid-template-columns: 62px 1fr auto; min-height: 80px; }
+.ach-card .ach-icon { display: grid; place-items: center; width: 62px; height: 62px; border-radius: 50%; filter: none; opacity: 1; overflow: hidden;
+  background: radial-gradient(circle, #2e2218, #140e09); box-shadow: 0 0 0 2px #c99a4c, 0 0 0 4px #3a2814; }
+.ach-card .ach-icon img { width: 100%; height: 100%; object-fit: cover; }
+.ach-card .ach-icon em { font-style: normal; font-size: 28px; }
+.ach-card:not(.done):not(.ready) .ach-icon { filter: grayscale(0.85) brightness(0.8); }
+.ach-card.done { opacity: 1; }
+.ach-card.ready { box-shadow: 0 0 0 1px #3a2814, 0 0 0 2.5px #ffc65a, 0 0 0 3.5px #2a1c0e, 0 0 16px rgba(255, 190, 80, 0.6); }
+.ach-text b { font: 700 18px/1.2 "Gowun Batang", serif; color: var(--ink-text); }
+.ach-text small { font-size: 13px; color: #3a2614; }
+.ach-prog { height: 14px; background: rgba(42, 26, 14, 0.25); }
+.ach-prog i { background: linear-gradient(90deg, #f2cd72, #d6a440); }
+.ach-prog em { color: #fff; }
+.ach-reward { display: inline-flex; align-items: center; gap: 3px; font: 700 13px "Gowun Batang", serif; color: #fff4e0; padding: 4px 8px 4px 4px; border-radius: 99px; background: rgba(26, 18, 12, 0.82); }
+.ach-reward .coin-img { width: 20px; height: 20px; }
+.ach-reward.got { padding: 0; background: none; }
+.ach-check { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 6px; font-style: normal; font-size: 22px; font-weight: 700; color: #fff;
+  background: linear-gradient(180deg, #2f8a4e, #1c5e33); box-shadow: 0 0 0 1.5px #d8f0d8, 0 0 0 3px #12351d, 0 2px 4px rgba(0, 0, 0, 0.5); }
+.ach-claim { border: 0; border-radius: 10px; padding: 8px 12px; color: #3a230d; font: 700 14px "Gowun Batang", serif; background: linear-gradient(180deg, #ffe39a, #e0a840); box-shadow: 0 0 0 1px #6e4f22, 0 0 12px rgba(255, 200, 90, 0.55); }
+/* other 도감 tabs: parchment tiles */
+.codex-cell { border-radius: 8px; color: var(--ink-text); background: linear-gradient(180deg, var(--parch-1), var(--parch-2)); box-shadow: 0 0 0 1px #3a2814, 0 0 0 2px #c99a4c, 0 3px 8px rgba(0, 0, 0, 0.5); border-bottom: 0; margin: 2px; }
+.codex-cell small { color: var(--ink-sub); }
+.codex-cell.locked { background: linear-gradient(180deg, #2c2016, #18110b); color: #a8977a; }
+.codex-cell .row-icon { background: #1d150e; }
+.help-card, .record-card { border-radius: 8px; background: linear-gradient(180deg, rgba(36, 26, 18, 0.96), rgba(22, 15, 10, 0.96)); border: 0; box-shadow: 0 0 0 1px #0a0705, 0 0 0 2px #a07a3c, 0 4px 10px rgba(0, 0, 0, 0.5); }
+.help-card h4, .record-card h4 { color: #f6e7c4; }
+
+/* ---------- other menu panels share the dark gold-rimmed board */
+.home-stage, .style-card, .prep-card, .ult-card, .daily-card, .endless-card, .gear-panel .doll2, .hint-card {
+  border-radius: 8px; border: 0; background: linear-gradient(180deg, rgba(38, 27, 19, 0.96), rgba(20, 14, 10, 0.96));
+  box-shadow: 0 0 0 1px #0a0705, 0 0 0 3px #6e4f22, 0 0 0 4px #d4a54c, 0 0 0 5px #2a1c0e, 0 8px 18px rgba(0, 0, 0, 0.55); margin: 5px; }
+.home-hero { border-radius: 8px; background: linear-gradient(90deg, rgba(244, 232, 204, 0.98), rgba(220, 198, 154, 0.95)); color: var(--ink-text);
+  box-shadow: 0 0 0 1px #3a2814, 0 0 0 3px #d4a54c, 0 0 0 4px #2a1c0e, 0 8px 18px rgba(0, 0, 0, 0.55); margin: 5px; width: auto; }
+.home-hero .hh-name { color: #1f140a; font: 400 40px/1 var(--font-brush); -webkit-text-stroke: 0.8px #1f140a; }
+.home-hero .hh-build { color: #3a2614; }
+.hs-stars, .hs-meta { color: #e3b964; }
+.hs-stars { color: #e8291e; }
+.hs-name { font: 400 34px/1 var(--font-brush); color: #fbf3e2; }
+.hp-card, .bp-btn, .d2-slot, .pp-hero, .slot-chip { border-radius: 10px; border: 1.5px solid #8c6a34; background: linear-gradient(180deg, #2c2016, #18110b); color: #f3e5c8; }
+.hp-card.on, .bp-btn.on, .pp-hero.on, .slot-chip.on, .d2-slot.on { border-color: #ffe3a0; background: linear-gradient(180deg, #4a3418, #2a1c0e); box-shadow: 0 0 0 1px #6e4f22, 0 0 14px rgba(255, 200, 100, 0.55); }
+.hp-name { font: 400 26px/1 var(--font-brush); color: #fbf3e2; }
+.item-card, .step { border-radius: 8px; color: var(--ink-text); background: linear-gradient(180deg, var(--parch-1), var(--parch-2)); box-shadow: 0 0 0 1px #3a2814, 0 0 0 2px #c99a4c, 0 3px 8px rgba(0, 0, 0, 0.45); margin: 2px; }
+.item-card.worn { background: linear-gradient(180deg, #fff3cf, #ecd08a); }
+.item-card .ic-text span, .step .st-text span, .ic-opt { color: var(--ink-sub); }
+.item-card .row-icon { background: #1d150e; }
+.step.got { background: linear-gradient(180deg, #e9f0d6, #cfdcae); }
+.st-lv { color: #9a5e10; }
+.list-title, .ult-title { color: #f6e7c4; }
+.ult-row b { color: #f8dfa0; }
+.hint { color: #d8c7a8; }
+.gate-msg { border-radius: 8px; background: rgba(142, 34, 25, 0.35); color: #ffd2c8; box-shadow: inset 0 0 0 1px rgba(255, 140, 120, 0.4); }
+
+/* ---------- home: the key art leads, cards hang below it */
+.home-key { margin: -6px -16px -18vw; position: relative; z-index: 0; }
+.home-key img { display: block; width: 100%; max-height: min(100vw, 560px); object-fit: cover; object-position: top center;
+  -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent); mask-image: linear-gradient(180deg, #000 70%, transparent); }
+#homeBody { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 14px; }
+#home .topbar { position: relative; z-index: 2; }
+#home .menu-wrap > .topbar { margin-bottom: 0; }
+
+/* ---------- bottom nav: dark carved wood, gold rim; the open tab is a lit lantern */
+.bottom-nav { gap: 4px; padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); background: linear-gradient(180deg, #2a1d14, #140d08); border-top: 0;
+  box-shadow: 0 -1px 0 #0a0705, 0 -3px 0 #8c6528, 0 -4px 0 #e3b964, 0 -12px 24px rgba(0, 0, 0, 0.6); backdrop-filter: none; }
+.bottom-nav button { gap: 2px; padding: 6px 0 4px; border-radius: 10px; color: #f3e5c8; }
+.bottom-nav button span { display: grid; place-items: center; height: 44px; font-size: 0; }
+.bottom-nav button span img { width: 46px; height: 44px; object-fit: contain; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.6)); }
+.bottom-nav button b { font: 700 16px "Gowun Batang", serif; color: #f6ead0; text-shadow: 0 2px 3px #000; }
+.bottom-nav button.on { background: radial-gradient(ellipse at 50% 40%, #fff6d8, #f5d68a 45%, #c8943c); box-shadow: 0 0 0 1px #6e4f22, 0 0 0 2.5px #f8dfa0, 0 0 18px rgba(255, 200, 100, 0.7); }
+.bottom-nav button.on b { color: #2a1608; text-shadow: none; }
+.bottom-nav button.on span { animation: none; }
+
+/* ---------- dialogs and battle cards keep the same dark-and-gold board */
+.confirm-card, .result-card, .tip-card { border-radius: 10px; background: linear-gradient(180deg, #2a1d14, #140d08); border: 0;
+  box-shadow: 0 0 0 1px #0a0705, 0 0 0 3px #6e4f22, 0 0 0 4px #e3b964, 0 0 0 5px #2a1c0e, 0 16px 40px rgba(0, 0, 0, 0.7); }
+.screen.dim { background: rgba(12, 8, 5, 0.82); }
+.pick-card { background: linear-gradient(180deg, #2c2016, #160f0a); border-radius: 12px; box-shadow: 0 0 0 1px #0a0705, 0 0 0 2.5px var(--c, #c99a4c), 0 8px 18px rgba(0, 0, 0, 0.6); }
+.panel-title { color: #fbf3e2; }
