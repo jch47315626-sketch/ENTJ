@@ -32,7 +32,7 @@ export function renderIntro(stage, daily = null, endless = false) {
   $('introName').textContent = stage.name;
   $('introText').textContent = daily
     ? daily.rules.map((r) => `${r.icon} ${r.name} — ${r.desc}`).join('\n')
-    : endless ? '끝이 없는 전장. 적은 갈수록 많아지고, 적장은 3분마다 더 강해져 돌아온다.\n쓰러질 때까지 버텨라!'
+    : endless ? '빛이 닿지 않는 마계. 적은 갈수록 많아지고, 적장은 3분마다 더 강해져 돌아온다.\n한 자리에 머물면 신의 분노가 떨어진다 — 쓰러질 때까지 움직이며 버텨라!'
     : stage.nanse ? NANSE_CARDS.filter((c) => stage.nanse.cards[c.id]).map((c) => `${c.icon} ${c.name} — ${c.desc(stage.nanse.cards[c.id])}`).join('\n') : stage.intro;
 }
 

@@ -195,6 +195,15 @@ export class Renderer {
     this.drawFx(ctx, g);
     if (g.arena) this.drawArenaBanners(ctx, g);
     this.drawNight(ctx, g, v);
+    if (g.stage.dark) {
+      // 마계: the edges of sight sink into a red-black gloom.
+      const p = g.player;
+      const grd = ctx.createRadialGradient(p.x, p.y, 220, p.x, p.y, Math.max(v.x1 - v.x0, v.y1 - v.y0) * 0.65);
+      grd.addColorStop(0, 'rgba(10, 0, 8, 0)');
+      grd.addColorStop(1, 'rgba(10, 0, 8, 0.72)');
+      ctx.fillStyle = grd;
+      ctx.fillRect(v.x0 - 40, v.y0 - 40, v.x1 - v.x0 + 80, v.y1 - v.y0 + 80);
+    }
     for (const c of g.crows) this.drawCrow(ctx, c);
     for (const k of g.pickups) if (k.kind === 'crowFeed' || k.kind === 'item') this.drawFeedPointer(ctx, k, g.time, v);
     this.drawTexts(ctx, g);

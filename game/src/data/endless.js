@@ -8,7 +8,7 @@ export const ENDLESS = {
   bossEvery: 180, // seconds between bosses
   bossHpStep: 0.8, // each later boss: +80% health
   bossDamageStep: 0.3, // … and +30% damage
-  spawnGrowth: 300, // spawn rate ×(1 + t / spawnGrowth)
+  spawnGrowth: 220, // spawn rate ×(1 + t / spawnGrowth)
   rampFrom: 240, // after 4:00 the waves harden:
   damageGrowth: 240, // enemy damage ×(1 + (t − rampFrom) / damageGrowth)
   hpGrowth: 300, // enemy health ×(1 + (t − rampFrom) / hpGrowth)
@@ -19,10 +19,34 @@ export const ENDLESS = {
   surgeStep: 0.08,
 };
 
+/**
+ * 마계: 무한 전장 is fought in its own dark realm, whatever field was chosen.
+ * The chosen field still sets the difficulty, foes and boss; the tempo is
+ * faster (more foes, quicker feet).
+ */
+export const MAGYE = {
+  ground: 'demonRealm',
+  terrain: { rocks: 0.14, bog: 0.22, clear: 240, bogSlow: 0.35, demon: true },
+  spawnRate: 1.4,
+  enemySpeed: 1.15,
+};
+
+/**
+ * 신의 분노: stand (nearly) still for `idle` seconds and lightning is called
+ * down — a warned circle, then a bolt that ignores armour.
+ */
+export const WRATH = { idle: 20, radius: 70, warn: 1, share: 0.45, again: 1.5, hint: 12 };
+
 /** A copy of `stage` set up for endless play. */
 export function makeEndless(stage) {
+  const d = stage.difficulty;
   return {
     ...stage,
+    name: `마계 · ${stage.name}`,
+    ground: MAGYE.ground,
+    terrain: MAGYE.terrain,
+    dark: true,
+    difficulty: { ...d, spawnRate: (d.spawnRate ?? 1) * MAGYE.spawnRate, enemySpeed: (d.enemySpeed ?? 1) * MAGYE.enemySpeed },
     endless: true,
     bossAt: ENDLESS.bossEvery,
     phases: stage.phases.map((p) => ({ ...p })),

@@ -189,7 +189,7 @@ function endlessCard(save, sel, act) {
   who.append(portrait(h, 56));
   who.append(el('div', 'dc-where', `<b>${josa(h.name, '으로')} 출전</b><span>${starText(st.difficulty.stars)} ${st.numeral} ${st.name}</span>`));
   card.append(who);
-  card.append(el('p', 'ec-rule', '적이 갈수록 많아지고, 적장은 <b>3분마다</b> 더 강해져 돌아와요. 냥 대신 <b>💎 결기수정</b>이 떨어져요 — 오래 버틸수록, 어려운 전장일수록 많이! 영웅과 전장은 위에서 고른 그대로예요.'));
+  card.append(el('p', 'ec-rule', '어둠의 <b>마계</b>에서 싸워요. 적이 더 빠르고 많으며, 적장은 <b>3분마다</b> 더 강해져 돌아와요. 냥 대신 <b>💎 결기수정</b>이 떨어져요. <b>⚡ 한 자리에 20초 머물면 신의 분노!</b> 고른 전장이 난이도와 적을 정해요.'));
   card.append(el('p', 'ec-best', best
     ? `🏆 이 전장 최고 기록 <b>${mmss(best.time)}</b> · 적장 ${best.bosses}명 · ${HEROES[best.hero]?.name ?? ''}`
     : '아직 기록이 없어요 — 첫 기록을 세워 보세요!'));

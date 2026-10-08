@@ -6,6 +6,7 @@ import { buildStatus } from '../systems/builds.js';
 
 import { CROW } from '../systems/crows.js';
 import { FIELD_ITEMS, ITEM_LIFE } from '../systems/fieldItems.js';
+import { WRATH } from '../data/endless.js';
 
 const $ = (id) => document.getElementById(id);
 /** Screen direction (east first, clockwise, y down) as an arrow. */
@@ -171,5 +172,7 @@ function heroStatus(g) {
   }
   if (p.drumUntil) chips.push(`🥁 전고 ${Math.ceil(p.drumUntil - g.time)}초`);
   if (p.keroseneUntil > g.time) chips.push(`🛢️ 불길 ${Math.ceil(p.keroseneUntil - g.time)}초`);
+  // 무한 전장: warn before 신의 분노 strikes a hero who stands still.
+  if (g.stage.endless && (g.stillT ?? 0) > WRATH.hint) chips.push(`<b class="wrath-chip">⚡ ${g.stillT >= WRATH.idle ? '신의 분노!' : `신의 분노까지 ${Math.ceil(WRATH.idle - g.stillT)}초`} — 움직여라</b>`);
   return chips.map((c) => `<span>${c}</span>`).join('');
 }

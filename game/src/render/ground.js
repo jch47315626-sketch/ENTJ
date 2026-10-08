@@ -543,4 +543,65 @@ export const GROUNDS = {
       }
     }
   },
+
+  /** 마계 (무한 전장): black-red rock, glowing lava cracks, bones and drifting embers. */
+  demonRealm(ctx, v, time) {
+    ctx.fillStyle = '#160b12';
+    ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
+    const tx0 = Math.floor(v.x0 / TILE) - 1, tx1 = Math.floor(v.x1 / TILE) + 1;
+    const ty0 = Math.floor(v.y0 / TILE) - 1, ty1 = Math.floor(v.y1 / TILE) + 1;
+    const glow = 0.6 + 0.4 * Math.sin(time * 2.2);
+    for (let tx = tx0; tx <= tx1; tx++) {
+      for (let ty = ty0; ty <= ty1; ty++) {
+        const ox = tx * TILE, oy = ty * TILE;
+        const h = hash2(tx, ty, 901);
+        // Scorched patches.
+        ctx.fillStyle = h < 0.5 ? 'rgba(60, 20, 34, 0.7)' : 'rgba(34, 18, 40, 0.6)';
+        ctx.beginPath();
+        ctx.ellipse(ox + hash2(tx, ty, 902) * TILE, oy + hash2(tx, ty, 903) * TILE, 70 + h * 80, 40 + h * 30, h * 3, 0, Math.PI * 2);
+        ctx.fill();
+        // Lava cracks, glowing and pulsing.
+        if (hash2(tx, ty, 904) < 0.55) {
+          const cx = ox + hash2(tx, ty, 905) * TILE, cy = oy + hash2(tx, ty, 906) * TILE;
+          ctx.lineCap = 'round';
+          for (const [w, c] of [[7, `rgba(255, 60, 20, ${0.25 * glow})`], [2.5, `rgba(255, 150, 60, ${0.85 * glow})`]]) {
+            ctx.strokeStyle = c;
+            ctx.lineWidth = w;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            let x = cx, y = cy;
+            for (let k = 0; k < 5; k++) {
+              x += (hash2(tx, ty, 910 + k) - 0.5) * 70;
+              y += (hash2(tx, ty, 920 + k) - 0.5) * 70;
+              ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+          }
+        }
+        // Bones.
+        if (hash2(tx, ty, 930) < 0.3) {
+          const bx = ox + hash2(tx, ty, 931) * TILE, by = oy + hash2(tx, ty, 932) * TILE, a = hash2(tx, ty, 933) * 3;
+          ctx.strokeStyle = 'rgba(200, 190, 180, 0.55)';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(bx - Math.cos(a) * 10, by - Math.sin(a) * 10);
+          ctx.lineTo(bx + Math.cos(a) * 10, by + Math.sin(a) * 10);
+          ctx.stroke();
+          ctx.fillStyle = 'rgba(200, 190, 180, 0.55)';
+          for (const k of [-1, 1]) {
+            ctx.beginPath();
+            ctx.arc(bx + Math.cos(a) * 11 * k, by + Math.sin(a) * 11 * k, 3, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        // Rising embers.
+        for (let k = 0; k < 3; k++) {
+          const ex = ox + hash2(tx, ty, 940 + k) * TILE + Math.sin(time + k) * 6;
+          const ey = oy + ((hash2(tx, ty, 950 + k) * TILE - time * 30) % TILE + TILE) % TILE;
+          ctx.fillStyle = `rgba(255, ${120 + k * 40}, 60, 0.8)`;
+          ctx.fillRect(ex, ey, 2.5, 2.5);
+        }
+      }
+    }
+  },
 };

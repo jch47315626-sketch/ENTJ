@@ -17,7 +17,7 @@ import { planCrows, updateCrows, callCrow, CROW } from './systems/crows.js';
 import { updateFieldObjects, breakObject } from './systems/fieldObjects.js';
 import { planFieldItems, updateFieldItems, takeFieldItem, ITEM_LIFE } from './systems/fieldItems.js';
 import { applyDaily } from './data/daily.js';
-import { ENDLESS, makeEndless, endlessSurge, crystalsOwed } from './data/endless.js';
+import { ENDLESS, makeEndless, endlessSurge, crystalsOwed, WRATH } from './data/endless.js';
 import { applyNanse } from './data/nanse.js';
 import { Spawner } from './systems/spawner.js';
 import { updateSkills } from './systems/skills.js';
@@ -509,7 +509,7 @@ export class Game {
   }
 
   /** `attacker`: the enemy that dealt the blow, when there is one (for 반격). */
-  hurtPlayer(amount, source = 'unknown', attacker = null) {
+  hurtPlayer(amount, source = 'unknown', attacker = null, opts = null) {
     const p = this.player;
     if (p.invuln > 0 || this.state !== 'play') return false;
     if (p.mount && this.time < p.mount.invulnUntil) return false;
@@ -518,6 +518,8 @@ export class Game {
     let dmg = Math.max(1, amount * (1 - armorCut(p.stats.armor + (p.wall ?? 0))));
     // 호위진: the bodyguards take a share of every blow.
     if (p.wardUntil > this.time) dmg = Math.max(1, dmg * 0.6);
+    // 신의 분노 goes straight through armour and guards.
+    if (opts?.pierce) dmg = amount;
     this.damageLog[source] = (this.damageLog[source] ?? 0) + dmg;
     if (this.boss) this.runStats.hurtInBoss += dmg;
     p.hp -= dmg;
@@ -742,6 +744,7 @@ export class Game {
     updateCrows(this, dt);
     updateFieldObjects(this, dt);
     updateFieldItems(this, dt);
+    if (this.stage.endless) this.updateWrath(dt);
     this.taunts = this.allies.filter((a) => a.lure && !a.dead);
     this.updateEnemies(dt);
     updateTerrain(this);
@@ -932,6 +935,35 @@ export class Game {
     }
     this.fx.push({ type: 'puff', x: e.x, y: e.y, t: 0, life: 0.4, size: 18, tone: 'mud' });
     e.pull = null;
+  }
+
+  /** 무한 전장 · 신의 분노: standing still too long calls lightning down on the hero. */
+  updateWrath(dt) {
+    const p = this.player;
+    const W = WRATH;
+    if (this.stillAt === undefined || (p.x - this.stillAt.x) ** 2 + (p.y - this.stillAt.y) ** 2 > W.radius * W.radius) {
+      this.stillAt = { x: p.x, y: p.y };
+      this.stillT = 0;
+      return;
+    }
+    this.stillT += dt;
+    if (this.stillT < W.idle || this.time < (this.wrathNext ?? 0)) return;
+    this.wrathNext = this.time + W.warn + W.again;
+    const x = p.x, y = p.y;
+    this.fx.push({ type: 'ringWarn', x, y, range: W.radius, t: 0, life: W.warn, tone: 'violet' });
+    this.banner('⚡ 신의 분노 — 움직여라!', 'small');
+    this.sfx('thunder');
+    this.later(W.warn, () => {
+      if (this.state !== 'play') return;
+      const pts = [{ x: x + 30, y: y - 520 }];
+      for (let i = 1; i < 6; i++) pts.push({ x: x + rand(-26, 26), y: y - 520 + i * 90 });
+      pts.push({ x, y });
+      this.fx.push({ type: 'bolt', points: pts, t: 0, life: 0.45, seed: Math.random() });
+      this.fx.push({ type: 'smash', x, y, range: W.radius * 1.2, t: 0, life: 0.6 });
+      this.shake(16);
+      this.sfx('thunder');
+      if ((p.x - x) ** 2 + (p.y - y) ** 2 < (W.radius + p.r * 0.5) ** 2) this.hurtPlayer(p.stats.maxHp * W.share, 'wrath', null, { pierce: true });
+    });
   }
 
   /** 말타기: hoofprints that hurt enemies, and trampling at the top tier. */

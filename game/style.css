@@ -1184,3 +1184,6 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 .gy-have { color: #b8aaff; font-weight: 700; }
 .gy-btn { background: linear-gradient(180deg, #8a7cff, #5a4ad0); color: #fff; }
 .gy-btn:disabled { background: #3a3550; color: #8a86a0; }
+
+/* 신의 분노 경고 */
+.wrath-chip { color: #ffd0ff; text-shadow: 0 0 8px rgba(200, 90, 255, 0.9); animation: evoPulse 0.8s ease-in-out infinite; }

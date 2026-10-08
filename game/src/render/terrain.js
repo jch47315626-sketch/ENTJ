@@ -10,6 +10,24 @@ export function drawBogs(ctx, g, v) {
   for (let tx = tx0; tx <= tx1; tx++) for (let ty = ty0; ty <= ty1; ty++) {
     const b = tileBog(T, tx, ty);
     if (!b) continue;
+    if (T.demon) {
+      // 마계: a pool of violet poison ooze, slowly bubbling.
+      ctx.fillStyle = 'rgba(70, 20, 90, 0.88)';
+      ctx.beginPath();
+      ctx.ellipse(b.x, b.y, b.rx, b.ry, 0, 0, TAU);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(190, 90, 255, 0.6)';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      for (let i = 0; i < 3; i++) {
+        const k = (((g.time * 0.7 + i * 0.33 + b.x * 0.01) % 1) + 1) % 1;
+        ctx.fillStyle = `rgba(220, 150, 255, ${0.6 * (1 - k)})`;
+        ctx.beginPath();
+        ctx.arc(b.x + (i - 1) * b.rx * 0.4, b.y + Math.sin(i * 2) * b.ry * 0.3, 3 + k * 6, 0, TAU);
+        ctx.fill();
+      }
+      continue;
+    }
     if (T.snow) {
       // 눈더미: deep drifts instead of bog.
       ctx.fillStyle = 'rgba(250, 252, 255, 0.95)';
@@ -65,7 +83,7 @@ export function drawRocks(ctx, g, v) {
     ctx.beginPath();
     ctx.ellipse(r.x + 6, r.y + r.r * 0.55, r.r * 1.05, r.r * 0.45, 0, 0, TAU);
     ctx.fill();
-    ctx.fillStyle = r.fallen ? '#6e655a' : '#5d5a55';
+    ctx.fillStyle = g.stage.terrain.demon ? '#1e1720' : r.fallen ? '#6e655a' : '#5d5a55';
     ctx.strokeStyle = '#26231f';
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -91,7 +109,16 @@ export function drawRocks(ctx, g, v) {
     ctx.lineTo(r.x - r.r * 0.05, r.y);
     ctx.lineTo(r.x + r.r * 0.25, r.y + r.r * 0.35);
     ctx.stroke();
-    if (g.stage.terrain.snow) {
+    if (g.stage.terrain.demon) {
+      // 마계 흑요석: glowing red veins.
+      ctx.strokeStyle = `rgba(255, 70, 40, ${0.6 + 0.3 * Math.sin(g.time * 3 + r.seed * 9)})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(r.x - r.r * 0.4, r.y - r.r * 0.2);
+      ctx.lineTo(r.x, r.y + r.r * 0.1);
+      ctx.lineTo(r.x + r.r * 0.35, r.y - r.r * 0.3);
+      ctx.stroke();
+    } else if (g.stage.terrain.snow) {
       // A cap of snow.
       ctx.fillStyle = 'rgba(250, 252, 255, 0.95)';
       ctx.beginPath();
