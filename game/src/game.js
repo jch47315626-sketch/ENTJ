@@ -21,7 +21,8 @@ import { applyNanse } from './data/nanse.js';
 import { Spawner } from './systems/spawner.js';
 import { updateSkills } from './systems/skills.js';
 
-export const XP_TO_NEXT = (lv) => 5 + 3 * lv + Math.floor(0.2 * lv * lv);
+/** 공훈 needed for the next level: gentle at first, steeper and steeper later on. */
+export const XP_TO_NEXT = (lv) => Math.floor((5 + 3 * lv + Math.floor(0.2 * lv * lv)) * (1 + 0.045 * Math.max(0, lv - 10)));
 
 const PLAYER_RADIUS = 14;
 const INVULN_TIME = 0.6;
