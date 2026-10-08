@@ -311,18 +311,18 @@ const SHIN_AI = { seek: 600, speed: 175, shoutEvery: 4.5, shoutFor: 1.8 };
 const SOLDIER = { damage: 11, cooldown: 0.5, speed: 195 };
 
 /** 마구니: how they circle, and how the 폭탄 flies. */
-const MAGUNI = { orbit: 64, spin: 2.6, guard: 26, bombSpeed: 460, bombLife: 1.6, seek: 650 };
+const MAGUNI = { orbit: 64, spin: 3.4, wardSpin: 4.8, guard: 26, bombSpeed: 460, bombLife: 1.6, seek: 650 };
 
 /** One circling spirit. Under 마구니 결계 it also nudges and hurts foes it brushes. */
 function updateMaguni(g, a, i, n, dt) {
   const p = g.player;
-  const ang = g.time * MAGUNI.spin + (i / n) * TAU;
+  const W = MAGUNI_LV[(p.upgrades.maguni ?? 1) - 1]?.ward;
+  const ang = g.time * (W ? MAGUNI.wardSpin : MAGUNI.spin) + (i / n) * TAU;
   const orbit = MAGUNI.orbit + n * 4;
   a.x = p.x + Math.cos(ang) * orbit;
   a.y = p.y + Math.sin(ang) * orbit * 0.8;
   a.facing = ang + Math.PI / 2;
   a.rest = 0;
-  const W = MAGUNI_LV[(p.upgrades.maguni ?? 1) - 1]?.ward;
   if (!W) return;
   g.grid.query(a.x, a.y, a.r + 30, (e) => {
     if (e.dead || g.isCharmed(e) || e.def.behavior === 'static') return;

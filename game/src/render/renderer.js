@@ -175,6 +175,36 @@ export class Renderer {
 
   drawPlayer(ctx, g) {
     const p = g.player;
+    if ((p.upgrades.maguni ?? 0) >= 4) {
+      // 마구니 결계: a violet floor fills the ring the 마구니 circle.
+      const n = g.allies.filter((a) => a.kind === 'maguni').length || 4;
+      const R = 64 + n * 4;
+      const pulse = 0.5 + 0.5 * Math.sin(g.time * 4);
+      const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, R);
+      grd.addColorStop(0, `rgba(170, 90, 240, ${0.15 + 0.08 * pulse})`);
+      grd.addColorStop(0.75, `rgba(140, 60, 220, ${0.32 + 0.1 * pulse})`);
+      grd.addColorStop(1, 'rgba(120, 40, 200, 0.55)');
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y, R, R * 0.8, 0, 0, TAU);
+      ctx.fill();
+      ctx.strokeStyle = `rgba(210, 160, 255, ${0.6 + 0.3 * pulse})`;
+      ctx.lineWidth = 3;
+      ctx.setLineDash([12, 8]);
+      ctx.lineDashOffset = -g.time * 40;
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.lineDashOffset = 0;
+      // Runes turning on the floor.
+      ctx.fillStyle = `rgba(230, 200, 255, ${0.5 + 0.3 * pulse})`;
+      ctx.font = 'bold 14px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (let i = 0; i < 6; i++) {
+        const a = -g.time * 1.5 + (i / 6) * TAU;
+        ctx.fillText('☸', p.x + Math.cos(a) * R * 0.62, p.y + Math.sin(a) * R * 0.62 * 0.8);
+      }
+    }
     if (p.meta.chaosAura) {
       // 혼란의 기운: a slow violet ring marks how close a soldier must come.
       ctx.strokeStyle = `rgba(150, 100, 210, ${0.25 + 0.1 * Math.sin(g.time * 3)})`;
@@ -805,6 +835,23 @@ export class Renderer {
         ctx.strokeRect(0, -f.width / 2, f.length, f.width);
         ctx.setLineDash([]);
         ctx.restore();
+      } else if (f.type === 'trapWarn') {
+        // 덫꾼: where spikes will spring up (brown, filling in as it arms).
+        ctx.fillStyle = `rgba(120, 72, 32, ${0.25 + 0.35 * p})`;
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, f.range, 0, TAU);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(150, 95, 45, 0.95)';
+        ctx.setLineDash([6, 5]);
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(170, 110, 50, 0.9)';
+        ctx.beginPath();
+        ctx.moveTo(f.x, f.y);
+        ctx.arc(f.x, f.y, f.range * 0.55, -Math.PI / 2, -Math.PI / 2 + TAU * p);
+        ctx.closePath();
+        ctx.fill();
       } else if (f.type === 'ringWarn') {
         const rgb = f.tone === 'violet' ? '150, 100, 210' : '179, 38, 30';
         ctx.fillStyle = `rgba(${rgb}, ${0.1 + 0.22 * p})`;

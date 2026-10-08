@@ -13,7 +13,7 @@ export const STAGES = {
     intro: '903년, 왕건의 수군이 나주에 닿는다. 서남해의 해적 두령 능창이 갯벌에서 기다린다.',
     ground: 'tidalFlat',
     // Stage-wide multipliers on top of the time curves in data/balance.js.
-    difficulty: { label: '쉬움', stars: 1, enemyHp: 1.45, enemyDamage: 1.45, spawnRate: 1.2, eliteBonus: 0.06, bossHp: 1.35, bossDamage: 1.35 },
+    difficulty: { label: '쉬움', stars: 1, enemyHp: 1.45, enemyDamage: 1.32, spawnRate: 1.2, eliteBonus: 0.06, bossHp: 1.35, bossDamage: 1.35 },
     clearText: '서남해의 뱃길이 고려에 열린다.',
     next: 'gongsan',
     bossAt: 300,
@@ -173,7 +173,7 @@ export const STAGES = {
     ground: 'riverPlain',
     terrain: { rocks: 0.14, bog: 0.3, clear: 260, bogSlow: 0.35 },
     unlockAfter: 'illicheon',
-    difficulty: { label: '지옥 Ⅰ', stars: 6, enemyHp: 4.6, enemyDamage: 3.4, spawnRate: 1.35, eliteBonus: 0.22, bossHp: 2.5, bossDamage: 2.4, xpScale: 0.19, rewardMul: 0.7 },
+    difficulty: { label: '지옥 Ⅰ', stars: 6, enemyHp: 4.4, enemyDamage: 3.3, spawnRate: 1.35, eliteBonus: 0.22, bossHp: 2.4, bossDamage: 2.3, xpScale: 0.19, rewardMul: 0.6 },
     clearText: '나루를 지켰다. 강 건너 갈대늪 너머로 양길의 북소리가 멀어진다.',
     next: 'munmak', bossAt: 300, boss: 'sinhwon', bossAlt: {}, supplyEvery: 34,
     phases: [
@@ -196,7 +196,7 @@ export const STAGES = {
     ground: 'tidalFlat',
     terrain: { rocks: 0.1, bog: 0.58, clear: 260, bogSlow: 0.4 },
     unlockAfter: 'seomgang',
-    difficulty: { label: '지옥 Ⅱ', stars: 6, enemyHp: 5.2, enemyDamage: 4.0, spawnRate: 1.35, eliteBonus: 0.24, bossHp: 2.8, bossDamage: 2.8, xpScale: 0.18, rewardMul: 0.75 },
+    difficulty: { label: '지옥 Ⅱ', stars: 6, enemyHp: 5.4, enemyDamage: 4.2, spawnRate: 1.35, eliteBonus: 0.24, bossHp: 2.9, bossDamage: 2.9, xpScale: 0.18, rewardMul: 0.8 },
     clearText: '늪을 빠져나왔다. 앞에는 영원산성으로 오르는 바위 비탈이다.',
     next: 'yeongwon', bossAt: 300, boss: 'wonhoe', bossAlt: {}, supplyEvery: 34,
     phases: [
@@ -218,7 +218,7 @@ export const STAGES = {
     ground: 'autumnHills',
     terrain: { rocks: 0.5, bog: 0.1, clear: 260, bogSlow: 0.4 },
     unlockAfter: 'munmak',
-    difficulty: { label: '지옥 Ⅲ', stars: 6, enemyHp: 5.9, enemyDamage: 4.7, spawnRate: 1.38, eliteBonus: 0.25, bossHp: 3.1, bossDamage: 3.2, xpScale: 0.175, rewardMul: 0.8 },
+    difficulty: { label: '지옥 Ⅲ', stars: 6, enemyHp: 6.6, enemyDamage: 5.2, spawnRate: 1.38, eliteBonus: 0.25, bossHp: 3.4, bossDamage: 3.5, xpScale: 0.175, rewardMul: 1.0 },
     clearText: '기훤이 쓰러지고 산성 문이 열린다. 그 너머는 빽빽한 신림 솔숲이다.',
     next: 'sillim', bossAt: 300, boss: 'gihwon', bossAlt: {}, supplyEvery: 34,
     phases: [
@@ -242,7 +242,7 @@ export const STAGES = {
     ground: 'pineForest',
     terrain: { rocks: 0.45, bog: 0.2, clear: 260, bogSlow: 0.4 },
     unlockAfter: 'yeongwon',
-    difficulty: { label: '지옥 Ⅳ', stars: 6, enemyHp: 6.7, enemyDamage: 5.5, spawnRate: 1.4, eliteBonus: 0.26, bossHp: 3.5, bossDamage: 3.6, xpScale: 0.17, rewardMul: 0.85 },
+    difficulty: { label: '지옥 Ⅳ', stars: 6, enemyHp: 8.0, enemyDamage: 6.4, spawnRate: 1.4, eliteBonus: 0.26, bossHp: 4.0, bossDamage: 4.2, xpScale: 0.17, rewardMul: 1.25 },
     clearText: '범바위 산채가 무너졌다. 솔숲 끝에서 굿판의 장구 소리가 들려온다.',
     next: 'guryong', bossAt: 300, boss: 'beombawi', bossAlt: {}, supplyEvery: 34,
     phases: [
@@ -265,7 +265,7 @@ export const STAGES = {
     ground: 'mountainPass',
     terrain: { rocks: 0.35, bog: 0.32, clear: 260, bogSlow: 0.4 },
     unlockAfter: 'sillim',
-    difficulty: { label: '지옥 Ⅴ', stars: 6, enemyHp: 7.5, enemyDamage: 6.3, spawnRate: 1.42, eliteBonus: 0.28, bossHp: 3.9, bossDamage: 4.0, xpScale: 0.16, rewardMul: 0.9 },
+    difficulty: { label: '지옥 Ⅴ', stars: 6, enemyHp: 9.6, enemyDamage: 7.8, spawnRate: 1.42, eliteBonus: 0.28, bossHp: 4.6, bossDamage: 4.9, xpScale: 0.16, rewardMul: 1.5 },
     clearText: '굿판이 흩어졌다. 계곡 위로 눈 덮인 비로봉이 보인다.',
     next: 'birobong', bossAt: 300, boss: 'maehwa', bossAlt: {}, supplyEvery: 34,
     phases: [
@@ -288,7 +288,7 @@ export const STAGES = {
     ground: 'snowPeak',
     terrain: { rocks: 0.38, bog: 0.4, clear: 260, bogSlow: 0.45, snow: true },
     unlockAfter: 'guryong',
-    difficulty: { label: '지옥 Ⅵ', stars: 6, enemyHp: 9.4, enemyDamage: 8.3, spawnRate: 1.45, eliteBonus: 0.29, bossHp: 4.6, bossDamage: 4.8, xpScale: 0.155, rewardMul: 0.95 },
+    difficulty: { label: '지옥 Ⅵ', stars: 6, enemyHp: 11.5, enemyDamage: 9.4, spawnRate: 1.45, eliteBonus: 0.29, bossHp: 5.3, bossDamage: 5.7, xpScale: 0.155, rewardMul: 1.8 },
     clearText: '흑풍이 눈 속에 쓰러졌다. 봉우리 너머, 북원성에 양길의 깃발이 펄럭인다.',
     next: 'bukwon', bossAt: 300, boss: 'heukpung', bossAlt: {}, supplyEvery: 34,
     phases: [
@@ -313,7 +313,7 @@ export const STAGES = {
     // 지형: boulders nobody can pass and bogs that slow the hero (systems/terrain.js).
     terrain: { rocks: 0.42, bog: 0.3, clear: 260, bogSlow: 0.4 },
     unlockAfter: 'birobong',
-    difficulty: { label: '지옥 Ⅶ', stars: 6, enemyHp: 11.5, enemyDamage: 10.5, spawnRate: 1.5, eliteBonus: 0.3, bossHp: 5.4, bossDamage: 5.6, xpScale: 0.15, rewardMul: 1 },
+    difficulty: { label: '지옥 Ⅶ', stars: 6, enemyHp: 13.8, enemyDamage: 11.4, spawnRate: 1.5, eliteBonus: 0.3, bossHp: 6.0, bossDamage: 6.6, xpScale: 0.15, rewardMul: 2.2 },
     clearText: '치악산의 횃불이 꺼진다. 돌아온 초적왕 양길의 이름은 이제 전설 속에만 남는다.',
     ending: {
       seal: '平\n定',

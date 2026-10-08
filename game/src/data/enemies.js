@@ -71,7 +71,7 @@ export const ENEMIES = {
     id: 'trapper', name: '덫꾼', tier: 2, hp: 26, speed: 84, damage: 5, radius: 12, xp: 3,
     behavior: 'trapper', knockResist: 0,
     // Runs close, plants a spike trap in your path, then runs away.
-    params: { plantRange: 150, cooldown: 4.5, trapRadius: 30, trapDps: 14, trapSlow: 0.4, trapLife: 12, flee: 1.4 },
+    params: { plantRange: 150, cooldown: 4.5, trapRadius: 30, trapDps: 14, trapSlow: 0.4, trapLife: 12, flee: 1.4, warn: 2 },
     look: { body: '#4f5a3a', accent: '#232a18', hat: 'hood', weapon: 'knife' },
   },
   shaman: {

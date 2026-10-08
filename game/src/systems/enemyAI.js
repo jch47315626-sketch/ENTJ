@@ -216,8 +216,13 @@ export const BEHAVIORS = {
       e.flee = P.flee;
       // Between itself and the hero, a little ahead of the hero.
       const x = e.x + dx * 0.7, y = e.y + dy * 0.7;
-      g.zones.push({ team: 'enemy', kind: 'spikes', x, y, r: P.trapRadius, dps: P.trapDps * e.damageMul, slow: P.trapSlow, life: P.trapLife, t: 0, source: 'trapper' });
-      g.fx.push({ type: 'puff', x, y, t: 0, life: 0.35, size: 12, tone: 'mud' });
+      // A brown circle shows where the spikes will spring up; they arm after `warn` seconds.
+      g.fx.push({ type: 'trapWarn', x, y, range: P.trapRadius, t: 0, life: P.warn });
+      const dps = P.trapDps * e.damageMul;
+      g.later(P.warn, () => {
+        g.zones.push({ team: 'enemy', kind: 'spikes', x, y, r: P.trapRadius, dps, slow: P.trapSlow, life: P.trapLife, t: 0, source: 'trapper' });
+        g.fx.push({ type: 'puff', x, y, t: 0, life: 0.35, size: 12, tone: 'mud' });
+      });
     }
   },
 
