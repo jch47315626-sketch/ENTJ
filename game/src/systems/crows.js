@@ -50,7 +50,7 @@ export function callCrow(g, x, y) {
   for (const k of g.pickups) {
     if (k.kind !== 'coin' || k.taken) continue;
     k.magnet = true;
-    k.t = Math.max(k.t, 3); // pulled in fast, even from far away
+    k.t = Math.max(k.t, 3); // pulled in fast (speed is capped in Game.updatePickups)
     n++;
   }
   g.banner(n ? `🐦‍⬛ 까마귀가 엽전 ${n}개를 물어 왔다!` : '🐦‍⬛ 까마귀가 왔지만 주울 엽전이 없었다…', 'crow');

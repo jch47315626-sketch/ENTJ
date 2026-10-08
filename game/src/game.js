@@ -1051,10 +1051,17 @@ export class Game {
       if (!k.magnet && d2 < pr2) k.magnet = true;
       if (k.magnet) {
         const d = Math.sqrt(d2) || 1;
-        const s = 260 + k.t * 120;
-        k.x += (dx / d) * s * dt;
-        k.y += (dy / d) * s * dt;
-        if (d < p.r + 6) {
+        // Pulled in faster the longer it flies, but capped, and never past the hero
+        // (an overshooting coin used to jitter around them like an afterimage).
+        const step = Math.min(260 + k.t * 120, 1100) * dt;
+        if (step >= d - p.r) {
+          k.x = p.x;
+          k.y = p.y;
+        } else {
+          k.x += (dx / d) * step;
+          k.y += (dy / d) * step;
+        }
+        if (step >= d - p.r || d < p.r + 6) {
           k.taken = true;
           if (k.kind === 'coin') {
             this.gainXp(k.value);
