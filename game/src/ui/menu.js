@@ -18,7 +18,7 @@ import { NANSE_CARDS, NANSE_MAX, NANSE_MILESTONES, nanseLevel, nanseRewardMul, b
 import { SPECIALS } from '../systems/specials.js';
 import { drawUnit } from '../render/sprites.js';
 import { iconCanvas } from '../render/icons.js';
-import { drawPortrait, starText, gradeTag } from './screens.js';
+import { starText, gradeTag } from './screens.js';
 
 /**
  * Menu screens: 홈 · 영웅 · 성장 · 전장 · 출진 준비 · 도감.
@@ -105,12 +105,14 @@ function header(title, save, act, seal = '') {
   return h;
 }
 
+/** A hero's painted bust from the key art, in a round gold frame. */
 function portrait(hero, px) {
-  const c = el('canvas', 'portrait');
-  c.width = c.height = px * 2;
-  c.style.width = c.style.height = `${px}px`;
-  drawPortrait(c, hero);
-  return c;
+  const im = el('img', 'portrait bust');
+  im.src = `${UI}/hero/${hero.id}.webp`;
+  im.alt = hero.name;
+  im.decoding = 'async';
+  im.style.width = im.style.height = `${px}px`;
+  return im;
 }
 
 /** Row of the six worn gear icons. */

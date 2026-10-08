@@ -1498,3 +1498,8 @@ body { background: var(--night); }
 .screen.dim { background: rgba(12, 8, 5, 0.82); }
 .pick-card { background: linear-gradient(180deg, #2c2016, #160f0a); border-radius: 12px; box-shadow: 0 0 0 1px #0a0705, 0 0 0 2.5px var(--c, #c99a4c), 0 8px 18px rgba(0, 0, 0, 0.6); }
 .panel-title { color: #fbf3e2; }
+/* Painted hero busts (assets/ui/hero) in a round gold frame. */
+.portrait.bust { display: block; flex: none; border-radius: 50%; object-fit: cover; background: #1a120c;
+  box-shadow: 0 0 0 2px #2a1c0e, 0 0 0 4px #d4a54c, 0 0 0 5px #2a1c0e, 0 4px 10px rgba(0, 0, 0, 0.55); }
+.hp-card .portrait.bust { margin: 4px auto 6px; }
+.hp-card.on .portrait.bust { box-shadow: 0 0 0 2px #2a1c0e, 0 0 0 4px #ffe3a0, 0 0 14px rgba(255, 200, 100, 0.7); }

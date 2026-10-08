@@ -1,4 +1,3 @@
-import { drawUnit } from '../render/sprites.js';
 import { GRADES } from '../data/meta.js';
 import { NANSE_CARDS } from '../data/nanse.js';
 
@@ -12,18 +11,6 @@ export function showScreen(name) {
   for (const s of SCREENS) $(s).hidden = s !== name;
   $('bottomNav').hidden = !MENUS.includes(name);
   for (const b of $('bottomNav').querySelectorAll('button')) b.classList.toggle('on', b.dataset.go === name);
-}
-
-/** Draws a hero, large, into a portrait canvas. */
-export function drawPortrait(canvas, hero) {
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width;
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, W, W);
-  ctx.translate(W * 0.5, W * 0.6);
-  ctx.scale(W / 44, W / 44);
-  const look = hero.look;
-  drawUnit(ctx, { ...look, body: look.robe }, 0, 0, 12, 0.35, { scale: 1 });
 }
 
 export function renderIntro(stage, daily = null, endless = false) {

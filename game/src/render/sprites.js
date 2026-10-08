@@ -2,6 +2,18 @@ const INK = '#1d1a17';
 const HANJI = '#f1e8d2';
 const UNIT_SCALE = 1.35;
 
+/** Painted heads (assets/ui/hero, cut from the key art), loaded once and drawn when ready. */
+const HEADS = {};
+function headImage(src) {
+  if (typeof Image === 'undefined') return null;
+  let im = HEADS[src];
+  if (!im) {
+    im = HEADS[src] = new Image();
+    im.src = src;
+  }
+  return im.complete && im.naturalWidth ? im : null;
+}
+
 /** Soft ground shadow under every unit. */
 export function drawShadow(ctx, x, y, r) {
   ctx.fillStyle = 'rgba(22, 19, 15, 0.3)';
@@ -116,7 +128,7 @@ export function drawUnit(ctx, look, x, y, r, facing, o = {}) {
     ctx.fill();
     ctx.stroke();
   }
-  if (look.hair) drawLongHair(ctx, look, r, sx, phase, o.flash);
+  if (look.hair && (back || !look.headImg)) drawLongHair(ctx, look, r, sx, phase, o.flash);
   if (weaponFirst && look.weapon) weapon();
 
   // Feet patter in turn.
@@ -474,6 +486,19 @@ function drawHead(ctx, look, r, flash, sx, back, phase) {
     ctx.quadraticCurveTo(-sx * hr * 0.5, hy - hr * 1.15, 0, hy - hr * 0.8);
     ctx.fill();
     ctx.stroke();
+  }
+
+  // The heroes wear their painted faces from the key art; the back view stays drawn.
+  const im = !back && look.headImg && headImage(look.headImg);
+  if (im) {
+    const w = hr * (look.headScale ?? 2.3), h = (w * im.naturalHeight) / im.naturalWidth;
+    ctx.save();
+    ctx.translate(0, hy - hr * (look.headLift ?? 0.3));
+    if (sx < 0) ctx.scale(-1, 1);
+    if (flash) ctx.filter = 'brightness(1.8)';
+    ctx.drawImage(im, -w / 2, -h / 2, w, h);
+    ctx.restore();
+    return;
   }
 
   // Face.
