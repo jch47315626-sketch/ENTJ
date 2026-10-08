@@ -1,4 +1,3 @@
-import { treeNodes, TREASURES } from './trees.js';
 import { STAGES } from './stages.js';
 import { josa } from '../core/korean.js';
 import { gyeolgiBonus } from './gyeolgi.js';
@@ -297,9 +296,7 @@ export const SECRETS = [
 
 /** Sums every owned bonus for one hero into a single object. */
 export function metaBonus(save, heroId) {
-  const treeGrants = [];
   const gearGrants = [];
-  const gearNodes = [];
   const total = {};
   const add = (b) => {
     for (const k in b) total[k] = (total[k] ?? 0) + b[k];
@@ -315,7 +312,6 @@ export function metaBonus(save, heroId) {
         // 비기 lines (data/gearOptions.js SPECIAL).
         else if (l.k === 'grant') gearGrants.push(l.v);
         else if (l.k === 'cap') total.caps = { ...(total.caps ?? {}), [l.v]: (total.caps?.[l.v] ?? 0) + 1 };
-        else if (l.k === 'node') gearNodes.push(l.v);
         else if (l.k === 'proc') total[l.v] = 1;
       }
     }
@@ -326,17 +322,6 @@ export function metaBonus(save, heroId) {
   }
   // 결기 상점 (무한 전장's 결기수정).
   add(gyeolgiBonus(save));
-  // Hero build: skill-tree nodes and the equipped treasure.
-  const bought = save.trees?.[heroId]?.nodes ?? [];
-  for (const node of treeNodes(heroId)) {
-    // A node bought in the tree, or passed on by a piece of gear (counted once).
-    if (!bought.includes(node.id) && !gearNodes.includes(node.id)) continue;
-    add(node.bonus);
-    treeGrants.push(...(node.grants ?? []));
-  }
-  const treasure = (TREASURES[heroId] ?? []).find((t) => t.id === outfit.treasure);
-  if (treasure) add(treasure.bonus);
-
   const grants = SECRETS.filter((s) => s.hero === heroId && save.secrets.includes(s.id)).map((s) => s.grant);
-  return { ...total, grants: [...new Set([...grants, ...treeGrants, ...gearGrants])] };
+  return { ...total, grants: [...new Set([...grants, ...gearGrants])] };
 }

@@ -19,11 +19,8 @@ export const GEAR_OPTIONS = [
   { key: 'reward', icon: '🪙', text: (v) => `판 보상 냥 +${pct(v)}`, max: 0.08 },
   // Hero lines.
   { key: 'allyMul', icon: '🏯', text: (v) => `아군 피해 +${pct(v)}`, max: 0.15, hero: 'wanggeon' },
-  { key: 'orderHaste', icon: '📯', text: (v) => `군령 주기 −${pct(v)}`, max: 0.08, hero: 'wanggeon' },
   { key: 'shinHpMul', icon: '🚩', text: (v) => `신숭겸 체력 +${pct(v)}`, max: 0.3, hero: 'wanggeon' },
-  { key: 'counterMul', icon: '💢', text: (v) => `반격 피해 +${pct(v)}`, max: 0.25, hero: 'gyeonhwon' },
   { key: 'daedoCd', icon: '🪓', text: (v) => `대도 재사용 −${pct(v)}`, max: 0.08, hero: 'gyeonhwon' },
-  { key: 'focusFill', icon: '☄️', text: (v) => `법력 집중 속도 +${pct(v)}`, max: 0.3, hero: 'gungye' },
   { key: 'specialArea', icon: '👁️', text: (v) => `관심법 범위 +${pct(v)}`, max: 0.2, hero: 'gungye' },
 ];
 
@@ -31,7 +28,6 @@ export const GEAR_OPTIONS = [
  * 비기 lines: instead of a number, they change how the hero fights.
  *   grant — start every battle already holding a 책략 at Lv1
  *   cap   — a 책략 can go one level higher
- *   node  — a skill-tree node works without buying it
  *   proc  — a new technique (see Game: 낙뢰 · 사기충천 · 수호 깃발 · 연환)
  * Found on 진품 (35%) up to 국보 (50%) pieces; every 신물 has one.
  */
@@ -48,11 +44,6 @@ export const SPECIAL = {
     gyeonhwon: ['fury'],
     gungye: [],
   },
-  node: {
-    wanggeon: ['wg_a1', 'wg_a2', 'wg_b1', 'wg_b2'],
-    gyeonhwon: ['gh_a1', 'gh_a2', 'gh_b1', 'gh_b2'],
-    gungye: ['gy_a1', 'gy_a2', 'gy_b1', 'gy_b2'],
-  },
   proc: ['thunder', 'rally', 'lastStand', 'echo'],
 };
 export const PROCS = {
@@ -64,20 +55,19 @@ export const PROCS = {
 const SPECIAL_CHANCE = [0, 0, 0, 0, 0, 0.35, 0.4, 0.45, 0.5, 1];
 
 /** Names for 비기 text, filled in by the game at start-up (avoids an import cycle). */
-export const NAMES = { upgrade: {}, node: {} };
+export const NAMES = { upgrade: {} };
 
 function rollSpecial(item, takenKinds = []) {
-  const kinds = ['grant', 'cap', 'node', 'proc'].filter((k) => !takenKinds.includes(k));
+  const kinds = ['grant', 'cap', 'proc'].filter((k) => !takenKinds.includes(k));
   const kind = kinds[Math.floor(Math.random() * kinds.length)];
   const S = SPECIAL[kind];
-  const pool = kind === 'proc' ? S : kind === 'node' ? S[item.hero] ?? [] : [...(S.any ?? []), ...(S[item.hero] ?? [])];
+  const pool = kind === 'proc' ? S : [...(S.any ?? []), ...(S[item.hero] ?? [])];
   return { k: kind, v: pool[Math.floor(Math.random() * pool.length)], special: true };
 }
 
 export const specialText = (l) => {
   if (l.k === 'grant') return `📜 출진할 때 「${NAMES.upgrade[l.v] ?? l.v}」 Lv1`;
   if (l.k === 'cap') return `⬆️ 「${NAMES.upgrade[l.v] ?? l.v}」 최대 레벨 +1`;
-  if (l.k === 'node') return `🌳 스킬 「${NAMES.node[l.v] ?? l.v}」 전수`;
   const p = PROCS[l.v];
   return p ? `${p.icon} ${p.name} — ${p.desc}` : l.v;
 };
@@ -152,7 +142,6 @@ function lineValid(item, l) {
   const S = SPECIAL[l.k];
   if (!S) return false;
   if (l.k === 'proc') return S.includes(l.v);
-  if (l.k === 'node') return (S[item.hero] ?? []).includes(l.v);
   return [...(S.any ?? []), ...(S[item.hero] ?? [])].includes(l.v);
 }
 

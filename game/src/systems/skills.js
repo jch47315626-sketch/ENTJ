@@ -30,7 +30,7 @@ export const ACTIVE_SKILLS = {
     levels: HORSE,
     fire(g, L) {
       const p = g.player;
-      p.mount = { until: g.time + L.duration, invulnUntil: g.time + L.invuln + (p.meta.horseInvul ?? 0), L, drop: 0 };
+      p.mount = { until: g.time + L.duration, invulnUntil: g.time + L.invuln, L, drop: 0 };
       g.fx.push({ type: 'puff', x: p.x, y: p.y, t: 0, life: 0.6, size: 30, tone: 'mud' });
       g.banner(`${L.name} — 말에 오른다`, 'small');
       g.sfx('gallop');
@@ -95,8 +95,7 @@ export function updateSkills(g, dt) {
     if (!lv) continue;
     const skill = ACTIVE_SKILLS[id];
     const L = skill.levels[lv - 1];
-    // Builds can shorten a skill's cooldown (e.g. horseCd from 기마의 길).
-    const cooldown = L.cooldown * (1 - (p.meta[`${id}Cd`] ?? 0));
+    const cooldown = L.cooldown;
     p.skillTimers[id] = (p.skillTimers[id] ?? cooldown) - dt;
     if (p.skillTimers[id] <= 0) {
       p.skillTimers[id] = cooldown;

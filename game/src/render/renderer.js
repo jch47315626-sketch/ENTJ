@@ -9,12 +9,6 @@ const ALLY_LOOKS = {
   decoy: { body: '#2d3b5c', trim: '#c9a24a', plume: '#b3261e', hat: 'hero', weapon: 'sword', skin: '#e3c39c' },
   shin: { body: '#2d3b5c', trim: '#c9a24a', plume: '#b3261e', hat: 'hero', weapon: 'sword', skin: '#e3c39c' },
 };
-/** 군세 (standing troops of 통솔의 길), by role. */
-const RETINUE_LOOKS = {
-  spear: { body: '#2d5a9c', accent: '#1e2a48', hat: 'helmetBlue', weapon: 'spear', trim: '#e8c060', skin: '#f0d0aa' },
-  archer: { body: '#3e6a8c', accent: '#1f2d3d', hat: 'hoodBlue', weapon: 'bow', trim: '#e8c060', skin: '#f0d0aa' },
-  guard: { body: '#1e3a78', accent: '#0e1424', hat: 'heavyHelmet', weapon: 'shield', trim: '#ffd76a', skin: '#f0d0aa', bulk: 1.15, brows: 'angry' },
-};
 
 /** 마구니: a little horned violet wisp with a flame tail; dim while recharging. */
 function drawMaguni(ctx, a) {
@@ -245,16 +239,6 @@ export class Renderer {
         ctx.fillText('☸', p.x + Math.cos(a) * R * 0.62, p.y + Math.sin(a) * R * 0.62 * 0.8);
       }
     }
-    if (p.meta.chaosAura) {
-      // 혼란의 기운: a slow violet ring marks how close a soldier must come.
-      ctx.strokeStyle = `rgba(150, 100, 210, ${0.25 + 0.1 * Math.sin(g.time * 3)})`;
-      ctx.setLineDash([8, 10]);
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 150, g.time * 0.5, g.time * 0.5 + TAU);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
     const look = p.hero.look;
     const blink = p.invuln > 0 && Math.floor(g.time * 30) % 2 === 0;
     const m = p.mount;
@@ -266,8 +250,7 @@ export class Renderer {
         alpha: blink ? 0.45 : 1,
         aura: p.tiger ? `rgba(255, 110, 20, ${0.45 + 0.2 * Math.sin(g.time * 16)})`
           : shielded ? `rgba(240, 200, 110, ${0.35 + 0.15 * Math.sin(g.time * 20)})`
-          : p.wardUntil > g.time ? `rgba(110, 160, 230, ${0.28 + 0.1 * Math.sin(g.time * 10)})`
-          : p.focus > 0.15 ? `rgba(255, 210, 110, ${0.12 + 0.3 * p.focus + (p.focus >= 1 ? 0.1 * Math.sin(g.time * 12) : 0)})` : undefined,
+          : undefined,
       });
     // Health strip under the hero.
     const w = 36, ratio = p.hp / p.stats.maxHp;
@@ -301,7 +284,7 @@ export class Renderer {
       ctx.stroke();
       ctx.setLineDash([]);
     }
-    const look = a.kind === 'retinue' ? RETINUE_LOOKS[a.role] : ALLY_LOOKS[a.kind];
+    const look = ALLY_LOOKS[a.kind];
     drawUnit(ctx, look, a.x, a.y, a.r, a.facing, { alpha: fade, flash: a.hurtFlash > 0 });
     if (a.kind === 'shin') {
       const w = 38, ratio = clamp(a.hp / a.maxHp, 0, 1);

@@ -7,8 +7,7 @@ import { Sound } from './audio/sound.js';
 import { themeFor } from './audio/music.js';
 import { showScreen, renderIntro, renderChoices, renderResult } from './ui/screens.js';
 import { renderHome, renderHeroes, renderGrow, renderMap, renderPrep, renderNanse, renderCodex, setCodexTab } from './ui/menu.js';
-import { loadSave, writeSave, outfitOf, treeOf, encodeSave, decodeSave } from './core/save.js';
-import { SKILL_TREES } from './data/trees.js';
+import { loadSave, writeSave, outfitOf, encodeSave, decodeSave } from './core/save.js';
 import { runFacts, recordRun, checkAchievements, claimAchievement, readyCount } from './core/achieve.js';
 import { ACHIEVEMENTS } from './data/achievements.js';
 import { dailyFor, dailyHeroBonus, todayKey } from './data/daily.js';
@@ -35,7 +34,6 @@ const sel = { hero: 'wanggeon', stage: 'seonamhae' };
 const save = loadSave();
 // Display names for gear 비기 lines (data/gearOptions.js).
 for (const u of UPGRADES) NAMES.upgrade[u.id] = u.title ?? (typeof u.name === 'string' ? u.name : u.id);
-for (const t of Object.values(SKILL_TREES)) for (const n of [t.root, ...t.branches.flatMap((b) => b.nodes)]) NAMES.node[n.id] = n.name;
 ensureGearOptions(save, EQUIPMENT); // older saves: every owned piece gets its option lines
 writeSave(save); // persist any format migration right away
 let introTimer = 0;
@@ -392,26 +390,6 @@ const act = {
   learn(sc) {
     if (!spend(sc.price)) return;
     save.secrets.push(sc.id);
-    done();
-  },
-  // Skills from either path can be learned; the style follows what is learned.
-  buyNode(node) {
-    const t = treeOf(save, sel.hero);
-    if (t.nodes.includes(node.id) || save.money < node.price) return;
-    save.money -= node.price;
-    t.nodes.push(node.id);
-    done();
-  },
-  buyTreasure(item) {
-    if (save.owned.includes(item.id) || save.money < item.price) return;
-    if (item.parent && !save.owned.includes(item.parent)) return;
-    save.money -= item.price;
-    save.owned.push(item.id);
-    outfitOf(save, sel.hero).treasure = item.id;
-    done();
-  },
-  wearTreasure(item) {
-    outfitOf(save, sel.hero).treasure = item.id;
     done();
   },
   /** 각인: reroll one option line of an owned piece for 냥. */

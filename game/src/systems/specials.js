@@ -48,14 +48,7 @@ export const SPECIALS = {
     name: '관심법',
     fire(g) {
       const p = g.player;
-      const base = GWANSIM[Math.min(GWANSIM.length - 1, p.upgrades.gwansim ?? 0)];
-      const m = p.meta;
-      const L = {
-        ...base,
-        count: base.count + (m.gwansimCount ?? 0),
-        duration: base.duration + (m.gwansimDur ?? 0),
-        tier: m.gwansimAllTiers ? 99 : base.tier,
-      };
+      const L = GWANSIM[Math.min(GWANSIM.length - 1, p.upgrades.gwansim ?? 0)];
       const picks = [];
       g.grid.query(p.x, p.y, 340, (e) => {
         if (e.dead || e.isBoss || e.def.behavior === 'static' || g.isCharmed(e)) return;

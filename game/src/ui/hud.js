@@ -1,8 +1,6 @@
 import { UPGRADES, FALLBACKS, evolutionStatus } from '../data/upgrades.js';
 import { currentWeaponLevel } from '../systems/weapons.js';
 import { WEAPONS } from '../data/weapons.js';
-import { ORDERS, orderEvery } from '../systems/allies.js';
-import { buildStatus } from '../systems/builds.js';
 
 import { CROW } from '../systems/crows.js';
 import { FIELD_ITEMS, ITEM_LIFE } from '../systems/fieldItems.js';
@@ -69,16 +67,6 @@ export class Hud {
       $('crowAlert').textContent = it
         ? `${it.icon} ${it.name} ${dir} 주우러 가요! ${Math.max(0, Math.ceil(ITEM_LIFE - feed.t))}초`
         : `🐦‍⬛ 감나무 가지 ${dir} 주우러 가요! ${Math.max(0, Math.ceil(CROW.feedLife - feed.t))}초`;
-    }
-    // 🏯 군령: fills toward the next order of any troop kind; flashes just before.
-    const orders = Object.entries(g.orders ?? {});
-    $('orderBar').hidden = !orders.length;
-    if (orders.length) {
-      const [role, o] = orders.reduce((a, b) => (b[1].t < a[1].t ? b : a));
-      const ratio = 1 - Math.max(0, o.t) / orderEvery(g, role);
-      $('orderFill').style.width = `${ratio * 100}%`;
-      $('orderBar').classList.toggle('full', o.t < 0.5);
-      $('orderLabel').textContent = o.t < 0.5 ? `⚔️ 군령 발동! ${ORDERS[role].name}` : `🏯 군령 · 다음 ${ORDERS[role].name}`;
     }
     this.updateEvo(g);
   }
@@ -151,14 +139,12 @@ function heroStatus(g) {
   };
   const chips = [];
   if (p.hero.id === 'wanggeon') {
-    const army = allies('retinue') + allies('soldier') + allies('archer') + allies('shin');
+    const army = allies('soldier') + allies('archer') + allies('shin');
     chips.push(`🏯 군세 ${army}명`);
-    if (p.wardUntil > g.time) chips.push('🛡️ 호위진');
     if (ready('shin')) chips.push(`🛡️ 신숭겸 ${ready('shin')}`);
     if (ready('horse')) chips.push(p.mount ? '🐎 기마 중' : `🐎 말 ${ready('horse')}`);
   } else if (p.hero.id === 'gyeonhwon') {
-    chips.push(...buildStatus(g));
-    if (!p.meta.proxArmor) chips.push(`🛡️ 갑주 ${Math.round(p.stats.armor)}`);
+    chips.push(`🛡️ 갑주 ${Math.round(p.stats.armor)}`);
     if (p.upgrades.fury) chips.push(`🔥 패기 ${p.upgrades.fury}`);
     if (ready('chain')) chips.push(`⛓️ 철쇄 ${ready('chain')}`);
     if (p.tiger) chips.push(`🐯 ${p.tiger.mul}배 ${Math.ceil(p.tiger.until - g.time)}초`);
@@ -166,7 +152,6 @@ function heroStatus(g) {
   } else if (p.hero.id === 'gungye') {
     const swayed = g.enemies.filter((e) => !e.dead && g.isCharmed(e)).length;
     chips.push(`🌀 홀린 적 ${swayed}`);
-    chips.push(...buildStatus(g));
     if (p.upgrades.maguni) chips.push(`👹 마구니 ${allies('maguni')}/4`);
     if (Object.keys(p.subs).length) chips.push('☄️ 금강저');
   }

@@ -92,7 +92,7 @@ export const PATTERNS = {
   // 궁예 주무기 1~3단계: 가까운 적에게 법력구 (부채꼴 다발)
   orbShot: {
     fire(g, p, lv, s) {
-      const range = lv.range * Math.sqrt(s.area) * s.rangeMul;
+      const range = lv.range * Math.sqrt(s.area);
       const target = g.nearestEnemy(p.x, p.y, range);
       if (!target) return retry();
       const aim = Math.atan2(target.y - p.y, target.x - p.x);
@@ -104,7 +104,7 @@ export const PATTERNS = {
           team: 'player', kind: 'orb', x: p.x, y: p.y,
           vx: Math.cos(a) * lv.speed, vy: Math.sin(a) * lv.speed,
           r: lv.size * s.area, damage: lv.damage * s.might, knockback: lv.knockback,
-          life: (range * 1.15) / lv.speed, pierce: lv.pierce + s.pierceBonus, hit: new Set(), angle: a,
+          life: (range * 1.15) / lv.speed, pierce: lv.pierce, hit: new Set(), angle: a,
         });
       }
       g.sfx('orb');
@@ -114,7 +114,7 @@ export const PATTERNS = {
   // 궁예 주무기 진화: 꿰뚫는 빛줄기 세 갈래 + 맞은 자리 연꽃 폭발
   lightBeam: {
     fire(g, p, lv, s) {
-      const range = lv.range * Math.sqrt(s.area) * s.rangeMul;
+      const range = lv.range * Math.sqrt(s.area);
       const targets = g.nearestEnemies(p.x, p.y, range, lv.beams);
       if (!targets.length) return retry();
       p.facing = Math.atan2(targets[0].y - p.y, targets[0].x - p.x);
@@ -200,15 +200,8 @@ export function updateWeapon(g, dt) {
   for (const w of p.weapons()) {
     const lv = WEAPONS[w.id].levels[w.level];
     const pat = PATTERNS[lv.pattern];
-    // Build bonuses: main-weapon damage, damage while mounted, orb pierce and reach.
     const main = w === p.weapon;
-    const s = {
-      ...p.stats,
-      // 법력 집중 (궁예): standing still charges the main weapon.
-      might: p.stats.might * (1 + (main ? (m.mainDamage ?? 0) + (m.focus ? 0.5 * (p.focus ?? 0) : 0) : 0) + (p.mount ? m.mountedMight ?? 0 : 0)),
-      pierceBonus: main ? m.pierce ?? 0 : 0,
-      rangeMul: main ? 1 + (m.rangeMul ?? 0) : 1,
-    };
+    const s = p.stats;
     pat.update?.(g, p, lv, s, dt);
     w.timer -= dt;
     if (w.timer > 0) continue;

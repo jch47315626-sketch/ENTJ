@@ -9,8 +9,7 @@ import { SLOTS, GEAR_BASE_IDS, gearId } from '../data/meta.js';
 const KEY = 'samhan-save-v1';
 
 // equipped: { [heroId]: { [slotId]: itemId } } — each hero wears their own gear.
-// trees: { [heroId]: { nodes: [nodeId] } } — skill-tree purchases (both paths may be learned).
-const fresh = () => ({ money: 0, crystals: 0, gyeolgi: {}, owned: [], equipped: {}, training: {}, secrets: [], best: {}, trees: {}, forge: {}, codex: { kills: {}, runs: 0, wins: 0, earned: 0 }, ach: {}, stats: {} });
+const fresh = () => ({ money: 0, crystals: 0, gyeolgi: {}, owned: [], equipped: {}, training: {}, secrets: [], best: {}, forge: {}, codex: { kills: {}, runs: 0, wins: 0, earned: 0 }, ach: {}, stats: {} });
 // codex: lifetime record for the 도감 — kills by enemy/boss id, runs, wins, 냥 earned.
 // forge: { [itemId]: 0..5 } — 제련 level of each owned item.
 
@@ -78,7 +77,29 @@ function migrate(save) {
     for (const id in HEROES) save.equipped[id] = { ...outfit };
   }
   splitSharedGear(save);
+  refundBuilds(save);
   return save;
+}
+
+/**
+ * 스킬 트리 (영웅의 길) and 보물 were taken out of the game: whatever was paid
+ * for them comes back as 냥, once. Prices as they were: nodes 360 · 900 ·
+ * 1,950 · 3,900 by depth, treasures 250 · 800 · 2,000.
+ */
+function refundBuilds(save) {
+  const NODE = [360, 900, 1950, 3900], TREASURE = [250, 800, 2000];
+  let back = 0;
+  for (const t of Object.values(save.trees ?? {})) {
+    for (const id of t.nodes ?? []) back += id.endsWith('_root') ? NODE[0] : NODE[Number(id.slice(-1))] ?? 0;
+  }
+  save.owned = save.owned.filter((id) => {
+    if (!id.startsWith('tr_')) return true;
+    back += TREASURE[Number(id.slice(-1))] ?? 0;
+    return false;
+  });
+  for (const outfit of Object.values(save.equipped ?? {})) delete outfit?.treasure;
+  delete save.trees;
+  if (back) save.money += back;
 }
 
 /**
@@ -103,11 +124,6 @@ function splitSharedGear(save) {
   for (const [h, outfit] of Object.entries(save.equipped ?? {})) {
     for (const s of SLOTS) if (old.has(outfit?.[s.id])) outfit[s.id] = gearId(h, outfit[s.id]);
   }
-}
-
-/** A hero's skill-tree state. */
-export function treeOf(save, heroId) {
-  return (save.trees[heroId] ??= { nodes: [], branch: null });
 }
 
 /** The outfit one hero is wearing ({ slotId: itemId }). */

@@ -7,7 +7,6 @@ import {
   SLOTS, EQUIPMENT, TRAINING, SECRETS, REWARD_BY_STARS, GRADES, FORGE,
   forgeCost, gradeOpen, itemBonus, bonusText, metaBonus, entryCheck, armorCut,
 } from '../data/meta.js';
-import { SKILL_TREES, TREASURES } from '../data/trees.js';
 import { ACHIEVEMENTS, ACH_GROUPS, progressOf } from '../data/achievements.js';
 import { heroUltimates } from '../data/upgrades.js';
 import { GYEOLGI, gyeolgiCost } from '../data/gyeolgi.js';
@@ -35,12 +34,6 @@ const itemById = (id) => EQUIPMENT.find((e) => e.id === id);
 const forgeLv = (save, item) => save.forge?.[item.id] ?? 0;
 const itemName = (save, item) => `${item.name}${forgeLv(save, item) ? ` +${forgeLv(save, item)}` : ''}`;
 
-/** Icon for each build (branch) of each hero's skill tree. */
-const BUILD_ICON = {
-  wanggeon: { A: '🏯', B: '🐎' },
-  gyeonhwon: { A: '⚔️', B: '🛡️' },
-  gungye: { A: '☄️', B: '🌀' },
-};
 const SLOT_ICON = { head: '🪖', body: '🛡️', charm: '📿', wrist: '💠', belt: '🎗️', feet: '👢' };
 
 /** Training rows lead with what they do. */
@@ -53,25 +46,7 @@ const TRAIN_UI = {
 };
 
 // Remembered between renders: which tab or card is open on each screen.
-const ui = { heroTab: 'gear', slot: 'head', view: {}, codexTab: 'ach', mapStage: null };
-
-/**
- * The hero's style is not chosen; it follows the skills learned.
- * Returns { name, counts: {A, B}, main } or null when nothing is learned.
- */
-function buildOf(save, heroId) {
-  const nodes = save.trees?.[heroId]?.nodes ?? [];
-  const tree = SKILL_TREES[heroId];
-  const counts = Object.fromEntries(tree.branches.map((b) => [b.id, b.nodes.filter((n) => nodes.includes(n.id)).length]));
-  const learned = tree.branches.filter((b) => counts[b.id] > 0).sort((a, b) => counts[b.id] - counts[a.id]);
-  if (!learned.length) return null;
-  const tag = (b) => `${BUILD_ICON[heroId][b.id]} ${b.name.replace(/의 길$/, '')}`;
-  const [main, second] = learned;
-  const name = !second ? `${tag(main)}의 길`
-    : counts[main.id] === counts[second.id] ? `${tag(main)} + ${tag(second)} 혼합`
-    : `${tag(main)} 중심 + ${tag(second)}`;
-  return { name, counts, main: main.id };
-}
+const ui = { heroTab: 'gear', slot: 'head', codexTab: 'ach', mapStage: null };
 
 function el(tag, cls, html) {
   const e = document.createElement(tag);
@@ -167,13 +142,11 @@ export function renderHome(save, sel, act) {
   const body = $('homeBody');
   body.innerHTML = '';
   const h = HEROES[sel.hero];
-  const build = buildOf(save, h.id);
-
   const hero = button('', 'home-hero', () => act.go('heroes'));
   hero.append(portrait(h, 120));
   const txt = el('div', 'hh-text');
   txt.append(el('div', 'hh-name', h.name));
-  txt.append(el('div', 'hh-build', build ? build.name : '스타일 없음 — 스킬을 배우면 정해져요'));
+  txt.append(el('div', 'hh-build', `${h.title} · ${h.role}`));
   txt.append(gearRow(save, h.id));
   hero.append(txt);
   body.append(hero);
@@ -260,28 +233,10 @@ export function renderHeroes(save, sel, act) {
   body.append(pick);
 
   const h = HEROES[sel.hero];
-  const tree = SKILL_TREES[h.id];
-  const build = buildOf(save, h.id);
-  const view = ui.view[h.id] ?? build?.main ?? 'A';
-  const br = tree.branches.find((b) => b.id === view);
-
-  // The two paths: tabs to look at, not a choice. Learning skills sets the style.
-  const builds = el('div', 'build-pick');
-  for (const b of tree.branches) {
-    const n = build?.counts[b.id] ?? 0;
-    const btn = button(`<span class="bp-icon">${BUILD_ICON[h.id][b.id]}</span><b>${b.name.replace(/의 길$/, '')}</b><small>${n}/${b.nodes.length}</small>`,
-      `bp-btn${b.id === view ? ' on' : ''}${n ? ' chosen' : ''}`, () => {
-        ui.view[h.id] = b.id;
-        renderHeroes(save, sel, act);
-      });
-    builds.append(btn);
-  }
-  body.append(builds);
-  const styleCard = el('div', 'style-card');
-  styleCard.innerHTML = `<small>지금 스타일 · <b class="style-now">${build ? build.name : '없음 — 스킬을 배우면 자연스럽게 정해져요'}</b></small>
-    <p>${BUILD_ICON[h.id][view]} ${br.style}</p>
+  const about = el('div', 'style-card');
+  about.innerHTML = `<small>${h.title} · ${h.role}</small><p>${h.blurb}</p>
     <small class="kit">고유기 <b>${SPECIALS[h.special].name}</b> · 무기 ${WEAPONS[h.weapon].levels.map((w) => w.name).join(' → ')}</small>`;
-  body.append(styleCard);
+  body.append(about);
   // 궁극기: every hero has three; each shows what unlocks it.
   const ults = heroUltimates(h);
   const ultCard = el('div', 'ult-card');
@@ -291,14 +246,12 @@ export function renderHeroes(save, sel, act) {
   }
   body.append(ultCard);
 
-  body.append(tabStrip([['gear', '🛡️ 장비'], ['forge', '🔨 제련'], ['skill', '📜 스킬'], ['treasure', '💎 보물']], ui.heroTab, (id) => {
+  body.append(tabStrip([['gear', '🛡️ 장비'], ['forge', '🔨 제련']], ui.heroTab, (id) => {
     ui.heroTab = id;
     renderHeroes(save, sel, act);
   }));
-  if (ui.heroTab === 'gear') body.append(gearPanel(save, h, act));
-  else if (ui.heroTab === 'forge') body.append(forgePanel(save, h, act));
-  else if (ui.heroTab === 'skill') body.append(skillPanel(save, h, view, act));
-  else body.append(treasurePanel(save, h, act));
+  if (ui.heroTab === 'forge') body.append(forgePanel(save, h, act));
+  else body.append(gearPanel(save, h, act));
 }
 
 /** Paper doll around the hero, then the chosen slot's grades. */
@@ -407,59 +360,6 @@ function forgePanel(save, h, act) {
     } else ctrl.append(tag(`+${FORGE.max} 완성`));
     card.append(ctrl);
     box.append(card);
-  }
-  return box;
-}
-
-/** Root node, then the viewed build's three steps. */
-function skillPanel(save, h, view, act) {
-  const tree = SKILL_TREES[h.id];
-  const state = save.trees?.[h.id] ?? { nodes: [] };
-  const has = (id) => state.nodes.includes(id);
-  const box = el('div', 'skill-panel');
-  const br = tree.branches.find((b) => b.id === view);
-  box.append(el('p', 'hint', '두 길 모두 배울 수 있어요. 많이 배운 쪽이 지금 스타일이 되고, 섞으면 혼합 스타일이 돼요.'));
-
-  const steps = [{ n: tree.root, branch: null, lv: '기본' }, ...br.nodes.map((n, i) => ({ n, branch: br.id, lv: `Lv.${i + 1}` }))];
-  steps.forEach(({ n, branch, lv }, i) => {
-    const prevOk = i === 0 || has(steps[i - 1].n.id);
-    const got = has(n.id);
-    const st = got ? 'got' : prevOk ? 'open' : 'locked';
-    const card = el('div', `step ${st}`);
-    card.innerHTML = `<span class="st-lv">${lv}</span><div class="st-text"><b>${n.name}</b><span>${n.desc}</span></div>`;
-    if (got) card.append(tag('✓ 습득'));
-    else if (st === 'open') card.append(priceBtn(n.price, save.money, () => act.buyNode(n, branch)));
-    else card.append(tag('🔒', 'locked'));
-    box.append(card);
-  });
-  return box;
-}
-
-/** Treasure tree: base treasure, then two per build. */
-function treasurePanel(save, h, act) {
-  const list = TREASURES[h.id] ?? [];
-  const tree = SKILL_TREES[h.id];
-  const wearing = outfit(save, h.id).treasure;
-  const box = el('div', 'treasure-panel');
-  box.append(el('p', 'hint', '보물은 보물 칸에 하나만 끼워요. 빌드와 같은 길의 보물이 잘 어울려요.'));
-  const card = (t) => {
-    const owned = save.owned.includes(t.id);
-    const parentOk = !t.parent || save.owned.includes(t.parent);
-    const c = el('div', `item-card${wearing === t.id ? ' worn' : ''}${!owned && !parentOk ? ' sealed' : ''}`);
-    c.append(iconCanvas(t.id, 40, 'row-icon'));
-    c.append(el('div', 'ic-text', `<b>${t.name}</b><span>${t.desc}</span>`));
-    const ctrl = el('div', 'ic-ctrl');
-    if (owned) ctrl.append(wearing === t.id ? tag('착용 중') : button('착용', 'wear-btn', () => act.wearTreasure(t)));
-    else if (parentOk) ctrl.append(priceBtn(t.price, save.money, () => act.buyTreasure(t)));
-    else ctrl.append(tag('🔒', 'locked'));
-    c.append(ctrl);
-    return c;
-  };
-  const base = list.find((t) => !t.parent);
-  if (base) box.append(card(base));
-  for (const b of tree.branches) {
-    box.append(el('h4', 'list-title', `${BUILD_ICON[h.id][b.id]} ${b.name}`));
-    for (const t of list.filter((x) => x.branch === b.id)) box.append(card(t));
   }
   return box;
 }
@@ -638,7 +538,6 @@ export function renderPrep(save, sel, act) {
   body.innerHTML = '';
   body.append(header('출진 준비', save, act, '出陣'));
   const h = HEROES[sel.hero];
-  const build = buildOf(save, h.id);
   const st = STAGES[sel.stage];
   const { boss, gate } = stageInfo(save, sel, st);
   const m = metaBonus(save, h.id);
@@ -658,7 +557,7 @@ export function renderPrep(save, sel, act) {
   top.append(portrait(h, 96));
   const t = el('div', 'hh-text');
   t.append(el('div', 'hh-name', h.name));
-  t.append(el('div', 'hh-build', build ? build.name : '스타일 없음'));
+  t.append(el('div', 'hh-build', `${h.title} · ${h.role}`));
   top.append(t);
   card.append(top);
 
@@ -672,11 +571,6 @@ export function renderPrep(save, sel, act) {
   };
   sec('장비', gearRow(save, h.id, 30), () => {
     ui.heroTab = 'gear';
-    act.go('heroes');
-  });
-  const tr = (TREASURES[h.id] ?? []).find((x) => x.id === outfit(save, h.id).treasure);
-  sec('보물', tr ? tr.name : '없음', () => {
-    ui.heroTab = 'treasure';
     act.go('heroes');
   });
   const secrets = SECRETS.filter((s) => s.hero === h.id && save.secrets.includes(s.id)).map((s) => s.name);
@@ -773,7 +667,7 @@ export function renderCodex(save, sel, act) {
   const body = $('codexBody');
   body.innerHTML = '';
   body.append(header('도감', save, act, '圖鑑'));
-  const tabs = [['ach', '업적'], ['hero', '영웅'], ['weapon', '무기'], ['gear', '장비'], ['treasure', '보물'], ['foe', '적'], ['record', '기록'], ['help', '도움말']];
+  const tabs = [['ach', '업적'], ['hero', '영웅'], ['weapon', '무기'], ['gear', '장비'], ['foe', '적'], ['record', '기록'], ['help', '도움말']];
   const strip = tabStrip(tabs.map(([id, name]) => [id, `${img(`icon/tab-${id}`, 'tab-img')}<b>${name}</b>`]), ui.codexTab, (id) => {
     ui.codexTab = id;
     renderCodex(save, sel, act);
@@ -819,13 +713,6 @@ export function renderCodex(save, sel, act) {
       const c = cell(iconCanvas(has ? it.id : `empty:${it.slot}`, 48, 'row-icon'), it.name, `${HEROES[it.hero].name} · ${GRADES[it.grade].name} ${SLOTS.find((s) => s.id === it.slot).name}`, !has);
       c.style.setProperty('--grade', GRADES[it.grade].color);
       grid.append(c);
-    }
-  } else if (ui.codexTab === 'treasure') {
-    for (const h of Object.values(HEROES)) {
-      for (const t of TREASURES[h.id] ?? []) {
-        const has = save.owned.includes(t.id);
-        grid.append(cell(iconCanvas(has ? t.id : 'empty:treasure', 48, 'row-icon'), t.name, h.name, !has));
-      }
     }
   } else if (ui.codexTab === 'foe') {
     const foes = [

@@ -1,7 +1,6 @@
 import { HEROES, MOMENTUM } from './data/heroes.js';
 import { ENEMIES, VETERAN } from './data/enemies.js';
 import { BOSSES } from './data/bosses.js';
-import { afterSwing, onHurt, updateBuild } from './systems/builds.js';
 import { STAGES, scaleStage } from './data/stages.js';
 import { enemyHpScale, enemyDamageScale, ENEMY_BOOST, ENEMY_ARMOR, BOSS_BOOST, HP_REGEN } from './data/balance.js';
 import { UPGRADES, FALLBACKS, evolutionStatus } from './data/upgrades.js';
@@ -152,7 +151,6 @@ export class Game {
     this.endTimer = 0;
     this.view = { w: 1280, h: 720 }; // world-units visible; set by renderer
     this.applyStartPerks();
-    this.spawnRetinue();
   }
 
   // ---------------------------------------------------------------- helpers
@@ -342,27 +340,8 @@ export class Game {
     return { name, ratio: clamp(hp / max, 0, 1) };
   }
 
-  /**
-   * 군세 (왕건 통솔의 길): standing troops from the skill tree. They never leave;
-   * each kind has its own 군령 cycle (see systems/allies.js ORDERS).
-   */
-  spawnRetinue() {
-    const m = this.player.meta;
-    const roles = [
-      ...Array(m.retinueSpear ?? 0).fill('spear'),
-      ...Array(m.retinueArcher ?? 0).fill('archer'),
-      ...Array(m.retinueGuard ?? 0).fill('guard'),
-    ];
-    this.orders = {};
-    roles.forEach((role, i) => {
-      this.allies.push({ kind: 'retinue', role, idx: roles.filter((r, j) => r === role && j < i).length, x: this.player.x, y: this.player.y, r: 11, cd: 0, facing: 0 });
-      this.orders[role] ??= { t: 2 + Object.keys(this.orders).length * 1.3 };
-    });
-  }
-
-  /** After each main-weapon swing (견훤 패공의 길 연참, gear 연환). */
+  /** After each main-weapon swing (gear 연환). */
   afterSwing() {
-    afterSwing(this);
     // 연환 (gear 비기): now and then the blade comes round again at once.
     const w = this.player.weapon;
     if (this.player.meta.echo && !w.echoed && Math.random() < 0.2) {
@@ -429,10 +408,6 @@ export class Game {
 
   killEnemy(e) {
     e.dead = true;
-    // 미륵의 대계: a swayed soldier bursts when it falls.
-    if (this.isCharmed(e) && this.player.meta.charmBlast) {
-      hitArc(this, e.x, e.y, 0, 70, 360, this.player.meta.charmBlast * this.player.stats.might, 80, 'burst');
-    }
     this.sfx(e.isBoss && !e.def.minion ? 'bossDown' : 'kill');
     this.fx.push({ type: 'ink', x: e.x, y: e.y, t: 0, life: 0.8, size: e.r * (e.isBoss && !e.def.minion ? 4 : 1.6), seed: Math.random() });
     if (e.def.behavior === 'static') {
@@ -517,10 +492,7 @@ export class Game {
     if (p.invuln > 0 || this.state !== 'play') return false;
     if (p.mount && this.time < p.mount.invulnUntil) return false;
     // Armour cuts 7% per point (max 50%), so it helps against big hits and small ones alike.
-    // 철벽 (견훤 반격의 길) adds armour for every foe close by.
-    let dmg = Math.max(1, amount * (1 - armorCut(p.stats.armor + (p.wall ?? 0))));
-    // 호위진: the bodyguards take a share of every blow.
-    if (p.wardUntil > this.time) dmg = Math.max(1, dmg * 0.6);
+    let dmg = Math.max(1, amount * (1 - armorCut(p.stats.armor)));
     dmg = Math.max(1, dmg * p.stats.taken);
     // 신의 분노 goes straight through armour and guards.
     if (opts?.pierce) dmg = amount;
@@ -533,7 +505,6 @@ export class Game {
     this.shake(4);
     this.sfx('hurt');
     this.texts.push({ x: p.x, y: p.y - 20, v: Math.round(dmg), t: 0, life: 0.7, hurt: true });
-    onHurt(this, attacker);
     // 수호 깃발 (gear 비기): a moment of safety when health runs low.
     if (p.meta.lastStand && p.hp > 0 && p.hp < p.stats.maxHp * 0.3 && this.time >= (p.lastStandReady ?? 0)) {
       p.lastStandReady = this.time + 60;
@@ -577,7 +548,7 @@ export class Game {
     const lvl = (u) => p.upgrades[u.id] ?? 0;
     // 한계 돌파 (gear 비기): some 책략 may go one level higher.
     const cap = (u) => u.maxLevel + (p.meta.caps?.[u.id] ?? 0);
-    const pool = UPGRADES.filter((u) => (!u.heroes || u.heroes.includes(p.hero.id)) && (!u.needs || p.meta[u.needs]) && (u.available ? u.available(this) : lvl(u) < cap(u)));
+    const pool = UPGRADES.filter((u) => (!u.heroes || u.heroes.includes(p.hero.id)) && (u.available ? u.available(this) : lvl(u) < cap(u)));
     const choices = [];
     const evo = pool.find((u) => u.isEvolution?.(this));
     if (evo) choices.push(evo);
@@ -704,7 +675,7 @@ export class Game {
     p.vx = p.vy = 0;
     if (p.moving) {
       let spd = p.stats.speed;
-      if (p.mount) spd *= p.mount.L.speed + (p.meta.mountSpeed ?? 0);
+      if (p.mount) spd *= p.mount.L.speed;
       for (const z of this.zones) {
         if (z.team === 'enemy' && z.slow && dist2(z.x, z.y, p.x, p.y) < z.r * z.r) spd *= 1 - z.slow;
       }
@@ -717,7 +688,6 @@ export class Game {
       p.y += p.vy * dt;
       p.facing = Math.atan2(move.y, move.x);
     }
-    updateBuild(this, dt);
     if (this.arena) {
       const dx = p.x - this.arena.x, dy = p.y - this.arena.y;
       const d = Math.hypot(dx, dy), lim = this.arena.r - p.r;
@@ -985,7 +955,7 @@ export class Game {
       m.drop = 0.06;
       this.zones.push({
         team: 'player', kind: 'hoof', x: p.x - Math.cos(p.facing) * 12, y: p.y - Math.sin(p.facing) * 12,
-        r: 26 * p.stats.area, dps: m.L.trailDps * p.stats.might * (1 + (p.meta.trailMul ?? 0)), life: m.L.trailLife, t: 0, angle: p.facing,
+        r: 26 * p.stats.area, dps: m.L.trailDps * p.stats.might, life: m.L.trailLife, t: 0, angle: p.facing,
       });
     }
     if (m.L.trample) {

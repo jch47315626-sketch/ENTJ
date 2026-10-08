@@ -39,32 +39,6 @@ export const UPGRADES = [
     describe: () => '통솔로 부르는 창병 +1, 머무는 시간 +2초',
     apply: (g) => g.player.recalc(),
   },
-  // Build 책략: offered only when the matching skill-tree path is taken (`needs` = a meta key).
-  {
-    id: 'orderDrill', name: '군령 단련', category: '병법', maxLevel: 3, weight: 12, heroes: ['wanggeon'], needs: 'retinueSpear',
-    describe: () => '🏯 군세가 더 자주 움직인다 — 모든 군령 주기 −10%',
-    apply: () => {}, // read directly by the build systems
-  },
-  {
-    id: 'rushDrill', name: '질풍참', category: '무예', maxLevel: 3, weight: 12, heroes: ['gyeonhwon'], needs: 'rush',
-    describe: () => '⚔️ 연참이 더 자주 — 재사용 −12%, 연참 피해 +15%',
-    apply: () => {}, // read directly by the build systems
-  },
-  {
-    id: 'counterDrill', name: '역습', category: '무예', maxLevel: 3, weight: 12, heroes: ['gyeonhwon'], needs: 'counter',
-    describe: () => '💥 반격이 더 세고 넓게 — 반격 피해 +25%, 범위 +10%',
-    apply: () => {}, // read directly by the build systems
-  },
-  {
-    id: 'focusDrill', name: '정신 통일', category: '무예', maxLevel: 3, weight: 12, heroes: ['gungye'], needs: 'focus',
-    describe: () => '☄️ 법력이 더 빨리 모인다 — 집중 속도 +30%, 천안통 주기 −10%',
-    apply: () => {}, // read directly by the build systems
-  },
-  {
-    id: 'chaosDrill', name: '미혹', category: '병법', maxLevel: 3, weight: 12, heroes: ['gungye'], needs: 'chaosAura',
-    describe: () => '🌀 혼란의 기운이 더 자주, 더 오래 — 주기 −12%, 홀림 +1초',
-    apply: () => {}, // read directly by the build systems
-  },
   skillUpgrade('shin', SHIN, ['wanggeon'], '병법', 14),
   skillUpgrade('horse', HORSE, ['wanggeon'], '지세', 13),
   skillUpgrade('chain', CHAIN, ['gyeonhwon'], '무예', 14),

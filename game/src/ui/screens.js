@@ -87,7 +87,7 @@ export function renderResult(g, won, extra = {}) {
     : '';
   $('resultText').textContent = won
     ? `${boss?.name ?? '적장'} 처치! ${g.stage.clearText}`
-    : g.boss ? `${boss.name}의 진을 넘지 못했다. 책략을 바꿔 다시 도전하자.` : `${g.stage.name}에서 쓰러졌다. 장비나 빌드를 바꿔 보자.`;
+    : g.boss ? `${boss.name}의 진을 넘지 못했다. 책략을 바꿔 다시 도전하자.` : `${g.stage.name}에서 쓰러졌다. 장비를 갖추고 다시 도전하자.`;
   // The last battlefield closes the story with its own ending.
   const end = won && g.stage.ending;
   seal.classList.toggle('ending', !!end);
