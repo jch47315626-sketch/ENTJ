@@ -4,7 +4,7 @@ import { BOSSES } from '../data/bosses.js';
 import { ENEMIES } from '../data/enemies.js';
 import { WEAPONS } from '../data/weapons.js';
 import {
-  SLOTS, EQUIPMENT, TRAINING, SECRETS, REWARD_BY_STARS, GRADES, FORGE,
+  SLOTS, EQUIPMENT, SECRETS, REWARD_BY_STARS, GRADES, FORGE,
   forgeCost, gradeOpen, itemBonus, bonusText, metaBonus, entryCheck, armorCut,
 } from '../data/meta.js';
 import { ACHIEVEMENTS, ACH_GROUPS, progressOf } from '../data/achievements.js';
@@ -36,15 +36,6 @@ const itemName = (save, item) => `${item.name}${forgeLv(save, item) ? ` +${forge
 
 const SLOT_ICON = { head: '🪖', body: '🛡️', charm: '📿', wrist: '💠', belt: '🎗️', feet: '👢' };
 
-/** Training rows lead with what they do. */
-const TRAIN_UI = {
-  swordDrill: ['⚔️', '모든 공격이 더 아파진다'],
-  body: ['❤️', '더 오래 버틴다'],
-  riding: ['🐎', '더 빨리 달린다'],
-  fortune: ['🪙', '판마다 냥을 더 받는다'],
-  tactics: ['📜', '출진하자마자 책략 하나'],
-};
-
 // Remembered between renders: which tab or card is open on each screen.
 const ui = { heroTab: 'gear', slot: 'head', codexTab: 'ach', mapStage: null };
 
@@ -73,11 +64,67 @@ const GEM = () => img('icon/crystal', 'gem-img');
 const priceBtn = (price, money, onClick) => button(`${COIN()}${fmt(price)}`, 'buy-btn', onClick, money < price);
 /** 완료 stamp: a gold tick in a ring over a small plaque. */
 const doneSeal = (text = '완료') => el('span', 'done-seal', `<i>✓</i><em>${text}</em>`);
-/** Section title in brush strokes with a red seal, as on the 수련 · 비전 boards. */
+/** Section title in brush strokes with a red seal, as on the 비전 board. */
 const sealOf = (hanja) => `<i class="title-seal">${[...hanja].join('<br>')}</i>`;
 const secHead = (title, seal, sub) => el('div', 'sec-head', `<b>${title}</b>${seal ? sealOf(seal) : ''}${sub ? `<small>${sub}</small>` : ''}`);
 /** Centered heading between gold rules (도감 groups). */
 const ruleHead = (icon, text) => el('h4', 'rule-head', `<span class="rh-line"></span>${icon}<b>${text}</b><span class="rh-line"></span>`);
+/**
+ * 꾹 누르기: hold a card to see its full description; letting go hides it.
+ * A hold never counts as a tap, so holding a buy button does not buy.
+ */
+const HOLD_MS = 380;
+let tipEl = null;
+function holdTip(node, html) {
+  let timer = 0, start = null, shown = false;
+  const hide = () => {
+    clearTimeout(timer);
+    if (tipEl) tipEl.hidden = true;
+  };
+  node.classList.add('has-tip');
+  node.addEventListener('pointerdown', (e) => {
+    start = { x: e.clientX, y: e.clientY };
+    shown = false;
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      shown = true;
+      showTip(node, typeof html === 'function' ? html() : html);
+    }, HOLD_MS);
+  });
+  node.addEventListener('pointermove', (e) => {
+    // Scrolling the list is not a hold.
+    if (start && !shown && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 10) clearTimeout(timer);
+  });
+  for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) node.addEventListener(ev, hide);
+  node.addEventListener('click', (e) => {
+    if (!shown) return;
+    shown = false;
+    e.stopPropagation();
+    e.preventDefault();
+  }, true);
+  node.addEventListener('contextmenu', (e) => e.preventDefault());
+  return node;
+}
+function showTip(node, html) {
+  if (!tipEl) {
+    tipEl = el('div', 'hold-tip');
+    tipEl.setAttribute('role', 'tooltip');
+    document.body.append(tipEl);
+  }
+  tipEl.innerHTML = html;
+  tipEl.hidden = false;
+  const r = node.getBoundingClientRect();
+  const w = Math.min(340, window.innerWidth - 24);
+  tipEl.style.width = `${w}px`;
+  tipEl.style.left = `${Math.max(12, Math.min(window.innerWidth - w - 12, r.left + r.width / 2 - w / 2))}px`;
+  const h = tipEl.offsetHeight;
+  // Above the finger if there is room, otherwise below the card.
+  tipEl.style.top = `${r.top - h - 10 > 8 ? r.top - h - 10 : Math.min(window.innerHeight - h - 8, r.bottom + 10)}px`;
+}
+/** Tip body: a title, then lines. */
+const tipHtml = (title, lines) => `<b class="ht-title">${title}</b>${lines.filter(Boolean).map((l) => `<p>${l}</p>`).join('')}`;
+const holdHint = () => el('p', 'hold-hint', '💡 카드를 꾹 누르고 있으면 자세한 설명이 나와요');
+
 const STAGE_ART = (id) => `url(${UI}/stage/${id}.webp)`;
 /** Bigger scene for the stage panel: the painted map around the node (삼한), or the field's own card art. */
 const STAGE_SCENE = (id) => (chapterOf(STAGES[id]) === 'samhan' ? `url(${UI}/scene/${id}.webp)` : STAGE_ART(id));
@@ -254,9 +301,11 @@ export function renderHeroes(save, sel, act) {
   const ultCard = el('div', 'ult-card');
   ultCard.append(el('b', 'ult-title', `🌟 궁극기 ${ults.length}`));
   for (const u of ults) {
-    ultCard.append(el('div', 'ult-row', `<b>${u.name}</b><span class="ult-need">${u.need.map((n) => `☐ ${n}`).join(' · ')}</span><small>${u.desc}</small>`));
+    const row = el('div', 'ult-row', `<b>${u.name}</b><span class="ult-need">${u.need.map((n) => `☐ ${n}`).join(' · ')}</span><small>${u.desc}</small>`);
+    ultCard.append(holdTip(row, tipHtml(`🌟 ${u.name}`, [u.desc, `조건: ${u.need.join(' + ')}`, '조건을 다 채운 뒤 레벨업하면 진화 카드가 꼭 나와요.'])));
   }
   body.append(ultCard);
+  body.append(holdHint());
 
   body.append(tabStrip([['gear', '🛡️ 장비'], ['forge', '🔨 제련']], ui.heroTab, (id) => {
     ui.heroTab = id;
@@ -337,6 +386,15 @@ function itemCard(save, h, item, act) {
   }
   card.append(ctrl);
   if (opts) card.append(opts); // full-width row under the controls
+  const G = GRADES[item.grade];
+  holdTip(card, () => tipHtml(`${gradeTag(item.grade)} ${open || owned ? itemName(save, item) : '???'}`, [
+    `${h.name} 전용 · ${SLOTS.find((s) => s.id === item.slot).name}`,
+    open || owned ? `기본 능력: ${bonusText(itemBonus(item, lv))}${lv ? ` (제련 +${lv} 포함)` : ''}` : '',
+    item.note ? item.note : '',
+    lines.length ? `옵션: ${lines.map(lineText).join(' · ')}` : owned ? '' : '얻을 때 무작위 옵션이 1~4줄 붙어요 (진품 이상은 비기가 붙기도 해요).',
+    owned ? (worn ? '지금 차고 있어요' : '가진 장비 — 눌러서 착용') : item.relic ? '난세 10단계 이상을 평정하면 얻을 수 있어요.'
+      : open ? `값: ${fmt(item.price)}냥` : `★${G.needStars} 전장을 평정하면 상점에 나와요.`,
+  ]));
   return card;
 }
 
@@ -371,6 +429,12 @@ function forgePanel(save, h, act) {
       ctrl.append(el('small', 'forge-cost', `🪙 ${fmt(cost)} · 성공 ${Math.round(FORGE.chance[lv] * 100)}%`));
     } else ctrl.append(tag(`+${FORGE.max} 완성`));
     card.append(ctrl);
+    holdTip(card, () => tipHtml(`🔨 ${itemName(save, item)}`, [
+      `지금: ${bonusText(itemBonus(item, lv))}`,
+      lv < FORGE.max ? `+${lv + 1} 성공 시: ${bonusText(itemBonus(item, lv + 1))}` : '최대 +5까지 제련했어요',
+      lv < FORGE.max ? `비용 ${fmt(forgeCost(item, lv))}냥 · 성공 확률 ${Math.round(FORGE.chance[lv] * 100)}% — 실패해도 장비는 그대로예요` : '',
+      `단계마다 기본 능력치 +${Math.round(FORGE.step * 100)}%`,
+    ]));
     box.append(card);
   }
   return box;
@@ -387,6 +451,7 @@ export function renderGrow(save, sel, act) {
   // 결기 상점: 무한 전장's 결기수정 buy permanent stacks.
   const gy = el('div', 'grow-card gyeolgi-card');
   gy.id = 'gyeolgiShop';
+  body.append(holdHint());
   const banner = el('div', 'gy-banner', `<span class="gy-gem">${img('icon/crystal', 'gy-big')}<b class="gy-have">${GEM()}${fmt(save.crystals ?? 0)}</b></span>
     <h3>결기 상점</h3><small>모든 영웅 · 무한 전장에서 모은 결기수정</small>`);
   banner.style.setProperty('--art', `url(${UI}/row/gyeolgi-banner.webp)`);
@@ -396,26 +461,22 @@ export function renderGrow(save, sel, act) {
     const cost = gyeolgiCost(g, lv);
     const row = el('div', `grow-row art-row${lv ? ' on' : ''}`);
     row.style.setProperty('--art', `url(${UI}/row/${g.id}-art.webp)`);
-    row.innerHTML = `${img(`row/${g.id}-icon`, 'gr-img')}<div class="gr-text"><b>${g.name} <i>${lv}${g.max ? `/${g.max}` : ''}스택</i></b><span>스택마다 ${g.text}</span><small>${g.max ? `스택마다 결기수정 ${g.cost} · 최대 ${g.max}스택` : `다음 스택 ×${g.grow}씩 비싸져요`}</small></div>`;
+    row.innerHTML = `${img(`row/${g.id}-icon`, 'gr-img')}<div class="gr-text"><b>${g.name} <i>${lv}${g.max ? `/${g.max}` : ''}스택</i></b><span>스택마다 ${g.text}</span><small>${g.max ? `스택마다 결기수정 ${g.cost} · 최대 ${g.max}스택` : (g.early && lv < g.early.length ? `처음 5스택은 싸요: ${g.early.join(' · ')}` : `다음 스택 ×${g.grow}씩 비싸져요`)}</small></div>`;
     if (g.max && lv >= g.max) row.append(doneSeal());
     else row.append(button(`${GEM()}${fmt(cost)}`, 'buy-btn gy-btn', () => act.buyGyeolgi(g), (save.crystals ?? 0) < cost));
+    const total = Object.entries(g.per).map(([k, v]) => bonusText({ [k]: v * lv }) || '').join(', ');
+    holdTip(row, () => tipHtml(`${g.icon} ${g.name}`, [
+      `스택마다 <b>${g.text}</b> — 모든 영웅에게 영구 적용`,
+      `지금 ${lv}${g.max ? `/${g.max}` : ''}스택${lv && g.id !== 'gLeech' ? ` · 합계 ${total}` : lv ? ` · 합계 ${(lv * 0.01).toFixed(2)}%` : ''}`,
+      g.max && lv >= g.max ? '최대까지 올렸어요' : `다음 스택: 결기수정 <b>${fmt(cost)}</b> (가진 결기수정 ${fmt(save.crystals ?? 0)})`,
+      g.cost ? `값: 스택마다 ${fmt(g.cost)} · 최대 ${g.max}스택`
+        : g.early ? `값: 처음 ${g.early.join(' · ')}, 그 뒤 스택마다 ×${g.grow}` : `값: 첫 스택 100, 그 뒤 스택마다 ×${g.grow}`,
+      '결기수정은 ♾️ 무한 전장에서만 모여요',
+    ]));
     gy.append(row);
   }
   if (!(save.crystals ?? 0) && !Object.keys(save.gyeolgi ?? {}).length) gy.append(el('p', 'hint', '♾️ 무한 전장에서는 냥 대신 결기수정이 떨어져요. 오래 버틸수록, 어려운 전장일수록 많이 모여요.'));
   grid.append(gy);
-
-  const train = el('div', 'grow-card');
-  train.append(secHead('수련', '修鍊', '모든 영웅 · 영구 성장'));
-  for (const t of TRAINING) {
-    const lv = save.training[t.id] ?? 0;
-    const [icon, effect] = TRAIN_UI[t.id] ?? ['•', t.name];
-    const row = el('div', `grow-row art-row${lv ? ' on' : ''}`);
-    row.style.setProperty('--art', `url(${UI}/row/${t.id}-art.webp)`);
-    row.innerHTML = `${TRAIN_UI[t.id] ? img(`row/${t.id}-icon`, 'gr-img') : `<span class="gr-icon">${icon}</span>`}<div class="gr-text"><b>${t.name} <i>Lv ${lv}/${t.max}</i></b><span>${effect}</span><small>${t.desc}</small></div>`;
-    row.append(lv >= t.max ? doneSeal() : priceBtn(t.price(lv), save.money, () => act.train(t)));
-    train.append(row);
-  }
-  grid.append(train);
 
   const sec = el('div', 'grow-card secret-card');
   sec.append(secHead('비전', '秘傳', '영웅별 · 출진할 때 이 스킬을 들고 시작'));
@@ -426,6 +487,11 @@ export function renderGrow(save, sel, act) {
     const row = el('div', `grow-row scroll-row${has ? ' on' : ''}${sc.hero !== sel.hero ? ' other' : ''}`);
     row.innerHTML = `${img(`row/scroll-${SECRET_SCROLL[sc.id] ?? 'swords'}`, 'gr-scroll')}<div class="gr-text"><b>${sc.name} <i>${HEROES[sc.hero].name}</i></b><span>${sc.desc}</span></div>`;
     row.append(has ? tag('습득', 'got-tag') : priceBtn(sc.price, save.money, () => act.learn(sc)));
+    holdTip(row, tipHtml(`📜 ${sc.name}`, [
+      `${HEROES[sc.hero].name} 전용 · ${sc.desc}`,
+      '배워 두면 출진할 때마다 이 책략을 Lv1로 들고 시작해요 (레벨업 카드 한 장을 아끼는 셈).',
+      has ? '✅ 이미 배웠어요' : `값: ${fmt(sc.price)}냥 (가진 냥 ${fmt(save.money)})`,
+    ]));
     sec.append(row);
   }
   grid.append(sec);
@@ -457,6 +523,18 @@ const MAP_POS = {
   bukwon: [40, 11],
 };
 const MAP_W = 124; // the painted maps are 1.24 times as wide as tall
+
+/** Hold tip for a battlefield: difficulty, reward, boss, gear and record. */
+function stageTip(save, sel, st) {
+  const { boss, gate, cleared } = stageInfo(save, sel, st);
+  const best = bestNanse(save, st.id);
+  return tipHtml(`${st.numeral} ${st.name}`, [
+    `${starRow(st)} ${st.difficulty.label} · 보상 ×${rewardOf(st)}`,
+    `적장: ${boss.name}${boss.epithet ? ` (${boss.epithet})` : ''}`,
+    `권장 장비: ${st.difficulty.stars > 1 ? `${GRADES[REC_GRADE[st.difficulty.stars]].name}${st.difficulty.stars > 5 ? ' +제련' : ' 이상'}` : '없어도 OK'}`,
+    cleared ? `🏆 평정함${best ? ` · 난세 최고 ${best}단계` : ''}` : gate.ok ? '아직 평정하지 못했어요' : `🔒 ${gate.text}`,
+  ]);
+}
 
 /** 보상 배율 shown for a field (stars × the field's own rewardMul). */
 const rewardOf = (st) => +(REWARD_BY_STARS[st.difficulty.stars] * (st.difficulty.rewardMul ?? 1)).toFixed(1);
@@ -520,6 +598,7 @@ export function renderMap(save, sel, act) {
       });
     n.style.left = `${x}%`;
     n.style.top = `${y}%`;
+    holdTip(n, stageTip(save, sel, st));
     map.append(n);
   }
   body.append(map);
@@ -625,9 +704,11 @@ export function renderNanse(save, sel, act) {
     const b = button(`<span class="ns-no">${st.numeral}${ok ? '' : '<i class="ns-lock">🔒</i>'}</span><span class="ns-text"><b>${st.name}</b><small>${ok ? (best ? `최고 ${best}단계` : '평정 완료') : '미평정'}</small></span>`,
       `ns-stage${id === sel.stage ? ' on' : ''}${ok ? '' : ' locked'}`, () => act.selectStage(id), !ok);
     b.style.setProperty('--art', STAGE_ART(id));
+    holdTip(b, stageTip(save, sel, st));
     row.append(b);
   }
   body.append(row);
+  body.append(holdHint());
   const cleared = !!save.best?.[sel.stage];
   body.append(nansePanel(save, sel, act, cleared));
   if (cleared) body.append(button('⚔️ 이 난세로 출진 준비', 'seal-btn cta', () => act.go('prep')));
@@ -666,6 +747,11 @@ function nansePanel(save, sel, act, cleared) {
     ctl.append(el('span', 'nb-count', String(r)));
     ctl.append(button('+', 'nb-btn', () => act.setNanse(c.id, r + 1), r >= c.ranks));
     row.append(ctl);
+    holdTip(row, tipHtml(`${c.icon} ${c.name}`, [
+      ...Array.from({ length: c.ranks }, (_, i) => `${c.ranks > 1 ? `${i + 1}단: ` : ''}${c.desc(i + 1)}${i < r ? ' ✔' : ''}`),
+      `난세 점수 +${c.points}${c.ranks > 1 ? ' (단마다)' : ''} — 점수의 합이 난세 단계예요`,
+      '단계가 높을수록 판 보상 냥이 늘어요',
+    ]));
     list.append(row);
   }
   box.append(list);
@@ -688,13 +774,15 @@ export function renderCodex(save, sel, act) {
   body.append(strip);
   const grid = el('div', 'codex-grid');
   const kills = save.codex?.kills ?? {};
-  const cell = (iconNode, name, sub, locked) => {
+  const cell = (iconNode, name, sub, locked, more = []) => {
     const c = el('div', `codex-cell${locked ? ' locked' : ''}`);
     c.append(iconNode);
     c.append(el('b', '', locked ? '???' : name));
     if (sub) c.append(el('small', '', locked ? '' : sub));
+    holdTip(c, locked ? tipHtml('???', ['아직 만나지 못했어요.']) : tipHtml(name, [sub, ...more]));
     return c;
   };
+  body.append(holdHint());
 
   if (ui.codexTab === 'ach') {
     body.append(achPanel(save, act));
@@ -710,13 +798,14 @@ export function renderCodex(save, sel, act) {
     return;
   }
   if (ui.codexTab === 'hero') {
-    for (const h of Object.values(HEROES)) grid.append(cell(portrait(h, 64), h.name, `${h.title} · ${h.role}`));
+    for (const h of Object.values(HEROES)) grid.append(cell(portrait(h, 64), h.name, `${h.title} · ${h.role}`, false, [h.blurb, `고유기: ${SPECIALS[h.special].name}`]));
   } else if (ui.codexTab === 'weapon') {
     for (const h of Object.values(HEROES)) {
       for (const wid of [h.weapon, ...(h.subWeapons ?? [])]) {
         const W = WEAPONS[wid];
         const ic = iconCanvas(wid, 48, 'row-icon');
-        grid.append(cell(ic, W.levels[0].name, `${h.name} · ${W.levels.map((l) => l.name).slice(1).join(' → ')}`));
+        grid.append(cell(ic, W.levels[0].name, `${h.name} · ${W.levels.map((l) => l.name).slice(1).join(' → ')}`, false,
+          W.levels.map((l, i) => `${i + 1}단계 <b>${l.name}</b>${l.evolution ? ' 🌟' : ''} — ${l.desc ?? ''}`)));
       }
     }
   } else if (ui.codexTab === 'gear') {
@@ -782,6 +871,12 @@ function achPanel(save, act) {
       const [now, need] = progressOf(a, save);
       const bar = a.goal && !st ? `<span class="ach-prog"><i style="width:${Math.min(100, (now / need) * 100)}%"></i><em>${fmt(Math.min(now, need))} / ${fmt(need)}</em></span>` : '';
       row.append(el('div', 'ach-text', `<b>${a.name}</b><small>${a.desc}</small>${bar}`));
+      holdTip(row, tipHtml(`${a.icon} ${a.name}`, [
+        a.desc,
+        a.goal ? `진행: ${fmt(Math.min(now, need))} / ${fmt(need)}` : '',
+        `보상 ${fmt(a.reward)}냥`,
+        st === 'done' ? '✅ 달성하고 보상을 받았어요' : st === 'ready' ? '🎁 달성! 받기를 눌러 보상을 받아요' : '',
+      ]));
       if (st === 'ready') row.append(button(`받기<br><small>+${fmt(a.reward)}</small>`, 'ach-claim', () => act.claimAch(a.id)));
       else row.append(el('span', `ach-reward${st === 'done' ? ' got' : ''}`, st === 'done' ? '<i class="ach-check">✓</i>' : `${COIN()}${fmt(a.reward)}`));
       box.append(row);

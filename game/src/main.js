@@ -372,12 +372,6 @@ const act = {
     refresh();
     toast(ok ? `🔨 제련 성공! ${item.name} +${lv + 1}` : `제련 실패… ${josa(item.name, '은')} +${lv} 그대로`, ok);
   },
-  train(t) {
-    const lv = save.training[t.id] ?? 0;
-    if (lv >= t.max || !spend(t.price(lv))) return;
-    save.training[t.id] = lv + 1;
-    done();
-  },
   buyGyeolgi(gy) {
     const lv = save.gyeolgi?.[gy.id] ?? 0;
     const cost = gyeolgiCost(gy, lv);

@@ -14,7 +14,7 @@ export const REWARD_BY_STARS = { 1: 1, 2: 1.8, 3: 3, 4: 4.5, 5: 6.5, 6: 10 };
 /** Base 냥 for felling the boss (before the stage multiplier). */
 export const BOSS_REWARD = 400;
 
-/** 냥 earned from a run, before the stage multiplier and 재물운. */
+/** 냥 earned from a run, before the stage multiplier and 판 보상 bonuses. */
 export function baseReward({ kills, seconds, won, bossKilled }) {
   return Math.round(kills * 0.6 + seconds * 0.4 + (won ? 150 : 0) + (bossKilled ? BOSS_REWARD : 0));
 }
@@ -272,15 +272,6 @@ export const clearedStars = (save) => Math.max(0, ...Object.values(save.best ?? 
 // Every grade is on sale from the start; higher grades are simply far more expensive.
 export const gradeOpen = () => true;
 
-/** Camp training: permanent, levelled with money. */
-export const TRAINING = [
-  { id: 'swordDrill', name: '무예 수련', max: 5, price: (lv) => 150 * (lv + 1), bonus: (lv) => ({ might: 0.05 * lv }), desc: '모든 공격 피해 +5%' },
-  { id: 'body', name: '체력 단련', max: 5, price: (lv) => 120 * (lv + 1), bonus: (lv) => ({ maxHp: 10 * lv }), desc: '최대 체력 +10' },
-  { id: 'riding', name: '기마 훈련', max: 3, price: (lv) => 200 * (lv + 1), bonus: (lv) => ({ speed: 0.04 * lv }), desc: '이동 +4%' },
-  { id: 'fortune', name: '재물운', max: 5, price: (lv) => 180 * (lv + 1), bonus: (lv) => ({ reward: 0.1 * lv }), desc: '판이 끝날 때 받는 냥 +10%' },
-  { id: 'tactics', name: '병법서', max: 1, price: () => 900, bonus: (lv) => ({ freePicks: lv }), desc: '출진하자마자 책략 하나를 고르고 시작' },
-];
-
 /**
  * Hero secrets (비전): start every run already knowing one of the hero's
  * level-up skills at Lv1. `grant` is an upgrade id from data/upgrades.js.
@@ -315,10 +306,6 @@ export function metaBonus(save, heroId) {
         else if (l.k === 'proc') total[l.v] = 1;
       }
     }
-  }
-  for (const t of TRAINING) {
-    const lv = save.training[t.id] ?? 0;
-    if (lv) add(t.bonus(lv));
   }
   // 결기 상점 (무한 전장's 결기수정).
   add(gyeolgiBonus(save));

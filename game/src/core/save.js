@@ -1,5 +1,5 @@
 /**
- * Persistent progress (money, gear, training) in this browser's storage.
+ * Persistent progress (money, gear, 결기) in this browser's storage.
  * Storage can be missing or blocked, so every access is guarded and the
  * game keeps working with an in-memory save.
  */
@@ -9,7 +9,7 @@ import { SLOTS, GEAR_BASE_IDS, gearId } from '../data/meta.js';
 const KEY = 'samhan-save-v1';
 
 // equipped: { [heroId]: { [slotId]: itemId } } — each hero wears their own gear.
-const fresh = () => ({ money: 0, crystals: 0, gyeolgi: {}, owned: [], equipped: {}, training: {}, secrets: [], best: {}, forge: {}, codex: { kills: {}, runs: 0, wins: 0, earned: 0 }, ach: {}, stats: {} });
+const fresh = () => ({ money: 0, crystals: 0, gyeolgi: {}, owned: [], equipped: {}, secrets: [], best: {}, forge: {}, codex: { kills: {}, runs: 0, wins: 0, earned: 0 }, ach: {}, stats: {} });
 // codex: lifetime record for the 도감 — kills by enemy/boss id, runs, wins, 냥 earned.
 // forge: { [itemId]: 0..5 } — 제련 level of each owned item.
 
@@ -78,7 +78,23 @@ function migrate(save) {
   }
   splitSharedGear(save);
   refundBuilds(save);
+  refundTraining(save);
   return save;
+}
+
+/**
+ * 수련 was taken out of the 성장 tab (its stats live on in 결기): the 냥 paid
+ * for it comes back once. Prices as they were: each level cost base × level.
+ */
+function refundTraining(save) {
+  const BASE = { swordDrill: 150, body: 120, riding: 200, fortune: 180 };
+  let back = 0;
+  for (const [id, lv] of Object.entries(save.training ?? {})) {
+    if (id === 'tactics') back += lv ? 900 : 0;
+    else for (let i = 1; i <= lv; i++) back += (BASE[id] ?? 0) * i;
+  }
+  delete save.training;
+  if (back) save.money += back;
 }
 
 /**

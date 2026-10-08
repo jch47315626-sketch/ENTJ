@@ -31,7 +31,7 @@ const MAX_ENEMIES = 420;
 
 class Player {
   constructor(hero, meta = {}) {
-    this.meta = meta; // bonuses from gear and camp training (data/meta.js)
+    this.meta = meta; // bonuses from gear, 결기 and 비전 (data/meta.js)
     this.hero = hero;
     this.x = 0;
     this.y = 0;
@@ -608,7 +608,7 @@ export class Game {
     return Math.round(base * REWARD_BY_STARS[this.stage.difficulty.stars] * (1 + (this.opts.meta?.reward ?? 0)) * (this.stage.difficulty.rewardMul ?? 1));
   }
 
-  /** 냥 for this run: base by performance, scaled by stage stars and 재물운. */
+  /** 냥 for this run: base by performance, scaled by stage stars and gear (판 보상 냥). */
   computeReward(won) {
     // 무한 전장: no 냥 at all — the reward is the 결기수정 picked up.
     if (this.stage.endless) return { base: 0, mul: 0, total: 0, stars: this.stage.difficulty.stars, bossBonus: 0, crystals: this.runStats.crystals ?? 0 };
@@ -619,7 +619,7 @@ export class Game {
     return { base, mul, total: Math.round(base * mul) + (this.stage.endless ? bossBonus : 0), stars, bossBonus };
   }
 
-  /** Start-of-run perks from the camp: secrets (비전) and free picks (병법서). */
+  /** Start-of-run perks: 책략 granted by 비전 and gear. */
   applyStartPerks() {
     const m = this.opts.meta ?? {};
     const p = this.player;
@@ -631,7 +631,6 @@ export class Game {
     }
     p.recalc();
     p.hp = p.stats.maxHp;
-    this.pendingLevels += m.freePicks ?? 0;
   }
 
   setState(s) {
