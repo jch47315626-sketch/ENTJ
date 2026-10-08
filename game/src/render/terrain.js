@@ -10,6 +10,21 @@ export function drawBogs(ctx, g, v) {
   for (let tx = tx0; tx <= tx1; tx++) for (let ty = ty0; ty <= ty1; ty++) {
     const b = tileBog(T, tx, ty);
     if (!b) continue;
+    if (T.snow) {
+      // 눈더미: deep drifts instead of bog.
+      ctx.fillStyle = 'rgba(250, 252, 255, 0.95)';
+      ctx.beginPath();
+      ctx.ellipse(b.x, b.y, b.rx, b.ry, 0, 0, TAU);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(150, 175, 200, 0.8)';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(170, 195, 220, 0.35)';
+      ctx.beginPath();
+      ctx.ellipse(b.x + b.rx * 0.15, b.y + b.ry * 0.25, b.rx * 0.7, b.ry * 0.45, 0, 0, TAU);
+      ctx.fill();
+      continue;
+    }
     ctx.fillStyle = 'rgba(48, 58, 34, 0.85)';
     ctx.beginPath();
     ctx.ellipse(b.x, b.y, b.rx, b.ry, 0, 0, TAU);
@@ -76,7 +91,13 @@ export function drawRocks(ctx, g, v) {
     ctx.lineTo(r.x - r.r * 0.05, r.y);
     ctx.lineTo(r.x + r.r * 0.25, r.y + r.r * 0.35);
     ctx.stroke();
-    if (!r.fallen && r.seed > 0.55) {
+    if (g.stage.terrain.snow) {
+      // A cap of snow.
+      ctx.fillStyle = 'rgba(250, 252, 255, 0.95)';
+      ctx.beginPath();
+      ctx.ellipse(r.x - r.r * 0.05, r.y - r.r * 0.45, r.r * 0.7, r.r * 0.32, -0.15, 0, TAU);
+      ctx.fill();
+    } else if (!r.fallen && r.seed > 0.55) {
       // Moss on the older stones.
       ctx.fillStyle = 'rgba(96, 124, 64, 0.6)';
       ctx.beginPath();

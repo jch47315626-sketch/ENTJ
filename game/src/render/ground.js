@@ -451,4 +451,96 @@ export const GROUNDS = {
       ctx.fillRect(x - 260, y - 260, 520, 520);
     }
   },
+
+  /** 신림 솔숲: dark needle-strewn floor under pine crowns, shafts of light. */
+  pineForest(ctx, v, time) {
+    ctx.fillStyle = '#3d4632';
+    ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
+    const tx0 = Math.floor(v.x0 / TILE) - 1, tx1 = Math.floor(v.x1 / TILE) + 1;
+    const ty0 = Math.floor(v.y0 / TILE) - 1, ty1 = Math.floor(v.y1 / TILE) + 1;
+    for (let tx = tx0; tx <= tx1; tx++) {
+      for (let ty = ty0; ty <= ty1; ty++) {
+        const ox = tx * TILE, oy = ty * TILE;
+        const h = hash2(tx, ty, 701);
+        ctx.fillStyle = h < 0.5 ? 'rgba(92, 70, 40, 0.4)' : 'rgba(60, 84, 46, 0.4)';
+        ctx.beginPath();
+        ctx.ellipse(ox + hash2(tx, ty, 702) * TILE, oy + hash2(tx, ty, 703) * TILE, 70 + h * 70, 40 + h * 30, h * 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(130, 90, 50, 0.55)';
+        ctx.lineWidth = 1.2;
+        for (let i = 0; i < 9; i++) {
+          const x = ox + hash2(tx, ty, 710 + i) * TILE, y = oy + hash2(tx, ty, 720 + i) * TILE, a = hash2(tx, ty, 730 + i) * 3;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + Math.cos(a) * 10, y + Math.sin(a) * 10);
+          ctx.stroke();
+        }
+        // Pine crowns seen from above (their shade on the floor).
+        if (hash2(tx, ty, 740) < 0.4) {
+          const cx = ox + hash2(tx, ty, 741) * TILE, cy = oy + hash2(tx, ty, 742) * TILE;
+          ctx.fillStyle = 'rgba(14, 22, 12, 0.35)';
+          ctx.beginPath();
+          ctx.arc(cx + 12, cy + 14, 46, 0, Math.PI * 2);
+          ctx.fill();
+          for (let k = 0; k < 6; k++) {
+            const a = (k / 6) * Math.PI * 2 + hash2(tx, ty, 743);
+            ctx.fillStyle = k % 2 ? '#24361f' : '#2e4426';
+            ctx.beginPath();
+            ctx.arc(cx + Math.cos(a) * 20, cy + Math.sin(a) * 18, 24, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.fillStyle = '#5a3a20';
+          ctx.beginPath();
+          ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+    // Slanted shafts of light.
+    for (let k = 0; k < 3; k++) {
+      const x = v.x0 + ((k * 0.33 + time * 0.005) % 1) * (v.x1 - v.x0);
+      ctx.fillStyle = 'rgba(255, 240, 190, 0.06)';
+      ctx.beginPath();
+      ctx.moveTo(x, v.y0);
+      ctx.lineTo(x + 80, v.y0);
+      ctx.lineTo(x - 120, v.y1);
+      ctx.lineTo(x - 200, v.y1);
+      ctx.closePath();
+      ctx.fill();
+    }
+  },
+
+  /** 비로봉 눈길: wind-packed snow, bare rock showing through, blowing snow. */
+  snowPeak(ctx, v, time) {
+    ctx.fillStyle = '#d9dee2';
+    ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
+    const tx0 = Math.floor(v.x0 / TILE) - 1, tx1 = Math.floor(v.x1 / TILE) + 1;
+    const ty0 = Math.floor(v.y0 / TILE) - 1, ty1 = Math.floor(v.y1 / TILE) + 1;
+    for (let tx = tx0; tx <= tx1; tx++) {
+      for (let ty = ty0; ty <= ty1; ty++) {
+        const ox = tx * TILE, oy = ty * TILE;
+        const h = hash2(tx, ty, 801);
+        ctx.fillStyle = h < 0.4 ? 'rgba(120, 124, 128, 0.35)' : 'rgba(255, 255, 255, 0.6)';
+        ctx.beginPath();
+        ctx.ellipse(ox + hash2(tx, ty, 802) * TILE, oy + hash2(tx, ty, 803) * TILE, 60 + h * 80, 24 + h * 26, h * 3, 0, Math.PI * 2);
+        ctx.fill();
+        // Wind ripples in the snow.
+        ctx.strokeStyle = 'rgba(160, 176, 190, 0.45)';
+        ctx.lineWidth = 1.5;
+        const cx = ox + hash2(tx, ty, 804) * TILE, cy = oy + hash2(tx, ty, 805) * TILE;
+        for (let i = 0; i < 3; i++) {
+          ctx.beginPath();
+          ctx.arc(cx, cy + i * 8, 34 + i * 6, Math.PI * 1.1, Math.PI * 1.9);
+          ctx.stroke();
+        }
+        // Blowing snow.
+        for (let k = 0; k < 4; k++) {
+          const sx = ox + ((hash2(tx, ty, 810 + k) * TILE + time * 60) % TILE);
+          const sy = oy + ((hash2(tx, ty, 820 + k) * TILE + time * 14) % TILE);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+          ctx.fillRect(sx, sy, 5, 1.6);
+        }
+      }
+    }
+  },
 };

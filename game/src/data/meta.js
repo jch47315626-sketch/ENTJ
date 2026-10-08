@@ -1,4 +1,6 @@
 import { treeNodes, TREASURES } from './trees.js';
+import { STAGES } from './stages.js';
+import { josa } from '../core/korean.js';
 
 /**
  * Progression between runs: money (냥) earned per run, equipment bought
@@ -252,9 +254,9 @@ export function itemBonus(item, lv = 0) {
  * hero to wear at least `count` pieces of that grade or better.
  */
 export function entryCheck(save, heroId, stage) {
-  // A field that opens only after another is cleared (치악산 after 일리천).
+  // A field that opens only after another is cleared (양길의 등장: one after another).
   if (stage.unlockAfter && !save.best?.[stage.unlockAfter]) {
-    const text = '일리천을 평정하면 열려요';
+    const text = `${josa(STAGES[stage.unlockAfter]?.name ?? stage.unlockAfter, '을')} 평정하면 열려요`;
     return { ok: false, have: 0, need: 1, text, locked: true };
   }
   const req = stage.require;

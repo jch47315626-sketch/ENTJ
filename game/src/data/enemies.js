@@ -57,7 +57,7 @@ export const ENEMIES = {
     id: 'slinger', name: '투석병', tier: 2, hp: 22, speed: 52, damage: 5, radius: 12, xp: 3,
     behavior: 'lobber', knockResist: 0.1,
     // Hurls a stone where the hero is heading; it lands after `flight` on a warned spot.
-    params: { keepMin: 200, keepMax: 290, fireEvery: 3.0, flight: 1.0, radius: 46, rockDamage: 13, lead: 0.8 },
+    params: { keepMin: 200, keepMax: 290, fireEvery: 3.2, flight: 1.0, radius: 46, rockDamage: 11, lead: 0.8 },
     look: { body: '#5c4a3a', accent: '#2a2018', hat: 'band', weapon: 'knife' },
   },
   axeman: {
@@ -71,7 +71,7 @@ export const ENEMIES = {
     id: 'trapper', name: '덫꾼', tier: 2, hp: 26, speed: 84, damage: 5, radius: 12, xp: 3,
     behavior: 'trapper', knockResist: 0,
     // Runs close, plants a spike trap in your path, then runs away.
-    params: { plantRange: 150, cooldown: 4.5, trapRadius: 30, trapDps: 28, trapSlow: 0.5, trapLife: 14, flee: 1.4 },
+    params: { plantRange: 150, cooldown: 4.5, trapRadius: 30, trapDps: 14, trapSlow: 0.4, trapLife: 12, flee: 1.4 },
     look: { body: '#4f5a3a', accent: '#232a18', hat: 'hood', weapon: 'knife' },
   },
   shaman: {

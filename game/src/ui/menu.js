@@ -1,5 +1,5 @@
 import { HEROES } from '../data/heroes.js';
-import { STAGES, STAGE_ORDER } from '../data/stages.js';
+import { STAGES, STAGE_ORDER, CHAPTERS, chapterOf } from '../data/stages.js';
 import { BOSSES } from '../data/bosses.js';
 import { ENEMIES } from '../data/enemies.js';
 import { WEAPONS } from '../data/weapons.js';
@@ -165,7 +165,7 @@ export function renderHome(save, sel, act) {
   const info = button(`
     <span class="hs-stars">${starText(st.difficulty.stars)}</span>
     <span class="hs-name">${st.numeral} ${st.name}</span>
-    <span class="hs-meta">보상 ×${REWARD_BY_STARS[st.difficulty.stars]} · 적장 ${boss.name}</span>`, 'hs-info', () => act.go('map'));
+    <span class="hs-meta">보상 ×${rewardOf(st)} · 적장 ${boss.name}</span>`, 'hs-info', () => act.go('map'));
   card.append(info);
   if (!gate.ok) card.append(el('p', 'gate-msg', `🔒 ${gate.text}`));
   const cta = button('⚔️ 출진하기', 'seal-btn cta', () => act.go('prep'));
@@ -481,8 +481,28 @@ const MAP_POS = {
   gochang: [74, 44],
   cheorwon: [44, 14],
   illicheon: [58, 56],
-  bukwon: [62, 27],
+  // 🏔️ 양길의 등장: a winding climb from 섬강 to 북원성.
+  seomgang: [18, 86],
+  munmak: [40, 76],
+  yeongwon: [66, 70],
+  sillim: [78, 50],
+  guryong: [52, 42],
+  birobong: [28, 28],
+  bukwon: [60, 12],
 };
+
+/** Land drawn under each theme's map. */
+const MAP_LAND = {
+  samhan: '<path class="land" d="M38 4 C52 2 62 8 66 16 C72 22 84 30 84 44 C86 58 82 70 78 80 C72 90 56 94 40 92 C28 92 18 88 16 80 C12 70 20 62 24 54 C28 44 22 36 26 26 C28 14 30 6 38 4 Z"/>',
+  yanggil: `<rect class="land mtn-land" x="4" y="4" width="92" height="92" rx="6"/>
+    <path class="mtn" d="M8 40 L22 18 L34 34 L48 8 L62 30 L74 14 L92 38 L92 48 L8 48 Z"/>
+    <path class="mtn snow" d="M44 14 L48 8 L52 14 L50 13 L48 15 L46 13 Z M70 20 L74 14 L78 20 L76 19 L74 21 L72 19 Z"/>
+    <path class="mtn far" d="M8 70 L20 56 L30 66 L44 52 L58 64 L70 54 L92 68 L92 74 L8 74 Z"/>
+    <path class="river" d="M4 90 C20 84 30 92 46 86 C60 80 70 88 96 82"/>`,
+};
+
+/** 보상 배율 shown for a field (stars × the field's own rewardMul). */
+const rewardOf = (st) => +(REWARD_BY_STARS[st.difficulty.stars] * (st.difficulty.rewardMul ?? 1)).toFixed(1);
 
 /** Gear grade worth wearing for each difficulty (data/meta.js GRADES). */
 const REC_GRADE = { 2: 3, 3: 5, 4: 6, 5: 8, 6: 8 };
@@ -492,17 +512,31 @@ export function renderMap(save, sel, act) {
   body.innerHTML = '';
   body.append(header('🗺️ 전장', save, act));
   const cur = ui.mapStage ?? sel.stage;
+  // Themes: 삼한 통일 · 양길의 등장 (each its own map).
+  ui.mapChapter ??= chapterOf(STAGES[cur]);
+  const chap = ui.mapChapter;
+  body.append(tabStrip(CHAPTERS.map((c) => {
+    const ids = STAGE_ORDER.filter((id) => chapterOf(STAGES[id]) === c.id);
+    const done = ids.filter((id) => save.best?.[id]).length;
+    return [c.id, `${c.icon} ${c.name} <small>${done}/${ids.length}</small>`];
+  }), chap, (id) => {
+    ui.mapChapter = id;
+    renderMap(save, sel, act);
+  }));
+  const ids = STAGE_ORDER.filter((id) => chapterOf(STAGES[id]) === chap);
+  const info = CHAPTERS.find((c) => c.id === chap);
+  if (chap !== 'samhan') body.append(el('p', 'chapter-sub', `${info.icon} ${info.name} — ${info.sub}. 일곱 전장을 차례로 평정하고 북원성의 양길을 정복하라!`));
 
-  const map = el('div', 'war-map');
+  const map = el('div', `war-map map-${chap}`);
   map.innerHTML = `<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-    <path class="land" d="M38 4 C52 2 62 8 66 16 C72 22 84 30 84 44 C86 58 82 70 78 80 C72 90 56 94 40 92 C28 92 18 88 16 80 C12 70 20 62 24 54 C28 44 22 36 26 26 C28 14 30 6 38 4 Z"/>
-    <polyline class="route" points="${STAGE_ORDER.map((id) => MAP_POS[id].join(',')).join(' ')}"/>
+    ${MAP_LAND[chap]}
+    <polyline class="route" points="${ids.map((id) => MAP_POS[id].join(',')).join(' ')}"/>
   </svg>`;
-  for (const id of STAGE_ORDER) {
+  for (const id of ids) {
     const st = STAGES[id];
     const { gate, cleared } = stageInfo(save, sel, st);
     const [x, y] = MAP_POS[id];
-    const n = button(`<span class="mn-no">${st.numeral}</span><span class="mn-name">${st.name}</span><span class="mn-stars">${'★'.repeat(st.difficulty.stars)}</span>`,
+    const n = button(`<span class="mn-no">${st.numeral}</span><span class="mn-name">${st.name}</span><span class="mn-stars">${st.difficulty.stars > 5 ? st.difficulty.label : '★'.repeat(st.difficulty.stars)}</span>`,
       `map-node${id === cur ? ' on' : ''}${cleared ? ' cleared' : ''}${gate.ok ? '' : ' locked'}`, () => {
         ui.mapStage = id;
         act.selectStage(id);
@@ -513,18 +547,21 @@ export function renderMap(save, sel, act) {
   }
   body.append(map);
 
-  const st = STAGES[cur];
+  const st = STAGES[ids.includes(cur) ? cur : ids[0]];
   const { boss, gate, cleared } = stageInfo(save, sel, st);
   const card = el('div', 'stage-detail');
   card.innerHTML = `
     <div class="sd-head"><b>${st.numeral} ${st.name}</b><span class="sd-stars">${starText(st.difficulty.stars)} ${st.difficulty.label}</span></div>
     <ul class="sd-rows">
-      <li><span>🪙 보상</span><b>×${REWARD_BY_STARS[st.difficulty.stars]}</b></li>
+      <li><span>🪙 보상</span><b>×${rewardOf(st)}</b></li>
       <li><span>⚔️ 적장</span><b>${boss.name}</b></li>
       <li><span>🛡️ 권장 장비</span><b>${st.difficulty.stars > 1 ? `${GRADES[REC_GRADE[st.difficulty.stars]].name}${st.difficulty.stars > 5 ? ' +제련' : ' 이상'}` : '없어도 OK'}</b></li>
       <li><span>🏆 기록</span><b>${cleared ? '평정함' : '아직'}</b></li>
     </ul>`;
-  card.append(button('출진 준비 ▶', 'seal-btn', () => act.go('prep')));
+  card.append(button('출진 준비 ▶', 'seal-btn', () => {
+    if (sel.stage !== st.id) act.selectStage(st.id);
+    act.go('prep');
+  }));
   body.append(card);
 }
 

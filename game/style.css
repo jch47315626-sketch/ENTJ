@@ -1159,3 +1159,13 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 .fc-next { color: #8fe0a8; font-size: 12px; }
 .fc-worn { font-size: 11px; color: var(--candy-mint); font-weight: normal; }
 .empty-note { color: var(--hanji-dim); text-align: center; padding: 18px 0; }
+
+/* 테마 지도: 양길의 등장 (산악 지도) */
+.war-map.map-yanggil { background: radial-gradient(ellipse at 50% 30%, #4a5a6a, #1f2a33); }
+.war-map .mtn-land { fill: #7f9466; stroke: #5d6e48; stroke-width: 0.6; }
+.war-map .mtn { fill: #5f6a58; stroke: #3f4838; stroke-width: 0.4; }
+.war-map .mtn.far { fill: #6c7e58; }
+.war-map .mtn.snow { fill: #f2f4f6; stroke: none; }
+.war-map .river { fill: none; stroke: #6f93a8; stroke-width: 2.2; stroke-linecap: round; }
+.chapter-sub { font-size: 13px; color: var(--hanji-dim); text-align: center; margin: 6px 0 8px; }
+.sub-tab small { opacity: 0.75; font-size: 11px; }
