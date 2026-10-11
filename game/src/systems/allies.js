@@ -189,6 +189,7 @@ function updateMaguniBomb(g, a, dt) {
   const p = g.player;
   hitArc(g, a.x, a.y, 0, a.radius * p.stats.area, 360, a.damage * p.stats.might, 160, 'blast', { stun: 0.5 });
   g.fx.push({ type: 'ink', x: a.x, y: a.y, t: 0, life: 0.9, size: 30, seed: 0.6 });
+  g.fx.push({ type: 'mindBurst', x: a.x, y: a.y, range: a.radius * p.stats.area, t: 0, life: 0.7, seed: Math.random() });
   g.shake(6);
   g.sfx('blast');
 }
@@ -272,6 +273,9 @@ function fallShin(g, a) {
   if (a.explode) {
     const E = a.explode;
     hitArc(g, a.x, a.y, 0, E.radius, 360, E.damage * g.player.stats.might, 260, 'blast', { stun: E.stun });
+    g.fx.push({ type: 'shatter', x: a.x, y: a.y, range: E.radius, t: 0, life: 0.9, seed: Math.random() });
+    g.fx.push({ type: 'awaken', x: a.x, y: a.y, t: 0, life: 1.0, seed: Math.random() });
+    g.ultFlash('255, 200, 120', 0.35, 0.4);
     g.shake(12);
     g.sfx('blast');
     g.banner('순절 — 신숭겸이 적진과 함께 스러진다', 'small');

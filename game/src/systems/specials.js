@@ -67,6 +67,11 @@ export const SPECIALS = {
         g.fx.push({ type: 'eye', x: e.x, y: e.y - e.r - 6, t: 0, life: 0.9, follow: e, size: 9 });
       }
       g.fx.push({ type: 'eye', x: p.x, y: p.y, t: 0, life: 1.1, follow: p, size: 40, big: true });
+      // 독심 관심법: a violet wave under a great eye in the sky.
+      if (L.evolution) {
+        g.fx.push({ type: 'mindWave', x: p.x, y: p.y, range: 340, t: 0, life: 1.2, seed: Math.random() });
+        g.ultFlash('150, 80, 220', 0.32, 0.45);
+      }
       g.banner(chosen.length ? `관심법 — ${chosen.length}명이 서로를 벤다` : '관심법 — 홀릴 자가 없다', 'small');
       g.sfx('gwansim');
       // Nothing to sway: keep most of the gauge instead of wasting it.

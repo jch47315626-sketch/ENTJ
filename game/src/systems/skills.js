@@ -71,6 +71,8 @@ ACTIVE_SKILLS.tiger = {
     const radius = E.radius * Math.sqrt(p.stats.area);
     const dmg = Math.max(currentWeaponLevel(p).damage, 30) * E.damage;
     g.banner('🐯 무자식이 상팔자!', 'big');
+    g.ultFlash('255, 70, 30', 0.35, 0.4);
+    g.fx.push({ type: 'rageBurst', x: p.x, y: p.y, t: 0, life: 0.8, seed: Math.random() });
     g.fx.push({ type: 'eight', x: p.x, y: p.y, range: radius, angle: p.facing, t: 0, life: 1.2 });
     for (let i = 0; i < E.swings; i++) {
       g.later(i * E.gap, () => {
@@ -120,8 +122,10 @@ ACTIVE_SKILLS.archers = {
     if (!spots.length) return 1;
     const dps = weaponDmg(p) * R.mul * p.stats.might;
     for (const s of spots) {
-      g.zones.push({ team: 'player', kind: 'fire', x: s.x, y: s.y, r: R.radius * Math.sqrt(p.stats.area), dps, life: R.life, t: 0 });
-      g.fx.push({ type: 'pulse', x: s.x, y: s.y, range: R.radius, t: 0, life: 0.5 });
+      const r = R.radius * Math.sqrt(p.stats.area);
+      // The arrows fall first; the ground catches fire as they land.
+      g.fx.push({ type: 'arrowRain', x: s.x, y: s.y, range: r, t: 0, life: 0.9, seed: Math.random() });
+      g.later(0.3, () => g.zones.push({ team: 'player', kind: 'fire', x: s.x, y: s.y, r, dps, life: R.life, t: 0 }));
     }
     g.sfx('volley');
   },
@@ -139,13 +143,15 @@ ACTIVE_SKILLS.edict = {
       foes = foes.slice(0, L.count);
     }
     const dmg = weaponDmg(p) * L.mul * p.stats.might;
-    for (const e of foes) {
+    // Shafts of light fall on each foe (drawn for the first few dozen; every one is struck).
+    foes.forEach((e, i) => {
       g.damageEnemy(e, dmg, e.x, e.y - 40, 40, L.stun ? { stun: e.isBoss ? L.bossStun : L.stun } : undefined);
-      g.fx.push({ type: 'spark', x: e.x, y: e.y - 6, t: 0, life: 0.35 });
-    }
+      if (i < 28) g.fx.push({ type: 'pillar', x: e.x, y: e.y, t: 0, life: 0.55, big: !!L.evolution, seed: Math.random() });
+    });
     if (L.evolution) {
       g.banner('📜 훈요십조 — 어명이 전장을 내리친다!', 'small');
-      g.fx.push({ type: 'pulse', x: p.x, y: p.y, range: FIELD_REACH, t: 0, life: 0.6 });
+      g.fx.push({ type: 'edictScroll', x: p.x, y: p.y, t: 0, life: 1.4, seed: Math.random() });
+      g.ultFlash('255, 230, 150', 0.35, 0.35);
       g.shake(8);
     }
     g.sfx('gong');
@@ -193,7 +199,7 @@ export function curseFoe(g, e, L) {
   // The curse burns too: `dot` × weapon damage every second, at the hero's might when cast.
   const dps = (L.dot ?? 0) * Math.max(currentWeaponLevel(p).damage, 30) * p.stats.might;
   e.curse = { until: g.time + L.duration, amp: L.amp, slow: L.slow ?? 0, spread: L.spread ?? 0, dps, tick: 0.5, L };
-  g.fx.push({ type: 'eye', x: e.x, y: e.y, t: 0, life: L.duration, follow: e, size: 10, big: !!L.evolution });
+  g.fx.push({ type: 'curseMark', x: e.x, y: e.y, t: 0, life: L.duration, follow: e, big: !!L.evolution, seed: Math.random() });
 }
 
 /** Counts down each owned skill and casts it when ready. */

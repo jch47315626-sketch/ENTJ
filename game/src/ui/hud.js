@@ -149,7 +149,7 @@ function heroStatus(g) {
     if ((p.upgrades.archers ?? 0) > 3) chips.push(`🔥 불화살 ${ready('archers')}`);
   } else if (p.hero.id === 'gyeonhwon') {
     chips.push(`🛡️ 갑주 ${Math.round(p.stats.armor)}`);
-    if (p.enraged) chips.push(`<b class="wrath-chip">👹 패왕 ${p.hp < p.stats.maxHp * 0.3 ? '피해 +120%' : '피해 +70%'}</b>`);
+    if (p.enraged) chips.push(`<b class="wrath-chip">👹 패왕 ${p.hp < p.stats.maxHp * 0.3 ? '피해 2배' : '피해 +60%'}</b>`);
     else if (p.upgrades.fury) chips.push(`🔥 패기 ${Math.min(3, p.upgrades.fury)}`);
     if (ready('boulder')) chips.push(`🪨 바위 ${ready('boulder')}`);
     if (ready('chain')) chips.push(`⛓️ 철쇄 ${ready('chain')}`);

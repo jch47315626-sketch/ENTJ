@@ -2,6 +2,7 @@ import { GROUNDS } from './ground.js';
 import { drawBogs, drawRocks } from './terrain.js';
 import { drawUnit, drawCart, drawCoin, drawRice, drawProjectile } from './sprites.js';
 import { clamp, TAU } from '../core/math.js';
+import { drawUltFx, drawScreenFlash } from './ultFx.js';
 
 const ALLY_LOOKS = {
   soldier: { body: '#3e5a7a', accent: '#1f2d3d', hat: 'helmetBlue', weapon: 'spear', skin: '#e3c39c' },
@@ -204,7 +205,28 @@ export class Renderer {
     ctx.restore();
 
     this.drawVignette(ctx, p.hurtFlash > 0 ? p.hurtFlash : 0);
+    drawScreenFlash(ctx, g, this.w, this.h);
     this.drawStick(ctx, input);
+  }
+
+  /** 후백제의 패왕: tongues of red flame lick up around 견훤 while his rage burns. */
+  drawRageFlames(ctx, g, p) {
+    const low = p.hp < p.stats.maxHp * 0.3;
+    const n = low ? 9 : 6;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * TAU + g.time * 1.2;
+      const k = (g.time * 2.2 + i * 0.37) % 1;
+      const x = p.x + Math.cos(a) * 22, y = p.y + 6 + Math.sin(a) * 9 - k * (low ? 52 : 38);
+      const r = (low ? 13 : 10) * (1 - k);
+      const grd = ctx.createRadialGradient(x, y, 0, x, y, r * 1.6);
+      grd.addColorStop(0, `rgba(255, 220, 120, ${0.9 * (1 - k)})`);
+      grd.addColorStop(0.5, `rgba(255, 90, 30, ${0.7 * (1 - k)})`);
+      grd.addColorStop(1, 'rgba(160, 20, 10, 0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.arc(x, y, r * 1.6, 0, TAU);
+      ctx.fill();
+    }
   }
 
   drawPlayer(ctx, g) {
@@ -242,6 +264,28 @@ export class Renderer {
     const look = p.hero.look;
     const blink = p.invuln > 0 && Math.floor(g.time * 30) % 2 === 0;
     const m = p.mount;
+    if (p.enraged) this.drawRageFlames(ctx, g, p);
+    if (m?.L.evolution) {
+      // 천리마: a golden glow and streaks of speed behind the galloping king.
+      const back = Math.atan2(-(p.vy || Math.sin(p.facing)), -(p.vx || Math.cos(p.facing)));
+      const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 60);
+      grd.addColorStop(0, 'rgba(255, 220, 120, 0.45)');
+      grd.addColorStop(1, 'rgba(255, 220, 120, 0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 60, 0, TAU);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 230, 160, 0.7)';
+      ctx.lineWidth = 2.5;
+      for (let i = 0; i < 5; i++) {
+        const off = (i - 2) * 9, len = 40 + ((g.time * 300 + i * 37) % 50);
+        const sx = p.x - Math.sin(back) * off, sy = p.y + Math.cos(back) * off;
+        ctx.beginPath();
+        ctx.moveTo(sx + Math.cos(back) * 18, sy + Math.sin(back) * 18);
+        ctx.lineTo(sx + Math.cos(back) * (18 + len), sy + Math.sin(back) * (18 + len));
+        ctx.stroke();
+      }
+    }
     const shielded = m && g.time < m.invulnUntil;
     const sw = p.swing && g.time - p.swing.at < p.swing.dur ? { k: (g.time - p.swing.at) / p.swing.dur, style: p.swing.style, dir: p.swing.dir } : null;
     drawUnit(ctx, { ...look, body: look.robe, mount: m ? '#f2ede0' : undefined },
@@ -1314,6 +1358,8 @@ export class Renderer {
           ctx.fill();
           break;
         }
+        default:
+          drawUltFx(ctx, f, p, g); // 궁극기 연출 (render/ultFx.js)
       }
     }
   }

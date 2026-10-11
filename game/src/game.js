@@ -419,12 +419,17 @@ export class Game {
     // 독심 관심법: a swayed soldier bursts when it falls.
     const blast = GWANSIM[p.upgrades.gwansim ?? 0]?.blast;
     if (blast && this.isCharmed(e)) {
-      hitArc(this, e.x, e.y, 0, blast.radius * Math.sqrt(p.stats.area), 360, Math.max(currentWeaponLevel(p).damage, 30) * blast.mul * p.stats.might, 80, 'burst');
+      const r = blast.radius * Math.sqrt(p.stats.area);
+      hitArc(this, e.x, e.y, 0, r, 360, Math.max(currentWeaponLevel(p).damage, 30) * blast.mul * p.stats.might, 80, 'none');
+      this.fx.push({ type: 'mindBurst', x: e.x, y: e.y, range: r, t: 0, life: 0.6, seed: Math.random() });
     }
     // 애꾸눈의 저주: the curse passes to the nearest foes.
     if (e.curse?.spread && e.curse.until > this.time) {
       const next = this.nearestEnemies(e.x, e.y, 240, 6).filter((o) => o !== e && !o.dead && !(o.curse?.until > this.time) && !this.isCharmed(o));
-      for (const o of next.slice(0, e.curse.spread)) curseFoe(this, o, e.curse.L);
+      for (const o of next.slice(0, e.curse.spread)) {
+        curseFoe(this, o, e.curse.L);
+        this.fx.push({ type: 'curseLink', x: e.x, y: e.y, tx: o.x, ty: o.y, t: 0, life: 0.4, seed: Math.random() });
+      }
     }
     this.sfx(e.isBoss && !e.def.minion ? 'bossDown' : 'kill');
     this.fx.push({ type: 'ink', x: e.x, y: e.y, t: 0, life: 0.8, size: e.r * (e.isBoss && !e.def.minion ? 4 : 1.6), seed: Math.random() });
@@ -613,6 +618,19 @@ export class Game {
     }));
   }
 
+  /** A screen-wide colour flash (a 궁극기 going off). */
+  ultFlash(rgb, alpha = 0.35, dur = 0.35) {
+    this.screenFlash = { rgb, alpha, dur, until: this.time + dur };
+  }
+
+  /** A 궁극기 has just been earned: a golden pillar of light where the hero stands. */
+  awaken() {
+    const p = this.player;
+    this.fx.push({ type: 'awaken', x: p.x, y: p.y, t: 0, life: 1.4, seed: Math.random() });
+    this.ultFlash('255, 225, 140', 0.45, 0.6);
+    this.shake(10);
+  }
+
   choose(index) {
     if (this.state !== 'levelup' || !this.choices?.[index]) return;
     const c = this.choices[index];
@@ -621,8 +639,9 @@ export class Game {
     }
     c.up.apply(this);
     if (c.evolution) {
-      this.banner(`무기 진화 — ${c.name}`, 'big');
+      this.banner(`🌟 궁극기 — ${c.name}`, 'big');
       this.sfx('evolve');
+      this.awaken();
     }
     this.pendingLevels--;
     this.choices = null;
@@ -741,6 +760,15 @@ export class Game {
 
     updateWeapon(this, dt);
     updateSkills(this, dt);
+    // 후백제의 패왕: the moment the rage takes hold (or deepens), it flares up.
+    const rage = p.enraged ? (p.hp < p.stats.maxHp * 0.3 ? 2 : 1) : 0;
+    if (rage > (this.rageShown ?? 0)) {
+      this.fx.push({ type: 'rageBurst', x: p.x, y: p.y, t: 0, life: 0.8, seed: Math.random() });
+      this.ultFlash('255, 50, 20', rage === 2 ? 0.4 : 0.28, 0.4);
+      this.banner(rage === 2 ? '👹 패왕의 분노 — 피해 2배!' : '👹 패왕의 분노', 'small');
+      this.shake(8);
+    }
+    this.rageShown = rage;
     updateAllies(this, dt);
     updateCrows(this, dt);
     updateFieldObjects(this, dt);
@@ -881,6 +909,8 @@ export class Game {
       pr.y += pr.vy * dt;
       pr.life -= dt;
       if (pr.spin !== undefined) pr.spin += dt * 14;
+      // 바위 던지기: dust kicked up behind a rolling boulder.
+      if (pr.kind === 'boulder' && Math.random() < dt * 14) this.fx.push({ type: 'puff', x: pr.x, y: pr.y + pr.r * 0.6, t: 0, life: 0.5, size: pr.r * 0.7, tone: 'mud' });
       if (pr.team === 'charm') {
         // Arrows loosed by charmed archers strike their own side.
         this.grid.query(pr.x, pr.y, pr.r + 30, (e) => {
@@ -922,9 +952,9 @@ export class Game {
     // 가은의 장사: a boulder bursts into shards where it stops.
     for (const pr of this.projectiles) {
       if (pr.life > 0 || !pr.shatter) continue;
-      hitArc(this, pr.x, pr.y, 0, pr.shatter.radius, 360, pr.shatter.damage, 120, 'burst', { stun: pr.shatter.stun });
-      this.fx.push({ type: 'puff', x: pr.x, y: pr.y, t: 0, life: 0.6, size: 30, tone: 'mud' });
-      this.shake(4);
+      hitArc(this, pr.x, pr.y, 0, pr.shatter.radius, 360, pr.shatter.damage, 120, 'none', { stun: pr.shatter.stun });
+      this.fx.push({ type: 'shatter', x: pr.x, y: pr.y, range: pr.shatter.radius, t: 0, life: 0.8, seed: Math.random() });
+      this.shake(6);
     }
     this.projectiles = this.projectiles.filter((pr) => pr.life > 0);
   }
@@ -949,6 +979,7 @@ export class Game {
     if (e.pull.slam) {
       // 패왕쇄: the slam hits as hard as his blade (`mul` × weapon damage); no knockback, so they stay at his feet.
       hitArc(this, e.x, e.y, 0, e.pull.slam.radius, 360, e.pull.slam.mul * Math.max(currentWeaponLevel(p).damage, 30) * p.stats.might, 0, 'chop');
+      this.fx.push({ type: 'shatter', x: e.x, y: e.y, range: e.pull.slam.radius * 0.8, t: 0, life: 0.6, seed: Math.random() });
       this.shake(4);
     }
     this.fx.push({ type: 'puff', x: e.x, y: e.y, t: 0, life: 0.4, size: 18, tone: 'mud' });
