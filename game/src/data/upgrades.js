@@ -1,5 +1,5 @@
 import { WEAPONS } from './weapons.js';
-import { GWANSIM, TIER_NAMES, SHIN, HORSE, CHAIN, TIGER, MAGUNI_LV } from './skills.js';
+import { GWANSIM, GWANSIM_LINE, TIER_NAMES, SHIN, HORSE, CHAIN, TIGER, MAGUNI_LV, ARCHERS_LV, EDICT, FURY_LV, BOULDER, CURSE } from './skills.js';
 
 /**
  * Level-up choices (책략). `apply` runs after the level has been increased,
@@ -43,27 +43,22 @@ export const UPGRADES = [
   skillUpgrade('horse', HORSE, ['wanggeon'], '지세', 13),
   skillUpgrade('chain', CHAIN, ['gyeonhwon'], '무예', 14),
   skillUpgrade('tiger', TIGER, ['gyeonhwon'], '무예', 13),
+  skillUpgrade('fury', FURY_LV, ['gyeonhwon'], '무예', 9, (g) => g.player.recalc()),
+  skillUpgrade('boulder', BOULDER, ['gyeonhwon'], '무예', 12),
   {
-    id: 'fury', name: '패기', category: '무예', maxLevel: 4, weight: 9, heroes: ['gyeonhwon'],
-    describe: () => '패왕의 일격 피해 +30%, 기절 +0.2초',
-    apply: (g) => g.player.recalc(),
-  },
-  {
-    id: 'gwansim', name: '관심법', category: '병법', maxLevel: GWANSIM.length - 1, weight: 11, heroes: ['gungye'],
+    ...skillUpgrade('gwansim', GWANSIM_LINE, ['gungye'], '병법', 11, (g) => g.player.recalc()),
     describe: (g) => {
-      const now = GWANSIM[g.player.upgrades.gwansim ?? 0];
-      const next = GWANSIM[(g.player.upgrades.gwansim ?? 0) + 1];
+      const lv = g.player.upgrades.gwansim ?? 0;
+      const now = GWANSIM[lv], next = GWANSIM[lv + 1];
+      if (next.evolution) return next.desc;
       const parts = [`홀리는 적 ${now.count} → ${next.count}명`, `${next.duration}초`, `홀린 적의 공격력 ×${next.power}`];
       if (next.tier > now.tier) parts.unshift(`${TIER_NAMES[next.tier]}도 홀린다`);
       return parts.join(', ');
     },
-    apply: (g) => g.player.recalc(),
   },
-  {
-    id: 'archers', name: '궁수대', category: '병법', maxLevel: 3, weight: 8, heroes: ['wanggeon'],
-    describe: () => '곁을 따르며 활을 쏘는 아군 궁수 +1',
-    apply: (g) => g.syncArcherAllies(),
-  },
+  skillUpgrade('curse', CURSE, ['gungye'], '병법', 11),
+  skillUpgrade('archers', ARCHERS_LV, ['wanggeon'], '병법', 8, (g) => g.syncArcherAllies()),
+  skillUpgrade('edict', EDICT, ['wanggeon'], '병법', 12),
   skillUpgrade('maguni', MAGUNI_LV, ['gungye'], '병법', 10),
   {
     id: 'momentum', name: '기세', category: '병법', maxLevel: 3, weight: 7,
@@ -103,7 +98,7 @@ export const FALLBACKS = [
 ];
 
 /** Level-up entry that grants a cooldown skill (systems/skills.js), then grows it. */
-function skillUpgrade(id, levels, heroes, category, weight) {
+function skillUpgrade(id, levels, heroes, category, weight, onApply) {
   const next = (g) => levels[g.player.upgrades[id] ?? 0];
   return {
     id, category, maxLevel: levels.length, weight, heroes, skill: true, title: levels[0].name,
@@ -119,6 +114,7 @@ function skillUpgrade(id, levels, heroes, category, weight) {
     apply: (g) => {
       // Comes into play soon after being chosen, then on its own cooldown.
       g.player.skillTimers[id] = Math.min(g.player.skillTimers[id] ?? 2, 2);
+      onApply?.(g);
     },
   };
 }
@@ -155,7 +151,7 @@ function canUpgradeWeapon(g) {
 }
 
 /** Skill lines that end in a 궁극기 (data/skills.js). */
-const SKILL_LINES = { shin: SHIN, horse: HORSE, chain: CHAIN, tiger: TIGER, maguni: MAGUNI_LV };
+const SKILL_LINES = { shin: SHIN, horse: HORSE, archers: ARCHERS_LV, edict: EDICT, chain: CHAIN, tiger: TIGER, fury: FURY_LV, boulder: BOULDER, maguni: MAGUNI_LV, gwansim: GWANSIM_LINE, curse: CURSE };
 
 const upTitle = (id) => {
   const u = UPGRADES.find((x) => x.id === id);

@@ -77,12 +77,14 @@ export class Hud {
     if (key === this.evoKey) return;
     this.evoKey = key;
     const list = evolutionStatus(g);
+    // Started 궁극기 get their full checklist; the rest fold into one dim line of names.
+    const started = list.filter((e) => e.owned), rest = list.filter((e) => !e.owned);
     this.el.evo.hidden = !list.length;
-    this.el.evo.innerHTML = list
-      .map((e) => `<div class="evo-row${e.ready ? ' ready' : ''}${e.owned ? '' : ' off'}"><b class="evo-name">🌟 ${e.name}</b>${e.checks
+    this.el.evo.innerHTML = started
+      .map((e) => `<div class="evo-row${e.ready ? ' ready' : ''}"><b class="evo-name">🌟 ${e.name}</b>${e.checks
         .map((c) => `<span class="evo-check${c.done ? ' done' : ''}"><i>${c.done ? '✔' : ''}</i>${c.label} <em>${c.now}/${c.need}</em></span>`)
         .join('')}${e.ready ? '<span class="evo-go">다음 레벨업에 진화!</span>' : ''}</div>`)
-      .join('');
+      .join('') + (rest.length ? `<div class="evo-row off evo-more">🌟 ${started.length ? '다른 궁극기' : '궁극기'}: ${rest.map((e) => e.name).join(' · ')}</div>` : '');
   }
 
   /** Pause screen: the weapons and 책략 taken so far (kept off the battle HUD). */
@@ -143,9 +145,13 @@ function heroStatus(g) {
     chips.push(`🏯 군세 ${army}명`);
     if (ready('shin')) chips.push(`🛡️ 신숭겸 ${ready('shin')}`);
     if (ready('horse')) chips.push(p.mount ? '🐎 기마 중' : `🐎 말 ${ready('horse')}`);
+    if (ready('edict')) chips.push(`📜 어명 ${ready('edict')}`);
+    if ((p.upgrades.archers ?? 0) > 3) chips.push(`🔥 불화살 ${ready('archers')}`);
   } else if (p.hero.id === 'gyeonhwon') {
     chips.push(`🛡️ 갑주 ${Math.round(p.stats.armor)}`);
-    if (p.upgrades.fury) chips.push(`🔥 패기 ${p.upgrades.fury}`);
+    if (p.enraged) chips.push(`<b class="wrath-chip">👹 패왕 ${p.hp < p.stats.maxHp * 0.3 ? '피해 +120%' : '피해 +70%'}</b>`);
+    else if (p.upgrades.fury) chips.push(`🔥 패기 ${Math.min(3, p.upgrades.fury)}`);
+    if (ready('boulder')) chips.push(`🪨 바위 ${ready('boulder')}`);
     if (ready('chain')) chips.push(`⛓️ 철쇄 ${ready('chain')}`);
     if (p.tiger) chips.push(`🐯 ${p.tiger.mul}배 ${Math.ceil(p.tiger.until - g.time)}초`);
     else if (ready('tiger')) chips.push(`🐯 호랑이 ${ready('tiger')}`);
@@ -153,6 +159,7 @@ function heroStatus(g) {
     const swayed = g.enemies.filter((e) => !e.dead && g.isCharmed(e)).length;
     chips.push(`🌀 홀린 적 ${swayed}`);
     if (p.upgrades.maguni) chips.push(`👹 마구니 ${allies('maguni')}/4`);
+    if (ready('curse')) chips.push(`👁️ 천안 ${ready('curse')}`);
     if (Object.keys(p.subs).length) chips.push('☄️ 금강저');
   }
   if (p.drumUntil) chips.push(`🥁 전고 ${Math.ceil(p.drumUntil - g.time)}초`);

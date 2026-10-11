@@ -40,8 +40,8 @@ export const SPECIAL = {
   },
   cap: {
     any: ['might', 'haste', 'area', 'swift', 'vitality'],
-    wanggeon: ['archers', 'guard'],
-    gyeonhwon: ['fury'],
+    wanggeon: ['guard'],
+    gyeonhwon: [],
     gungye: [],
   },
   proc: ['thunder', 'rally', 'lastStand', 'echo'],

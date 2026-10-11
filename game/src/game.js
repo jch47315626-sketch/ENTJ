@@ -4,11 +4,11 @@ import { BOSSES } from './data/bosses.js';
 import { STAGES, scaleStage } from './data/stages.js';
 import { enemyHpScale, enemyDamageScale, ENEMY_BOOST, ENEMY_ARMOR, BOSS_BOOST, HP_REGEN } from './data/balance.js';
 import { UPGRADES, FALLBACKS, evolutionStatus } from './data/upgrades.js';
-import { MAGUNI_LV } from './data/skills.js';
+import { MAGUNI_LV, FURY_LV, GWANSIM } from './data/skills.js';
 import { baseReward, REWARD_BY_STARS, BOSS_REWARD, armorCut } from './data/meta.js';
 import { SpatialGrid } from './core/grid.js';
 import { clamp, rand, TAU, dist2, angleDiff } from './core/math.js';
-import { updateWeapon, hitArc } from './systems/weapons.js';
+import { updateWeapon, hitArc, currentWeaponLevel } from './systems/weapons.js';
 import { SPECIALS } from './systems/specials.js';
 import { BEHAVIORS } from './systems/enemyAI.js';
 import { updateAllies } from './systems/allies.js';
@@ -19,11 +19,13 @@ import { applyDaily } from './data/daily.js';
 import { ENDLESS, makeEndless, endlessSurge, crystalsOwed, WRATH } from './data/endless.js';
 import { applyNanse } from './data/nanse.js';
 import { Spawner } from './systems/spawner.js';
-import { updateSkills } from './systems/skills.js';
+import { updateSkills, curseFoe } from './systems/skills.js';
 import { updateTerrain, inBog } from './systems/terrain.js';
 
 /** 공훈 needed for the next level: gentle at first, steeper and steeper later on. */
-export const XP_TO_NEXT = (lv) => Math.floor((5 + 3 * lv + Math.floor(0.2 * lv * lv)) * (1 + 0.045 * Math.max(0, lv - 10)));
+export /** A card that moves a started 궁극기 forward is offered this many times as often. */
+const EVO_PULL = 2.5;
+const XP_TO_NEXT = (lv) => Math.floor((5 + 3 * lv + Math.floor(0.2 * lv * lv)) * (1 + 0.045 * Math.max(0, lv - 10)));
 
 const PLAYER_RADIUS = 14;
 const INVULN_TIME = 0.6;
@@ -56,35 +58,38 @@ class Player {
     const b = this.hero.stats;
     const m = this.meta;
     const u = (id) => this.upgrades[id] ?? 0;
-    // 패왕의 분노: below half health the hero hits harder and faster.
     const maxHp = (b.maxHp + 25 * u('vitality') + (m.maxHp ?? 0)) * (m.hpMul ?? 1);
-    this.enraged = !!m.berserk && this.hp !== undefined && this.hp < maxHp * 0.5;
-    const rage = this.enraged ? m.berserk : 0;
+    // 후백제의 패왕 (패기 궁극기): the lower his health, the harder and faster he hits.
+    const R = u('fury') >= FURY_LV.length ? FURY_LV.at(-1).rage : null;
+    const ratio = this.hp === undefined ? 1 : this.hp / maxHp;
+    const rageLv = R ? (ratio < 0.3 ? R.low : ratio < 0.5 ? R.half : R.always) : null;
+    this.enraged = !!R && rageLv !== R.always;
+    const rage = rageLv?.might ?? 0;
     this.stats = {
       maxHp,
       // 전고 (war drum object): faster steps and swings while it beats.
       speed: b.speed * (1 + 0.08 * u('swift') + (m.speed ?? 0)) * (this.drumUntil ? 1.2 : 1),
       might: b.might * (1 + 0.15 * u('might') + 0.02 * u('bMight') + (m.might ?? 0) + rage) * (this.tiger ? this.tiger.mul : 1),
-      haste: b.haste * (1 - 0.1 * u('haste') - (m.haste ?? 0) - (rage ? 0.2 : 0)) * (this.drumUntil ? 0.75 : 1),
+      haste: b.haste * (1 - 0.1 * u('haste') - (m.haste ?? 0) - (rageLv?.haste ?? 0)) * (this.drumUntil ? 0.75 : 1),
       area: b.area * (1 + 0.12 * u('area') + (m.area ?? 0)),
       pickup: b.pickup * (1 + 0.35 * u('magnet') + (m.pickup ?? 0)),
       armor: b.armor + (m.armor ?? 0),
       // 단단한 갑옷: each stack takes 2% off what is left of every blow.
       taken: 0.98 ** u('bArmor'),
-      leech: (m.leech ?? 0) + 0.0001 * u('bLeech'),
-      momentumMul: 1 + 0.25 * u('momentum') + (m.momentum ?? 0),
+      leech: (m.leech ?? 0) + 0.0001 * u('bLeech') + (rageLv?.leech ?? 0),
+      momentumMul: 1 + 0.25 * u('momentum') + (m.momentum ?? 0) + (GWANSIM[u('gwansim')]?.momentum ?? 0),
       xpMul: 1 + (m.xp ?? 0),
       guard: u('guard'),
       caltrops: u('caltrops'),
-      specialMul: 1 + 0.3 * u('fury') + (m.specialMul ?? 0),
+      specialMul: 1 + 0.3 * Math.min(3, u('fury')) + (m.specialMul ?? 0),
       specialArea: 1 + (m.specialArea ?? 0),
-      specialStun: 0.2 * u('fury'),
+      specialStun: 0.2 * Math.min(3, u('fury')),
     };
   }
 
   heal(v) {
     this.hp = Math.min(this.stats.maxHp, this.hp + v);
-    if (this.meta.berserk) this.recalc();
+    if (this.upgrades.fury >= FURY_LV.length) this.recalc();
   }
 
   /** Main weapon first, then any second weapons. */
@@ -351,7 +356,7 @@ export class Game {
   }
 
   syncArcherAllies() {
-    const want = this.player.upgrades.archers ?? 0;
+    const want = Math.min(3, this.player.upgrades.archers ?? 0); // the 4th level is the 궁극기, not an archer
     let have = this.allies.filter((a) => a.kind === 'archer' && !a.maxLife).length; // event archers don't count
     while (have < want) {
       this.allies.push({ kind: 'archer', x: this.player.x, y: this.player.y, r: 10, cd: 0.5, facing: 0 });
@@ -384,6 +389,8 @@ export class Game {
     // Stage armour: harder battlefields shrug off a share of every blow (supply carts excepted).
     if (e.def.behavior !== 'static') amount = Math.max(1, amount * (1 - (ENEMY_ARMOR[this.stage.difficulty.stars] ?? 0)));
     if (opts?.stun) e.stun = Math.max(e.stun ?? 0, opts.stun * (e.isBoss ? 0.25 : 1));
+    // 천안: a marked foe takes more from every blow.
+    if (e.curse && e.curse.until > this.time) amount *= 1 + e.curse.amp;
     e.hp -= amount;
     // 결기 · 피 회복: a sliver of the damage dealt comes back as health.
     const leech = this.player.stats.leech;
@@ -408,6 +415,17 @@ export class Game {
 
   killEnemy(e) {
     e.dead = true;
+    const p = this.player;
+    // 독심 관심법: a swayed soldier bursts when it falls.
+    const blast = GWANSIM[p.upgrades.gwansim ?? 0]?.blast;
+    if (blast && this.isCharmed(e)) {
+      hitArc(this, e.x, e.y, 0, blast.radius * Math.sqrt(p.stats.area), 360, Math.max(currentWeaponLevel(p).damage, 30) * blast.mul * p.stats.might, 80, 'burst');
+    }
+    // 애꾸눈의 저주: the curse passes to the nearest foes.
+    if (e.curse?.spread && e.curse.until > this.time) {
+      const next = this.nearestEnemies(e.x, e.y, 240, 6).filter((o) => o !== e && !o.dead && !(o.curse?.until > this.time) && !this.isCharmed(o));
+      for (const o of next.slice(0, e.curse.spread)) curseFoe(this, o, e.curse.L);
+    }
     this.sfx(e.isBoss && !e.def.minion ? 'bossDown' : 'kill');
     this.fx.push({ type: 'ink', x: e.x, y: e.y, t: 0, life: 0.8, size: e.r * (e.isBoss && !e.def.minion ? 4 : 1.6), seed: Math.random() });
     if (e.def.behavior === 'static') {
@@ -494,6 +512,8 @@ export class Game {
     // Armour cuts 7% per point (max 50%), so it helps against big hits and small ones alike.
     let dmg = Math.max(1, amount * (1 - armorCut(p.stats.armor)));
     dmg = Math.max(1, dmg * p.stats.taken);
+    // 천리마: on horseback, blows glance off.
+    if (p.mount?.L.guard) dmg = Math.max(1, dmg * (1 - p.mount.L.guard));
     // 신의 분노 goes straight through armour and guards.
     if (opts?.pierce) dmg = amount;
     this.damageLog[source] = (this.damageLog[source] ?? 0) + dmg;
@@ -501,7 +521,7 @@ export class Game {
     p.hp -= dmg;
     p.invuln = INVULN_TIME + (p.meta.invulBonus ?? 0);
     p.hurtFlash = 0.25;
-    if (p.meta.berserk) p.recalc();
+    if (p.upgrades.fury >= FURY_LV.length) p.recalc();
     this.shake(4);
     this.sfx('hurt');
     this.texts.push({ x: p.x, y: p.y - 20, v: Math.round(dmg), t: 0, life: 0.7, hurt: true });
@@ -550,15 +570,23 @@ export class Game {
     const cap = (u) => u.maxLevel + (p.meta.caps?.[u.id] ?? 0);
     const pool = UPGRADES.filter((u) => (!u.heroes || u.heroes.includes(p.hero.id)) && (u.available ? u.available(this) : lvl(u) < cap(u)));
     const choices = [];
-    const evo = pool.find((u) => u.isEvolution?.(this));
-    if (evo) choices.push(evo);
-    const rest = pool.filter((u) => u !== evo);
     // 궁핍 (난세 패): fewer cards to choose from.
     const count = this.stage.difficulty.choiceCount ?? 3;
+    // Every 궁극기 that is ready gets its card (as many as fit).
+    const evos = pool.filter((u) => u.isEvolution?.(this)).slice(0, count);
+    choices.push(...evos);
+    const rest = pool.filter((u) => !evos.includes(u));
+    // A 궁극기 once started should be reachable: its line and the 책략 it still needs come up more often.
+    const pushing = new Set();
+    for (const e of evolutionStatus(this)) {
+      // The main weapon is held from the start; it counts once it has been raised.
+      if (!e.owned || (e.checks[0].id === 'weapon' && p.weapon.level < 1)) continue;
+      for (const c of e.checks) if (!c.done) pushing.add(c.id);
+    }
     while (choices.length < count && rest.length) {
       let total = 0;
       const w = rest.map((u) => {
-        const x = u.weight * (u.category === p.hero.favoredCategory ? 1.5 : 1);
+        const x = u.weight * (u.category === p.hero.favoredCategory ? 1.5 : 1) * (pushing.has(u.id) ? EVO_PULL : 1);
         total += x;
         return x;
       });
@@ -761,6 +789,15 @@ export class Game {
       // 무당's blessing: faster for a while.
       if (e.hasteUntil > this.time) mul *= 1.35;
       if (p.stats.caltrops && !e.isBoss && dist2(e.x, e.y, p.x, p.y) < slowR * slowR) mul = slow;
+      // 천안: the mark burns every half second; 애꾸눈의 저주 also slows (bosses half as much).
+      if (e.curse && e.curse.until > this.time) {
+        if (e.curse.slow) mul *= 1 - e.curse.slow * (e.isBoss ? 0.5 : 1);
+        e.curse.tick -= dt;
+        if (e.curse.tick <= 0 && e.curse.dps) {
+          e.curse.tick += 0.5;
+          this.damageEnemy(e, e.curse.dps * 0.5, e.x, e.y, 0);
+        }
+      }
       for (const z of this.zones) {
         if (z.team === 'player' && z.slow && dist2(z.x, z.y, e.x, e.y) < z.r * z.r) mul *= e.isBoss ? 1 - z.slow * 0.4 : 1 - z.slow;
       }
@@ -882,6 +919,13 @@ export class Game {
         });
       }
     }
+    // 가은의 장사: a boulder bursts into shards where it stops.
+    for (const pr of this.projectiles) {
+      if (pr.life > 0 || !pr.shatter) continue;
+      hitArc(this, pr.x, pr.y, 0, pr.shatter.radius, 360, pr.shatter.damage, 120, 'burst', { stun: pr.shatter.stun });
+      this.fx.push({ type: 'puff', x: pr.x, y: pr.y, t: 0, life: 0.6, size: 30, tone: 'mud' });
+      this.shake(4);
+    }
     this.projectiles = this.projectiles.filter((pr) => pr.life > 0);
   }
 
@@ -903,7 +947,8 @@ export class Game {
     e.kx = e.ky = 0;
     e.stun = Math.max(e.stun ?? 0, e.pull.stun);
     if (e.pull.slam) {
-      hitArc(this, e.x, e.y, 0, e.pull.slam.radius, 360, e.pull.slam.damage * p.stats.might, 0, 'chop'); // no knockback: keep them at his feet
+      // 패왕쇄: the slam hits as hard as his blade (`mul` × weapon damage); no knockback, so they stay at his feet.
+      hitArc(this, e.x, e.y, 0, e.pull.slam.radius, 360, e.pull.slam.mul * Math.max(currentWeaponLevel(p).damage, 30) * p.stats.might, 0, 'chop');
       this.shake(4);
     }
     this.fx.push({ type: 'puff', x: e.x, y: e.y, t: 0, life: 0.4, size: 18, tone: 'mud' });
@@ -954,7 +999,7 @@ export class Game {
       m.drop = 0.06;
       this.zones.push({
         team: 'player', kind: 'hoof', x: p.x - Math.cos(p.facing) * 12, y: p.y - Math.sin(p.facing) * 12,
-        r: 26 * p.stats.area, dps: m.L.trailDps * p.stats.might, life: m.L.trailLife, t: 0, angle: p.facing,
+        r: 26 * p.stats.area, dps: (m.L.trailMul ? Math.max(currentWeaponLevel(p).damage, 30) * m.L.trailMul : m.L.trailDps) * p.stats.might, life: m.L.trailLife, t: 0, angle: p.facing,
       });
     }
     if (m.L.trample) {
@@ -964,7 +1009,7 @@ export class Game {
         if (dist2(e.x, e.y, p.x, p.y) > rr * rr) return;
         if (this.time - (e.trampledAt ?? -9) < 0.5) return;
         e.trampledAt = this.time;
-        this.damageEnemy(e, m.L.trample * p.stats.might, p.x, p.y, 220);
+        this.damageEnemy(e, m.L.trample * Math.max(currentWeaponLevel(p).damage, 30) * p.stats.might, p.x, p.y, 220);
       });
     }
   }

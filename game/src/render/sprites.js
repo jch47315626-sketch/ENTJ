@@ -1019,6 +1019,33 @@ export function drawProjectile(ctx, p) {
     ctx.strokeStyle = '#1d1a17';
     ctx.lineWidth = 1;
     ctx.stroke();
+  } else if (p.kind === 'boulder') {
+    // 바위 던지기: a rough grey stone, tumbling as it rolls.
+    ctx.rotate(p.spin ?? 0);
+    const r = p.r;
+    ctx.fillStyle = '#7d7468';
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = Math.max(1.5, r * 0.1);
+    ctx.beginPath();
+    for (let i = 0; i <= 9; i++) {
+      const a = (i / 9) * Math.PI * 2;
+      const k = 0.86 + 0.14 * Math.sin(a * 3 + 1);
+      ctx[i ? 'lineTo' : 'moveTo'](Math.cos(a) * r * k, Math.sin(a) * r * k);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(220, 212, 196, 0.35)';
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.3, -r * 0.3, r * 0.4, r * 0.25, -0.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(29, 26, 23, 0.6)';
+    ctx.lineWidth = Math.max(1, r * 0.07);
+    ctx.beginPath();
+    ctx.moveTo(r * 0.1, -r * 0.5);
+    ctx.lineTo(-r * 0.05, 0);
+    ctx.lineTo(r * 0.3, r * 0.35);
+    ctx.stroke();
   } else if (p.kind === 'orb') {
     const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, p.r * 2);
     glow.addColorStop(0, 'rgba(255, 236, 170, 0.9)');
