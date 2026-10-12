@@ -154,6 +154,8 @@ export function drawSpirits(save, n, cost, rand = Math.random) {
   save.yeongju -= cost;
   save.spirits ??= {};
   const out = [];
+  save.stats ??= {};
+  save.stats.draws = (save.stats.draws ?? 0) + n;
   for (let i = 0; i < n; i++) {
     const s = rollSpirit(save.pity ?? 0, rand);
     save.pity = s.grade === 4 ? 0 : (save.pity ?? 0) + 1;
@@ -257,13 +259,12 @@ export const FIRST_SPIRIT_RUNS = 5;
 export const altarRunsDone = (save) => save.altarRuns ?? 0;
 
 /**
- * Counts one finished 사신의 제단 run and, on the FIRST_SPIRIT_RUNS-th, gives a 범수
+ * Once FIRST_SPIRIT_RUNS 사신의 제단 runs are done (main.js counts them), gives a 범수
  * the player does not have yet (★1, taken along if the party has room).
  * Returns that 영물's id, or null.
  */
 export function countRunForGift(save, rand = Math.random) {
-  save.altarRuns = (save.altarRuns ?? 0) + 1;
-  if (save.spiritGift || save.altarRuns < FIRST_SPIRIT_RUNS) return null;
+  if (save.spiritGift || (save.altarRuns ?? 0) < FIRST_SPIRIT_RUNS) return null;
   save.spiritGift = true;
   save.spirits ??= {};
   const pool = DRAW_POOL.filter((s) => s.grade === 1 && !save.spirits[s.id]);

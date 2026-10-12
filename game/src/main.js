@@ -10,6 +10,7 @@ import { renderHome, renderHeroes, renderGrow, renderMap, renderPrep, renderNans
 import { GACHA, SPIRITS, SPIRIT_GRADES, drawSpirits, starUp, setBranch, toggleCompanion, callSasin, countRunForGift } from './data/spirits.js';
 import { loadSave, writeSave, outfitOf, encodeSave, decodeSave } from './core/save.js';
 import { runFacts, recordRun, checkAchievements, claimAchievement, readyCount } from './core/achieve.js';
+import { codexReadyCount, claimCodex, claimCodexAll } from './data/codexTiers.js';
 import { ACHIEVEMENTS } from './data/achievements.js';
 import { dailyFor, dailyHeroBonus, todayKey } from './data/daily.js';
 import { josa } from './core/korean.js';
@@ -157,10 +158,13 @@ function onState(state, g) {
       if (newTier) save.altarBest = A.tier;
       if (state === 'clear') save.altarTier = Math.min(ALTAR_MAX_TIER, Math.max(save.altarTier ?? 1, newTier && altarTierOpen(save, A.tier + 1) ? A.tier + 1 : A.tier));
       for (const [id, n] of Object.entries(g.killsBy)) save.codex.kills[id] = (save.codex.kills[id] ?? 0) + n;
+      save.altarRuns = (save.altarRuns ?? 0) + 1;
+      const altarUnlocks = checkAchievements(save);
       writeSave(save);
+      updateBadge();
       g.resultExtra = {
         altar: { ...A, essence: pay.essence, newTier, maxTier: ALTAR_MAX_TIER, tickets: refreshAltar(save).tickets },
-        unlocks: [],
+        unlocks: altarUnlocks.map((a) => `${a.icon} ${a.name}`),
         newFoes: Object.keys(g.killsBy).filter((id) => !known.has(id)).length,
       };
     }
@@ -354,10 +358,23 @@ function checkMenuAchievements() {
 }
 
 /** Red dot on 📖 도감 while some 업적 reward is waiting. */
+/** After a reward was taken: save, sound, badge, and a toast with what came in. */
+function paidToast(label, got) {
+  if (!got.money && !got.yeongju) return;
+  writeSave(save);
+  sound.unlock();
+  sound.sfx('achieve');
+  updateBadge();
+  refresh();
+  toast(`${label} ${[got.money && `🪙 +${got.money.toLocaleString()}냥`, got.yeongju && `🔮 +${got.yeongju.toLocaleString()} 영주`].filter(Boolean).join(' · ')}`);
+}
+
 function updateBadge() {
-  const n = readyCount(save);
+  const n = readyCount(save) + codexReadyCount(save);
   const b = $('bottomNav').querySelector('[data-go="codex"]');
   b.dataset.badge = n ? String(n) : '';
+  // 🐾 영물 joins the menu once the altar has been tried (or a 영물 is owned).
+  $('bottomNav').querySelector('[data-go="spirit"]').hidden = !((save.altarRuns ?? 0) > 0 || Object.keys(save.spirits ?? {}).length);
 }
 
 /** Saves, plays a purchase sound and redraws. */
@@ -383,6 +400,8 @@ const act = {
     const out = drawSpirits(save, n, n === 10 ? GACHA.ten : GACHA.one * n);
     if (!out) return toast('🔮 영주가 모자라요. 사신의 제단에서 영기를 모아요!', false);
     setLastDraw(out);
+    checkAchievements(save);
+    updateBadge();
     const best = Math.max(...out.map((d) => SPIRITS[d.id].grade));
     sound.sfx(best >= 4 ? 'achieve' : best >= 3 ? 'evolve' : 'buy');
     if (best >= 4) toast(`🌟 ${SPIRIT_GRADES[4].name} ${out.filter((d) => SPIRITS[d.id].grade === 4).map((d) => SPIRITS[d.id].name).join(', ')}!`);
@@ -392,6 +411,8 @@ const act = {
   starSpirit(id) {
     if (!starUp(save, id)) return;
     const st = save.spirits[id].stars;
+    checkAchievements(save);
+    updateBadge();
     sound.sfx(st >= 5 ? 'achieve' : 'evolve');
     toast(st >= 5 ? `🌟 ${SPIRITS[id].name} 각성!` : st === 3 ? `★3 ${SPIRITS[id].name} — 갈래를 골라요!` : `★${st} ${SPIRITS[id].name}`);
     writeSave(save);
@@ -411,6 +432,8 @@ const act = {
   },
   callSasin(id) {
     if (!callSasin(save, id, ESSENCE_PER_SASIN)) return;
+    checkAchievements(save);
+    updateBadge();
     sound.sfx('achieve');
     toast(`✨ ${josa(SPIRITS[id].name, '이')} 응답했다! 동행 칸이 2칸이 돼요`);
     writeSave(save);
@@ -498,25 +521,23 @@ const act = {
     toast(`🔁 각인 — ${before} → ${lineText(save.gearOpts[item.id][index])}`);
   },
   claimAch(id) {
-    const got = claimAchievement(save, id);
-    if (!got) return;
-    writeSave(save);
-    sound.unlock();
-    sound.sfx('achieve');
-    updateBadge();
-    refresh();
-    toast(`🏆 보상 +${got.toLocaleString()}냥`);
+    paidToast('🏆 보상', claimAchievement(save, id));
   },
   claimAllAch() {
-    let got = 0;
-    for (const a of ACHIEVEMENTS) got += claimAchievement(save, a.id);
-    if (!got) return;
-    writeSave(save);
-    sound.unlock();
-    sound.sfx('achieve');
-    updateBadge();
-    refresh();
-    toast(`🏆 보상 모두 받기 +${got.toLocaleString()}냥`);
+    const got = { money: 0, yeongju: 0 };
+    for (const a of ACHIEVEMENTS) {
+      const g = claimAchievement(save, a.id);
+      got.money += g.money;
+      got.yeongju += g.yeongju;
+    }
+    paidToast('🏆 보상 모두 받기', got);
+  },
+  /** 도감 단계 보상: one entry, or everything waiting in a tab. */
+  claimCodex(kind, id) {
+    paidToast('📖 도감 보상', claimCodex(save, kind, id));
+  },
+  claimCodexAll(kinds) {
+    paidToast('📖 도감 보상 모두 받기', claimCodexAll(save, kinds.includes('foe') ? [...kinds, 'boss'] : kinds));
   },
   exportCode() {
     return encodeSave(save);

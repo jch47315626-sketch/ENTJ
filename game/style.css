@@ -523,7 +523,7 @@ button.doll-slot:hover, button.doll-slot:focus-visible { border-color: var(--gol
 .menu-screen .menu-wrap { width: min(640px, 100%); gap: 12px; padding-block: 0; }
 .bottom-nav {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
-  display: grid; grid-template-columns: repeat(5, 1fr);
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
   padding: 6px max(8px, env(safe-area-inset-left)) calc(6px + env(safe-area-inset-bottom));
   background: rgba(32, 25, 42, 0.96); border-top: 1px solid rgba(255, 203, 107, 0.25);
   backdrop-filter: blur(6px);
@@ -1605,3 +1605,18 @@ body { background: var(--night); }
 .tab-emoji { display: inline-flex; align-items: center; justify-content: center; font-size: 22px; }
 .codex-emoji { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; font-size: 28px; box-shadow: inset 0 0 0 2px var(--gc); }
 .codex-cell.locked .codex-emoji { filter: brightness(0) opacity(0.5); }
+
+/* 연속 업적 · 도감 단계 */
+.ach-tiers { display: inline-flex; gap: 3px; margin-left: 6px; vertical-align: middle; }
+.ach-tiers i, .cx-tiers i { width: 8px; height: 8px; transform: rotate(45deg); background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(240, 200, 110, 0.5); }
+.ach-tiers i.on, .cx-tiers i.on { background: #f2c84a; }
+.ach-tiers i.ready, .cx-tiers i.ready { background: #8fe3c0; box-shadow: 0 0 6px #8fe3c0; }
+.cx-tiers { display: flex; gap: 4px; justify-content: center; margin-top: 3px; }
+.codex-cell { position: relative; }
+.codex-cell.tier-ready { box-shadow: 0 0 0 2px #8fe3c0, 0 0 14px rgba(143, 227, 192, 0.6); cursor: pointer; }
+.cx-gift { position: absolute; top: 4px; right: 6px; font-size: 18px; animation: cx-bob 1s ease-in-out infinite; }
+@keyframes cx-bob { 50% { transform: translateY(-3px); } }
+
+/* 🐾 영물 in the bottom menu (shown once the altar has been tried). */
+.bottom-nav button[hidden] { display: none; }
+.bottom-nav button span.nav-emoji { display: flex; align-items: center; justify-content: center; width: 46px; height: 44px; font-size: 34px; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.6)); }

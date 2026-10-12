@@ -58,13 +58,17 @@ export function checkAchievements(save, run = null) {
   return fresh;
 }
 
-/** Takes one reward. Returns the 냥 paid (0 if it was not ready). */
+/** Takes one reward (냥, or 영주 for `currency: 'yeongju'`). Returns { money, yeongju } paid. */
 export function claimAchievement(save, id) {
-  if (save.ach[id] !== 'ready') return 0;
+  if (save.ach[id] !== 'ready') return { money: 0, yeongju: 0 };
   const a = ACHIEVEMENTS.find((x) => x.id === id);
   save.ach[id] = 'done';
+  if (a.currency === 'yeongju') {
+    save.yeongju = (save.yeongju ?? 0) + a.reward;
+    return { money: 0, yeongju: a.reward };
+  }
   save.money += a.reward;
-  return a.reward;
+  return { money: a.reward, yeongju: 0 };
 }
 
 export const readyCount = (save) => Object.values(save.ach ?? {}).filter((v) => v === 'ready').length;

@@ -16,6 +16,7 @@ import { GUARDIANS, ALTAR_TICKETS, ESSENCE_PER_SASIN, ALTAR_TIERS, ALTAR_MAX_TIE
 import { josa } from '../core/korean.js';
 import { lineText, lineMax, engraveCost } from '../data/gearOptions.js';
 import { HELP } from '../data/help.js';
+import { codexEntry, FOES, GENERALS } from '../data/codexTiers.js';
 import { NANSE_CARDS, NANSE_MAX, NANSE_MILESTONES, nanseLevel, nanseRewardMul, bestNanse, milestoneBonus } from '../data/nanse.js';
 import { SPECIALS } from '../systems/specials.js';
 import { drawUnit } from '../render/sprites.js';
@@ -820,13 +821,33 @@ export function renderCodex(save, sel, act) {
   body.append(strip);
   const grid = el('div', 'codex-grid');
   const kills = save.codex?.kills ?? {};
-  const cell = (iconNode, name, sub, locked, more = []) => {
-    const c = el('div', `codex-cell${locked ? ' locked' : ''}`);
+  // `tier` (data/codexTiers.js): the entry's 단계 pips, and a 🎁 to tap when one is reached.
+  const cell = (iconNode, name, sub, locked, more = [], tier = null, lockedSub = '') => {
+    const c = el('div', `codex-cell${locked ? ' locked' : ''}${tier?.ready > 0 ? ' tier-ready' : ''}`);
     c.append(iconNode);
     c.append(el('b', '', locked ? '???' : name));
-    if (sub) c.append(el('small', '', locked ? '' : sub));
-    holdTip(c, locked ? tipHtml('???', ['아직 만나지 못했어요.']) : tipHtml(name, [sub, ...more]));
+    if (sub || lockedSub) c.append(el('small', '', locked ? lockedSub : sub));
+    let tierLines = [];
+    if (tier) {
+      c.append(el('span', 'cx-tiers', tier.tiers.map((t, i) => `<i class="${i < tier.claimed ? 'on' : i < tier.reached ? 'ready' : ''}"></i>`).join('')));
+      const unit = tier.kind === 'spirit' ? '★' : tier.kind === 'boss' ? '번 격파' : '명 처치';
+      tierLines = tier.tiers.map((t, i) => `${i < tier.claimed ? '✅' : i < tier.reached ? '🎁' : '◻️'} ${tier.kind === 'spirit' ? `★${t.need}` : `${fmt(t.need)}${unit}`} — ${t.currency === 'yeongju' ? `영주 ${fmt(t.reward)}` : `${fmt(t.reward)}냥`}`);
+      if (tier.ready > 0) {
+        c.append(el('span', 'cx-gift', '🎁'));
+        c.addEventListener('click', () => act.claimCodex(tier.kind, tier.id));
+      }
+    }
+    holdTip(c, locked ? tipHtml('???', ['아직 만나지 못했어요.', lockedSub, ...(tierLines.length ? ['<b>도감 단계 보상</b>', tierLines.join('<br>')] : [])]) : tipHtml(name, [sub, ...more, ...(tierLines.length ? [`<b>도감 단계 보상</b>${tier.ready > 0 ? ' — 눌러서 받기!' : ''}`, tierLines.join('<br>')] : [])]));
     return c;
+  };
+  /** 🎁 모두 받기 for one tab, when anything is waiting. */
+  const claimAllBtn = (kinds) => {
+    let money = 0, yj = 0;
+    for (const e of kinds.flatMap(([k, list]) => list.map((id) => codexEntry(save, k, id)))) {
+      for (let i = e.claimed; i < e.reached; i++) (e.tiers[i].currency === 'yeongju' ? (yj += e.tiers[i].reward) : (money += e.tiers[i].reward));
+    }
+    if (!money && !yj) return null;
+    return button(`🎁 도감 보상 모두 받기 ${[money && `+${fmt(money)}냥`, yj && `🔮 +${fmt(yj)}`].filter(Boolean).join(' · ')}`, 'ach-claim-all', () => act.claimCodexAll(kinds.map(([k]) => k)));
   };
   body.append(holdHint());
 
@@ -862,22 +883,24 @@ export function renderCodex(save, sel, act) {
       grid.append(c);
     }
   } else if (ui.codexTab === 'spirit') {
-    // 영물: met ones show their grade, stars and 갈래; the rest stay as ???.
+    // 영물: met ones show their grade, stars and 갈래; the rest stay as ??? with their grade.
+    const all = claimAllBtn([['spirit', SPIRIT_LIST.map((x) => x.id)]]);
+    if (all) body.append(all);
     for (const s of SPIRIT_LIST) {
       const own = spiritOf(save, s.id);
       const ic = el('span', 'row-icon codex-emoji', s.icon);
       ic.style.setProperty('--gc', SPIRIT_GRADES[s.grade].color);
       grid.append(cell(ic, s.name, `${SPIRIT_GRADES[s.grade].name} · ${s.role}${own ? ` · ★${own.stars}${own.branch ? ` · ${s.branches[own.branch].name}` : ''}` : ''}`, !own,
-        [s.base, `갈래 A ${s.branches.a.name} — ${s.branches.a.desc}`, `갈래 B ${s.branches.b.name} — ${s.branches.b.desc}`, `★5 각성 — ${s.awaken}`]));
+        [s.base, `갈래 A ${s.branches.a.name} — ${s.branches.a.desc}`, `갈래 B ${s.branches.b.name} — ${s.branches.b.desc}`, `★5 각성 — ${s.awaken}`],
+        codexEntry(save, 'spirit', s.id), `${SPIRIT_GRADES[s.grade].name}${s.grade === 5 ? ' · 사신 정수로' : ' · 뽑기로'}`));
     }
     body.append(grid);
     body.append(comboCard(save));
     return;
   } else if (ui.codexTab === 'foe') {
-    const foes = [
-      ...Object.values(ENEMIES).filter((e) => e.behavior !== 'static'),
-      ...Object.values(BOSSES).filter((b) => b.look && !b.minion),
-    ];
+    const foes = [...FOES(), ...GENERALS()];
+    const all = claimAllBtn([['foe', FOES().map((x) => x.id)], ['boss', GENERALS().map((x) => x.id)]]);
+    if (all) body.append(all);
     for (const f of foes) {
       const n = kills[f.id] ?? 0;
       const cv = el('canvas', 'foe-icon');
@@ -893,7 +916,8 @@ export function renderCodex(save, sel, act) {
         ctx.fillStyle = 'rgba(30, 24, 40, 0.9)';
         ctx.fillRect(0, 0, 112, 112);
       }
-      grid.append(cell(cv, f.name, f.epithet ? `적장 · 격파 ${n}` : `처치 ${fmt(n)}`, !n));
+      const boss = !!BOSSES[f.id] && !ENEMIES[f.id];
+      grid.append(cell(cv, f.name, boss ? `적장 · 격파 ${n}` : `처치 ${fmt(n)}`, !n, [], codexEntry(save, boss ? 'boss' : 'foe', f.id), boss ? '적장' : ''));
     }
   } else {
     body.append(recordPanel(save, act));
@@ -911,32 +935,43 @@ function achPanel(save, act) {
   const box = el('div', 'ach-box');
   const done = ACHIEVEMENTS.filter((a) => save.ach?.[a.id]).length;
   const ready = ACHIEVEMENTS.filter((a) => save.ach?.[a.id] === 'ready');
-  const waiting = ready.reduce((n, a) => n + a.reward, 0);
+  const waiting = ready.filter((a) => a.currency !== 'yeongju').reduce((n, a) => n + a.reward, 0);
+  const waitingY = ready.filter((a) => a.currency === 'yeongju').reduce((n, a) => n + a.reward, 0);
+  const pay = (a) => (a.currency === 'yeongju' ? `🔮${fmt(a.reward)}` : `${COIN()}${fmt(a.reward)}`);
   const top = el('div', 'ach-top');
   top.append(el('div', 'ach-count', `<span class="ach-num"><b>${done}</b> / ${ACHIEVEMENTS.length} 달성</span>
     <span class="ach-meter"><i style="width:${(done / ACHIEVEMENTS.length) * 100}%"></i></span>`));
   box.append(top);
-  if (ready.length) box.append(button(`🎁 모두 받기 +${fmt(waiting)}냥`, 'ach-claim-all', () => act.claimAllAch()));
+  if (ready.length) box.append(button(`🎁 모두 받기 ${[waiting && `+${fmt(waiting)}냥`, waitingY && `🔮 +${fmt(waitingY)}`].filter(Boolean).join(' · ')}`, 'ach-claim-all', () => act.claimAllAch()));
   let n = 0;
   for (const [gid, gname] of ACH_GROUPS) {
     const [icon, ...words] = gname.split(' ');
     box.append(ruleHead(GROUP_ICON[gid] ?? `<span class="rh-emoji">${icon}</span>`, words.join(' ')));
-    for (const a of ACHIEVEMENTS.filter((x) => x.group === gid)) {
+    // 연속 업적: one row per series — the first tier not yet taken (or the last, all done).
+    const shown = [];
+    for (const x of ACHIEVEMENTS.filter((y) => y.group === gid)) {
+      if (!x.series) { shown.push(x); continue; }
+      if (shown.some((y) => y.series === x.series)) continue;
+      const tiers = ACHIEVEMENTS.filter((y) => y.series === x.series);
+      shown.push(tiers.find((y) => save.ach?.[y.id] !== 'done') ?? tiers.at(-1));
+    }
+    for (const a of shown) {
       const st = save.ach?.[a.id];
       const row = el('div', `ach-card${st === 'ready' ? ' ready' : st === 'done' ? ' done' : ''}`);
       row.style.setProperty('--art', `url(${UI}/ach/art${n++ % 6}.webp)`);
       row.append(el('span', 'ach-icon', ACH_ART.has(a.id) ? img(`ach/${a.id}`) : `<em>${a.icon}</em>`));
       const [now, need] = progressOf(a, save);
       const bar = a.goal && !st ? `<span class="ach-prog"><i style="width:${Math.min(100, (now / need) * 100)}%"></i><em>${fmt(Math.min(now, need))} / ${fmt(need)}</em></span>` : '';
-      row.append(el('div', 'ach-text', `<b>${a.name}</b><small>${a.desc}</small>${bar}`));
+      const pips = a.series ? `<span class="ach-tiers">${ACHIEVEMENTS.filter((y) => y.series === a.series).map((y) => `<i class="${save.ach?.[y.id] === 'done' ? 'on' : save.ach?.[y.id] === 'ready' ? 'ready' : ''}"></i>`).join('')}</span>` : '';
+      row.append(el('div', 'ach-text', `<b>${a.name}${pips}</b><small>${a.desc}</small>${bar}`));
       holdTip(row, tipHtml(`${a.icon} ${a.name}`, [
         a.desc,
         a.goal ? `진행: ${fmt(Math.min(now, need))} / ${fmt(need)}` : '',
-        `보상 ${fmt(a.reward)}냥`,
+        a.series ? ACHIEVEMENTS.filter((y) => y.series === a.series).map((y) => `${save.ach?.[y.id] === 'done' ? '✅' : save.ach?.[y.id] === 'ready' ? '🎁' : '◻️'} ${y.desc} — ${y.currency === 'yeongju' ? `영주 ${fmt(y.reward)}` : `${fmt(y.reward)}냥`}`).join('<br>') : `보상 ${a.currency === 'yeongju' ? `영주 ${fmt(a.reward)}` : `${fmt(a.reward)}냥`}`,
         st === 'done' ? '✅ 달성하고 보상을 받았어요' : st === 'ready' ? '🎁 달성! 받기를 눌러 보상을 받아요' : '',
       ]));
-      if (st === 'ready') row.append(button(`받기<br><small>+${fmt(a.reward)}</small>`, 'ach-claim', () => act.claimAch(a.id)));
-      else row.append(el('span', `ach-reward${st === 'done' ? ' got' : ''}`, st === 'done' ? '<i class="ach-check">✓</i>' : `${COIN()}${fmt(a.reward)}`));
+      if (st === 'ready') row.append(button(`받기<br><small>+${a.currency === 'yeongju' ? '🔮' : ''}${fmt(a.reward)}</small>`, 'ach-claim', () => act.claimAch(a.id)));
+      else row.append(el('span', `ach-reward${st === 'done' ? ' got' : ''}`, st === 'done' ? '<i class="ach-check">✓</i>' : pay(a)));
       box.append(row);
     }
   }
