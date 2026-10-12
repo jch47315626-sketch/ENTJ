@@ -11,6 +11,8 @@ export const starText = (n) => (n > 5 ? '★★★★★💀' : '★'.repeat(n) 
 /** Shows one overlay screen (or none during play). The bottom menu shows on menu screens. */
 export function showScreen(name) {
   for (const s of SCREENS) $(s).hidden = s !== name;
+  // A home dungeon sheet never outlives the home screen.
+  if (name !== 'home') document.querySelector('.sheet-back')?.remove();
   $('bottomNav').hidden = !MENUS.includes(name);
   for (const b of $('bottomNav').querySelectorAll('button')) b.classList.toggle('on', b.dataset.go === name);
 }

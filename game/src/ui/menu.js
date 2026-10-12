@@ -201,33 +201,76 @@ function stageInfo(save, sel, st) {
 
 export function renderHome(save, sel, act) {
   $('homeMoney').textContent = fmt(save.money);
+  $('homeYeongju').textContent = fmt(save.yeongju ?? 0);
+  $('homeCrystals').textContent = fmt(save.crystals ?? 0);
+  $('homeYeongjuPill').hidden = !((save.yeongju ?? 0) > 0 || (save.altarRuns ?? 0) > 0);
+  $('homeCrystalPill').hidden = !((save.crystals ?? 0) > 0 || Object.keys(save.gyeolgi ?? {}).length);
   const body = $('homeBody');
   body.innerHTML = '';
-  const h = HEROES[sel.hero];
-  const hero = button('', 'home-hero', () => act.go('heroes'));
-  hero.append(portrait(h, 120));
-  const txt = el('div', 'hh-text');
-  txt.append(el('div', 'hh-name', h.name));
-  txt.append(el('div', 'hh-build', `${h.title} · ${h.role}`));
-  txt.append(gearRow(save, h.id));
-  hero.append(txt);
-  body.append(hero);
 
+  // 영웅 + 고른 전장 + 출진, all in one card.
+  const h = HEROES[sel.hero];
   const st = STAGES[sel.stage];
   const { boss, gate } = stageInfo(save, sel, st);
-  const card = el('div', 'home-stage');
-  const info = button(`
-    <span class="hs-stars">${starText(st.difficulty.stars)}</span>
-    <span class="hs-name">${st.numeral} ${st.name}</span>
-    <span class="hs-meta">보상 ×${rewardOf(st)} · 적장 ${boss.name}</span>`, 'hs-info', () => act.go('map'));
-  card.append(info);
+  const card = el('div', 'home-main');
+  const who = button('', 'hm-hero', () => act.go('heroes'));
+  who.append(portrait(h, 78));
+  const wt = el('div', 'hm-who', `<b>${h.name}</b><small>${h.title}</small>`);
+  wt.append(gearRow(save, h.id, 18));
+  who.append(wt);
+  card.append(who);
+  card.append(button(`<span class="hs-stars">${starText(st.difficulty.stars)}</span><span class="hm-stage">${st.numeral} ${st.name}</span><small>보상 ×${rewardOf(st)} · 적장 ${boss.name} · 전장 바꾸기 ›</small>`, 'hm-field', () => act.go('map')));
   if (!gate.ok) card.append(el('p', 'gate-msg', `🔒 ${gate.text}`));
-  const cta = button('⚔️ 출진하기', 'seal-btn cta', () => act.go('prep'));
-  card.append(cta);
+  card.append(button('⚔️ 출진하기', 'seal-btn cta', () => act.go('prep')));
   body.append(card);
-  body.append(dailyCard(save, act));
-  body.append(altarCard(save, sel, act));
-  body.append(endlessCard(save, sel, act));
+
+  // 던전: one line each; the full card opens in a sheet.
+  const list = el('div', 'dg-list');
+  const d = dailyFor(todayKey());
+  const dDone = save.daily?.date === d.date && save.daily.cleared;
+  list.append(dungeonRow('📅', '오늘의 전장', `${HEROES[d.heroId].name} · ${STAGES[d.stageId].name}`,
+    dDone ? '✅ 오늘 보상 받음' : `첫 승리 🪙 ${fmt(d.reward)} · ${untilTomorrow()} 남음`, !dDone, () => openSheet('daily', save, sel, act)));
+  const a = refreshAltar(save);
+  const g = GUARDIANS[guardianOf()];
+  list.append(dungeonRow('🏯', '사신의 제단', `${g ? `${g.icon} ${g.name}` : '✨ 사신의 날'} · ${Math.max(1, save.altarTier ?? 1)}단계`,
+    `🎟️ 입장권 ${a.tickets}/${ALTAR_TICKETS.cap}${save.spiritGift ? '' : ` · 🐾 ${Math.max(1, FIRST_SPIRIT_RUNS - altarRunsDone(save))}판 더 돌면 첫 영물`}`, a.tickets > 0, () => openSheet('altar', save, sel, act)));
+  const best = save.endless?.[sel.stage];
+  const mmss = (t) => `${Math.floor(t / 60)}분 ${String(Math.floor(t % 60)).padStart(2, '0')}초`;
+  list.append(dungeonRow('♾️', '무한 전장', `${h.name} · ${st.name}`, best ? `🏆 최고 ${mmss(best.time)} · 💎 결기수정` : '쓰러질 때까지 · 💎 결기수정', false, () => openSheet('endless', save, sel, act)));
+  body.append(list);
+  if (ui.sheet) openSheet(ui.sheet, save, sel, act);
+}
+
+/** One line of the home's dungeon list. */
+function dungeonRow(icon, name, line, status, glow, onOpen) {
+  const b = button(`<span class="dg-icon">${icon}</span><span class="dg-text"><b>${name}</b><span>${line}</span><small>${status}</small></span><span class="dg-go">›</span>`, `dg-row${glow ? ' glow' : ''}`, onOpen);
+  return b;
+}
+
+/** A dungeon's full card in a sheet over the home screen (kept open across refreshes). */
+function openSheet(kind, save, sel, act) {
+  ui.sheet = kind;
+  document.querySelector('.sheet-back')?.remove();
+  const close = () => {
+    ui.sheet = null;
+    back.remove();
+  };
+  // Leaving for a battle or another menu closes the sheet.
+  const leave = (fn) => (...args) => {
+    close();
+    fn(...args);
+  };
+  const sAct = { ...act, go: leave(act.go), startDaily: leave(act.startDaily), startEndless: leave(act.startEndless), startAltar: leave(act.startAltar) };
+  const back = el('div', 'sheet-back');
+  const sheet = el('div', 'sheet');
+  const x = button('✕', 'sheet-x', close);
+  x.setAttribute('aria-label', '닫기');
+  sheet.append(x);
+  sheet.append(kind === 'daily' ? dailyCard(save, sAct) : kind === 'altar' ? altarCard(save, sel, sAct) : endlessCard(save, sel, sAct));
+  back.append(sheet);
+  back.addEventListener('click', (e) => e.target === back && close());
+  // On top of everything (the bottom menu included) until closed.
+  $('app').append(back);
 }
 
 /** 🏯 사신의 제단: today's guardian (or a choice on 사신의 날), 단계, entries left, 영주 and 사신 정수. */

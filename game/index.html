@@ -67,26 +67,27 @@
 
   <section id="home" class="screen menu-screen home-screen">
     <div class="menu-wrap">
-      <div class="topbar">
-        <span class="coin-pill">🪙 <b id="homeMoney">0</b></span>
-        <span class="topbar-right">
-          <span class="tb-row">
-            <button id="homeSave" class="plain-btn small save-btn" type="button" title="기록을 코드로 저장하거나 불러오기">💾 저장</button>
-            <label class="mini-toggle"><input id="soundOn" type="checkbox" checked> 🔊</label>
-          </span>
-          <button id="installBtn" class="plain-btn small install-mini" type="button">📲 핸드폰에 설치</button>
+      <div class="topbar home-top">
+        <span class="purse">
+          <span class="coin-pill">🪙 <b id="homeMoney">0</b></span>
+          <span class="coin-pill yj" id="homeYeongjuPill" hidden>🔮 <b id="homeYeongju">0</b></span>
+          <span class="coin-pill gem" id="homeCrystalPill" hidden>💎 <b id="homeCrystals">0</b></span>
+        </span>
+        <span class="tb-icons">
+          <button id="installBtn" class="icon-btn small" type="button" title="핸드폰에 설치" aria-label="핸드폰에 설치">📲</button>
+          <button id="homeSave" class="icon-btn small" type="button" title="기록을 코드로 저장하거나 불러오기" aria-label="저장">💾</button>
+          <label class="icon-btn small mini-toggle" title="소리"><input id="soundOn" type="checkbox" checked hidden><span class="snd-on">🔊</span><span class="snd-off">🔇</span></label>
         </span>
       </div>
-      <h1 class="home-key"><img src="assets/ui/head/home.webp" alt="삼한난세 — 후삼국 세 영웅의 성장"></h1>
+      <h1 class="sr-only">삼한난세</h1>
       <div id="homeBody"></div>
-      <label class="quick"><input id="quickMode" type="checkbox"> 빠른 시험 모드 (1분 뒤 보스 · 냥 35%)</label>
     </div>
   </section>
 
   <section id="heroes" class="screen menu-screen" hidden><div class="menu-wrap" id="heroesBody"></div></section>
   <section id="grow" class="screen menu-screen" hidden><div class="menu-wrap" id="growBody"></div></section>
   <section id="map" class="screen menu-screen" hidden><div class="menu-wrap" id="mapBody"></div></section>
-  <section id="prep" class="screen menu-screen" hidden><div class="menu-wrap" id="prepBody"></div></section>
+  <section id="prep" class="screen menu-screen" hidden><div class="menu-wrap" id="prepBody"></div><label class="quick prep-quick"><input id="quickMode" type="checkbox"> 빠른 시험 모드 (1분 뒤 보스 · 냥 35%)</label></section>
   <section id="nanse" class="screen menu-screen" hidden><div class="menu-wrap" id="nanseBody"></div></section>
   <section id="codex" class="screen menu-screen" hidden><div class="menu-wrap" id="codexBody"></div></section>
   <section id="spirit" class="screen menu-screen" hidden><div class="menu-wrap" id="spiritBody"></div></section>
