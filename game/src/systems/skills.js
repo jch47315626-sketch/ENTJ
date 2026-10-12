@@ -1,4 +1,4 @@
-import { SHIN, HORSE, CHAIN, TIGER, ARCHERS_LV, EDICT, BOULDER, CURSE } from '../data/skills.js';
+import { SHIN, HORSE, CHAIN, RANGED_BEHAVIORS, TIGER, ARCHERS_LV, EDICT, BOULDER, CURSE } from '../data/skills.js';
 import { hitArc, currentWeaponLevel } from './weapons.js';
 import { enemyHpScale } from '../data/balance.js';
 import { rand } from '../core/math.js';
@@ -43,7 +43,8 @@ ACTIVE_SKILLS.chain = {
   levels: CHAIN,
   fire(g, L) {
     const p = g.player;
-    const pool = g.enemies.filter((e) => !e.dead && !e.isBoss && !e.pull && !g.isCharmed(e) && L.targets.includes(e.def.id)
+    const pool = g.enemies.filter((e) => !e.dead && !e.isBoss && !e.pull && !g.isCharmed(e)
+      && (L.targets === 'ranged' ? RANGED_BEHAVIORS.includes(e.def.behavior) : L.targets.includes(e.def.id))
       && (e.x - p.x) ** 2 + (e.y - p.y) ** 2 < L.range * L.range);
     // Nothing to hook: look again shortly instead of wasting the cooldown.
     if (!pool.length) return 1;
