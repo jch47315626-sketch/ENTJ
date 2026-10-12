@@ -11,7 +11,7 @@ import { ACHIEVEMENTS, ACH_GROUPS, progressOf } from '../data/achievements.js';
 import { heroUltimates } from '../data/upgrades.js';
 import { GYEOLGI, gyeolgiCost } from '../data/gyeolgi.js';
 import { dailyFor, todayKey, untilTomorrow } from '../data/daily.js';
-import { SPIRITS, SPIRIT_LIST, SPIRIT_GRADES, GACHA, STAR_DUPES, MAX_STARS, SASIN_STAR_ESSENCE, COMBOS, combosOf, companionSlots, spiritOf, dupesForNext } from '../data/spirits.js';
+import { SPIRITS, SPIRIT_LIST, SPIRIT_GRADES, GACHA, STAR_DUPES, MAX_STARS, SASIN_STAR_ESSENCE, COMBOS, combosOf, companionSlots, spiritOf, dupesForNext, FIRST_SPIRIT_RUNS, altarRunsDone } from '../data/spirits.js';
 import { GUARDIANS, ALTAR_TICKETS, ESSENCE_PER_SASIN, ALTAR_TIERS, ALTAR_MAX_TIER, guardianOf, refreshAltar, altarTierOpen, wispWorth, clearBonus } from '../data/altar.js';
 import { josa } from '../core/korean.js';
 import { lineText, lineMax, engraveCost } from '../data/gearOptions.js';
@@ -254,6 +254,7 @@ function altarCard(save, sel, act) {
     const nb = ALTAR_TIERS[tier + 1].base;
     card.append(el('p', 'ac-lock', (save.altarBest ?? 0) < tier ? `🔒 ${tier}단계를 평정하면 ${tier + 1}단계가 열려요` : `🔒 ${tier + 1}단계: 전장 「${STAGES[nb].name}」을 먼저 평정하세요`));
   }
+  if (!save.spiritGift) card.append(el('p', 'ac-lock', `🐾 제단을 <b>${Math.max(1, FIRST_SPIRIT_RUNS - altarRunsDone(save))}판</b> 더 돌면 첫 영물이 찾아와요`));
   card.append(button(`🐾 영물 뽑기·동행 <small>영물 ${Object.keys(save.spirits ?? {}).length}/${SPIRIT_LIST.length}</small>`, 'plain-btn small ac-spirit', () => act.go('spirit')));
   card.append(el('p', 'ec-rule', `${josa(HEROES[sel.hero].name, '으로')} 출전 · 떠도는 <b>영기</b>를 모으면 판이 끝날 때 <b>영주</b>가 돼요. 2분 30초 뒤 수호 영수를 쓰러뜨리면 보너스!`));
   const none = a.tickets <= 0;
@@ -1050,6 +1051,7 @@ export function renderSpirit(save, sel, act) {
   row.append(button(`10회 뽑기<br><small>🔮 ${GACHA.ten} (10% 할인)</small>`, 'seal-btn sp-draw ten', () => act.drawSpirit(10), (save.yeongju ?? 0) < GACHA.ten));
   gc.append(row);
   if ((save.yeongju ?? 0) < GACHA.one) gc.append(el('p', 'hint', '🏯 사신의 제단에서 영기를 모으면 영주가 돼요.'));
+  if (!save.spiritGift) gc.append(el('p', 'hint', `🐾 사신의 제단을 ${Math.max(1, FIRST_SPIRIT_RUNS - altarRunsDone(save))}판 더 돌면 범수 한 마리가 선물로 찾아와요.`));
   if (lastDraw?.length) {
     const res = el('div', `sp-result${lastDraw.length > 1 ? ' ten' : ''}`);
     lastDraw.forEach((d, i) => {

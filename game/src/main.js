@@ -7,7 +7,7 @@ import { Sound } from './audio/sound.js';
 import { themeFor } from './audio/music.js';
 import { showScreen, renderIntro, renderChoices, renderResult } from './ui/screens.js';
 import { renderHome, renderHeroes, renderGrow, renderMap, renderPrep, renderNanse, renderCodex, setCodexTab, renderSpirit, setLastDraw } from './ui/menu.js';
-import { GACHA, SPIRITS, SPIRIT_GRADES, drawSpirits, starUp, setBranch, toggleCompanion, callSasin } from './data/spirits.js';
+import { GACHA, SPIRITS, SPIRIT_GRADES, drawSpirits, starUp, setBranch, toggleCompanion, callSasin, countRunForGift } from './data/spirits.js';
 import { loadSave, writeSave, outfitOf, encodeSave, decodeSave } from './core/save.js';
 import { runFacts, recordRun, checkAchievements, claimAchievement, readyCount } from './core/achieve.js';
 import { ACHIEVEMENTS } from './data/achievements.js';
@@ -233,6 +233,16 @@ function onState(state, g) {
       updateBadge();
       // What this run added to the 도감, for the result card.
       g.resultExtra = { dailyBonus, endless, nanse: nanseInfo, unlocks: unlocked.map((a) => `${a.icon} ${a.name}`), newFoes: Object.keys(g.killsBy).filter((id) => !known.has(id)).length };
+    }
+    // 🐾 첫 영물: the fifth 사신의 제단 run brings a 범수 along.
+    if (g.stage.altar && g.resultExtra && !g.giftCounted) {
+      g.giftCounted = true;
+      const gift = countRunForGift(save);
+      if (gift) {
+        g.resultExtra.spiritGift = gift;
+        writeSave(save);
+        setTimeout(() => sound.sfx('achieve'), 1400);
+      }
     }
     renderResult(g, state === 'clear', g.resultExtra);
     if (g.resultExtra?.unlocks.length && !g.achieveSounded) {

@@ -1,5 +1,7 @@
 import { GRADES } from '../data/meta.js';
 import { NANSE_CARDS } from '../data/nanse.js';
+import { SPIRITS } from '../data/spirits.js';
+import { josa } from '../core/korean.js';
 
 const $ = (id) => document.getElementById(id);
 const MENUS = ['home', 'heroes', 'grow', 'map', 'prep', 'nanse', 'codex', 'spirit'];
@@ -124,6 +126,7 @@ export function renderResult(g, won, extra = {}) {
   rows.push(['⏱️', '버틴 시간', fmt(g.time)]);
   for (const u of extra.unlocks ?? []) rows.push(['🏆', `업적 · ${u}`, '달성!']);
   if (extra.newFoes) rows.push(['📖', '도감에 새 적', `+${extra.newFoes}`]);
+  if (extra.spiritGift) rows.push([SPIRITS[extra.spiritGift].icon, `첫 영물 · ${josa(SPIRITS[extra.spiritGift].name, '이')} 따라왔다!`, '동행!']);
   $('resultRows').innerHTML = rows.map(([i, k, v], n) => `<li style="--i:${n}"><span>${i} ${k}</span><b>${v}</b></li>`).join('');
   countUp($('resultRows').querySelector('.count-up'));
   confetti(won);

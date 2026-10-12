@@ -250,3 +250,27 @@ export const COMBOS = [
 
 /** The 궁합 that a party (list of ids) makes. */
 export const combosOf = (ids) => COMBOS.filter((c) => c.ids.every((id) => ids.includes(id)));
+
+/** 첫 영물: after this many finished 사신의 제단 runs, a 범수 joins for free. */
+export const FIRST_SPIRIT_RUNS = 5;
+/** 사신의 제단 runs counted so far toward the first 영물. */
+export const altarRunsDone = (save) => save.altarRuns ?? 0;
+
+/**
+ * Counts one finished 사신의 제단 run and, on the FIRST_SPIRIT_RUNS-th, gives a 범수
+ * the player does not have yet (★1, taken along if the party has room).
+ * Returns that 영물's id, or null.
+ */
+export function countRunForGift(save, rand = Math.random) {
+  save.altarRuns = (save.altarRuns ?? 0) + 1;
+  if (save.spiritGift || save.altarRuns < FIRST_SPIRIT_RUNS) return null;
+  save.spiritGift = true;
+  save.spirits ??= {};
+  const pool = DRAW_POOL.filter((s) => s.grade === 1 && !save.spirits[s.id]);
+  if (!pool.length) return null;
+  const s = pool[Math.floor(rand() * pool.length)];
+  save.spirits[s.id] = { stars: 1, dupes: 0, branch: null };
+  save.companions ??= [];
+  if (save.companions.length < companionSlots(save)) save.companions.push(s.id);
+  return s.id;
+}
