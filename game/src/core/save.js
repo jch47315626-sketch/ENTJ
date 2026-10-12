@@ -9,9 +9,13 @@ import { SLOTS, GEAR_BASE_IDS, gearId } from '../data/meta.js';
 const KEY = 'samhan-save-v1';
 
 // equipped: { [heroId]: { [slotId]: itemId } } — each hero wears their own gear.
-const fresh = () => ({ money: 0, crystals: 0, gyeolgi: {}, owned: [], equipped: {}, secrets: [], best: {}, forge: {}, codex: { kills: {}, runs: 0, wins: 0, earned: 0 }, ach: {}, stats: {} });
+const fresh = () => ({ money: 0, crystals: 0, gyeolgi: {}, owned: [], equipped: {}, secrets: [], best: {}, forge: {}, codex: { kills: {}, runs: 0, wins: 0, earned: 0 }, ach: {}, stats: {}, ...freshSpirit() });
 // codex: lifetime record for the 도감 — kills by enemy/boss id, runs, wins, 냥 earned.
 // forge: { [itemId]: 0..5 } — 제련 level of each owned item.
+// 사신의 제단 and 영물 (data/altar.js): yeongju 영주, essence 사신 정수,
+// altar { day, tickets, essenceDay }, spirits { [spiritId]: { stars, dupes, branch } },
+// companions [spiritId…] taken into battle, pity draws since the last 신수.
+const freshSpirit = () => ({ yeongju: 0, essence: 0, altar: null, spirits: {}, companions: [], pity: 0 });
 
 export function loadSave() {
   try {
@@ -69,6 +73,7 @@ function migrate(save) {
   // 업적: id → 'ready' | 'done'; stats: lifetime counts for them (core/achieve.js).
   save.ach ??= {};
   save.stats ??= {};
+  migrateSpirit(save);
   const shared = SLOTS.some((s) => typeof save.equipped[s.id] === 'string');
   if (shared) {
     const outfit = {};
@@ -80,6 +85,19 @@ function migrate(save) {
   refundBuilds(save);
   refundTraining(save);
   return save;
+}
+
+/** 영주·사신 정수·영물 (added later): fill in what an older save lacks and drop anything malformed. */
+function migrateSpirit(save) {
+  const base = freshSpirit();
+  for (const k of ['yeongju', 'essence', 'pity']) {
+    const v = Number(save[k]);
+    save[k] = Number.isFinite(v) && v > 0 ? Math.floor(v) : base[k];
+  }
+  const a = save.altar;
+  save.altar = a && Number.isFinite(a.day) ? { day: a.day, tickets: Math.max(0, Math.floor(Number(a.tickets) || 0)), essenceDay: Number.isFinite(a.essenceDay) ? a.essenceDay : -1 } : null;
+  if (!save.spirits || typeof save.spirits !== 'object' || Array.isArray(save.spirits)) save.spirits = {};
+  if (!Array.isArray(save.companions)) save.companions = [];
 }
 
 /**

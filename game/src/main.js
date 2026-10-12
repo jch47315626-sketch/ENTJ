@@ -19,6 +19,7 @@ import { ensureGearOptions, rollOptions, rerollLine, engraveCost, lineText, NAME
 import { UPGRADES } from './data/upgrades.js';
 import { helpById } from './data/help.js';
 import { STAGES } from './data/stages.js';
+import { refreshAltar } from './data/altar.js';
 import { HEROES } from './data/heroes.js';
 
 const $ = (id) => document.getElementById(id);
@@ -32,6 +33,9 @@ const tutor = new Tutorial();
 let game = null;
 const sel = { hero: 'wanggeon', stage: 'seonamhae' };
 const save = loadSave();
+// 사신의 제단: top up today's entry tickets and keep the day it was done.
+refreshAltar(save);
+writeSave(save);
 // Display names for gear 비기 lines (data/gearOptions.js).
 for (const u of UPGRADES) NAMES.upgrade[u.id] = u.title ?? (typeof u.name === 'string' ? u.name : u.id);
 ensureGearOptions(save, EQUIPMENT); // older saves: every owned piece gets its option lines

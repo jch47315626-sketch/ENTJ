@@ -11,6 +11,7 @@ import { ACHIEVEMENTS, ACH_GROUPS, progressOf } from '../data/achievements.js';
 import { heroUltimates } from '../data/upgrades.js';
 import { GYEOLGI, gyeolgiCost } from '../data/gyeolgi.js';
 import { dailyFor, todayKey, untilTomorrow } from '../data/daily.js';
+import { GUARDIANS, ALTAR_TICKETS, ESSENCE_PER_SASIN, guardianOf, refreshAltar } from '../data/altar.js';
 import { josa } from '../core/korean.js';
 import { lineText, lineMax, engraveCost } from '../data/gearOptions.js';
 import { HELP } from '../data/help.js';
@@ -223,7 +224,24 @@ export function renderHome(save, sel, act) {
   card.append(cta);
   body.append(card);
   body.append(dailyCard(save, act));
+  body.append(altarCard(save));
   body.append(endlessCard(save, sel, act));
+}
+
+/** 🏯 사신의 제단: today's guardian, entries left, 영주 and 사신 정수 (the dungeon opens in a later update). */
+function altarCard(save) {
+  const a = refreshAltar(save);
+  const gid = guardianOf();
+  const g = GUARDIANS[gid];
+  const card = el('div', 'altar-card');
+  card.append(el('div', 'dc-head', `<b>🏯 사신의 제단</b><span>입장권 <b>${a.tickets}</b> / ${ALTAR_TICKETS.cap} · 하루 ${ALTAR_TICKETS.perDay}장</span>`));
+  card.append(el('p', 'ac-guard', g
+    ? `오늘의 수호 영수 <b style="color:${g.color}">${g.icon} ${g.name}</b> <small>(${g.dir}녘 · ${g.trait})</small>`
+    : `<b>사신의 날</b> — 네 수호 영수 중 하나를 골라 도전하고, 첫 승리 때 <b>사신 정수</b>를 얻어요.`));
+  card.append(el('div', 'ac-purse', `<span>🔮 영주 <b>${fmt(save.yeongju ?? 0)}</b></span><span>✨ 사신 정수 <b>${fmt(save.essence ?? 0)}</b> / ${ESSENCE_PER_SASIN}</span>`));
+  card.append(el('p', 'ec-rule', '영기를 모아 <b>영주</b>로 바꾸고, 영주로 <b>영물</b>을 불러내요. 금·토·일 첫 승리에는 <b>사신 정수</b>가 더해져요.'));
+  card.append(button('🔒 제단 준비 중 — 곧 열려요', 'altar-btn', () => {}, true));
+  return card;
 }
 
 /** ♾️ 무한 전장: the chosen hero and field with no end; best time per field. */

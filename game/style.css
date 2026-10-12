@@ -1042,6 +1042,13 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 /* ♾️ 무한 전장 */
 .endless-card { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; padding: 14px; border-radius: 22px; background: linear-gradient(180deg, #2c2742, #221d34); border: 2px solid rgba(156, 207, 255, 0.55); box-shadow: 0 0 18px rgba(156, 207, 255, 0.15); }
 .endless-card .dc-head b { color: var(--candy-sky); }
+.altar-card { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; padding: 14px; border-radius: 22px; background: linear-gradient(180deg, #24303a, #1a2229); border: 2px solid rgba(143, 227, 192, 0.5); box-shadow: 0 0 18px rgba(143, 227, 192, 0.14); }
+.altar-card .dc-head b { color: #8fe3c0; }
+.altar-card .dc-head span b { color: var(--hanji); }
+.altar-card .ac-guard { margin: 0; font-size: 14px; }
+.altar-card .ac-purse { display: flex; gap: 14px; flex-wrap: wrap; font-size: 14px; }
+.altar-card .ac-purse b { color: #f2d27a; }
+.altar-btn { padding: 10px; border-radius: 14px; border: 0; background: rgba(255, 255, 255, 0.08); color: rgba(244, 236, 216, 0.6); font: inherit; }
 .ec-rule { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--hanji-dim); text-align: left; }
 .ec-rule b { color: var(--hanji); }
 .ec-best { margin: 0; padding: 8px 12px; border-radius: 12px; background: rgba(255, 213, 107, 0.1); font-size: 14px; color: var(--hanji); text-align: center; }
@@ -1449,7 +1456,7 @@ body { background: var(--night); }
 .help-card h4, .record-card h4 { color: #f6e7c4; }
 
 /* ---------- other menu panels share the dark gold-rimmed board */
-.home-stage, .style-card, .prep-card, .ult-card, .daily-card, .endless-card, .gear-panel .doll2, .hint-card {
+.home-stage, .style-card, .prep-card, .ult-card, .daily-card, .endless-card, .altar-card, .gear-panel .doll2, .hint-card {
   border-radius: 8px; border: 0; background: linear-gradient(180deg, rgba(38, 27, 19, 0.96), rgba(20, 14, 10, 0.96));
   box-shadow: 0 0 0 1px #0a0705, 0 0 0 3px #6e4f22, 0 0 0 4px #d4a54c, 0 0 0 5px #2a1c0e, 0 8px 18px rgba(0, 0, 0, 0.55); margin: 5px; }
 .home-hero { border-radius: 8px; background: linear-gradient(90deg, rgba(244, 232, 204, 0.98), rgba(220, 198, 154, 0.95)); color: var(--ink-text);
