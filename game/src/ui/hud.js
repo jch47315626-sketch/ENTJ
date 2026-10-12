@@ -162,6 +162,15 @@ function heroStatus(g) {
     if (ready('curse')) chips.push(`👁️ 천안 ${ready('curse')}`);
     if (Object.keys(p.subs).length) chips.push('☄️ 금강저');
   }
+  // 🐾 동행 영물: what is worth knowing at a glance.
+  for (const s of g.spirits ?? []) {
+    if (s.id === 'jujak') chips.push(`🐦‍🔥 부활 ${s.data.revives}`);
+    else if (s.id === 'owl' && g.rerolls !== undefined) chips.push(`🦉 다시 뽑기 ${g.rerolls}`);
+    else if (s.id === 'wolf') chips.push(`🐺 ${(s.data.pack ?? []).length}/${s.br === 'a' ? 8 : 5}`);
+    else if (s.id === 'cub') chips.push(`🐯 ${Math.round((s.data.grow ?? 0) * 100)}%`);
+    else if (s.id === 'bear' && s.data.guard) chips.push('🐻 버팀');
+  }
+  if (p.shield > 0) chips.push(`🛡️ 보호막 ${Math.ceil(p.shield)}`);
   if (p.drumUntil) chips.push(`🥁 전고 ${Math.ceil(p.drumUntil - g.time)}초`);
   if (p.keroseneUntil > g.time) chips.push(`🛢️ 불길 ${Math.ceil(p.keroseneUntil - g.time)}초`);
   // 무한 전장: warn before 신의 분노 strikes a hero who stands still.

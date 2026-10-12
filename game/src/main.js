@@ -90,6 +90,8 @@ function newGame(mode = null) {
     daily: runDaily,
     endless: runEndless,
     altar: runAltar,
+    // 🐾 동행 영물 (data/spirits.js), whoever the hero.
+    spirits: (save.companions ?? []).filter((id) => save.spirits?.[id]).map((id) => ({ id, ...save.spirits[id] })),
     nanse,
     objectsTip: !save.tipsSeen?.objects,
     quick: !runDaily && !runEndless && !runAltar && $('quickMode').checked,
@@ -116,10 +118,17 @@ function newGame(mode = null) {
 
 function onState(state, g) {
   if (state === 'levelup') {
-    renderChoices(g.choices, (i) => {
+    const pick = (i) => {
       sound.sfx('pick');
       g.choose(i);
-    });
+    };
+    // 🦉 부엉이 · 다시 뽑기: a new hand while rerolls last.
+    const reroll = () => {
+      if (!g.reroll()) return;
+      sound.sfx('flip');
+      renderChoices(g.choices, pick, g.rerolls > 0 ? reroll : null, g.rerolls);
+    };
+    renderChoices(g.choices, pick, g.rerolls > 0 ? reroll : null, g.rerolls);
     sound.sfx('flip');
     showScreen('levelup');
     tutor.onLevelup(g);

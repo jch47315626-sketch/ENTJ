@@ -19,6 +19,7 @@ import { applyDaily } from './data/daily.js';
 import { ENDLESS, makeEndless, endlessSurge, crystalsOwed, WRATH } from './data/endless.js';
 import { applyNanse } from './data/nanse.js';
 import { ALTAR, ALTAR_TIERS, makeAltarStage, altarYeongju } from './data/altar.js';
+import { makeSpirits, spiritMeta, initSpirits, updateSpirits, spiritAbsorb, spiritOnHurt, spiritRevive, spiritOnKill, spiritOnSpecial } from './systems/spirits.js';
 import { Spawner } from './systems/spawner.js';
 import { updateSkills, curseFoe } from './systems/skills.js';
 import { updateTerrain, inBog } from './systems/terrain.js';
@@ -69,7 +70,7 @@ class Player {
     this.stats = {
       maxHp,
       // 전고 (war drum object): faster steps and swings while it beats.
-      speed: b.speed * (1 + 0.08 * u('swift') + (m.speed ?? 0)) * (this.drumUntil ? 1.2 : 1),
+      speed: b.speed * (1 + 0.08 * u('swift') + (m.speed ?? 0)) * (this.drumUntil ? 1.2 : 1) * (this.spiritSpeed ?? 1),
       might: b.might * (1 + 0.15 * u('might') + 0.02 * u('bMight') + (m.might ?? 0) + rage) * (this.tiger ? this.tiger.mul : 1),
       haste: b.haste * (1 - 0.1 * u('haste') - (m.haste ?? 0) - (rageLv?.haste ?? 0)) * (this.drumUntil ? 0.75 : 1),
       area: b.area * (1 + 0.12 * u('area') + (m.area ?? 0)),
@@ -123,7 +124,10 @@ export class Game {
     const base = opts.altar ? makeAltarStage(raw, opts.altar.guardian, opts.altar.tier) : opts.daily ? applyDaily(raw, opts.daily) : opts.endless ? makeEndless(raw) : opts.nanse ? applyNanse(raw, opts.nanse) : raw;
     this.endlessBosses = 0;
     this.stage = scaleStage(base, opts.quick ? 0.2 : 1);
-    this.player = new Player(hero, opts.meta);
+    // 영물 동행 (systems/spirits.js): passive gifts go into the hero's bonuses.
+    const comps = opts.spirits ?? [];
+    this.player = new Player(hero, spiritMeta(opts.meta ?? {}, comps));
+    this.spirits = makeSpirits(comps);
     this.enemies = [];
     this.projectiles = [];
     this.allies = [];
@@ -158,6 +162,7 @@ export class Game {
     this.endTimer = 0;
     this.view = { w: 1280, h: 720 }; // world-units visible; set by renderer
     this.applyStartPerks();
+    initSpirits(this);
   }
 
   // ---------------------------------------------------------------- helpers
@@ -391,6 +396,8 @@ export class Game {
     // Stage armour: harder battlefields shrug off a share of every blow (supply carts excepted).
     if (e.def.behavior !== 'static') amount = Math.max(1, amount * (1 - (ENEMY_ARMOR[this.stage.difficulty.stars] ?? 0)));
     if (opts?.stun) e.stun = Math.max(e.stun ?? 0, opts.stun * (e.isBoss ? 0.25 : 1));
+    // 진돗개 사냥개 · 까마귀 흉조: a marked foe takes more.
+    if (e.spiritAmp && e.spiritAmp.until > this.time) amount *= 1 + e.spiritAmp.amp;
     // 천안: a marked foe takes more from every blow.
     if (e.curse && e.curse.until > this.time) amount *= 1 + e.curse.amp;
     e.hp -= amount;
@@ -443,6 +450,7 @@ export class Game {
       this.kills++;
       this.addMomentum(MOMENTUM.perKill);
       this.killProcs(e);
+      if (this.spirits.length) spiritOnKill(this, e);
     }
     if (e.xp > 0) this.dropCoin(e.x, e.y, e.xp);
     // 무한 전장: 결기수정 drop from the fallen as the run earns them.
@@ -524,6 +532,13 @@ export class Game {
     // Armour cuts 7% per point (max 50%), so it helps against big hits and small ones alike.
     let dmg = Math.max(1, amount * (1 - armorCut(p.stats.armor)));
     dmg = Math.max(1, dmg * p.stats.taken);
+    if (this.spirits.length) {
+      dmg = spiritAbsorb(this, dmg, attacker);
+      if (dmg <= 0) {
+        p.invuln = INVULN_TIME;
+        return false;
+      }
+    }
     // 천리마: on horseback, blows glance off.
     if (p.mount?.L.guard) dmg = Math.max(1, dmg * (1 - p.mount.L.guard));
     // 신의 분노 goes straight through armour and guards.
@@ -544,6 +559,8 @@ export class Game {
       this.banner('🚩 수호 깃발 — 3초 동안 무적!', 'small');
       this.sfx('gong');
     }
+    if (this.spirits.length) spiritOnHurt(this, attacker);
+    if (p.hp <= 0 && this.spirits.length && spiritRevive(this)) return true;
     if (p.hp <= 0) {
       p.hp = 0;
       this.state = 'dying';
@@ -559,6 +576,7 @@ export class Game {
     if (p.momentum >= MOMENTUM.max) {
       p.momentum = 0;
       SPECIALS[p.hero.special].fire(this);
+      if (this.spirits.length) spiritOnSpecial(this, MOMENTUM.max);
     }
   }
 
@@ -583,7 +601,7 @@ export class Game {
     const pool = UPGRADES.filter((u) => (!u.heroes || u.heroes.includes(p.hero.id)) && (u.available ? u.available(this) : lvl(u) < cap(u)));
     const choices = [];
     // 궁핍 (난세 패): fewer cards to choose from.
-    const count = this.stage.difficulty.choiceCount ?? 3;
+    const count = (this.stage.difficulty.choiceCount ?? 3) + (this.spiritCards ?? 0);
     // Every 궁극기 that is ready gets its card (as many as fit).
     const evos = pool.filter((u) => u.isEvolution?.(this)).slice(0, count);
     choices.push(...evos);
@@ -598,7 +616,7 @@ export class Game {
     while (choices.length < count && rest.length) {
       let total = 0;
       const w = rest.map((u) => {
-        const x = u.weight * (u.category === p.hero.favoredCategory ? 1.5 : 1) * (pushing.has(u.id) ? EVO_PULL : 1);
+        const x = u.weight * (u.category === p.hero.favoredCategory ? 1.5 : 1) * (pushing.has(u.id) ? EVO_PULL * (this.evoPullMul ?? 1) : 1);
         total += x;
         return x;
       });
@@ -653,6 +671,14 @@ export class Game {
     this.pendingLevels--;
     this.choices = null;
     this.setState('play');
+  }
+
+  /** 부엉이 · 다시 뽑기: a fresh hand of 책략 (a few times per battle). */
+  reroll() {
+    if (this.state !== 'levelup' || !(this.rerolls > 0)) return false;
+    this.rerolls--;
+    this.choices = this.buildChoices();
+    return true;
   }
 
   /** How far this run got, for the defeat 냥: way to the boss, and the boss's HP taken off. */
@@ -792,6 +818,7 @@ export class Game {
     }
     this.rageShown = rage;
     updateAllies(this, dt);
+    if (this.spirits.length) updateSpirits(this, dt);
     updateCrows(this, dt);
     updateFieldObjects(this, dt);
     updateFieldItems(this, dt);
@@ -1106,6 +1133,7 @@ export class Game {
             e.zoneHits ??= {};
             if (this.time - (e.zoneHits[z.kind] ?? -9) < 0.24) return;
             e.zoneHits[z.kind] = this.time;
+            if (z.spirit) this.runStats.spiritDmg = (this.runStats.spiritDmg ?? 0) + Math.min(z.dps * 0.25, Math.max(0, e.hp));
             this.damageEnemy(e, z.dps * 0.25, z.x, z.y, 0);
           });
         }

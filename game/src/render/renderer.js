@@ -3,6 +3,7 @@ import { drawBogs, drawRocks } from './terrain.js';
 import { drawUnit, drawCart, drawCoin, drawRice, drawProjectile } from './sprites.js';
 import { clamp, TAU } from '../core/math.js';
 import { drawUltFx, drawScreenFlash } from './ultFx.js';
+import { drawSpirit, drawSpiritsUnder, drawSpiritShield, drawSpiritZone, drawSpiritFx } from './spiritFx.js';
 
 const ALLY_LOOKS = {
   soldier: { body: '#3e5a7a', accent: '#1f2d3d', hat: 'helmetBlue', weapon: 'spear', skin: '#e3c39c' },
@@ -179,10 +180,15 @@ export class Renderer {
     const units = [];
     for (const e of g.enemies) if (!e.dead && e.x > v.x0 - 80 && e.x < v.x1 + 80 && e.y > v.y0 - 80 && e.y < v.y1 + 80) units.push(e);
     for (const a of g.allies) units.push(a);
+    for (const s of g.spirits ?? []) units.push(s);
     units.push(p);
+    drawSpiritsUnder(ctx, g);
     units.sort((a, b) => a.y - b.y);
     for (const u of units) {
-      if (u === p) this.drawPlayer(ctx, g);
+      if (u === p) {
+        this.drawPlayer(ctx, g);
+        drawSpiritShield(ctx, g);
+      } else if (u.spirit) drawSpirit(ctx, g, u);
       else if (u.kind) this.drawAlly(ctx, u);
       else this.drawEnemy(ctx, g, u);
     }
@@ -480,7 +486,8 @@ export class Renderer {
 
   drawZones(ctx, g) {
     for (const z of g.zones) {
-      const a = 1 - z.t / z.life;
+      const a = z.aura ? 1 : 1 - z.t / z.life;
+      if (drawSpiritZone(ctx, g, z, a)) continue;
       if (z.kind === 'spikes') {
         // 덫꾼's spike trap: a dark ring of iron spikes.
         const al = Math.min(1, a * 4);
@@ -1407,7 +1414,7 @@ export class Renderer {
           break;
         }
         default:
-          drawUltFx(ctx, f, p, g); // 궁극기 연출 (render/ultFx.js)
+          if (!drawSpiritFx(ctx, f, p)) drawUltFx(ctx, f, p, g); // 영물 (render/spiritFx.js), 궁극기 연출 (render/ultFx.js)
       }
     }
   }

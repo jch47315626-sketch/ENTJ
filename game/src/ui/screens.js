@@ -27,9 +27,10 @@ export function renderIntro(stage, daily = null, endless = false) {
 const CAT = { 무예: '⚔️', 병법: '📜', 지세: '🌿', 보급: '🍙' };
 
 /** Level-up: three sticker cards that flip in one after another. */
-export function renderChoices(choices, onPick) {
+export function renderChoices(choices, onPick, onReroll = null, rerolls = 0) {
   const box = $('choices');
   box.innerHTML = '';
+  box.dataset.n = choices.length;
   choices.forEach((c, i) => {
     const b = document.createElement('button');
     b.type = 'button';
@@ -54,6 +55,14 @@ export function renderChoices(choices, onPick) {
     b.addEventListener('click', () => onPick(i));
     box.appendChild(b);
   });
+  if (onReroll) {
+    const r = document.createElement('button');
+    r.type = 'button';
+    r.className = 'reroll-btn';
+    r.textContent = `🦉 다시 뽑기 (${rerolls})`;
+    r.addEventListener('click', onReroll);
+    box.appendChild(r);
+  }
   box.querySelector('button')?.focus({ preventScroll: true });
 }
 

@@ -1585,3 +1585,9 @@ body { background: var(--night); }
 .sp-btn.up:not(:disabled) { background: linear-gradient(180deg, #ffd27a, #d89a2a); color: #2a1a06; font-weight: 700; }
 .sp-btn:disabled { opacity: 0.4; cursor: default; }
 .sp-br { font-size: 11px; border: 1px solid rgba(143, 227, 192, 0.4); background: transparent; }
+
+/* 부엉이: 4–5 책략 cards, and the 다시 뽑기 button. */
+.pick-cards[data-n="4"] { grid-template-columns: repeat(4, minmax(0, 200px)); }
+.pick-cards[data-n="5"] { grid-template-columns: repeat(5, minmax(0, 180px)); }
+@media (max-width: 720px) { .pick-cards[data-n="4"], .pick-cards[data-n="5"] { grid-template-columns: 1fr 1fr; max-width: 420px; gap: 10px; } }
+.reroll-btn { grid-column: 1 / -1; justify-self: center; padding: 8px 18px; border-radius: 999px; border: 2px solid #c9a8ff; background: rgba(40, 30, 60, 0.85); color: #f1e8d2; font: inherit; font-size: 15px; cursor: pointer; }
