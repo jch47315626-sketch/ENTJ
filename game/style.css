@@ -1677,3 +1677,15 @@ body { background: var(--night); }
   .bottom-nav button span.nav-emoji { font-size: 28px; }
   .bottom-nav button b { font-size: 15px; }
 }
+
+/* 🎁 쿠폰 */
+.coupon-sheet { display: flex; flex-direction: column; gap: 12px; }
+.coupon-sheet .dc-head b { color: #ffd27a; }
+.coupon-row { display: flex; gap: 8px; }
+.coupon-input { flex: 1; min-width: 0; padding: 12px; border-radius: 10px; border: 2px solid rgba(227, 185, 100, 0.6); background: rgba(0, 0, 0, 0.35); color: var(--hanji); font: 700 18px var(--font-body, inherit); letter-spacing: 1px; text-transform: uppercase; }
+.coupon-input::placeholder { text-transform: none; letter-spacing: 0; color: rgba(244, 236, 216, 0.4); }
+.coupon-go { padding: 10px 18px; }
+.coupon-out { min-height: 22px; font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
+.coupon-out.ok b { font-size: 17px; color: #8fe3c0; }
+.coupon-out.bad { color: #ff9a8a; }
+.coupon-sheet .dc-head { padding-right: 44px; }

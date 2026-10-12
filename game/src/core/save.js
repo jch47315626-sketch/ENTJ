@@ -98,6 +98,8 @@ function migrateSpirit(save) {
   save.altar = a && Number.isFinite(a.day) ? { day: a.day, tickets: Math.max(0, Math.floor(Number(a.tickets) || 0)), essenceDay: Number.isFinite(a.essenceDay) ? a.essenceDay : -1 } : null;
   if (!save.spirits || typeof save.spirits !== 'object' || Array.isArray(save.spirits)) save.spirits = {};
   if (!Array.isArray(save.companions)) save.companions = [];
+  // 쿠폰: fingerprints of the codes already used (core/coupon.js).
+  if (!Array.isArray(save.coupons)) save.coupons = [];
 }
 
 /**

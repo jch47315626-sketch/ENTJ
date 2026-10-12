@@ -6,7 +6,8 @@ import { Tutorial } from './ui/tutorial.js';
 import { Sound } from './audio/sound.js';
 import { themeFor } from './audio/music.js';
 import { showScreen, renderIntro, renderChoices, renderResult } from './ui/screens.js';
-import { renderHome, renderHeroes, renderGrow, renderMap, renderPrep, renderNanse, renderCodex, setCodexTab, renderSpirit, setLastDraw } from './ui/menu.js';
+import { renderHome, renderHeroes, renderGrow, renderMap, renderPrep, renderNanse, renderCodex, setCodexTab, renderSpirit, setLastDraw, openCoupon } from './ui/menu.js';
+import { redeemCoupon } from './core/coupon.js';
 import { GACHA, SPIRITS, SPIRIT_GRADES, drawSpirits, starUp, setBranch, toggleCompanion, callSasin, countRunForGift } from './data/spirits.js';
 import { loadSave, writeSave, outfitOf, encodeSave, decodeSave } from './core/save.js';
 import { runFacts, recordRun, checkAchievements, claimAchievement, readyCount } from './core/achieve.js';
@@ -395,6 +396,22 @@ const act = {
   startEndless: () => newGame(ENDLESS_RUN),
   /** 사신의 제단: enter at 단계 `tier` against `guardian` (today's, or the one picked on a 사신의 날). */
   startAltar: (guardian, tier) => newGame({ altar: { guardian, tier } }),
+  /** 🎁 쿠폰: check the code, pay the gift, and report back to the sheet. */
+  async redeemCoupon(code) {
+    const r = await redeemCoupon(save, code);
+    sound.unlock();
+    if (!r.ok) {
+      sound.sfx('forgeFail');
+      return r;
+    }
+    ensureGearOptions(save, EQUIPMENT); // gifted gear gets its option lines
+    checkAchievements(save);
+    writeSave(save);
+    sound.sfx('achieve');
+    updateBadge();
+    if (menu === 'home') renderHome(save, sel, act);
+    return r;
+  },
   /** 영물 뽑기: 1 or 10 draws for 영주. */
   drawSpirit(n) {
     const out = drawSpirits(save, n, n === 10 ? GACHA.ten : GACHA.one * n);
@@ -603,6 +620,7 @@ document.addEventListener('click', (e) => {
   writeSave(save);
   toast('🎮 다음 출진에서 튜토리얼이 나와요!');
 });
+$('homeCoupon').addEventListener('click', () => openCoupon(act));
 $('homeSave').addEventListener('click', () => {
   setCodexTab('record');
   go('codex');

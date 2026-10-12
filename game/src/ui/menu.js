@@ -1225,3 +1225,37 @@ function spiritCard(save, s, act) {
   ]));
   return c;
 }
+
+// =================================================================== 쿠폰
+
+/** 🎁 쿠폰: a sheet with one input; the gift (or why not) shows under it. */
+export function openCoupon(act) {
+  document.querySelector('.sheet-back')?.remove();
+  const back = el('div', 'sheet-back');
+  const sheet = el('div', 'sheet coupon-sheet');
+  const close = () => back.remove();
+  const x = button('✕', 'sheet-x', close);
+  x.setAttribute('aria-label', '닫기');
+  sheet.append(x);
+  sheet.append(el('div', 'dc-head', '<b>🎁 쿠폰 입력</b><span>코드 하나당 한 번</span>'));
+  const input = el('input', 'coupon-input');
+  Object.assign(input, { type: 'text', placeholder: '쿠폰 코드', autocomplete: 'off', spellcheck: false, maxLength: 40 });
+  input.setAttribute('autocapitalize', 'characters');
+  const out = el('div', 'coupon-out');
+  const go = button('받기', 'seal-btn coupon-go', async () => {
+    go.disabled = true;
+    const r = await act.redeemCoupon(input.value);
+    go.disabled = false;
+    out.className = `coupon-out ${r.ok ? 'ok' : 'bad'}`;
+    out.innerHTML = r.ok ? `<b>🎉 ${r.name}</b>${r.lines.map((l) => `<span>${l}</span>`).join('')}` : `⚠️ ${r.reason}`;
+    if (r.ok) input.value = '';
+  });
+  input.addEventListener('keydown', (e) => e.key === 'Enter' && go.click());
+  const row = el('div', 'coupon-row');
+  row.append(input, go);
+  sheet.append(row, out);
+  back.append(sheet);
+  back.addEventListener('click', (e) => e.target === back && close());
+  $('app').append(back);
+  setTimeout(() => input.focus(), 50);
+}
