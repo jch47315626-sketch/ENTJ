@@ -211,6 +211,28 @@ function bombTarget(g) {
 }
 
 /**
+ * 마구니 against a shot that is not a flying projectile (투석병's stone, 덫꾼's
+ * trap) landing at (x, y): a 마구니 near 궁예 catches it and vanishes (returns
+ * 0), under 마구니 결계 it only softens it (returns the damage share left),
+ * otherwise 1. Only counts when the shot would reach 궁예 (`reach` around him).
+ */
+export function maguniShield(g, x, y, reach) {
+  const p = g.player;
+  const lv = p.upgrades.maguni ?? 0;
+  if (!lv || (x - p.x) ** 2 + (y - p.y) ** 2 > (reach + p.r + MAGUNI.guard) ** 2) return 1;
+  const L = MAGUNI_LV[Math.min(lv, MAGUNI_LV.length) - 1];
+  if (L.ward) return 1 - L.ward.reduce;
+  const list = g.allies.filter((a) => a.kind === 'maguni' && !a.dead);
+  if (!list.length) return 1;
+  let m = list[0];
+  for (const a of list) if ((a.x - x) ** 2 + (a.y - y) ** 2 < (m.x - x) ** 2 + (m.y - y) ** 2) m = a;
+  m.dead = true;
+  g.fx.push({ type: 'spark', x, y, t: 0, life: 0.3 });
+  g.fx.push({ type: 'puff', x: m.x, y: m.y, t: 0, life: 0.4, size: 14, tone: 'light' });
+  return 0;
+}
+
+/**
  * 마구니 (궁예): one appears every few seconds up to the cap; each catches one
  * shot just before it lands and vanishes. With the cap full, the next one
  * becomes a 폭탄. Under 마구니 결계 all four stay for good.

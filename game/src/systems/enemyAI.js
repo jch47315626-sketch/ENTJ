@@ -1,5 +1,6 @@
 import { updateBoss } from './bossAI.js';
 import { rand, angleDiff } from '../core/math.js';
+import { maguniShield } from './allies.js';
 
 /**
  * Enemy behaviours keyed by EnemyDef.behavior. Each sets the desired
@@ -151,7 +152,11 @@ export const BEHAVIORS = {
     g.fx.push({ type: 'lob', x: e.x, y: e.y, x1: tx, y1: ty, t: 0, life: P.flight });
     const dmg = P.rockDamage * e.damageMul;
     g.later(P.flight, () => {
-      if ((p.x - tx) ** 2 + (p.y - ty) ** 2 < (P.radius + p.r * 0.5) ** 2) g.hurtPlayer(dmg, 'slinger', e.dead ? null : e);
+      if ((p.x - tx) ** 2 + (p.y - ty) ** 2 < (P.radius + p.r * 0.5) ** 2) {
+        // 마구니 catches the stone (or, under 결계, takes most of the blow).
+        const share = maguniShield(g, tx, ty, P.radius);
+        if (share > 0) g.hurtPlayer(dmg * share, 'slinger', e.dead ? null : e);
+      }
       g.fx.push({ type: 'puff', x: tx, y: ty, t: 0, life: 0.45, size: 22, tone: 'mud' });
     });
   },
@@ -220,7 +225,10 @@ export const BEHAVIORS = {
       g.fx.push({ type: 'trapWarn', x, y, range: P.trapRadius, t: 0, life: P.warn });
       const dps = P.trapDps * e.damageMul;
       g.later(P.warn, () => {
-        g.zones.push({ team: 'enemy', kind: 'spikes', x, y, r: P.trapRadius, dps, slow: P.trapSlow, life: P.trapLife, t: 0, source: 'trapper' });
+        // A trap springing up by 궁예: a 마구니 smothers it (or, under 결계, blunts it).
+        const share = maguniShield(g, x, y, P.trapRadius);
+        if (share <= 0) return;
+        g.zones.push({ team: 'enemy', kind: 'spikes', x, y, r: P.trapRadius, dps: dps * share, slow: P.trapSlow, life: P.trapLife, t: 0, source: 'trapper' });
         g.fx.push({ type: 'puff', x, y, t: 0, life: 0.35, size: 12, tone: 'mud' });
       });
     }

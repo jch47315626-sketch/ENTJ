@@ -107,14 +107,14 @@ export const TIGER = [
  */
 export const MAGUNI_LV = [
   { name: '마구니', every: 10, max: 4, bomb: { damage: 70, radius: 110 },
-    desc: '10초마다 마구니가 하나씩 생겨(최대 4) 날아오는 원거리 공격을 막아 주고 사라진다. 넷이 다 찬 뒤 10초가 더 지나면 마구니 폭탄이 되어 적진 한가운데서 터진다.' },
+    desc: '10초마다 마구니가 하나씩 생겨(최대 4) 화살·돌·덫 같은 원거리 공격을 막아 주고 사라진다. 넷이 다 찬 뒤 10초가 더 지나면 마구니 폭탄이 되어 적진 한가운데서 터진다.' },
   { name: '마구니 · 떼', every: 10, max: 4, bomb: { damage: 110, radius: 125 },
     desc: '마구니 폭탄이 더 크고 세게 터진다.' },
   { name: '마구니 · 업화', every: 10, max: 4, bomb: { damage: 160, radius: 140 },
     desc: '마구니 폭탄이 훨씬 세다.' },
   { name: '마구니 결계', every: 8, max: 4, bomb: { damage: 210, radius: 150 }, evolution: true,
     ward: { reduce: 0.9, damage: 20, push: 70, hitEvery: 0.4 },
-    desc: '마구니 넷이 늘 곁을 돈다. 그 안에서는 원거리 공격 피해 90% 감소, 닿는 적은 살짝 밀려나며 피해를 입는다. 폭탄도 계속 나간다.' },
+    desc: '마구니 넷이 늘 곁을 돈다. 그 안에서는 원거리 공격(화살·돌·덫) 피해 90% 감소, 닿는 적은 살짝 밀려나며 피해를 입는다. 폭탄도 계속 나간다.' },
 ];
 
 /**
