@@ -25,7 +25,7 @@ export const GUARDIANS = {
 const WEEKDAY_GUARDIAN = [null, 'cheongnyong', 'jujak', 'baekho', 'hyeonmu', null, null];
 
 /** 사신 정수 needed to call one 사신. */
-export const ESSENCE_PER_SASIN = 39;
+export const ESSENCE_PER_SASIN = 30;
 
 /** Day number in the player's own time zone (days since 1970-01-01 local). */
 export function dayNumber(d = new Date()) {
