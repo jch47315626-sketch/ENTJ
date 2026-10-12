@@ -19,7 +19,7 @@ import { ensureGearOptions, rollOptions, rerollLine, engraveCost, lineText, NAME
 import { UPGRADES } from './data/upgrades.js';
 import { helpById } from './data/help.js';
 import { STAGES } from './data/stages.js';
-import { refreshAltar } from './data/altar.js';
+import { refreshAltar, useTicket, payAltar, ALTAR_TIERS, ALTAR_MAX_TIER, altarTierOpen } from './data/altar.js';
 import { HEROES } from './data/heroes.js';
 
 const $ = (id) => document.getElementById(id);
@@ -46,15 +46,26 @@ let runDaily = null;
 /** Playing ♾️ 무한 전장 (so 다시 출진 replays it). */
 let runEndless = false;
 const ENDLESS_RUN = { endless: true };
+/** The 사신의 제단 run being played ({ guardian, tier }), or null. */
+let runAltar = null;
+/** The mode 다시 출진 replays. */
+const replayMode = () => runDaily ?? (runAltar ? { altar: runAltar } : runEndless ? ENDLESS_RUN : null);
 
 /** Starts a battle: the chosen hero and field, a daily challenge, or endless mode. */
 function newGame(mode = null) {
   runDaily = mode?.rules ? mode : null;
   runEndless = !!mode?.endless;
+  runAltar = mode?.altar ?? null;
   const heroId = runDaily?.heroId ?? sel.hero;
-  const stageId = runDaily?.stageId ?? sel.stage;
+  const stageId = runDaily?.stageId ?? (runAltar ? ALTAR_TIERS[runAltar.tier].base : sel.stage);
+  // 사신의 제단: an open 단계 and one entry ticket.
+  if (runAltar && (!altarTierOpen(save, runAltar.tier) || !useTicket(save))) {
+    toMenu('home');
+    toast(altarTierOpen(save, runAltar.tier) ? '🎟️ 오늘의 입장권을 다 썼어요. 내일 다시 3장이 채워져요!' : '🔒 아직 열리지 않은 단계예요.');
+    return;
+  }
   // Gear gate: send the player back to the menu, where the reason is shown.
-  if (!runDaily && !entryCheck(save, sel.hero, STAGES[sel.stage]).ok) {
+  if (!runDaily && !runAltar && !entryCheck(save, sel.hero, STAGES[sel.stage]).ok) {
     toMenu('prep');
     return;
   }
@@ -62,7 +73,7 @@ function newGame(mode = null) {
   if (!runDaily) save.sel = { hero: sel.hero, stage: sel.stage };
   writeSave(save);
   // 난세 단계: only on a battlefield already pacified, in a normal run.
-  const nanse = !runDaily && !runEndless && save.best?.[stageId] && nanseLevel(save.nanseCards) > 0 ? { ...save.nanseCards } : null;
+  const nanse = !runDaily && !runEndless && !runAltar && save.best?.[stageId] && nanseLevel(save.nanseCards) > 0 ? { ...save.nanseCards } : null;
   const meta = metaBonus(save, heroId);
   if (runDaily) {
     const hb = dailyHeroBonus(runDaily);
@@ -77,9 +88,10 @@ function newGame(mode = null) {
     stageId,
     daily: runDaily,
     endless: runEndless,
+    altar: runAltar,
     nanse,
     objectsTip: !save.tipsSeen?.objects,
-    quick: !runDaily && !runEndless && $('quickMode').checked,
+    quick: !runDaily && !runEndless && !runAltar && $('quickMode').checked,
     onBanner: (t, size) => hud.banner(t, size),
     onState,
     onBoss: (def) => hud.bossIntro(def),
@@ -124,6 +136,23 @@ function onState(state, g) {
     if (tutor.active || tutor.finished) {
       tutor.stop();
       save.tutorialDone = true;
+    }
+    // 사신의 제단: 영기 → 영주 (and 사신 정수 on a 사신의 날); no 냥, records or 업적.
+    if (g.stage.altar && g.reward && !g.rewardBanked) {
+      g.rewardBanked = true;
+      const known = new Set(Object.keys(save.codex.kills));
+      const A = g.reward.altar;
+      const pay = payAltar(save, { yeongju: A.yeongju, cleared: state === 'clear' });
+      const newTier = state === 'clear' && A.tier > (save.altarBest ?? 0);
+      if (newTier) save.altarBest = A.tier;
+      if (state === 'clear') save.altarTier = Math.min(ALTAR_MAX_TIER, Math.max(save.altarTier ?? 1, newTier && altarTierOpen(save, A.tier + 1) ? A.tier + 1 : A.tier));
+      for (const [id, n] of Object.entries(g.killsBy)) save.codex.kills[id] = (save.codex.kills[id] ?? 0) + n;
+      writeSave(save);
+      g.resultExtra = {
+        altar: { ...A, essence: pay.essence, newTier, maxTier: ALTAR_MAX_TIER, tickets: refreshAltar(save).tickets },
+        unlocks: [],
+        newFoes: Object.keys(g.killsBy).filter((id) => !known.has(id)).length,
+      };
     }
     // Bank the run's money and records once.
     if (g.reward && !g.rewardBanked) {
@@ -327,6 +356,14 @@ const act = {
   start: () => newGame(),
   startDaily: () => newGame(dailyFor(todayKey())),
   startEndless: () => newGame(ENDLESS_RUN),
+  /** 사신의 제단: enter at 단계 `tier` against `guardian` (today's, or the one picked on a 사신의 날). */
+  startAltar: (guardian, tier) => newGame({ altar: { guardian, tier } }),
+  /** Remember the 단계 chosen on the altar card. */
+  setAltarTier(t) {
+    save.altarTier = Math.max(1, Math.min(ALTAR_MAX_TIER, t));
+    writeSave(save);
+    refresh();
+  },
   /** 난세 패: change one card's rank (clamped), remembered for the next runs. */
   setNanse(id, rank) {
     const card = NANSE_CARDS.find((c) => c.id === id);
@@ -475,7 +512,7 @@ input.on('key', (k) => {
     sound.sfx('pick');
     game.choose(Number(k) - 1);
   }
-  if ((game.state === 'over' || game.state === 'clear') && k === 'enter') newGame(runDaily ?? (runEndless ? ENDLESS_RUN : null));
+  if ((game.state === 'over' || game.state === 'clear') && k === 'enter') newGame(replayMode());
 });
 
 for (const b of $('bottomNav').querySelectorAll('button')) b.addEventListener('click', () => go(b.dataset.go));
@@ -494,7 +531,7 @@ $('homeSave').addEventListener('click', () => {
 $('pauseBtn').addEventListener('click', () => game?.togglePause());
 $('resumeBtn').addEventListener('click', () => game?.togglePause());
 $('quitBtn').addEventListener('click', () => askLeave(() => toMenu('home')));
-$('retryBtn').addEventListener('click', () => newGame(runDaily ?? (runEndless ? ENDLESS_RUN : null)));
+$('retryBtn').addEventListener('click', () => newGame(replayMode()));
 $('homeBtn').addEventListener('click', () => toMenu('home'));
 $('toMapBtn').addEventListener('click', () => toMenu('map'));
 $('nextBtn').addEventListener('click', () => {

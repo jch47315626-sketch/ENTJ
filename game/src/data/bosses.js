@@ -408,4 +408,68 @@ export const BOSSES = {
     ],
     enrage: { below: 0.2, speedMul: 1.2, cooldownMul: 0.7, banner: '양길 — "궁예 그놈을 키운 것이 내 평생의 한이다!"' },
   },
+
+  // 사신의 제단 (data/altar.js): the four guardians, beasts rather than men.
+  // `look.beast` is drawn by render/beasts.js. They wake at 2:30, so they are
+  // lighter than a field's general; the 단계 scales them from there.
+  g_cheongnyong: {
+    id: 'g_cheongnyong', name: '청룡', hanja: '靑龍', epithet: '동녘을 지키는 바람과 번개', guardian: true,
+    hp: 1900, speed: 104, radius: 34, damage: 15, knockResist: 0.97, xp: 0,
+    look: { beast: 'dragon', body: '#3fae7a', accent: '#1d5a44', trim: '#f2d27a' },
+    patterns: [
+      { type: 'chase', time: 1.5 },
+      { type: 'lightning', windup: 0.9, count: 4, spread: 150, radius: 60, damage: 19, lead: 0.6 },
+      { type: 'chase', time: 1.1 },
+      { type: 'dash', windup: 0.6, speed: 620, distance: 460, damage: 19, repeat: 2 },
+      { type: 'halo', windup: 1.0, beams: 2, length: 300, width: 22, turn: 1.1, time: 2.6, dps: 24 },
+      { type: 'fan', windup: 0.5, count: 7, spread: 80, speed: 300, damage: 11, kind: 'orb' },
+    ],
+    summons: [{ atHpRatio: 0.5, enemy: 'cavalry', count: 6, banner: '청룡의 바람이 기마병을 몰고 온다!' }],
+    enrage: { below: 0.3, speedMul: 1.25, cooldownMul: 0.7, banner: '청룡이 먹구름을 부른다!' },
+  },
+  g_jujak: {
+    id: 'g_jujak', name: '주작', hanja: '朱雀', epithet: '남녘을 지키는 불의 새', guardian: true,
+    hp: 1700, speed: 112, radius: 32, damage: 15, knockResist: 0.96, xp: 0,
+    look: { beast: 'phoenix', body: '#e0503a', accent: '#8a1e14', trim: '#ffcf5a' },
+    patterns: [
+      { type: 'chase', time: 1.3, keep: 200 },
+      { type: 'fan', windup: 0.55, count: 9, spread: 100, speed: 310, damage: 11, kind: 'orb' },
+      { type: 'firePots', windup: 0.85, count: 4, spread: 140, radius: 60, dps: 18, life: 3.4 },
+      { type: 'dash', windup: 0.55, speed: 680, distance: 480, damage: 18 },
+      { type: 'chase', time: 1.0, keep: 200 },
+      { type: 'firePots', windup: 0.7, count: 6, spread: 200, radius: 54, dps: 18, life: 3 },
+    ],
+    summons: [{ atHpRatio: 0.5, enemy: 'archer', count: 6, banner: '불꽃 깃털이 궁수로 변한다!' }],
+    enrage: { below: 0.3, speedMul: 1.2, cooldownMul: 0.7, banner: '주작의 날개가 하늘을 불태운다!' },
+  },
+  g_baekho: {
+    id: 'g_baekho', name: '백호', hanja: '白虎', epithet: '서녘을 지키는 흰 범', guardian: true,
+    hp: 2000, speed: 122, radius: 33, damage: 17, knockResist: 0.97, xp: 0,
+    look: { beast: 'tiger', body: '#eef0f4', accent: '#24242c', trim: '#7ad0ff' },
+    patterns: [
+      { type: 'chase', time: 1.2 },
+      { type: 'dash', windup: 0.5, speed: 700, distance: 460, damage: 21, repeat: 3 },
+      { type: 'chase', time: 1.0 },
+      { type: 'spin', windup: 0.65, radius: 150, damage: 21 },
+      { type: 'dash', windup: 0.45, speed: 760, distance: 520, damage: 21 },
+      { type: 'spin', windup: 0.55, radius: 135, damage: 21, repeat: 2 },
+    ],
+    summons: [{ atHpRatio: 0.5, enemy: 'axeman', count: 5, banner: '백호의 포효에 광전사들이 뛰쳐나온다!' }],
+    enrage: { below: 0.3, speedMul: 1.3, cooldownMul: 0.7, banner: '백호가 하얗게 번뜩인다!' },
+  },
+  g_hyeonmu: {
+    id: 'g_hyeonmu', name: '현무', hanja: '玄武', epithet: '북녘을 지키는 거북과 뱀', guardian: true,
+    hp: 2600, speed: 72, radius: 38, damage: 15, knockResist: 0.99, xp: 0,
+    look: { beast: 'turtle', body: '#3a4f8a', accent: '#1a2442', trim: '#7ad8a0' },
+    patterns: [
+      { type: 'chase', time: 1.6 },
+      { type: 'firePots', windup: 0.9, count: 5, spread: 170, radius: 62, dps: 16, life: 4, zone: 'poison' },
+      { type: 'spin', windup: 0.8, radius: 165, damage: 20 },
+      { type: 'fan', windup: 0.6, count: 12, spread: 360, speed: 240, damage: 11, kind: 'orb' },
+      { type: 'chase', time: 1.2 },
+      { type: 'rockfall', windup: 1.0, count: 5, spread: 220, radius: 50, damage: 19, life: 10 },
+    ],
+    summons: [{ atHpRatio: 0.5, enemy: 'shield', count: 6, banner: '현무의 등딱지에서 방패병이 솟는다!' }],
+    enrage: { below: 0.3, speedMul: 1.3, cooldownMul: 0.75, banner: '현무의 뱀이 독을 뿜는다!' },
+  },
 };

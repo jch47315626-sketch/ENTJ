@@ -14,7 +14,7 @@ export function showScreen(name) {
 }
 
 export function renderIntro(stage, daily = null, endless = false) {
-  const tag = daily ? '📅 오늘의 전장 · ' : endless ? '♾️ 무한 전장 · ' : stage.nanse ? `🔥 난세 ${stage.nanse.level}단계 · ` : '';
+  const tag = daily ? '📅 오늘의 전장 · ' : endless ? '♾️ 무한 전장 · ' : stage.altar ? '🏯 사신의 제단 · ' : stage.nanse ? `🔥 난세 ${stage.nanse.level}단계 · ` : '';
   $('introYear').textContent = `${tag}${stage.year} · ${stage.place} · 난이도 ${stage.difficulty.label}`;
   $('introName').textContent = stage.name;
   $('introText').textContent = daily
@@ -94,7 +94,14 @@ export function renderResult(g, won, extra = {}) {
   $('nextBtn').hidden = !(won && g.stage.next) || !!g.stage.daily || !!en;
   const r = g.reward;
   const rows = [];
-  if (r && en) rows.push(['💎', '결기수정', `<span class="count-up" data-to="${r.crystals ?? 0}">+0</span>`]);
+  const al = extra.altar;
+  if (al) {
+    rows.push(['🔮', '영주', `<span class="count-up" data-to="${al.yeongju}">+0</span>`]);
+    rows.push(['✨', '모은 영기', `${al.wisps}개 × ${al.tier}단계${won ? ' + 평정 보너스' : ''}`]);
+    if (al.essence) rows.push(['🌟', '사신 정수', `+${al.essence}`]);
+    if (al.newTier) rows.push(['🏯', `제단 ${al.tier}단계 첫 평정`, `${al.tier + 1 <= al.maxTier ? `${al.tier + 1}단계 열림!` : '최고 단계!'}`]);
+    rows.push(['🎟️', '남은 입장권', `${al.tickets}장`]);
+  } else if (r && en) rows.push(['💎', '결기수정', `<span class="count-up" data-to="${r.crystals ?? 0}">+0</span>`]);
   else if (r) rows.push(['🪙', '냥', `<span class="count-up" data-to="${r.total}">+0</span>`]);
   if (r && g.opts.quick) rows.push(['⚡', '빠른 시험 모드', '냥 35%']);
   if (r?.bossBonus) rows.push(['👑', '적장 토벌 보상', `+${r.bossBonus.toLocaleString()}`]);

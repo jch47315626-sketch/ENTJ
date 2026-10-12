@@ -140,6 +140,7 @@ export class Renderer {
       if (k.kind === 'coin') drawCoin(ctx, k.x, k.y, k.tier, k.t);
       else if (k.kind === 'crowFeed') this.drawCrowFeed(ctx, k, g.time);
       else if (k.kind === 'item') this.drawFieldItem(ctx, k, g.time);
+      else if (k.kind === 'wisp') this.drawWisp(ctx, k, g.time);
       else if (k.kind === 'crystal') {
         // 결기수정: a small violet-blue gem with a glint.
         const bob = Math.sin(g.time * 5 + k.x) * 2;
@@ -555,6 +556,24 @@ export class Renderer {
           ctx.arc(z.x + Math.cos(ang) * rr, z.y + Math.sin(ang) * rr - 4 * Math.sin(g.time * 9 + k), 6 + (k % 3) * 2, 0, TAU);
           ctx.fill();
         }
+      } else if (z.kind === 'poison') {
+        // 현무's venom: a green pool with rising bubbles.
+        ctx.fillStyle = `rgba(70, 160, 90, ${0.32 * a})`;
+        ctx.beginPath();
+        ctx.arc(z.x, z.y, z.r, 0, TAU);
+        ctx.fill();
+        ctx.strokeStyle = `rgba(40, 110, 60, ${0.6 * a})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        for (let k = 0; k < 6; k++) {
+          const u = (g.time * 0.9 + k / 6) % 1;
+          const ang = k * 1.7 + z.x * 0.01;
+          const rr = z.r * (0.2 + 0.6 * ((k * 41) % 10) / 10);
+          ctx.fillStyle = `rgba(150, 230, 140, ${0.7 * a * (1 - u)})`;
+          ctx.beginPath();
+          ctx.arc(z.x + Math.cos(ang) * rr, z.y + Math.sin(ang) * rr - u * 14, 3 + 4 * u, 0, TAU);
+          ctx.fill();
+        }
       } else if (z.kind === 'dust') {
         ctx.fillStyle = `rgba(150, 126, 90, ${0.35 * a})`;
         ctx.beginPath();
@@ -562,6 +581,35 @@ export class Renderer {
         ctx.fill();
       }
     }
+  }
+
+  /** 영기 (사신의 제단): a drifting spirit flame with a trailing wisp; blinks before it fades. */
+  drawWisp(ctx, k, time) {
+    const left = k.life - k.t;
+    if (left < 3 && Math.sin(time * 18) < 0) return;
+    const pulse = 0.8 + 0.2 * Math.sin(time * 6 + k.seed * 9);
+    const glow = ctx.createRadialGradient(k.x, k.y, 1, k.x, k.y, 26);
+    glow.addColorStop(0, `rgba(160, 255, 220, ${0.7 * pulse})`);
+    glow.addColorStop(1, 'rgba(120, 230, 200, 0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(k.x, k.y, 26, 0, TAU);
+    ctx.fill();
+    // Tail streaming away from the way it drifts.
+    const a = Math.atan2(k.vy ?? 0, k.vx ?? 1) + Math.PI;
+    ctx.fillStyle = 'rgba(190, 255, 235, 0.55)';
+    ctx.beginPath();
+    ctx.moveTo(k.x + Math.cos(a + 1.6) * 6, k.y + Math.sin(a + 1.6) * 6);
+    ctx.quadraticCurveTo(k.x + Math.cos(a) * 14, k.y + Math.sin(a) * 14 + Math.sin(time * 8 + k.seed * 5) * 4, k.x + Math.cos(a) * 22, k.y + Math.sin(a) * 22);
+    ctx.lineTo(k.x + Math.cos(a - 1.6) * 6, k.y + Math.sin(a - 1.6) * 6);
+    ctx.fill();
+    ctx.fillStyle = '#e9fff8';
+    ctx.strokeStyle = 'rgba(40, 140, 120, 0.9)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(k.x, k.y, 7 * pulse, 0, TAU);
+    ctx.fill();
+    ctx.stroke();
   }
 
   /** 미륵 광배: faint guide lines while winding up, bright beams once live. */

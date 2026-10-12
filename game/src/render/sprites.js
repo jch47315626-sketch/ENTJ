@@ -1,4 +1,5 @@
 import { MODELS, drawModelBackHair, drawModelHead } from './heroModel.js';
+import { drawBeast } from './beasts.js';
 
 const INK = '#1d1a17';
 const HANJI = '#f1e8d2';
@@ -21,6 +22,7 @@ export function drawShadow(ctx, x, y, r) {
  *          cape?, beard?, mustache?, brows?, eyepatch?, bulk?, blush? }
  */
 export function drawUnit(ctx, look, x, y, r, facing, o = {}) {
+  if (look.beast) return drawBeast(ctx, look, x, y, r, facing, { ...o, scale: o.scale ?? UNIT_SCALE });
   // Chibi figures are drawn a little larger than their hit circle.
   r *= o.scale ?? UNIT_SCALE;
   drawShadow(ctx, x, y, r * (look.mount ? 1.5 : 1));

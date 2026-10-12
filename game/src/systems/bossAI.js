@@ -110,7 +110,7 @@ export const BOSS_PATTERNS = {
       b.pt -= dt;
       if (b.pt > 0) return false;
       for (const pot of b.pots) {
-        g.zones.push({ team: 'enemy', kind: 'fire', x: pot.x, y: pot.y, r: P.radius, dps: P.dps * b.damageMul, life: P.life, t: 0 });
+        g.zones.push({ team: 'enemy', kind: P.zone ?? 'fire', x: pot.x, y: pot.y, r: P.radius, dps: P.dps * b.damageMul, life: P.life, t: 0 });
         g.fx.push({ type: 'puff', x: pot.x, y: pot.y, t: 0, life: 0.5, size: 30, tone: 'mud' });
       }
       g.sfx('firePot');

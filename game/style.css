@@ -1048,7 +1048,20 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 .altar-card .ac-guard { margin: 0; font-size: 14px; }
 .altar-card .ac-purse { display: flex; gap: 14px; flex-wrap: wrap; font-size: 14px; }
 .altar-card .ac-purse b { color: #f2d27a; }
-.altar-btn { padding: 10px; border-radius: 14px; border: 0; background: rgba(255, 255, 255, 0.08); color: rgba(244, 236, 216, 0.6); font: inherit; }
+.altar-btn { padding: 12px; border-radius: 14px; border: 0; background: rgba(255, 255, 255, 0.08); color: rgba(244, 236, 216, 0.6); font: inherit; font-size: 16px; }
+.altar-btn.go:not(:disabled) { background: linear-gradient(180deg, #5fd0a8, #2f8f70); color: #10241c; font-weight: 700; box-shadow: 0 3px 0 #1a5040; cursor: pointer; }
+.altar-card .ac-tier { display: flex; align-items: center; gap: 8px; }
+.ac-step { width: 40px; height: 40px; border-radius: 12px; border: 0; background: rgba(255, 255, 255, 0.1); color: var(--hanji); font-size: 16px; cursor: pointer; }
+.ac-step:disabled { opacity: 0.3; cursor: default; }
+.ac-tier-mid { flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.ac-tier-mid b { font-size: 18px; color: #8fe3c0; }
+.ac-tier-mid small { font-size: 12px; color: rgba(244, 236, 216, 0.75); }
+.altar-card .ac-lock { margin: 0; font-size: 12px; color: rgba(244, 236, 216, 0.6); text-align: center; }
+.ac-pick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.ac-guardian { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 2px; border-radius: 12px; border: 2px solid var(--gc); background: rgba(0, 0, 0, 0.25); color: var(--hanji); font: inherit; font-size: 20px; cursor: pointer; }
+.ac-guardian b { font-size: 14px; }
+.ac-guardian small { font-size: 10px; opacity: 0.75; }
+.ac-guardian:disabled { opacity: 0.35; cursor: default; }
 .ec-rule { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--hanji-dim); text-align: left; }
 .ec-rule b { color: var(--hanji); }
 .ec-best { margin: 0; padding: 8px 12px; border-radius: 12px; background: rgba(255, 213, 107, 0.1); font-size: 14px; color: var(--hanji); text-align: center; }

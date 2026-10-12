@@ -18,6 +18,7 @@ import { planFieldItems, updateFieldItems, takeFieldItem, ITEM_LIFE } from './sy
 import { applyDaily } from './data/daily.js';
 import { ENDLESS, makeEndless, endlessSurge, crystalsOwed, WRATH } from './data/endless.js';
 import { applyNanse } from './data/nanse.js';
+import { ALTAR, ALTAR_TIERS, makeAltarStage, altarYeongju } from './data/altar.js';
 import { Spawner } from './systems/spawner.js';
 import { updateSkills, curseFoe } from './systems/skills.js';
 import { updateTerrain, inBog } from './systems/terrain.js';
@@ -117,8 +118,9 @@ export class Game {
     // 오늘의 전장: the day's rules are folded into the stage's difficulty.
     // ♾️ 무한 전장: the same field, with no end (data/endless.js).
     // 난세 단계: the chosen hardship cards fold into the stage (data/nanse.js).
-    const raw = STAGES[opts.stageId];
-    const base = opts.daily ? applyDaily(raw, opts.daily) : opts.endless ? makeEndless(raw) : opts.nanse ? applyNanse(raw, opts.nanse) : raw;
+    // 사신의 제단: the 단계's field at double pace, with the day's guardian (data/altar.js).
+    const raw = STAGES[opts.altar ? ALTAR_TIERS[opts.altar.tier].base : opts.stageId];
+    const base = opts.altar ? makeAltarStage(raw, opts.altar.guardian, opts.altar.tier) : opts.daily ? applyDaily(raw, opts.daily) : opts.endless ? makeEndless(raw) : opts.nanse ? applyNanse(raw, opts.nanse) : raw;
     this.endlessBosses = 0;
     this.stage = scaleStage(base, opts.quick ? 0.2 : 1);
     this.player = new Player(hero, opts.meta);
@@ -448,6 +450,7 @@ export class Game {
       this.crystalsDropped = (this.crystalsDropped ?? 0) + 1;
       this.pickups.push({ kind: 'crystal', x: e.x, y: e.y, magnet: false, t: 0 });
     }
+    if (this.stage.altar && e.elite && !e.isBoss) for (let i = 0; i < ALTAR.eliteWisps; i++) this.addWisp(e.x, e.y);
     if (e.def.drop === 'rice') this.pickups.push({ kind: 'rice', x: e.x, y: e.y, heal: 25 * (this.stage.difficulty.riceMul ?? 1), magnet: false, t: 0 });
     if (e.isBoss && (e.def.minion || this.bosses.some((o) => !o.dead && !o.def.minion))) {
       // A clone, or one of several generals: the fight goes on.
@@ -455,6 +458,10 @@ export class Game {
     } else if (e.isBoss && this.stage.endless) {
       this.endBossWave(e);
     } else if (e.isBoss) {
+      if (this.stage.altar) {
+        this.runStats.wisps = (this.runStats.wisps ?? 0) + ALTAR.bossWisps;
+        this.texts.push({ x: e.x, y: e.y - 40, v: `🔮 영기 +${ALTAR.bossWisps}`, t: 0, life: 1.6, order: true });
+      }
       this.state = 'clearing';
       this.endTimer = 2.2;
       this.banner(`${e.def.name} 격파`, 'big');
@@ -659,7 +666,7 @@ export class Game {
 
   /** 냥 earned so far this run, before any victory bonus (shown in the HUD). */
   liveReward() {
-    if (this.stage.endless) return 0; // 무한 전장 pays in 결기수정 only
+    if (this.stage.endless || this.stage.altar) return 0; // 무한 전장 pays in 결기수정, 제단 in 영주
     const base = baseReward({ kills: this.kills, seconds: this.time, won: false, bossKilled: false, ...this.progress() });
     return Math.round(base * REWARD_BY_STARS[this.stage.difficulty.stars] * (1 + (this.opts.meta?.reward ?? 0)) * (this.stage.difficulty.rewardMul ?? 1) * (this.opts.quick ? QUICK_REWARD : 1));
   }
@@ -668,6 +675,12 @@ export class Game {
   computeReward(won) {
     // 무한 전장: no 냥 at all — the reward is the 결기수정 picked up.
     if (this.stage.endless) return { base: 0, mul: 0, total: 0, stars: this.stage.difficulty.stars, bossBonus: 0, crystals: this.runStats.crystals ?? 0 };
+    // 사신의 제단: no 냥 — the 영기 gathered turn into 영주 (paid by main.js).
+    if (this.stage.altar) {
+      const wisps = this.runStats.wisps ?? 0;
+      const { tier, guardian } = this.stage.altar;
+      return { base: 0, mul: 0, total: 0, stars: this.stage.difficulty.stars, bossBonus: 0, altar: { wisps, tier, guardian, yeongju: altarYeongju(wisps, tier, won) } };
+    }
     const stars = this.stage.difficulty.stars;
     const base = baseReward({ kills: this.kills, seconds: this.time, won, bossKilled: won, ...this.progress() });
     const mul = REWARD_BY_STARS[stars] * (1 + (this.opts.meta?.reward ?? 0)) * (this.stage.difficulty.rewardMul ?? 1) * (this.opts.quick ? QUICK_REWARD : 1);
@@ -783,6 +796,7 @@ export class Game {
     updateFieldObjects(this, dt);
     updateFieldItems(this, dt);
     if (this.stage.endless) this.updateWrath(dt);
+    if (this.stage.altar) this.updateAltar(dt);
     this.taunts = this.allies.filter((a) => a.lure && !a.dead);
     this.updateEnemies(dt);
     updateTerrain(this);
@@ -996,6 +1010,23 @@ export class Game {
   }
 
   /** 무한 전장 · 신의 분노: standing still too long calls lightning down on the hero. */
+  /** 사신의 제단: a 영기 drifts in every few seconds somewhere around the hero. */
+  updateAltar(dt) {
+    if (this.state !== 'play') return;
+    this.wispT = (this.wispT ?? 1) - dt;
+    if (this.wispT > 0) return;
+    this.wispT = ALTAR.wispEvery;
+    const p = this.player;
+    const a = Math.random() * Math.PI * 2;
+    const d = ALTAR.wispNear[0] + Math.random() * (ALTAR.wispNear[1] - ALTAR.wispNear[0]);
+    this.addWisp(p.x + Math.cos(a) * d, p.y + Math.sin(a) * d);
+  }
+
+  addWisp(x, y) {
+    const a = Math.random() * Math.PI * 2;
+    this.pickups.push({ kind: 'wisp', x, y, vx: Math.cos(a) * 24, vy: Math.sin(a) * 24, life: ALTAR.wispLife, seed: Math.random(), magnet: false, t: 0 });
+  }
+
   updateWrath(dt) {
     const p = this.player;
     const W = WRATH;
@@ -1106,6 +1137,17 @@ export class Game {
         } else if (k.t > CROW.feedLife) k.taken = true;
         continue;
       }
+      if (k.kind === 'wisp' && !k.magnet) {
+        // 영기 wander on their own and must be reached (half the pickup reach).
+        if (k.t > k.life) { k.taken = true; continue; }
+        const turn = (Math.random() - 0.5) * 3 * dt;
+        const c = Math.cos(turn), sn = Math.sin(turn);
+        [k.vx, k.vy] = [k.vx * c - k.vy * sn, k.vx * sn + k.vy * c];
+        k.x += k.vx * dt;
+        k.y += k.vy * dt;
+        if (d2 < Math.max(p.r + 34, p.stats.pickup * 0.5) ** 2) k.magnet = true;
+        continue;
+      }
       if (!k.magnet && d2 < pr2) k.magnet = true;
       if (k.magnet) {
         const d = Math.sqrt(d2) || 1;
@@ -1124,6 +1166,11 @@ export class Game {
           if (k.kind === 'coin') {
             this.gainXp(k.value);
             this.sfx('coin');
+          }
+          else if (k.kind === 'wisp') {
+            this.runStats.wisps = (this.runStats.wisps ?? 0) + 1;
+            this.texts.push({ x: p.x, y: p.y - 30, v: '🔮 +1', t: 0, life: 0.8, order: true });
+            this.sfx('buy');
           }
           else if (k.kind === 'crystal') {
             this.runStats.crystals = (this.runStats.crystals ?? 0) + 1;
