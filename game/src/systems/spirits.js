@@ -40,7 +40,7 @@ export function spiritMeta(meta, list) {
   for (const c of combosOf(list.map((x) => x.id))) for (const [k, v] of Object.entries(c.meta ?? {})) m[k] = (m[k] ?? 0) + v;
   for (const c of list) {
     const pw = 1 + 0.25 * (c.stars - 1), br = c.stars >= 3 ? c.branch : null;
-    if (c.id === 'crow' && br === 'a') { m.pickup = (m.pickup ?? 0) + 0.5; m.xp = (m.xp ?? 0) + 0.1; }
+    if (c.id === 'crow' && br === 'a') { m.pickup = (m.pickup ?? 0) + 0.5; m.xp = (m.xp ?? 0) + 0.05; }
     if (c.id === 'owl') m.xp = (m.xp ?? 0) + 0.03 * c.stars;
     if (c.id === 'crane') m.momentum = (m.momentum ?? 0) + 0.2 * pw * (br === 'a' ? 2 : 1);
     if (c.id === 'dragonmaid') m.allyMul = (m.allyMul ?? 0) + 0.1 * pw + (br === 'b' ? 0.4 : 0);
@@ -130,7 +130,14 @@ function aura(g, s, key, z) {
 
 const ACT = {
   jindo(g, s) {
-    if (s.br === 'b') return 0.5; // 충견 stays by the hero and answers in onHurt
+    if (s.br === 'b') {
+      // 충견: stays by the hero, bites whatever comes close, and answers blows in onHurt.
+      const e = nearestFoe(g, g.player.x, g.player.y, 130);
+      if (!e) return 0.4;
+      lungeTo(s, e.x, e.y, 0.15);
+      hit(g, s, e, D(g, s, 1.5), { stun: 0.4 });
+      return 1.5;
+    }
     const bite = (e) => {
       if (!e) return;
       lungeTo(s, e.x, e.y);
@@ -229,7 +236,7 @@ const ACT = {
     const e = near.find((o) => !o.isBoss && (o.elite || RANGED.has(o.def.id))) ?? (s.awake && g.boss && !g.boss.dead ? g.boss : null) ?? near.find((o) => !o.isBoss) ?? near[0];
     if (!e) return 0.5;
     lungeTo(s, e.x, e.y, 0.2);
-    hit(g, s, e, D(g, s, 3) * (e.isBoss && s.awake ? 1.3 : 1));
+    hit(g, s, e, D(g, s, 3.6) * (e.isBoss && s.awake ? 1.3 : 1));
     if (s.br === 'a' && !e.dead && !e.isBoss && e.hp < e.maxHp * 0.25) hit(g, s, e, e.hp + 1);
     return s.br === 'b' ? 1.2 : 2.4;
   },
@@ -363,7 +370,7 @@ const ACT = {
       ring(g, p.x, p.y, 150, '#f1e8d2', 0.5);
     }
     g.texts.push({ x: p.x, y: p.y - 40, v: '🐘 백상!', t: 0, life: 1, order: true });
-    return 14;
+    return 10;
   },
   haetae: () => 1, // every frame in tick()
   cheongnyong(g, s) {
@@ -395,13 +402,13 @@ const ACT = {
       lungeTo(s, prey.x, prey.y, 0.2);
       hit(g, s, prey, prey.hp + 1);
       g.fx.push({ type: 'spLine', x: prey.x - 20, y: prey.y - 20, tx: prey.x + 20, ty: prey.y + 20, color: '#ffffff', width: 5, t: 0, life: 0.3 });
-      return 1.5;
+      return 1.1;
     }
     const e = near[0];
     if (!e) return 0.5;
     lungeTo(s, e.x, e.y, 0.2);
-    hit(g, s, e, D(g, s, 2 * (s.br === 'b' ? 1.5 : 1)));
-    return 1.5;
+    hit(g, s, e, D(g, s, 2.6 * (s.br === 'b' ? 1.5 : 1)));
+    return 1.1;
   },
   hyeonmu(g, s) {
     const p = g.player;
@@ -422,7 +429,7 @@ function tick(g, s, dt) {
       s.data.trample = (s.data.trample ?? 0) - dt;
       if (s.data.trample <= 0) {
         s.data.trample = 0.3;
-        area(g, p.x, p.y, 60, (e) => hit(g, s, e, D(g, s, 1.2 * (s.br === 'a' ? 2 : 1)), { from: p, kb: 60 }));
+        area(g, p.x, p.y, 70, (e) => hit(g, s, e, D(g, s, 1.5 * (s.br === 'a' ? 2.5 : 1)), { from: p, kb: 60 }));
       }
     } else {
       s.data.until = 0;
@@ -512,7 +519,7 @@ export function spiritOnHurt(g, attacker) {
     if (s.id === 'jindo' && s.br === 'b' && attacker && !attacker.dead && g.time >= (s.data.bite ?? 0)) {
       s.data.bite = g.time + 0.5;
       lungeTo(s, attacker.x, attacker.y, 0.15);
-      hit(g, s, attacker, D(g, s, 2));
+      hit(g, s, attacker, D(g, s, 3));
     }
     if (s.id === 'bear' && s.br === 'b' && g.time >= (s.data.swipe ?? 0)) {
       s.data.swipe = g.time + 1;
