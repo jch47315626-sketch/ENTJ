@@ -11,6 +11,13 @@ import { gyeolgiBonus } from './gyeolgi.js';
 /** Reward multiplier by difficulty stars (1–5). */
 export const REWARD_BY_STARS = { 1: 1, 2: 1.8, 3: 3, 4: 4.5, 5: 6.5, 6: 10 };
 
+/**
+ * 빠른 시험 모드 (boss at 1:00) pays this share of the 냥: a quick run is
+ * about a third as long, so farming a low field on it must not beat a
+ * full run on a harder one.
+ */
+export const QUICK_REWARD = 0.35;
+
 /** Base 냥 for felling the boss (before the stage multiplier). */
 export const BOSS_REWARD = 400;
 

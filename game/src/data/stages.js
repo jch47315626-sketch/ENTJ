@@ -173,7 +173,7 @@ export const STAGES = {
     ground: 'riverPlain',
     terrain: { rocks: 0.14, bog: 0.3, clear: 260, bogSlow: 0.35 },
     unlockAfter: 'illicheon',
-    difficulty: { label: '지옥 Ⅰ', stars: 6, enemyHp: 4.4, enemyDamage: 3.3, spawnRate: 1.35, eliteBonus: 0.22, bossHp: 2.4, bossDamage: 2.3, xpScale: 0.19, rewardMul: 0.6 },
+    difficulty: { label: '지옥 Ⅰ', stars: 6, enemyHp: 4.4, enemyDamage: 3.3, spawnRate: 1.35, eliteBonus: 0.22, bossHp: 2.4, bossDamage: 2.3, xpScale: 0.19, rewardMul: 0.7 },
     clearText: '나루를 지켰다. 강 건너 갈대늪 너머로 양길의 북소리가 멀어진다.',
     next: 'munmak', bossAt: 300, boss: 'sinhwon', bossAlt: {}, supplyEvery: 34,
     phases: [

@@ -5,7 +5,7 @@ import { STAGES, scaleStage } from './data/stages.js';
 import { enemyHpScale, enemyDamageScale, ENEMY_BOOST, ENEMY_ARMOR, BOSS_BOOST, HP_REGEN } from './data/balance.js';
 import { UPGRADES, FALLBACKS, evolutionStatus } from './data/upgrades.js';
 import { MAGUNI_LV, FURY_LV, GWANSIM } from './data/skills.js';
-import { baseReward, REWARD_BY_STARS, BOSS_REWARD, armorCut } from './data/meta.js';
+import { baseReward, REWARD_BY_STARS, BOSS_REWARD, QUICK_REWARD, armorCut } from './data/meta.js';
 import { SpatialGrid } from './core/grid.js';
 import { clamp, rand, TAU, dist2, angleDiff } from './core/math.js';
 import { updateWeapon, hitArc, currentWeaponLevel } from './systems/weapons.js';
@@ -652,7 +652,7 @@ export class Game {
   liveReward() {
     if (this.stage.endless) return 0; // 무한 전장 pays in 결기수정 only
     const base = baseReward({ kills: this.kills, seconds: this.time, won: false, bossKilled: false });
-    return Math.round(base * REWARD_BY_STARS[this.stage.difficulty.stars] * (1 + (this.opts.meta?.reward ?? 0)) * (this.stage.difficulty.rewardMul ?? 1));
+    return Math.round(base * REWARD_BY_STARS[this.stage.difficulty.stars] * (1 + (this.opts.meta?.reward ?? 0)) * (this.stage.difficulty.rewardMul ?? 1) * (this.opts.quick ? QUICK_REWARD : 1));
   }
 
   /** 냥 for this run: base by performance, scaled by stage stars and gear (판 보상 냥). */
@@ -661,7 +661,7 @@ export class Game {
     if (this.stage.endless) return { base: 0, mul: 0, total: 0, stars: this.stage.difficulty.stars, bossBonus: 0, crystals: this.runStats.crystals ?? 0 };
     const stars = this.stage.difficulty.stars;
     const base = baseReward({ kills: this.kills, seconds: this.time, won, bossKilled: won });
-    const mul = REWARD_BY_STARS[stars] * (1 + (this.opts.meta?.reward ?? 0)) * (this.stage.difficulty.rewardMul ?? 1);
+    const mul = REWARD_BY_STARS[stars] * (1 + (this.opts.meta?.reward ?? 0)) * (this.stage.difficulty.rewardMul ?? 1) * (this.opts.quick ? QUICK_REWARD : 1);
     const bossBonus = won ? Math.round(BOSS_REWARD * mul) : this.stage.endless ? Math.round(BOSS_REWARD * mul * ENDLESS.bossBounty * this.endlessBosses) : 0;
     return { base, mul, total: Math.round(base * mul) + (this.stage.endless ? bossBonus : 0), stars, bossBonus };
   }
