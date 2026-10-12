@@ -21,9 +21,26 @@ export const QUICK_REWARD = 0.35;
 /** Base 냥 for felling the boss (before the stage multiplier). */
 export const BOSS_REWARD = 400;
 
-/** 냥 earned from a run, before the stage multiplier and 판 보상 bonuses. */
-export function baseReward({ kills, seconds, won, bossKilled }) {
-  return Math.round(kills * 0.6 + seconds * 0.4 + (won ? 150 : 0) + (bossKilled ? BOSS_REWARD : 0));
+/**
+ * A lost run still earns part of the victory bonus (150 + 적장 400) by how far
+ * it got: up to 35% for holding out until the boss, plus up to 25% for the
+ * boss's HP taken off. It goes through the stage multiplier like the rest,
+ * so a defeat on a hard field is worth more than one on an easy field.
+ */
+export const LOSS_SHARE = { reach: 0.35, boss: 0.25 };
+
+/**
+ * 냥 earned from a run, before the stage multiplier and 판 보상 bonuses.
+ * `reach` (0–1): share of the way to the boss; `bossDone` (0–1): share of
+ * the boss's HP taken off. Both only count when the run is lost, and a lost
+ * run's whole pay is scaled by `reach`.
+ */
+export function baseReward({ kills, seconds, won, bossKilled, reach = 0, bossDone = 0 }) {
+  if (won) return Math.round(kills * 0.6 + seconds * 0.4 + 150 + (bossKilled ? BOSS_REWARD : 0));
+  // A defeat is scaled by `reach` as well, so dying early on a field far
+  // above one's level (×10–22 냥) never pays better than winning a fitting one.
+  const consolation = (150 + BOSS_REWARD) * (LOSS_SHARE.reach * reach + LOSS_SHARE.boss * bossDone);
+  return Math.round((kills * 0.6 + seconds * 0.4 + consolation) * Math.min(1, reach));
 }
 
 export const SLOTS = [

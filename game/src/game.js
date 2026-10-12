@@ -648,10 +648,19 @@ export class Game {
     this.setState('play');
   }
 
+  /** How far this run got, for the defeat 냥: way to the boss, and the boss's HP taken off. */
+  progress() {
+    const B = this.boss;
+    return {
+      reach: Math.min(1, this.time / this.stage.bossAt),
+      bossDone: B?.maxHp ? Math.min(1, Math.max(0, 1 - B.hp / B.maxHp)) : 0,
+    };
+  }
+
   /** 냥 earned so far this run, before any victory bonus (shown in the HUD). */
   liveReward() {
     if (this.stage.endless) return 0; // 무한 전장 pays in 결기수정 only
-    const base = baseReward({ kills: this.kills, seconds: this.time, won: false, bossKilled: false });
+    const base = baseReward({ kills: this.kills, seconds: this.time, won: false, bossKilled: false, ...this.progress() });
     return Math.round(base * REWARD_BY_STARS[this.stage.difficulty.stars] * (1 + (this.opts.meta?.reward ?? 0)) * (this.stage.difficulty.rewardMul ?? 1) * (this.opts.quick ? QUICK_REWARD : 1));
   }
 
@@ -660,7 +669,7 @@ export class Game {
     // 무한 전장: no 냥 at all — the reward is the 결기수정 picked up.
     if (this.stage.endless) return { base: 0, mul: 0, total: 0, stars: this.stage.difficulty.stars, bossBonus: 0, crystals: this.runStats.crystals ?? 0 };
     const stars = this.stage.difficulty.stars;
-    const base = baseReward({ kills: this.kills, seconds: this.time, won, bossKilled: won });
+    const base = baseReward({ kills: this.kills, seconds: this.time, won, bossKilled: won, ...this.progress() });
     const mul = REWARD_BY_STARS[stars] * (1 + (this.opts.meta?.reward ?? 0)) * (this.stage.difficulty.rewardMul ?? 1) * (this.opts.quick ? QUICK_REWARD : 1);
     const bossBonus = won ? Math.round(BOSS_REWARD * mul) : this.stage.endless ? Math.round(BOSS_REWARD * mul * ENDLESS.bossBounty * this.endlessBosses) : 0;
     return { base, mul, total: Math.round(base * mul) + (this.stage.endless ? bossBonus : 0), stars, bossBonus };
