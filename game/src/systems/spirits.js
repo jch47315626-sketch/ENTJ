@@ -1,4 +1,5 @@
 import { SPIRITS, combosOf } from '../data/spirits.js';
+import { RANGED_BEHAVIORS } from '../data/skills.js';
 
 /**
  * 영물 in battle (data/spirits.js has their names and texts). Each companion
@@ -232,8 +233,7 @@ const ACT = {
   falcon(g, s) {
     const p = g.player;
     const near = foes(g, p.x, p.y, 450, 30);
-    const RANGED = new Set(['archer', 'eliteArcher', 'slinger', 'shaman']);
-    const e = near.find((o) => !o.isBoss && (o.elite || RANGED.has(o.def.id))) ?? (s.awake && g.boss && !g.boss.dead ? g.boss : null) ?? near.find((o) => !o.isBoss) ?? near[0];
+    const e = near.find((o) => !o.isBoss && (o.elite || RANGED_BEHAVIORS.includes(o.def.behavior))) ?? (s.awake && g.boss && !g.boss.dead ? g.boss : null) ?? near.find((o) => !o.isBoss) ?? near[0];
     if (!e) return 0.5;
     lungeTo(s, e.x, e.y, 0.2);
     hit(g, s, e, D(g, s, 3.6) * (e.isBoss && s.awake ? 1.3 : 1));

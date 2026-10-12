@@ -60,24 +60,23 @@ export const HORSE = [
 /**
  * 철쇄 (견훤's chain-hook skill, gained from level-ups). On cooldown he
  * hurls iron chains at ranged soldiers and drags them to his feet, stunned.
- * `targets` lists which enemy ids can be hooked ('ranged': every foe that
- * fights from afar, see RANGED_BEHAVIORS); the last tier slams the ground
- * where they land.
+ * `targets` 'ranged': every foe that fights from afar (RANGED_BEHAVIORS),
+ * or a list of enemy ids; the last tier slams the ground where they land.
  */
 /** Enemy behaviours that fight from a distance (data/enemies.js). */
 export const RANGED_BEHAVIORS = ['ranged', 'lobber', 'trapper', 'shaman'];
 
 export const CHAIN = [
-  { name: '철쇄', cooldown: 9, count: 2, range: 520, stun: 0.6, targets: ['archer'],
-    desc: '쇠사슬로 멀리 있는 궁수 둘을 발밑으로 끌어온다. 끌려온 적은 잠시 기절한다.' },
-  { name: '쌍철쇄', cooldown: 8, count: 3, range: 560, stun: 0.8, targets: ['archer'],
-    desc: '더 자주, 더 멀리서 궁수 셋을 끌어온다.' },
-  { name: '천근쇄', cooldown: 7, count: 4, range: 600, stun: 1.0, targets: ['archer', 'eliteArcher'],
-    desc: '정예 궁수까지 끌어온다. 넷까지, 기절 1초.' },
+  { name: '철쇄', cooldown: 9, count: 2, range: 520, stun: 0.6, targets: 'ranged',
+    desc: '쇠사슬로 멀리서 쏘는 적(궁수·투석병·덫꾼·무당) 둘을 발밑으로 끌어온다. 끌려온 적은 잠시 기절한다.' },
+  { name: '쌍철쇄', cooldown: 8, count: 3, range: 560, stun: 0.8, targets: 'ranged',
+    desc: '더 자주, 더 멀리서 원거리 적 셋을 끌어온다.' },
+  { name: '천근쇄', cooldown: 7, count: 4, range: 600, stun: 1.0, targets: 'ranged',
+    desc: '원거리 적 넷까지, 기절 1초.' },
   { name: '패왕쇄', cooldown: 6, count: 5, range: 640, stun: 1.2, targets: 'ranged', evolution: true,
     slam: { radius: 90, mul: 2.2 },
     requires: { upgrade: 'fury', level: 2 },
-    desc: '궁수·투석병·덫꾼·무당 — 멀리서 싸우는 적이면 누구든 다섯을 끌어와 땅에 내리꽂는다. 떨어진 자리 주변 적까지 피해를 입는다.' },
+    desc: '원거리 적 다섯을 끌어와 땅에 내리꽂는다. 떨어진 자리 주변 적까지 피해를 입는다.' },
 ];
 
 /**
