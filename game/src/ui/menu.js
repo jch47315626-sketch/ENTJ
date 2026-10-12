@@ -11,7 +11,7 @@ import { ACHIEVEMENTS, ACH_GROUPS, progressOf } from '../data/achievements.js';
 import { heroUltimates } from '../data/upgrades.js';
 import { GYEOLGI, gyeolgiCost } from '../data/gyeolgi.js';
 import { dailyFor, todayKey, untilTomorrow } from '../data/daily.js';
-import { SPIRITS, SPIRIT_LIST, SPIRIT_GRADES, GACHA, STAR_DUPES, MAX_STARS, SASIN_STAR_ESSENCE, companionSlots, spiritOf, dupesForNext } from '../data/spirits.js';
+import { SPIRITS, SPIRIT_LIST, SPIRIT_GRADES, GACHA, STAR_DUPES, MAX_STARS, SASIN_STAR_ESSENCE, COMBOS, combosOf, companionSlots, spiritOf, dupesForNext } from '../data/spirits.js';
 import { GUARDIANS, ALTAR_TICKETS, ESSENCE_PER_SASIN, ALTAR_TIERS, ALTAR_MAX_TIER, guardianOf, refreshAltar, altarTierOpen, wispWorth, clearBonus } from '../data/altar.js';
 import { josa } from '../core/korean.js';
 import { lineText, lineMax, engraveCost } from '../data/gearOptions.js';
@@ -810,8 +810,8 @@ export function renderCodex(save, sel, act) {
   const body = $('codexBody');
   body.innerHTML = '';
   body.append(header('도감', save, act, '圖鑑'));
-  const tabs = [['ach', '업적'], ['hero', '영웅'], ['weapon', '무기'], ['gear', '장비'], ['foe', '적'], ['record', '기록'], ['help', '도움말']];
-  const strip = tabStrip(tabs.map(([id, name]) => [id, `${img(`icon/tab-${id}`, 'tab-img')}<b>${name}</b>`]), ui.codexTab, (id) => {
+  const tabs = [['ach', '업적'], ['hero', '영웅'], ['weapon', '무기'], ['gear', '장비'], ['spirit', '영물'], ['foe', '적'], ['record', '기록'], ['help', '도움말']];
+  const strip = tabStrip(tabs.map(([id, name]) => [id, `${id === 'spirit' ? '<span class="tab-img tab-emoji">🐾</span>' : img(`icon/tab-${id}`, 'tab-img')}<b>${name}</b>`]), ui.codexTab, (id) => {
     ui.codexTab = id;
     renderCodex(save, sel, act);
   });
@@ -860,6 +860,18 @@ export function renderCodex(save, sel, act) {
       c.style.setProperty('--grade', GRADES[it.grade].color);
       grid.append(c);
     }
+  } else if (ui.codexTab === 'spirit') {
+    // 영물: met ones show their grade, stars and 갈래; the rest stay as ???.
+    for (const s of SPIRIT_LIST) {
+      const own = spiritOf(save, s.id);
+      const ic = el('span', 'row-icon codex-emoji', s.icon);
+      ic.style.setProperty('--gc', SPIRIT_GRADES[s.grade].color);
+      grid.append(cell(ic, s.name, `${SPIRIT_GRADES[s.grade].name} · ${s.role}${own ? ` · ★${own.stars}${own.branch ? ` · ${s.branches[own.branch].name}` : ''}` : ''}`, !own,
+        [s.base, `갈래 A ${s.branches.a.name} — ${s.branches.a.desc}`, `갈래 B ${s.branches.b.name} — ${s.branches.b.desc}`, `★5 각성 — ${s.awaken}`]));
+    }
+    body.append(grid);
+    body.append(comboCard(save));
+    return;
   } else if (ui.codexTab === 'foe') {
     const foes = [
       ...Object.values(ENEMIES).filter((e) => e.behavior !== 'static'),
@@ -1064,8 +1076,12 @@ export function renderSpirit(save, sel, act) {
       : i >= slots ? '🔒<small>사신과 함께 열려요</small>' : '<small>아래에서 영물을 눌러<br>동행으로 데려가요</small>'));
   }
   party.append(pr);
-  party.append(el('p', 'hint', '동행 영물은 모든 영웅과 함께 싸워요. 싸우는 모습은 곧 열려요!'));
+  const active = combosOf(save.companions ?? []);
+  party.append(el('p', 'hint', active.length
+    ? active.map((c) => `<b class="sp-combo-on">${c.icon} 궁합 · ${c.name}</b> ${c.desc}`).join('<br>')
+    : '동행 영물은 모든 영웅과 함께 싸워요. 두 마리가 <b>궁합</b>이 맞으면 힘이 더해져요.'));
   body.append(party);
+  body.append(comboCard(save));
 
   // 도감: grade by grade.
   for (const g of [5, 4, 3, 2, 1]) {
@@ -1078,6 +1094,21 @@ export function renderSpirit(save, sel, act) {
     box.append(grid);
     body.append(box);
   }
+}
+
+/** 궁합: every pairing, lit when both are owned, marked when they march together. */
+function comboCard(save) {
+  const box = el('div', 'grow-card sp-combos');
+  const owned = (id) => !!spiritOf(save, id);
+  const known = COMBOS.filter((c) => c.ids.every(owned)).length;
+  box.append(el('div', 'sp-gacha-head', `<b>💞 궁합</b><span>${known}/${COMBOS.length} 갖춤 · 두 마리를 함께 동행</span>`));
+  for (const c of COMBOS) {
+    const [a, b] = c.ids.map((id) => SPIRITS[id]);
+    const have = c.ids.every(owned);
+    const on = c.ids.every((id) => save.companions?.includes(id));
+    box.append(el('div', `sp-combo${have ? '' : ' off'}${on ? ' on' : ''}`, `<span class="sp-combo-pair">${owned(a.id) ? a.icon : '❔'}${owned(b.id) ? b.icon : '❔'}</span><div><b>${c.icon} ${c.name}${on ? ' <i>발동 중</i>' : ''}</b><small>${a.name} + ${b.name} — ${c.desc}</small></div>`));
+  }
+  return box;
 }
 
 function spiritCard(save, s, act) {
@@ -1109,6 +1140,7 @@ function spiritCard(save, s, act) {
     `★마다 위력이 커져요${own ? ` — 지금 ★${own.stars}` : ''}`,
     `<b>★3 갈래</b> (언제든 바꿀 수 있어요)<br>A ${s.branches.a.name} — ${s.branches.a.desc}<br>B ${s.branches.b.name} — ${s.branches.b.desc}${own?.branch ? `<br>고른 갈래: <b>${s.branches[own.branch].name}</b>` : ''}`,
     `<b>★5 각성</b> — ${s.awaken}`,
+    COMBOS.filter((c) => c.ids.includes(s.id)).map((c) => `💞 ${c.name} (${c.ids.filter((i) => i !== s.id).map((i) => SPIRITS[i].name).join('')}) — ${c.desc}`).join('<br>'),
     s.grade === 5 ? `사신 정수로만 불러요 (${ESSENCE_PER_SASIN}개) · 별도 정수로 올려요 (${SASIN_STAR_ESSENCE.slice(1).join(' · ')})` : `뽑기로 만나요 · ★5까지 중복 ${STAR_DUPES.reduce((a, b) => a + b, 0)}장`,
   ]));
   return c;

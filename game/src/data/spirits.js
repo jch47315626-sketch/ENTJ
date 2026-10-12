@@ -221,3 +221,32 @@ export function toggleCompanion(save, id) {
   save.companions = list;
   return true;
 }
+
+// ------------------------------------------------------------------ 궁합
+
+/**
+ * 궁합: two 영물 taken along together. `mods[id]` changes that 영물 in
+ * battle (read by systems/spirits.js): dmg × and cd × always; the other keys
+ * are its own (beams, jumps, dives, packMax, shield, grow0, life, range,
+ * heal, radius, execute, quake, allCoins). `meta` adds to the hero's bonuses.
+ */
+export const COMBOS = [
+  { id: 'crowSun', ids: ['crow', 'samjogo'], icon: '🌞', name: '까마귀 떼', desc: '삼족오 광선 +1줄 · 까마귀가 화면 끝의 엽전까지 물어 와요', mods: { samjogo: { beams: 1 }, crow: { allCoins: true } } },
+  { id: 'tigerWolf', ids: ['wolf', 'baekho'], icon: '🐾', name: '범과 이리', desc: '늑대 무리 피해 +50% · 백호 처형 기준 +10%p', mods: { wolf: { dmg: 1.5 }, baekho: { execute: 0.1 } } },
+  { id: 'shellPact', ids: ['turtle', 'hyeonmu'], icon: '🐢', name: '거북의 맹약', desc: '보호막 +50% · 바다거북 보호막 간격 −30%', mods: { turtle: { shield: 1.5, cd: 0.7 }, hyeonmu: { shield: 1.5 } } },
+  { id: 'dragonWed', ids: ['dragonmaid', 'cheongnyong'], icon: '💞', name: '용궁의 혼례', desc: '번개가 3번 더 튀어요 · 물결 범위 +30%', mods: { cheongnyong: { jumps: 3 }, dragonmaid: { radius: 1.3 } } },
+  { id: 'phoenixSong', ids: ['crane', 'jujak'], icon: '🎶', name: '봉황의 노래', desc: '기세 충전 +30% · 주작 불길 피해 +40%', mods: { jujak: { dmg: 1.4 } }, meta: { momentum: 0.3 } },
+  { id: 'houndPack', ids: ['jindo', 'wolf'], icon: '🐕', name: '들개 무리', desc: '늑대 최대 +2마리 · 진돗개 쿨다운 −30%', mods: { wolf: { packMax: 2 }, jindo: { cd: 0.7 } } },
+  { id: 'seaWind', ids: ['gull', 'turtle'], icon: '🌊', name: '바닷바람', desc: '갈매기 급강하 +1회 · 보호막 +30%', mods: { gull: { dives: 1 }, turtle: { shield: 1.3 } } },
+  { id: 'nightVenom', ids: ['bat', 'snake'], icon: '🌙', name: '밤의 독', desc: '박쥐 피해 +50% · 구렁이 독 +40%', mods: { bat: { dmg: 1.5 }, snake: { dmg: 1.4 } } },
+  { id: 'earthQuake', ids: ['worm', 'boar'], icon: '🌋', name: '땅울림', desc: '멧돼지 돌진이 끝나는 곳에서 대지렁이가 솟아요', mods: { boar: { quake: true } } },
+  { id: 'tigerBlood', ids: ['cub', 'baekho'], icon: '🐯', name: '범의 핏줄', desc: '범새끼가 반쯤 자란 채 시작 · 백호 피해 +30%', mods: { cub: { grow0: 0.5 }, baekho: { dmg: 1.3 } } },
+  { id: 'foxFire', ids: ['fox', 'haetae'], icon: '🦊', name: '여우불', desc: '분신이 2배 오래 · 해태가 삼키는 범위 +30%', mods: { fox: { life: 2 }, haetae: { range: 1.3 } } },
+  { id: 'mountainStep', ids: ['elephant', 'bear'], icon: '⛰️', name: '산을 울리는 발', desc: '백상 쿨다운 −30% · 짓밟기 피해 +50%', mods: { elephant: { cd: 0.7, dmg: 1.5 } } },
+  { id: 'scholar', ids: ['owl', 'crane'], icon: '📜', name: '선비의 벗', desc: '책략 카드 +1장 · 공훈 +10%', mods: { owl: { cards: 1 } }, meta: { xp: 0.1 } },
+  { id: 'waterFriends', ids: ['otter', 'dragonmaid'], icon: '💧', name: '물의 벗', desc: '수달 회복 2배 · 물결 범위 +30%', mods: { otter: { heal: 2 }, dragonmaid: { radius: 1.3 } } },
+  { id: 'skyHunt', ids: ['falcon', 'cheongnyong'], icon: '⚡', name: '하늘의 사냥꾼', desc: '해동청 피해 +50% · 번개 피해 +20%', mods: { falcon: { dmg: 1.5 }, cheongnyong: { dmg: 1.2 } } },
+];
+
+/** The 궁합 that a party (list of ids) makes. */
+export const combosOf = (ids) => COMBOS.filter((c) => c.ids.every((id) => ids.includes(id)));

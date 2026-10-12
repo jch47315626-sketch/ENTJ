@@ -1,4 +1,4 @@
-import { SPIRITS } from '../data/spirits.js';
+import { SPIRITS, combosOf } from '../data/spirits.js';
 
 /**
  * 영물 in battle (data/spirits.js has their names and texts). Each companion
@@ -16,9 +16,17 @@ const dist2 = (ax, ay, bx, by) => (ax - bx) ** 2 + (ay - by) ** 2;
 
 /** Battle state for the companions taken along ([{ id, stars, branch }]). */
 export function makeSpirits(list) {
+  const combos = combosOf(list.map((c) => c.id));
+  // 궁합: each 영물's modifiers from every pairing it is part of.
+  const modsOf = (id) => {
+    const m = { dmg: 1, cd: 1 };
+    for (const c of combos) for (const [k, v] of Object.entries(c.mods[id] ?? {})) m[k] = k === 'dmg' || k === 'cd' ? m[k] * v : v;
+    return m;
+  };
   return list
     .filter((c) => SPIRITS[c.id])
     .map((c, i) => ({
+      mod: modsOf(c.id),
       id: c.id, def: SPIRITS[c.id], slot: i, spirit: true,
       stars: c.stars, br: c.stars >= 3 ? c.branch : null, awake: c.stars >= 5,
       pw: 1 + 0.25 * (c.stars - 1),
@@ -29,6 +37,7 @@ export function makeSpirits(list) {
 /** Passive gifts folded into the hero's bonuses before the battle (returns a new meta). */
 export function spiritMeta(meta, list) {
   const m = { ...meta };
+  for (const c of combosOf(list.map((x) => x.id))) for (const [k, v] of Object.entries(c.meta ?? {})) m[k] = (m[k] ?? 0) + v;
   for (const c of list) {
     const pw = 1 + 0.25 * (c.stars - 1), br = c.stars >= 3 ? c.branch : null;
     if (c.id === 'crow' && br === 'a') { m.pickup = (m.pickup ?? 0) + 0.5; m.xp = (m.xp ?? 0) + 0.1; }
@@ -41,11 +50,13 @@ export function spiritMeta(meta, list) {
 
 /** Set-up that needs the game: extra cards, rerolls, revives. */
 export function initSpirits(g) {
+  const combos = combosOf(g.spirits.map((s) => s.id));
+  if (combos.length) g.later(3, () => g.banner(combos.map((c) => `${c.icon} 궁합 · ${c.name}`).join('  '), 'small'));
   for (const s of g.spirits) {
     s.x = g.player.x - 30 + s.slot * 60;
     s.y = g.player.y + 24;
     if (s.id === 'owl') {
-      g.spiritCards = (g.spiritCards ?? 0) + (s.br === 'a' ? 2 : 1);
+      g.spiritCards = (g.spiritCards ?? 0) + (s.br === 'a' ? 2 : 1) + (s.mod.cards ?? 0);
       if (s.br === 'b') g.rerolls = 3;
       if (s.awake) g.evoPullMul = 2;
     }
@@ -53,12 +64,13 @@ export function initSpirits(g) {
     if (s.id === 'bear' && s.awake) s.data.guard = 1;
     if (s.id === 'otter' && s.awake) s.data.saved = 1;
     if (s.id === 'cub' && s.awake) s.data.grow = 1;
+    if (s.id === 'cub') s.data.grow0 = s.mod.grow0 ?? 0;
   }
 }
 
 // ---------------------------------------------------------------- helpers
 
-const D = (g, s, mul = 1) => SPIRIT_HIT * g.player.stats.might * s.pw * mul;
+const D = (g, s, mul = 1) => SPIRIT_HIT * g.player.stats.might * s.pw * mul * s.mod.dmg;
 const foes = (g, x, y, r, n = 8) => g.nearestEnemies(x, y, r, n).filter((e) => !e.dead && !g.isCharmed(e) && e.def.behavior !== 'static');
 const nearestFoe = (g, x, y, r) => foes(g, x, y, r, 1)[0] ?? null;
 
@@ -133,9 +145,9 @@ const ACT = {
     const p = g.player;
     let n = 0;
     for (const k of g.pickups) {
-      if ((k.kind === 'coin' || k.kind === 'rice') && !k.magnet && (s.awake || dist2(k.x, k.y, p.x, p.y) < 420 ** 2)) {
+      if ((k.kind === 'coin' || k.kind === 'rice') && !k.magnet && (s.awake || s.mod.allCoins || dist2(k.x, k.y, p.x, p.y) < 420 ** 2)) {
         k.magnet = true;
-        if (++n >= (s.awake ? 99 : 3)) break;
+        if (++n >= (s.awake || s.mod.allCoins ? 99 : 3)) break;
       }
     }
     if (s.br === 'b') {
@@ -150,7 +162,7 @@ const ACT = {
   },
   otter(g, s) {
     const p = g.player;
-    p.heal(p.stats.maxHp * 0.04 * s.pw * (s.br === 'a' ? 2 : 1));
+    p.heal(p.stats.maxHp * 0.04 * s.pw * (s.br === 'a' ? 2 : 1) * (s.mod.heal ?? 1));
     g.texts.push({ x: p.x, y: p.y - 30, v: '🐟', t: 0, life: 0.8, order: true });
     if (s.br === 'b') {
       g.zones.push({ team: 'player', kind: 'water', x: p.x, y: p.y, r: 110, slow: 0.4, life: 2, t: 0 });
@@ -159,7 +171,7 @@ const ACT = {
     return 10;
   },
   gull(g, s) {
-    const dives = s.awake ? 5 : s.br === 'a' ? 3 : 1;
+    const dives = (s.awake ? 5 : s.br === 'a' ? 3 : 1) + (s.mod.dives ?? 0);
     const r = s.br === 'b' ? 140 : 70;
     const first = crowdSpot(g, g.player.x, g.player.y, 420);
     if (!first) return 0.5;
@@ -189,6 +201,13 @@ const ACT = {
     });
     lungeTo(s, ex, ey, 0.35);
     line(g, p.x, p.y, ex, ey, 'rgba(150, 110, 70, 0.7)', 30, 0.35);
+    // 땅울림: the worm bursts up where the charge ends.
+    const worm = s.mod.quake && g.spirits.find((o) => o.id === 'worm');
+    if (worm) g.later(0.35, () => {
+      area(g, ex, ey, 100, (o) => hit(g, worm, o, D(g, worm, 2), { from: { x: ex, y: ey }, stun: 1 }));
+      ring(g, ex, ey, 100, '#a8784a', 0.5);
+      g.fx.push({ type: 'puff', x: ex, y: ey, t: 0, life: 0.6, size: 50, tone: 'mud' });
+    });
     return 4;
   },
   bat(g, s) {
@@ -216,7 +235,7 @@ const ACT = {
   },
   fox(g, s) {
     const n = s.br === 'a' ? 2 : 1;
-    const life = 3.5 * (s.awake ? 1.5 : 1);
+    const life = 3.5 * (s.awake ? 1.5 : 1) * (s.mod.life ?? 1);
     for (let i = 0; i < n; i++) {
       g.spawnDecoy(life);
       const d = g.allies.at(-1);
@@ -251,7 +270,7 @@ const ACT = {
       w.bite = 0.2;
       hit(g, s, e, D(g, s, 0.6 * (s.br === 'b' && i === 0 ? 3 : 1)), { from: w });
     });
-    const max = s.br === 'a' ? 8 : 5;
+    const max = (s.br === 'a' ? 8 : 5) + (s.mod.packMax ?? 0);
     if (s.awake && pack.length >= max && g.time >= (s.data.howl ?? 0)) {
       s.data.howl = g.time + 10;
       area(g, p.x, p.y, 250, (e) => (e.stun = Math.max(e.stun ?? 0, e.isBoss ? 0.25 : 1)));
@@ -281,7 +300,7 @@ const ACT = {
     return 5;
   },
   cub(g, s) {
-    const grow = (s.data.grow = s.awake ? 1 : Math.min(1, (g.kills - (s.data.k0 ??= g.kills)) / 250));
+    const grow = (s.data.grow = s.awake ? 1 : Math.min(1, s.data.grow0 + (g.kills - (s.data.k0 ??= g.kills)) / 250));
     const stage = Math.floor(grow * 4);
     if (s.br === 'b' && stage > (s.data.roared ?? 0)) {
       s.data.roared = stage;
@@ -295,12 +314,12 @@ const ACT = {
     return 1.2;
   },
   turtle(g, s) {
-    shield(g, s, g.player.stats.maxHp * 0.08 * s.pw * (s.br === 'a' ? 2 : 1));
+    shield(g, s, g.player.stats.maxHp * 0.08 * s.pw * (s.br === 'a' ? 2 : 1) * (s.mod.shield ?? 1));
     return 10;
   },
   samjogo(g, s, dt) {
     const p = g.player;
-    const beams = (s.br === 'a' ? 2 : 1) + (s.awake ? 1 : 0);
+    const beams = (s.br === 'a' ? 2 : 1) + (s.awake ? 1 : 0) + (s.mod.beams ?? 0);
     s.data.angle = (s.data.angle ?? 0) + 2.2 * dt;
     s.data.beams = beams;
     s.data.tick = (s.data.tick ?? 0) - dt;
@@ -323,7 +342,7 @@ const ACT = {
     return 0;
   },
   dragonmaid(g, s) {
-    const p = g.player, r = s.br === 'a' ? 280 : 200;
+    const p = g.player, r = (s.br === 'a' ? 280 : 200) * (s.mod.radius ?? 1);
     const wave = () => {
       area(g, p.x, p.y, r, (e) => hit(g, s, e, D(g, s), { from: p }));
       g.zones.push({ team: 'player', kind: 'water', x: p.x, y: p.y, r, slow: 0.5, life: 2, t: 0 });
@@ -352,7 +371,7 @@ const ACT = {
     let from = p, e = nearestFoe(g, p.x, p.y, 320);
     if (!e) return 0.5;
     const seen = new Set();
-    for (let j = 0; j < (s.br === 'a' ? 8 : 4) && e; j++) {
+    for (let j = 0; j < (s.br === 'a' ? 8 : 4) + (s.mod.jumps ?? 0) && e; j++) {
       seen.add(e);
       line(g, from.x, from.y, e.x, e.y, 'rgba(160, 240, 255, 0.95)', 3, 0.3);
       hit(g, s, e, D(g, s, 2), { stun: s.awake ? 0.3 : 0 });
@@ -369,7 +388,7 @@ const ACT = {
   },
   baekho(g, s) {
     const p = g.player;
-    const line = s.br === 'a' ? 0.6 : 0.3;
+    const line = (s.br === 'a' ? 0.6 : 0.3) + (s.mod.execute ?? 0);
     const near = foes(g, p.x, p.y, 320, 20);
     const prey = near.find((e) => !e.isBoss && e.hp < e.maxHp * line) ?? (s.awake ? near.find((e) => e.isBoss && e.hp < e.maxHp * 0.1) : null);
     if (prey) {
@@ -388,7 +407,7 @@ const ACT = {
     const p = g.player;
     if (g.time >= (s.data.shieldAt ?? 0)) {
       s.data.shieldAt = g.time + 8;
-      shield(g, s, p.stats.maxHp * 0.1 * s.pw * (s.br === 'a' ? 2 : 1));
+      shield(g, s, p.stats.maxHp * 0.1 * s.pw * (s.br === 'a' ? 2 : 1) * (s.mod.shield ?? 1));
     }
     aura(g, s, 'venom', { kind: 'poison', r: 90 * (s.br === 'b' ? 1.5 : 1), dps: D(g, s, 0.8 * (s.br === 'b' ? 2 : 1)) });
     return 0;
@@ -412,7 +431,7 @@ function tick(g, s, dt) {
     }
   }
   if (s.id === 'haetae') {
-    const R = (60 + 15 * s.stars) * (s.br === 'a' ? 2 : 1);
+    const R = (60 + 15 * s.stars) * (s.br === 'a' ? 2 : 1) * (s.mod.range ?? 1);
     let eaten = 0;
     g.projectiles = g.projectiles.filter((pr) => {
       if (pr.team !== 'enemy' || dist2(pr.x, pr.y, p.x, p.y) > R * R) return true;
@@ -459,7 +478,7 @@ export function updateSpirits(g, dt) {
     s.cd -= dt;
     if (s.cd > 0) continue;
     const next = ACT[s.id]?.(g, s, dt) ?? 1;
-    s.cd = Math.max(0, next);
+    s.cd = Math.max(0, next * (next > 0.3 ? s.mod.cd : 1));
   }
 }
 
@@ -537,7 +556,7 @@ export function spiritOnKill(g, e) {
   for (const s of g.spirits) {
     if (s.id === 'wolf') {
       const pack = (s.data.pack ??= []);
-      if (pack.length < (s.br === 'a' ? 8 : 5) && Math.random() < 0.1) {
+      if (pack.length < (s.br === 'a' ? 8 : 5) + (s.mod.packMax ?? 0) && Math.random() < 0.1) {
         pack.push({ x: e.x, y: e.y, cd: 0.5, bite: 0 });
         g.fx.push({ type: 'puff', x: e.x, y: e.y, t: 0, life: 0.5, size: 16, tone: 'light' });
       }

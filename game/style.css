@@ -1591,3 +1591,17 @@ body { background: var(--night); }
 .pick-cards[data-n="5"] { grid-template-columns: repeat(5, minmax(0, 180px)); }
 @media (max-width: 720px) { .pick-cards[data-n="4"], .pick-cards[data-n="5"] { grid-template-columns: 1fr 1fr; max-width: 420px; gap: 10px; } }
 .reroll-btn { grid-column: 1 / -1; justify-self: center; padding: 8px 18px; border-radius: 999px; border: 2px solid #c9a8ff; background: rgba(40, 30, 60, 0.85); color: #f1e8d2; font: inherit; font-size: 15px; cursor: pointer; }
+
+/* 궁합 */
+.sp-combos { margin-top: 12px; }
+.sp-combo { display: flex; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 10px; background: rgba(255, 255, 255, 0.05); }
+.sp-combo.off { opacity: 0.45; }
+.sp-combo.on { background: rgba(143, 227, 192, 0.16); box-shadow: inset 0 0 0 1px rgba(143, 227, 192, 0.6); }
+.sp-combo-pair { font-size: 22px; min-width: 56px; text-align: center; letter-spacing: -2px; }
+.sp-combo b { display: block; font-size: 14px; }
+.sp-combo b i { font-style: normal; font-size: 11px; color: #10241c; background: #8fe3c0; border-radius: 6px; padding: 1px 5px; margin-left: 4px; }
+.sp-combo small { display: block; font-size: 11px; color: var(--hanji-dim); }
+.sp-combo-on { color: #8fe3c0; }
+.tab-emoji { display: inline-flex; align-items: center; justify-content: center; font-size: 22px; }
+.codex-emoji { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; font-size: 28px; box-shadow: inset 0 0 0 2px var(--gc); }
+.codex-cell.locked .codex-emoji { filter: brightness(0) opacity(0.5); }
