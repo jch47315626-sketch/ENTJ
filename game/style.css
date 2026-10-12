@@ -1534,3 +1534,54 @@ body { background: var(--night); }
 .hold-tip p b { color: #ffd98a; }
 @keyframes tipIn { from { opacity: 0; transform: translateY(4px); } }
 .hold-hint { margin: -4px 0 0; font-size: 12.5px; color: #c7b393; text-align: center; }
+
+/* ---------- 영물 (data/spirits.js) */
+.ac-spirit { align-self: stretch; }
+.sp-gacha, .sp-party, .sp-grade { margin-top: 12px; }
+.sp-gacha-head { display: flex; justify-content: space-between; align-items: baseline; }
+.sp-gacha-head > b { font-size: 18px; color: #8fe3c0; }
+.sp-gacha-head span { font-size: 13px; color: var(--hanji-dim); }
+.sp-gacha-head span b { color: #f2d27a; }
+.sp-rates { margin: 0; font-size: 12px; line-height: 1.6; }
+.sp-rates i { font-style: normal; font-weight: 700; }
+.sp-rates small { color: var(--hanji-dim); }
+.sp-gacha-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sp-draw { padding: 10px 6px; font-size: 16px; line-height: 1.2; }
+.sp-draw small { font-size: 12px; opacity: 0.85; }
+.sp-result { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.sp-result:not(.ten) { grid-template-columns: 1fr; justify-items: center; }
+.sp-pull { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 2px; border-radius: 10px; border: 2px solid var(--gc); background: rgba(0, 0, 0, 0.3); text-align: center; animation: sp-pop 0.45s backwards; animation-delay: calc(var(--i) * 0.08s); min-width: 64px; }
+.sp-pull .sp-ic { font-size: 26px; }
+.sp-pull b { font-size: 12px; }
+.sp-pull small { font-size: 10px; color: var(--hanji-dim); }
+.sp-pull.new small { color: #ffe08a; font-weight: 700; }
+.sp-pull.g4 { box-shadow: 0 0 14px var(--gc); }
+.sp-pull.g3 { box-shadow: 0 0 8px var(--gc); }
+@keyframes sp-pop { from { transform: scale(0.3) rotateY(90deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.sp-slots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sp-slot { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 86px; border-radius: 12px; border: 2px solid rgba(143, 227, 192, 0.6); background: rgba(0, 0, 0, 0.25); text-align: center; }
+.sp-slot .sp-ic { font-size: 30px; }
+.sp-slot.empty { border-style: dashed; color: var(--hanji-dim); font-size: 12px; }
+.sp-slot.locked { opacity: 0.45; }
+.sp-grade-head { display: flex; justify-content: space-between; align-items: baseline; }
+.sp-grade-head b { font-family: var(--font-brush); font-weight: 400; font-size: 22px; }
+.sp-grade-head small { font-size: 12px; color: var(--hanji-dim); }
+.sp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sp-card { display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 12px; border: 2px solid var(--gc); background: rgba(0, 0, 0, 0.28); }
+.sp-card.locked { border-color: rgba(255, 255, 255, 0.15); opacity: 0.7; }
+.sp-card.party { box-shadow: 0 0 0 2px #8fe3c0, 0 0 12px rgba(143, 227, 192, 0.5); }
+.sp-top { display: flex; gap: 8px; align-items: center; }
+.sp-top .sp-ic { font-size: 30px; width: 40px; text-align: center; }
+.sp-top b { display: block; font-size: 15px; }
+.sp-top small { display: block; font-size: 11px; color: var(--hanji-dim); }
+.sp-stars { color: #ffcf5a; font-size: 12px; letter-spacing: -1px; }
+.sp-stars i { font-style: normal; color: rgba(255, 255, 255, 0.18); }
+.sp-bar { position: relative; height: 16px; border-radius: 8px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
+.sp-bar i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, #5fd0a8, #8fe3c0); }
+.sp-bar span { position: relative; display: block; text-align: center; font-size: 11px; line-height: 16px; color: #fff; font-weight: 700; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9); }
+.sp-btns, .sp-branch { display: flex; gap: 4px; }
+.sp-btn, .sp-br { flex: 1; padding: 6px 2px; border-radius: 8px; border: 0; background: rgba(255, 255, 255, 0.1); color: var(--hanji); font: inherit; font-size: 12px; cursor: pointer; }
+.sp-btn.on, .sp-br.on { background: #8fe3c0; color: #10241c; font-weight: 700; }
+.sp-btn.up:not(:disabled) { background: linear-gradient(180deg, #ffd27a, #d89a2a); color: #2a1a06; font-weight: 700; }
+.sp-btn:disabled { opacity: 0.4; cursor: default; }
+.sp-br { font-size: 11px; border: 1px solid rgba(143, 227, 192, 0.4); background: transparent; }

@@ -2,7 +2,7 @@ import { GRADES } from '../data/meta.js';
 import { NANSE_CARDS } from '../data/nanse.js';
 
 const $ = (id) => document.getElementById(id);
-const MENUS = ['home', 'heroes', 'grow', 'map', 'prep', 'nanse', 'codex'];
+const MENUS = ['home', 'heroes', 'grow', 'map', 'prep', 'nanse', 'codex', 'spirit'];
 const SCREENS = [...MENUS, 'intro', 'levelup', 'pause', 'result'];
 export const starText = (n) => (n > 5 ? '★★★★★💀' : '★'.repeat(n) + '☆'.repeat(5 - n));
 

@@ -6,7 +6,8 @@ import { Tutorial } from './ui/tutorial.js';
 import { Sound } from './audio/sound.js';
 import { themeFor } from './audio/music.js';
 import { showScreen, renderIntro, renderChoices, renderResult } from './ui/screens.js';
-import { renderHome, renderHeroes, renderGrow, renderMap, renderPrep, renderNanse, renderCodex, setCodexTab } from './ui/menu.js';
+import { renderHome, renderHeroes, renderGrow, renderMap, renderPrep, renderNanse, renderCodex, setCodexTab, renderSpirit, setLastDraw } from './ui/menu.js';
+import { GACHA, SPIRITS, SPIRIT_GRADES, drawSpirits, starUp, setBranch, toggleCompanion, callSasin } from './data/spirits.js';
 import { loadSave, writeSave, outfitOf, encodeSave, decodeSave } from './core/save.js';
 import { runFacts, recordRun, checkAchievements, claimAchievement, readyCount } from './core/achieve.js';
 import { ACHIEVEMENTS } from './data/achievements.js';
@@ -19,7 +20,7 @@ import { ensureGearOptions, rollOptions, rerollLine, engraveCost, lineText, NAME
 import { UPGRADES } from './data/upgrades.js';
 import { helpById } from './data/help.js';
 import { STAGES } from './data/stages.js';
-import { refreshAltar, useTicket, payAltar, ALTAR_TIERS, ALTAR_MAX_TIER, altarTierOpen } from './data/altar.js';
+import { ESSENCE_PER_SASIN, refreshAltar, useTicket, payAltar, ALTAR_TIERS, ALTAR_MAX_TIER, altarTierOpen } from './data/altar.js';
 import { HEROES } from './data/heroes.js';
 
 const $ = (id) => document.getElementById(id);
@@ -235,7 +236,7 @@ function onState(state, g) {
 
 // ------------------------------------------------------------------ menus
 
-const RENDER = { home: renderHome, heroes: renderHeroes, grow: renderGrow, map: renderMap, prep: renderPrep, nanse: renderNanse, codex: renderCodex };
+const RENDER = { home: renderHome, heroes: renderHeroes, grow: renderGrow, map: renderMap, prep: renderPrep, nanse: renderNanse, codex: renderCodex, spirit: renderSpirit };
 let menu = 'home';
 
 /** Leaves any run and opens a menu screen. */
@@ -358,6 +359,44 @@ const act = {
   startEndless: () => newGame(ENDLESS_RUN),
   /** 사신의 제단: enter at 단계 `tier` against `guardian` (today's, or the one picked on a 사신의 날). */
   startAltar: (guardian, tier) => newGame({ altar: { guardian, tier } }),
+  /** 영물 뽑기: 1 or 10 draws for 영주. */
+  drawSpirit(n) {
+    const out = drawSpirits(save, n, n === 10 ? GACHA.ten : GACHA.one * n);
+    if (!out) return toast('🔮 영주가 모자라요. 사신의 제단에서 영기를 모아요!', false);
+    setLastDraw(out);
+    const best = Math.max(...out.map((d) => SPIRITS[d.id].grade));
+    sound.sfx(best >= 4 ? 'achieve' : best >= 3 ? 'evolve' : 'buy');
+    if (best >= 4) toast(`🌟 ${SPIRIT_GRADES[4].name} ${out.filter((d) => SPIRITS[d.id].grade === 4).map((d) => SPIRITS[d.id].name).join(', ')}!`);
+    writeSave(save);
+    refresh();
+  },
+  starSpirit(id) {
+    if (!starUp(save, id)) return;
+    const st = save.spirits[id].stars;
+    sound.sfx(st >= 5 ? 'achieve' : 'evolve');
+    toast(st >= 5 ? `🌟 ${SPIRITS[id].name} 각성!` : st === 3 ? `★3 ${SPIRITS[id].name} — 갈래를 골라요!` : `★${st} ${SPIRITS[id].name}`);
+    writeSave(save);
+    refresh();
+  },
+  branchSpirit(id, k) {
+    if (!setBranch(save, id, k)) return;
+    sound.sfx('pick');
+    writeSave(save);
+    refresh();
+  },
+  toggleCompanion(id) {
+    if (!toggleCompanion(save, id)) return;
+    sound.sfx('pick');
+    writeSave(save);
+    refresh();
+  },
+  callSasin(id) {
+    if (!callSasin(save, id, ESSENCE_PER_SASIN)) return;
+    sound.sfx('achieve');
+    toast(`✨ ${josa(SPIRITS[id].name, '이')} 응답했다! 동행 칸이 2칸이 돼요`);
+    writeSave(save);
+    refresh();
+  },
   /** Remember the 단계 chosen on the altar card. */
   setAltarTier(t) {
     save.altarTier = Math.max(1, Math.min(ALTAR_MAX_TIER, t));

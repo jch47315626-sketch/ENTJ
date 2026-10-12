@@ -11,6 +11,7 @@ import { ACHIEVEMENTS, ACH_GROUPS, progressOf } from '../data/achievements.js';
 import { heroUltimates } from '../data/upgrades.js';
 import { GYEOLGI, gyeolgiCost } from '../data/gyeolgi.js';
 import { dailyFor, todayKey, untilTomorrow } from '../data/daily.js';
+import { SPIRITS, SPIRIT_LIST, SPIRIT_GRADES, GACHA, STAR_DUPES, MAX_STARS, SASIN_STAR_ESSENCE, companionSlots, spiritOf, dupesForNext } from '../data/spirits.js';
 import { GUARDIANS, ALTAR_TICKETS, ESSENCE_PER_SASIN, ALTAR_TIERS, ALTAR_MAX_TIER, guardianOf, refreshAltar, altarTierOpen, wispWorth, clearBonus } from '../data/altar.js';
 import { josa } from '../core/korean.js';
 import { lineText, lineMax, engraveCost } from '../data/gearOptions.js';
@@ -253,6 +254,7 @@ function altarCard(save, sel, act) {
     const nb = ALTAR_TIERS[tier + 1].base;
     card.append(el('p', 'ac-lock', (save.altarBest ?? 0) < tier ? `🔒 ${tier}단계를 평정하면 ${tier + 1}단계가 열려요` : `🔒 ${tier + 1}단계: 전장 「${STAGES[nb].name}」을 먼저 평정하세요`));
   }
+  card.append(button(`🐾 영물 뽑기·동행 <small>영물 ${Object.keys(save.spirits ?? {}).length}/${SPIRIT_LIST.length}</small>`, 'plain-btn small ac-spirit', () => act.go('spirit')));
   card.append(el('p', 'ec-rule', `${josa(HEROES[sel.hero].name, '으로')} 출전 · 떠도는 <b>영기</b>를 모으면 판이 끝날 때 <b>영주</b>가 돼요. 2분 30초 뒤 수호 영수를 쓰러뜨리면 보너스!`));
   const none = a.tickets <= 0;
   if (g) card.append(button(none ? '🎟️ 오늘의 입장권을 다 썼어요' : `${g.icon} ${g.name}의 제단 입장`, 'altar-btn go', () => act.startAltar(gid, tier), none));
@@ -1007,4 +1009,107 @@ export function setHeroTab(tab, slot) {
 /** Opens the 도감 on its 기록 tab (save code). */
 export function setCodexTab(tab) {
   ui.codexTab = tab;
+}
+
+// =================================================================== 영물
+
+/** The last draw, shown at the top of the 영물 screen until the next one. */
+let lastDraw = null;
+export const setLastDraw = (d) => (lastDraw = d);
+
+const starPips = (n, max = 5) => `<span class="sp-stars">${'★'.repeat(n)}<i>${'★'.repeat(max - n)}</i></span>`;
+
+/** 🐾 영물: 뽑기 with 영주, the party, and every 영물 with its stars, 갈래 and 각성. */
+export function renderSpirit(save, sel, act) {
+  const body = $('spiritBody');
+  body.innerHTML = '';
+  const h = header('영물', save, act, '靈物');
+  h.querySelector('.coin-pill').innerHTML = `🔮 <b>${fmt(save.yeongju ?? 0)}</b>`;
+  body.append(h);
+  body.append(holdHint());
+
+  // 뽑기
+  const gc = el('div', 'grow-card sp-gacha');
+  const toPity = GACHA.pity - (save.pity ?? 0);
+  gc.append(el('div', 'sp-gacha-head', `<b>🔮 영물 뽑기</b><span>영주 <b>${fmt(save.yeongju ?? 0)}</b></span>`));
+  gc.append(el('p', 'sp-rates', [1, 2, 3, 4].map((g) => `<i style="color:${SPIRIT_GRADES[g].color}">${SPIRIT_GRADES[g].name} ${Math.round(SPIRIT_GRADES[g].rate * 1000) / 10}%</i>`).join(' · ') + ` <br><small>신수 확정까지 <b>${toPity}</b>뽑 · 중복은 별 올리기에, ★5 뒤 중복은 영주로 돌려받아요</small>`));
+  const row = el('div', 'sp-gacha-btns');
+  row.append(button(`1회 뽑기<br><small>🔮 ${GACHA.one}</small>`, 'seal-btn sp-draw', () => act.drawSpirit(1), (save.yeongju ?? 0) < GACHA.one));
+  row.append(button(`10회 뽑기<br><small>🔮 ${GACHA.ten} (10% 할인)</small>`, 'seal-btn sp-draw ten', () => act.drawSpirit(10), (save.yeongju ?? 0) < GACHA.ten));
+  gc.append(row);
+  if ((save.yeongju ?? 0) < GACHA.one) gc.append(el('p', 'hint', '🏯 사신의 제단에서 영기를 모으면 영주가 돼요.'));
+  if (lastDraw?.length) {
+    const res = el('div', `sp-result${lastDraw.length > 1 ? ' ten' : ''}`);
+    lastDraw.forEach((d, i) => {
+      const s = SPIRITS[d.id];
+      const c = el('div', `sp-pull g${s.grade}${d.isNew ? ' new' : ''}`, `<span class="sp-ic">${s.icon}</span><b>${s.name}</b><small>${d.isNew ? 'NEW!' : d.refund ? `🔮+${d.refund}` : '중복 +1'}</small>`);
+      c.style.setProperty('--gc', SPIRIT_GRADES[s.grade].color);
+      c.style.setProperty('--i', i);
+      res.append(c);
+    });
+    gc.append(res);
+  }
+  body.append(gc);
+
+  // 동행
+  const slots = companionSlots(save);
+  const party = el('div', 'grow-card sp-party');
+  party.append(el('div', 'sp-gacha-head', `<b>🐾 동행</b><span>${slots}칸${slots < 2 ? ' · 사신을 얻으면 2칸' : ''}</span>`));
+  const pr = el('div', 'sp-slots');
+  for (let i = 0; i < 2; i++) {
+    const id = save.companions?.[i];
+    const s = id && SPIRITS[id];
+    pr.append(el('div', `sp-slot${s ? '' : ' empty'}${i >= slots ? ' locked' : ''}`, s
+      ? `<span class="sp-ic">${s.icon}</span><b>${s.name}</b>${starPips(save.spirits[id].stars)}`
+      : i >= slots ? '🔒<small>사신과 함께 열려요</small>' : '<small>아래에서 영물을 눌러<br>동행으로 데려가요</small>'));
+  }
+  party.append(pr);
+  party.append(el('p', 'hint', '동행 영물은 모든 영웅과 함께 싸워요. 싸우는 모습은 곧 열려요!'));
+  body.append(party);
+
+  // 도감: grade by grade.
+  for (const g of [5, 4, 3, 2, 1]) {
+    const box = el('div', 'grow-card sp-grade');
+    const list = SPIRIT_LIST.filter((s) => s.grade === g);
+    const have = list.filter((s) => spiritOf(save, s.id)).length;
+    box.append(el('div', 'sp-grade-head', `<b style="color:${SPIRIT_GRADES[g].color}">${SPIRIT_GRADES[g].name}</b><small>${have}/${list.length}${g === 5 ? ` · 사신 정수 ${save.essence ?? 0}/${ESSENCE_PER_SASIN}로 불러요` : ''}</small>`));
+    const grid = el('div', 'sp-grid');
+    for (const s of list) grid.append(spiritCard(save, s, act));
+    box.append(grid);
+    body.append(box);
+  }
+}
+
+function spiritCard(save, s, act) {
+  const own = spiritOf(save, s.id);
+  const c = el('div', `sp-card g${s.grade}${own ? '' : ' locked'}${save.companions?.includes(s.id) ? ' party' : ''}`);
+  c.style.setProperty('--gc', SPIRIT_GRADES[s.grade].color);
+  const need = own ? (s.grade === 5 ? SASIN_STAR_ESSENCE[own.stars] : dupesForNext(own.stars)) : 0;
+  const have = own ? (s.grade === 5 ? save.essence ?? 0 : own.dupes) : 0;
+  const maxed = own && own.stars >= MAX_STARS;
+  c.append(el('div', 'sp-top', `<span class="sp-ic">${own ? s.icon : '❔'}</span><div><b>${s.name}</b><small>${s.role}</small>${own ? starPips(own.stars) : ''}</div>`));
+  if (own) {
+    const pct = maxed ? 100 : Math.min(100, (have / need) * 100);
+    c.append(el('div', 'sp-bar', `<i style="width:${pct}%"></i><span>${maxed ? '★5 각성' : s.grade === 5 ? `정수 ${have}/${need}` : `중복 ${have}/${need}`}</span>`));
+    const btns = el('div', 'sp-btns');
+    const inParty = save.companions?.includes(s.id);
+    btns.append(button(inParty ? '동행 중' : '동행', `sp-btn${inParty ? ' on' : ''}`, () => act.toggleCompanion(s.id)));
+    if (!maxed) btns.append(button('★ 올리기', 'sp-btn up', () => act.starSpirit(s.id), have < need));
+    c.append(btns);
+    if (own.stars >= 3) {
+      const br = el('div', 'sp-branch');
+      for (const k of ['a', 'b']) br.append(button(`${s.branches[k].name}`, `sp-br${own.branch === k ? ' on' : ''}`, () => act.branchSpirit(s.id, k)));
+      c.append(br);
+    }
+  } else if (s.grade === 5) {
+    c.append(button(`✨ 정수 ${ESSENCE_PER_SASIN}로 부르기`, 'sp-btn up', () => act.callSasin(s.id), (save.essence ?? 0) < ESSENCE_PER_SASIN));
+  }
+  holdTip(c, () => tipHtml(`${s.icon} ${s.name} <small>${SPIRIT_GRADES[s.grade].name} · ${s.role}</small>`, [
+    s.base,
+    `★마다 위력이 커져요${own ? ` — 지금 ★${own.stars}` : ''}`,
+    `<b>★3 갈래</b> (언제든 바꿀 수 있어요)<br>A ${s.branches.a.name} — ${s.branches.a.desc}<br>B ${s.branches.b.name} — ${s.branches.b.desc}${own?.branch ? `<br>고른 갈래: <b>${s.branches[own.branch].name}</b>` : ''}`,
+    `<b>★5 각성</b> — ${s.awaken}`,
+    s.grade === 5 ? `사신 정수로만 불러요 (${ESSENCE_PER_SASIN}개) · 별도 정수로 올려요 (${SASIN_STAR_ESSENCE.slice(1).join(' · ')})` : `뽑기로 만나요 · ★5까지 중복 ${STAR_DUPES.reduce((a, b) => a + b, 0)}장`,
+  ]));
+  return c;
 }
