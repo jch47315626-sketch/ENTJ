@@ -107,6 +107,12 @@ export function renderResult(g, won, extra = {}) {
     $('resultText').textContent = `${fmt(en.time)} 버티고 적장 ${en.bosses}명을 쓰러뜨렸다.${en.isNew ? '' : ` (최고 ${fmt(en.best.time)})`}`;
   }
   $('nextBtn').hidden = !(won && g.stage.next) || !!g.stage.daily || !!en;
+  // Dungeons: try again right away, or go back to that dungeon's own screen.
+  const mode = g.stage.altar ? 'altar' : g.stage.daily ? 'daily' : g.stage.endless ? 'endless' : null;
+  $('toMapBtn').textContent = { altar: '🏯 제단으로', daily: '📅 오늘의 전장으로', endless: '♾️ 무한 전장으로' }[mode] ?? '🗺️ 전장으로';
+  const tickets = extra.altar?.tickets;
+  $('retryBtn').textContent = mode === 'altar' ? `🔁 다시 도전 · 🎟️ ${tickets ?? 0}` : mode ? '🔁 다시 도전' : '다시 출진';
+  $('retryBtn').disabled = mode === 'altar' && !(tickets > 0);
   const r = g.reward;
   const rows = [];
   const al = extra.altar;

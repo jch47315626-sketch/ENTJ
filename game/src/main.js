@@ -137,6 +137,7 @@ function onState(state, g) {
   } else if (state === 'paused') {
     sound.stopMusic();
     hud.fillPause(g);
+    $('quitBtn').textContent = { altar: '🏯 제단으로', daily: '📅 오늘의 전장으로', endless: '♾️ 무한 전장으로' }[dungeonOfRun()] ?? '처음으로';
     showScreen('pause');
   } else if (state === 'play') {
     sound.startMusic(); // resume this field's theme
@@ -635,10 +636,18 @@ $('homeSave').addEventListener('click', () => {
 });
 $('pauseBtn').addEventListener('click', () => game?.togglePause());
 $('resumeBtn').addEventListener('click', () => game?.togglePause());
-$('quitBtn').addEventListener('click', () => askLeave(() => toMenu('home')));
+/** After a dungeon run, its own screen (the home sheet) is where the player goes back to. */
+const dungeonOfRun = () => (runAltar ? 'altar' : runDaily ? 'daily' : runEndless ? 'endless' : null);
+function backFromRun(fallback) {
+  const k = dungeonOfRun();
+  if (!k) return toMenu(fallback);
+  setSheet(k);
+  toMenu('home');
+}
+$('quitBtn').addEventListener('click', () => askLeave(() => backFromRun('home')));
 $('retryBtn').addEventListener('click', () => newGame(replayMode()));
 $('homeBtn').addEventListener('click', () => toMenu('home'));
-$('toMapBtn').addEventListener('click', () => toMenu('map'));
+$('toMapBtn').addEventListener('click', () => backFromRun('map'));
 $('nextBtn').addEventListener('click', () => {
   const next = game?.stage.next;
   if (!next) return;
