@@ -3,7 +3,7 @@ import { STAGES } from './stages.js';
 import { SPIRITS, COMBOS } from './spirits.js';
 
 /**
- * 업적: goals with a 냥 reward (영주 for the 사신의 제단 ones, `currency`), claimed from 도감 → 업적.
+ * 업적: goals with a 냥 reward (영주 for the 사신의 제단 ones, `currency`), claimed from 🎁 보상.
  * `check(save, run)` sees the lifetime save and, at the end of a battle,
  * that battle's facts (`run`, see runFacts in core/achieve.js; null when
  * checked from the menus). Groups only order the list.

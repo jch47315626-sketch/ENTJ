@@ -1689,3 +1689,19 @@ body { background: var(--night); }
 .coupon-out.ok b { font-size: 17px; color: #8fe3c0; }
 .coupon-out.bad { color: #ff9a8a; }
 .coupon-sheet .dc-head { padding-right: 44px; }
+
+/* ---------- 4메뉴: 재화 줄, 강화 탭, 보상 */
+.page-head .purse { display: flex; gap: 3px; flex-wrap: nowrap; justify-content: flex-end; min-width: 0; }
+.page-head .purse .coin-pill { font-size: 12px; padding: 3px 7px; white-space: nowrap; }
+.page-head .purse .coin-pill img { width: 16px; height: 16px; }
+.sub-tabs.power-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; flex-wrap: nowrap; }
+.sub-tabs.power-tabs .sub-tab { min-width: 0; padding: 8px 2px; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: clip; }
+.todo-card { margin-top: 12px; }
+.todo-row { display: flex; align-items: center; gap: 10px; padding: 8px 6px; border-top: 1px solid rgba(255, 255, 255, 0.07); }
+.todo-row:first-of-type { border-top: 0; }
+.todo-row > div { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.todo-row b { font-size: 15px; }
+.todo-row small { font-size: 12px; color: var(--hanji-dim); }
+.todo-row.done { opacity: 0.6; }
+.todo-check { flex: none; width: 30px; text-align: center; font-size: 20px; }
+.todo-row .seal-btn.small { padding: 6px 12px; font-size: 14px; }

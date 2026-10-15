@@ -12,7 +12,7 @@ import { heroUltimates } from '../data/upgrades.js';
 import { GYEOLGI, gyeolgiCost } from '../data/gyeolgi.js';
 import { dailyFor, todayKey, untilTomorrow } from '../data/daily.js';
 import { SPIRITS, SPIRIT_LIST, SPIRIT_GRADES, GACHA, STAR_DUPES, MAX_STARS, SASIN_STAR_ESSENCE, COMBOS, combosOf, companionSlots, spiritOf, dupesForNext, FIRST_SPIRIT_RUNS, altarRunsDone } from '../data/spirits.js';
-import { GUARDIANS, ALTAR_TICKETS, ESSENCE_PER_SASIN, ALTAR_TIERS, ALTAR_MAX_TIER, guardianOf, refreshAltar, altarTierOpen, wispWorth, clearBonus } from '../data/altar.js';
+import { GUARDIANS, ALTAR_TICKETS, ESSENCE_PER_SASIN, ALTAR_TIERS, ALTAR_MAX_TIER, guardianOf, dayNumber, refreshAltar, altarTierOpen, wispWorth, clearBonus } from '../data/altar.js';
 import { josa } from '../core/korean.js';
 import { lineText, lineMax, engraveCost } from '../data/gearOptions.js';
 import { HELP } from '../data/help.js';
@@ -40,7 +40,7 @@ const itemName = (save, item) => `${item.name}${forgeLv(save, item) ? ` +${forge
 const SLOT_ICON = { head: '🪖', body: '🛡️', charm: '📿', wrist: '💠', belt: '🎗️', feet: '👢' };
 
 // Remembered between renders: which tab or card is open on each screen.
-const ui = { heroTab: 'gear', slot: 'head', codexTab: 'ach', mapStage: null };
+const ui = { heroTab: 'gear', growTab: 'secret', slot: 'head', codexTab: 'hero', mapStage: null };
 
 function el(tag, cls, html) {
   const e = document.createElement(tag);
@@ -151,8 +151,54 @@ function header(title, save, act, seal = '') {
   home.setAttribute('aria-label', '홈으로');
   h.append(home);
   h.append(el('h2', 'page-title', `<span>${title}</span>${seal ? sealOf(seal) : ''}`));
-  h.append(el('span', 'coin-pill', `${COIN()}<b>${fmt(save.money)}</b>`));
+  h.append(purse(save));
   return h;
+}
+
+/** The same purse on every screen: 냥, and 영주 · 결기수정 once the player has met them. */
+function purse(save) {
+  const box = el('span', 'purse');
+  box.append(el('span', 'coin-pill', `${COIN()}<b>${fmt(save.money)}</b>`));
+  if ((save.yeongju ?? 0) > 0 || (save.altarRuns ?? 0) > 0) box.append(el('span', 'coin-pill yj', `🔮<b>${fmt(save.yeongju ?? 0)}</b>`));
+  if ((save.crystals ?? 0) > 0 || Object.keys(save.gyeolgi ?? {}).length) box.append(el('span', 'coin-pill gem', `💎<b>${fmt(save.crystals ?? 0)}</b>`));
+  return box;
+}
+
+// ------------------------------------------------------------ 메뉴 묶음
+
+/** ⚔️ 출진: 전장 지도 · 난세. */
+function sortieTabs(act, current) {
+  return tabStrip([['map', '🗺️ 전장'], ['nanse', '🔥 난세']], current, (id) => act.go(id));
+}
+
+/** 💪 강화: 장비 · 제련 · 비전 · 결기 · 영물 (영물 once the altar has been tried). */
+const POWER_TABS = [['gear', '🛡️ 장비', 'heroes'], ['forge', '🔨 제련', 'heroes'], ['secret', '📜 비전', 'grow'], ['gyeolgi', '💎 결기', 'grow'], ['spirit', '🐾 영물', 'spirit']];
+export const spiritOpen = (save) => (save.altarRuns ?? 0) > 0 || Object.keys(save.spirits ?? {}).length > 0;
+function powerTabs(save, act, current) {
+  const tabs = POWER_TABS.filter(([id]) => id !== 'spirit' || spiritOpen(save));
+  const strip = tabStrip(tabs.map(([id, name]) => [id, name]), current, (id) => goPower(act, id));
+  strip.classList.add('power-tabs');
+  return strip;
+}
+/** Opens one 강화 tab (whichever screen holds it). */
+export function goPower(act, id) {
+  const t = POWER_TABS.find((x) => x[0] === id) ?? POWER_TABS[0];
+  if (t[2] === 'heroes') ui.heroTab = id;
+  if (t[2] === 'grow') ui.growTab = id;
+  act.go(t[2]);
+}
+
+/** The three heroes to choose between (장비 · 제련 · 비전 are per hero). */
+function heroPicker(save, sel, act) {
+  const pick = el('div', 'hero-pick');
+  for (const h of Object.values(HEROES)) {
+    const b = button('', `hp-card${h.id === sel.hero ? ' on' : ''}`, () => act.pickHero(h.id), !h.available);
+    b.append(portrait(h, 56));
+    b.append(el('span', 'hp-name', h.name));
+    b.append(el('span', 'hp-role', h.role));
+    pick.append(b);
+  }
+  return pick;
 }
 
 /** Banner colour behind each hero's portrait (as on the key art's flags). */
@@ -299,7 +345,7 @@ function altarCard(save, sel, act) {
     card.append(el('p', 'ac-lock', (save.altarBest ?? 0) < tier ? `🔒 ${tier}단계를 평정하면 ${tier + 1}단계가 열려요` : `🔒 ${tier + 1}단계: 전장 「${STAGES[nb].name}」을 먼저 평정하세요`));
   }
   if (!save.spiritGift) card.append(el('p', 'ac-lock', `🐾 제단을 <b>${Math.max(1, FIRST_SPIRIT_RUNS - altarRunsDone(save))}판</b> 더 돌면 첫 영물이 찾아와요`));
-  card.append(button(`🐾 영물 뽑기·동행 <small>영물 ${Object.keys(save.spirits ?? {}).length}/${SPIRIT_LIST.length}</small>`, 'plain-btn small ac-spirit', () => act.go('spirit')));
+  card.append(button(`🐾 영물 뽑기·동행 <small>영물 ${Object.keys(save.spirits ?? {}).length}/${SPIRIT_LIST.length}</small>`, 'plain-btn small ac-spirit', () => goPower(act, 'spirit')));
   card.append(el('p', 'ec-rule', `${josa(HEROES[sel.hero].name, '으로')} 출전 · 떠도는 <b>영기</b>를 모으면 판이 끝날 때 <b>영주</b>가 돼요. 2분 30초 뒤 수호 영수를 쓰러뜨리면 보너스!`));
   const none = a.tickets <= 0;
   if (g) card.append(button(none ? '🎟️ 오늘의 입장권을 다 썼어요' : `${g.icon} ${g.name}의 제단 입장`, 'altar-btn go', () => act.startAltar(gid, tier), none));
@@ -368,20 +414,17 @@ function dailyCard(save, act) {
 export function renderHeroes(save, sel, act) {
   const body = $('heroesBody');
   body.innerHTML = '';
-  body.append(header('영웅', save, act, '英雄'));
-
-  // Hero picker.
-  const pick = el('div', 'hero-pick');
-  for (const h of Object.values(HEROES)) {
-    const b = button('', `hp-card${h.id === sel.hero ? ' on' : ''}`, () => act.pickHero(h.id), !h.available);
-    b.append(portrait(h, 56));
-    b.append(el('span', 'hp-name', h.name));
-    b.append(el('span', 'hp-role', h.role));
-    pick.append(b);
-  }
-  body.append(pick);
+  body.append(header('강화', save, act, '強化'));
+  if (ui.heroTab !== 'forge') ui.heroTab = 'gear';
+  body.append(powerTabs(save, act, ui.heroTab));
+  body.append(heroPicker(save, sel, act));
 
   const h = HEROES[sel.hero];
+  if (ui.heroTab === 'forge') {
+    body.append(holdHint());
+    body.append(forgePanel(save, h, act));
+    return;
+  }
   const about = el('div', 'style-card');
   about.innerHTML = `<small>${h.title} · ${h.role}</small><p>${h.blurb}</p>
     <small class="kit">고유기 <b>${SPECIALS[h.special].name}</b> · 무기 ${WEAPONS[h.weapon].levels.map((w) => w.name).join(' → ')}</small>`;
@@ -396,13 +439,7 @@ export function renderHeroes(save, sel, act) {
   }
   body.append(ultCard);
   body.append(holdHint());
-
-  body.append(tabStrip([['gear', '🛡️ 장비'], ['forge', '🔨 제련']], ui.heroTab, (id) => {
-    ui.heroTab = id;
-    renderHeroes(save, sel, act);
-  }));
-  if (ui.heroTab === 'forge') body.append(forgePanel(save, h, act));
-  else body.append(gearPanel(save, h, act));
+  body.append(gearPanel(save, h, act));
 }
 
 /** Paper doll around the hero, then the chosen slot's grades. */
@@ -535,7 +572,10 @@ function forgePanel(save, h, act) {
 export function renderGrow(save, sel, act) {
   const body = $('growBody');
   body.innerHTML = '';
-  body.append(header('성장', save, act, '成長'));
+  body.append(header('강화', save, act, '強化'));
+  if (ui.growTab !== 'gyeolgi') ui.growTab = 'secret';
+  body.append(powerTabs(save, act, ui.growTab));
+  if (ui.growTab === 'secret') body.append(heroPicker(save, sel, act));
   const grid = el('div', 'grow-grid');
 
   // 결기 상점: 무한 전장's 결기수정 buy permanent stacks.
@@ -566,7 +606,7 @@ export function renderGrow(save, sel, act) {
     gy.append(row);
   }
   if (!(save.crystals ?? 0) && !Object.keys(save.gyeolgi ?? {}).length) gy.append(el('p', 'hint', '♾️ 무한 전장에서는 냥 대신 결기수정이 떨어져요. 오래 버틸수록, 어려운 전장일수록 많이 모여요.'));
-  grid.append(gy);
+  if (ui.growTab === 'gyeolgi') grid.append(gy);
 
   const sec = el('div', 'grow-card secret-card');
   sec.append(secHead('비전', '秘傳', '영웅별 · 출진할 때 이 스킬을 들고 시작'));
@@ -584,7 +624,7 @@ export function renderGrow(save, sel, act) {
     ]));
     sec.append(row);
   }
-  grid.append(sec);
+  if (ui.growTab === 'secret') grid.append(sec);
   body.append(grid);
 }
 
@@ -655,7 +695,8 @@ function routeSvg(ids, save) {
 export function renderMap(save, sel, act) {
   const body = $('mapBody');
   body.innerHTML = '';
-  body.append(header('전장', save, act, '戰場'));
+  body.append(header('출진', save, act, '出陣'));
+  body.append(sortieTabs(act, 'map'));
   const cur = ui.mapStage ?? sel.stage;
   // Themes: 삼한 통일 · 양길의 등장 (each its own map).
   ui.mapChapter ??= chapterOf(STAGES[cur]);
@@ -755,7 +796,7 @@ export function renderPrep(save, sel, act) {
     act.go('heroes');
   });
   const secrets = SECRETS.filter((s) => s.hero === h.id && save.secrets.includes(s.id)).map((s) => s.name);
-  sec('비전', secrets.length ? `📜 ${secrets.join(', ')}` : '없음', () => act.go('grow'));
+  sec('비전', secrets.length ? `📜 ${secrets.join(', ')}` : '없음', () => goPower(act, 'secret'));
   sec('전장', `${starText(st.difficulty.stars)} ${st.name} · 적장 ${boss.name}`, () => act.go('map'));
   sec('전투력', `❤️ ${Math.round(h.stats.maxHp + (m.maxHp ?? 0))} · ⚔️ ×${(h.stats.might * (1 + (m.might ?? 0))).toFixed(2)} · 🛡️ ${+(h.stats.armor + (m.armor ?? 0)).toFixed(1)} (피해 −${Math.round(armorCut(h.stats.armor + (m.armor ?? 0)) * 100)}%)`);
   body.append(card);
@@ -784,7 +825,8 @@ export function renderPrep(save, sel, act) {
 export function renderNanse(save, sel, act) {
   const body = $('nanseBody');
   body.innerHTML = '';
-  body.append(header('난세 단계', save, act, '亂世'));
+  body.append(header('출진', save, act, '出陣'));
+  body.append(sortieTabs(act, 'nanse'));
   // Battlefield cards: only pacified ones can carry 난세.
   const row = el('div', 'nanse-stages');
   for (const id of STAGE_ORDER) {
@@ -852,10 +894,11 @@ function nansePanel(save, sel, act, cleared) {
 // =================================================================== 도감
 
 export function renderCodex(save, sel, act) {
+  if (ui.codexTab === 'ach') ui.codexTab = 'hero'; // 업적 moved to 🎁 보상
   const body = $('codexBody');
   body.innerHTML = '';
   body.append(header('도감', save, act, '圖鑑'));
-  const tabs = [['ach', '업적'], ['hero', '영웅'], ['weapon', '무기'], ['gear', '장비'], ['spirit', '영물'], ['foe', '적'], ['record', '기록'], ['help', '도움말']];
+  const tabs = [['hero', '영웅'], ['weapon', '무기'], ['gear', '장비'], ['spirit', '영물'], ['foe', '적'], ['record', '기록'], ['help', '도움말']];
   const strip = tabStrip(tabs.map(([id, name]) => [id, `${id === 'spirit' ? '<span class="tab-img tab-emoji">🐾</span>' : img(`icon/tab-${id}`, 'tab-img')}<b>${name}</b>`]), ui.codexTab, (id) => {
     ui.codexTab = id;
     renderCodex(save, sel, act);
@@ -894,10 +937,6 @@ export function renderCodex(save, sel, act) {
   };
   body.append(holdHint());
 
-  if (ui.codexTab === 'ach') {
-    body.append(achPanel(save, act));
-    return;
-  }
   if (ui.codexTab === 'help') {
     const box = el('div', 'help-box');
     const replay = button('▶ 첫 판 튜토리얼 다시 보기', 'plain-btn small replay-btn');
@@ -1114,9 +1153,8 @@ const starPips = (n, max = 5) => `<span class="sp-stars">${'★'.repeat(n)}<i>${
 export function renderSpirit(save, sel, act) {
   const body = $('spiritBody');
   body.innerHTML = '';
-  const h = header('영물', save, act, '靈物');
-  h.querySelector('.coin-pill').innerHTML = `🔮 <b>${fmt(save.yeongju ?? 0)}</b>`;
-  body.append(h);
+  body.append(header('강화', save, act, '強化'));
+  body.append(powerTabs(save, act, 'spirit'));
   body.append(holdHint());
 
   // 뽑기
@@ -1258,4 +1296,58 @@ export function openCoupon(act) {
   back.addEventListener('click', (e) => e.target === back && close());
   $('app').append(back);
   setTimeout(() => input.focus(), 50);
+}
+
+// =================================================================== 보상
+
+/** Open a home dungeon sheet (오늘의 전장 · 사신의 제단 · 무한 전장) on the next home render. */
+export const setSheet = (kind) => (ui.sheet = kind);
+
+/** 🎁 보상: 오늘 할 일, rewards waiting (업적 · 도감), 쿠폰, and the 업적 list. */
+export function renderReward(save, sel, act) {
+  const body = $('rewardBody');
+  body.innerHTML = '';
+  body.append(header('보상', save, act, '報償'));
+
+  // 오늘 할 일
+  const today = el('div', 'grow-card todo-card');
+  today.append(el('div', 'sp-gacha-head', '<b>📋 오늘 할 일</b><span>매일 0시에 새로</span>'));
+  const d = dailyFor(todayKey());
+  const dDone = save.daily?.date === d.date && save.daily.cleared;
+  const a = refreshAltar(save);
+  const todo = (done, icon, text, sub, btnText, onGo) => {
+    const row = el('div', `todo-row${done ? ' done' : ''}`, `<span class="todo-check">${done ? '✅' : icon}</span><div><b>${text}</b><small>${sub}</small></div>`);
+    if (!done && onGo) row.append(button(btnText, 'plain-btn small', onGo));
+    today.append(row);
+  };
+  todo(dDone, '📅', '오늘의 전장 첫 승리', dDone ? '오늘 보상을 받았어요' : `${HEROES[d.heroId].name} · ${STAGES[d.stageId].name} · 🪙 ${fmt(d.reward)}`, '도전', () => act.startDaily());
+  todo(a.tickets <= 0, '🏯', '사신의 제단', a.tickets > 0 ? `입장권 ${a.tickets}장 남음 · 영기를 모아 영주로` : '오늘 입장권을 다 썼어요', '입장', () => act.openSheet('altar'));
+  if (!guardianOf()) {
+    const got = (save.altar?.essenceDay ?? -1) >= dayNumber();
+    todo(got, '✨', '사신의 날 · 사신 정수', got ? '오늘 정수를 받았어요' : '제단을 평정하면 사신 정수 +1', '입장', () => act.openSheet('altar'));
+  }
+  body.append(today);
+
+  // 받을 보상
+  const achReady = ACHIEVEMENTS.filter((x) => save.ach?.[x.id] === 'ready').length;
+  const foeReady = [...FOES(), ...GENERALS()].reduce((n, f) => n + Math.max(0, codexEntry(save, BOSSES[f.id] && !ENEMIES[f.id] ? 'boss' : 'foe', f.id).ready), 0);
+  const spReady = SPIRIT_LIST.reduce((n, x) => n + Math.max(0, codexEntry(save, 'spirit', x.id).ready), 0);
+  const box = el('div', 'grow-card todo-card');
+  box.append(el('div', 'sp-gacha-head', `<b>🎁 받을 보상</b><span>${achReady + foeReady + spReady ? `${achReady + foeReady + spReady}개` : '모두 받았어요'}</span>`));
+  const line = (icon, text, n, onGet, onSee) => {
+    const row = el('div', `todo-row${n ? '' : ' done'}`, `<span class="todo-check">${icon}</span><div><b>${text}</b><small>${n ? `${n}개 받을 수 있어요` : '받을 게 없어요'}</small></div>`);
+    if (n) row.append(button('모두 받기', 'seal-btn small', onGet));
+    else if (onSee) row.append(button('보기', 'plain-btn small', onSee));
+    box.append(row);
+  };
+  line('🏆', '업적', achReady, () => act.claimAllAch(), null);
+  line('⚔️', '도감 · 적과 적장', foeReady, () => act.claimCodexAll(['foe', 'boss']), () => act.openCodex('foe'));
+  if (spiritOpen(save)) line('🐾', '도감 · 영물', spReady, () => act.claimCodexAll(['spirit']), () => act.openCodex('spirit'));
+  const cp = el('div', 'todo-row', '<span class="todo-check">🎟️</span><div><b>쿠폰</b><small>코드를 넣으면 선물을 받아요</small></div>');
+  cp.append(button('입력', 'plain-btn small', () => openCoupon(act)));
+  box.append(cp);
+  body.append(box);
+
+  body.append(holdHint());
+  body.append(achPanel(save, act));
 }

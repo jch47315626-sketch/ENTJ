@@ -6,7 +6,7 @@ import { Tutorial } from './ui/tutorial.js';
 import { Sound } from './audio/sound.js';
 import { themeFor } from './audio/music.js';
 import { showScreen, renderIntro, renderChoices, renderResult } from './ui/screens.js';
-import { renderHome, renderHeroes, renderGrow, renderMap, renderPrep, renderNanse, renderCodex, setCodexTab, renderSpirit, setLastDraw, openCoupon } from './ui/menu.js';
+import { renderHome, renderHeroes, renderGrow, renderMap, renderPrep, renderNanse, renderCodex, setCodexTab, renderSpirit, setLastDraw, openCoupon, renderReward, setSheet } from './ui/menu.js';
 import { redeemCoupon } from './core/coupon.js';
 import { GACHA, SPIRITS, SPIRIT_GRADES, drawSpirits, starUp, setBranch, toggleCompanion, callSasin, countRunForGift } from './data/spirits.js';
 import { loadSave, writeSave, outfitOf, encodeSave, decodeSave } from './core/save.js';
@@ -260,7 +260,7 @@ function onState(state, g) {
 
 // ------------------------------------------------------------------ menus
 
-const RENDER = { home: renderHome, heroes: renderHeroes, grow: renderGrow, map: renderMap, prep: renderPrep, nanse: renderNanse, codex: renderCodex, spirit: renderSpirit };
+const RENDER = { home: renderHome, heroes: renderHeroes, grow: renderGrow, map: renderMap, prep: renderPrep, nanse: renderNanse, codex: renderCodex, spirit: renderSpirit, reward: renderReward };
 let menu = 'home';
 
 /** Leaves any run and opens a menu screen. */
@@ -317,7 +317,7 @@ function menuTips(name) {
   if (name === 'home' && save.codex.runs >= 1) showTip('modes');
   if ((name === 'nanse' || name === 'prep') && save.best?.[sel.stage]) showTip('nanse');
   if (name === 'heroes' && save.codex.runs >= 1) showTip('gear');
-  if (name === 'codex' && readyCount(save)) showTip('ach');
+  if (name === 'reward' && readyCount(save)) showTip('ach');
   if (name === 'heroes' && mine.length) {
     showTip('gearOpts');
     if (lines.some((l) => l.special)) showTip('bigi');
@@ -352,7 +352,7 @@ const spend = (cost) => {
 function checkMenuAchievements() {
   const fresh = checkAchievements(save);
   if (fresh.length) {
-    toast(`🏆 업적 달성! ${fresh.map((a) => a.name).join(', ')} — 도감에서 보상 받기`);
+    toast(`🏆 업적 달성! ${fresh.map((a) => a.name).join(', ')} — 🎁 보상에서 받기`);
     setTimeout(() => sound.sfx('achieve'), 250);
   }
   updateBadge();
@@ -372,10 +372,9 @@ function paidToast(label, got) {
 
 function updateBadge() {
   const n = readyCount(save) + codexReadyCount(save);
-  const b = $('bottomNav').querySelector('[data-go="codex"]');
+  // Everything waiting to be taken (업적 · 도감 단계) shows on 🎁 보상.
+  const b = $('bottomNav').querySelector('[data-go="reward"]');
   b.dataset.badge = n ? String(n) : '';
-  // 🐾 영물 joins the menu once the altar has been tried (or a 영물 is owned).
-  $('bottomNav').querySelector('[data-go="spirit"]').hidden = !((save.altarRuns ?? 0) > 0 || Object.keys(save.spirits ?? {}).length);
 }
 
 /** Saves, plays a purchase sound and redraws. */
@@ -396,6 +395,15 @@ const act = {
   startEndless: () => newGame(ENDLESS_RUN),
   /** 사신의 제단: enter at 단계 `tier` against `guardian` (today's, or the one picked on a 사신의 날). */
   startAltar: (guardian, tier) => newGame({ altar: { guardian, tier } }),
+  /** From 🎁 보상: open a home dungeon sheet, or a 도감 tab. */
+  openSheet(kind) {
+    setSheet(kind);
+    go('home');
+  },
+  openCodex(tab) {
+    setCodexTab(tab);
+    go('codex');
+  },
   /** 🎁 쿠폰: check the code, pay the gift, and report back to the sheet. */
   async redeemCoupon(code) {
     const r = await redeemCoupon(save, code);

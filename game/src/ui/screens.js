@@ -4,7 +4,9 @@ import { SPIRITS } from '../data/spirits.js';
 import { josa } from '../core/korean.js';
 
 const $ = (id) => document.getElementById(id);
-const MENUS = ['home', 'heroes', 'grow', 'map', 'prep', 'nanse', 'codex', 'spirit'];
+const MENUS = ['home', 'heroes', 'grow', 'map', 'prep', 'nanse', 'codex', 'spirit', 'reward'];
+/** Which bottom-menu button a screen belongs to: 출진 · 강화 · 보상 · 도감. */
+const NAV_OF = { map: 'map', nanse: 'map', prep: 'map', heroes: 'heroes', grow: 'heroes', spirit: 'heroes', reward: 'reward', codex: 'codex' };
 const SCREENS = [...MENUS, 'intro', 'levelup', 'pause', 'result'];
 export const starText = (n) => (n > 5 ? '★★★★★💀' : '★'.repeat(n) + '☆'.repeat(5 - n));
 
@@ -14,7 +16,7 @@ export function showScreen(name) {
   // A home dungeon sheet never outlives the home screen.
   if (name !== 'home') document.querySelector('.sheet-back')?.remove();
   $('bottomNav').hidden = !MENUS.includes(name);
-  for (const b of $('bottomNav').querySelectorAll('button')) b.classList.toggle('on', b.dataset.go === name);
+  for (const b of $('bottomNav').querySelectorAll('button')) b.classList.toggle('on', b.dataset.go === NAV_OF[name]);
 }
 
 export function renderIntro(stage, daily = null, endless = false) {
