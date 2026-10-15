@@ -1,12 +1,13 @@
 import { GRADES } from '../data/meta.js';
 import { NANSE_CARDS } from '../data/nanse.js';
+import { ATTR_ICON, ATTR_NAME } from '../data/trial.js';
 import { SPIRITS } from '../data/spirits.js';
 import { josa } from '../core/korean.js';
 
 const $ = (id) => document.getElementById(id);
 const MENUS = ['home', 'heroes', 'grow', 'map', 'prep', 'nanse', 'codex', 'spirit', 'reward'];
-/** Which bottom-menu button a screen belongs to: 출진 · 강화 · 보상 · 도감. */
-const NAV_OF = { map: 'map', nanse: 'map', prep: 'map', heroes: 'heroes', grow: 'heroes', spirit: 'heroes', reward: 'reward', codex: 'codex' };
+/** Which bottom-menu button a screen belongs to: 출진 (the home screen) · 강화 · 보상 · 도감. */
+const NAV_OF = { home: 'home', map: 'home', nanse: 'home', prep: 'home', heroes: 'heroes', grow: 'heroes', spirit: 'heroes', reward: 'reward', codex: 'codex' };
 const SCREENS = [...MENUS, 'intro', 'levelup', 'pause', 'result'];
 export const starText = (n) => (n > 5 ? '★★★★★💀' : '★'.repeat(n) + '☆'.repeat(5 - n));
 
@@ -20,12 +21,12 @@ export function showScreen(name) {
 }
 
 export function renderIntro(stage, daily = null, endless = false) {
-  const tag = daily ? '📅 오늘의 전장 · ' : endless ? '♾️ 무한 전장 · ' : stage.altar ? '🏯 사신의 제단 · ' : stage.nanse ? `🔥 난세 ${stage.nanse.level}단계 · ` : '';
+  const tag = daily ? '📅 오늘의 전장 · ' : endless ? '♾️ 무한 전장 · ' : stage.altar ? '🏯 사신의 제단 · ' : stage.trial ? `🔥 일일 던전 · 난세 ${stage.nanse.level}단계 · ` : '';
   $('introYear').textContent = `${tag}${stage.year} · ${stage.place} · 난이도 ${stage.difficulty.label}`;
   $('introName').textContent = stage.name;
   $('introText').textContent = daily
     ? daily.rules.map((r) => `${r.icon} ${r.name} — ${r.desc}`).join('\n')
-    : endless ? '빛이 닿지 않는 마계. 적은 갈수록 많아지고, 적장은 3분마다 더 강해져 돌아온다.\n한 자리에 머물면 신의 분노가 떨어진다 — 쓰러질 때까지 움직이며 버텨라!'
+    : endless ? `${stage.intro}\n적은 갈수록 많아지고, 적장은 3분마다 더 강해져 돌아온다. 한 자리에 머물면 신의 분노 — 쓰러질 때까지 움직여라!`
     : stage.nanse ? NANSE_CARDS.filter((c) => stage.nanse.cards[c.id]).map((c) => `${c.icon} ${c.name} — ${c.desc(stage.nanse.cards[c.id])}`).join('\n') : stage.intro;
 }
 
@@ -106,10 +107,10 @@ export function renderResult(g, won, extra = {}) {
     $('resultTitle').textContent = en.isNew ? '♾️ 새 최고 기록!' : '♾️ 무한 전장';
     $('resultText').textContent = `${fmt(en.time)} 버티고 적장 ${en.bosses}명을 쓰러뜨렸다.${en.isNew ? '' : ` (최고 ${fmt(en.best.time)})`}`;
   }
-  $('nextBtn').hidden = !(won && g.stage.next) || !!g.stage.daily || !!en;
+  $('nextBtn').hidden = !(won && g.stage.next) || !!g.stage.daily || !!g.stage.trial || !!en;
   // Dungeons: try again right away, or go back to that dungeon's own screen.
-  const mode = g.stage.altar ? 'altar' : g.stage.daily ? 'daily' : g.stage.endless ? 'endless' : null;
-  $('toMapBtn').textContent = { altar: '🏯 제단으로', daily: '📅 오늘의 전장으로', endless: '♾️ 무한 전장으로' }[mode] ?? '🗺️ 전장으로';
+  const mode = g.stage.trial ? 'trial' : g.stage.altar ? 'altar' : g.stage.daily ? 'daily' : g.stage.endless ? 'endless' : null;
+  $('toMapBtn').textContent = { trial: '🔥 일일 던전으로', altar: '🏯 제단으로', daily: '📅 오늘의 전장으로', endless: '♾️ 무한 전장으로' }[mode] ?? '🗺️ 전장으로';
   const tickets = extra.altar?.tickets;
   $('retryBtn').textContent = mode === 'altar' ? `🔁 다시 도전 · 🎟️ ${tickets ?? 0}` : mode ? '🔁 다시 도전' : '다시 출진';
   $('retryBtn').disabled = mode === 'altar' && !(tickets > 0);
@@ -127,9 +128,12 @@ export function renderResult(g, won, extra = {}) {
   if (r && g.opts.quick) rows.push(['⚡', '빠른 시험 모드', '냥 35%']);
   if (r?.bossBonus) rows.push(['👑', `적장 토벌 보상${g.bossMul && g.bossMul !== 1 ? ` (🎰 ×${g.bossMul})` : ''}`, `+${r.bossBonus.toLocaleString()}`]);
   if (extra.dailyBonus) rows.push(['📅', '오늘의 전장 보상', `+${extra.dailyBonus.toLocaleString()}`]);
-  if (extra.nanse) rows.push(['🔥', `난세 ${extra.nanse.level}단계 평정`, extra.nanse.isNew ? '최고 기록!' : '']);
-  if (extra.nanse?.bonus) rows.push(['🏮', '난세 돌파 보상', `+${extra.nanse.bonus.toLocaleString()}`]);
-  if (extra.nanse?.relic) rows.push(['🌟', `신물 획득 · ${extra.nanse.relic}`, '획득!']);
+  const tr = extra.trial;
+  if (tr) {
+    rows.push([ATTR_ICON, ATTR_NAME, `+${tr.attr.toLocaleString()}${tr.won ? '' : ' (패퇴 30%)'}`]);
+    rows.push(['🔥', `일일 던전 · 난세 ${tr.level}단계`, tr.won ? '평정!' : '패퇴']);
+    if (tr.relic) rows.push(['🌟', `신물 획득 · ${tr.relic}`, '획득!']);
+  }
   if (en) rows.push(['♾️', '적장 격파', `${en.bosses}명`]);
   rows.push(['⭐', '공훈', `Lv ${g.player.level}`]);
   rows.push(['⚔️', '처치', `${g.kills}`]);

@@ -256,7 +256,7 @@ for (const heroId of Object.keys(RELIC_NAMES)) {
     EQUIPMENT.push({
       id: `${heroId}.relic_${slot}`, slot, grade: 9, hero: heroId, relic: true, price: 100000,
       name: RELIC_NAMES[heroId][slot], bonus, icon: top.icon ?? top.id, tint: RELIC_TINT[heroId],
-      note: '난세 10단계 이상을 평정하면 얻는 신물.',
+      note: '🔥 일일 던전에서 난세 10단계 이상을 평정하면 얻는 신물.',
     });
   }
 }

@@ -39,6 +39,7 @@
     <div class="hud-corner">
       <button id="muteBtn" class="icon-btn" type="button" aria-expanded="false" aria-label="소리 조절">🔊</button>
       <button id="pauseBtn" class="icon-btn" type="button" aria-label="일시정지">⏸</button>
+      <div id="evoPop" class="evo-pop" hidden aria-live="polite"></div>
       <div id="soundPanel" class="sound-panel" hidden>
         <label>🔉 전체 <input id="volume" type="range" min="0" max="100" step="5" aria-label="전체 소리 크기"> <b id="volumeText">80</b></label>
         <label>🎵 음악 <input id="musicVol" type="range" min="0" max="100" step="5" aria-label="배경음악 크기"> <b id="musicVolText">70</b></label>
@@ -72,6 +73,7 @@
           <span class="coin-pill">🪙 <b id="homeMoney">0</b></span>
           <span class="coin-pill yj" id="homeYeongjuPill" hidden>🔮 <b id="homeYeongju">0</b></span>
           <span class="coin-pill gem" id="homeCrystalPill" hidden>💎 <b id="homeCrystals">0</b></span>
+          <span class="coin-pill attr" id="homeAttrPill" title="속성결정 — 🔥 일일 던전에서 얻어요">🔷 <b id="homeAttr">0</b></span>
         </span>
         <span class="tb-icons">
           <button id="installBtn" class="icon-btn small" type="button" title="핸드폰에 설치" aria-label="핸드폰에 설치">📲</button>
@@ -95,7 +97,7 @@
   <section id="reward" class="screen menu-screen" hidden><div class="menu-wrap" id="rewardBody"></div></section>
 
   <nav id="bottomNav" class="bottom-nav" aria-label="메뉴">
-    <button type="button" data-go="map"><span><img src="assets/ui/icon/nav-map.webp" alt=""></span><b>출진</b></button>
+    <button type="button" data-go="home"><span><img src="assets/ui/icon/nav-map.webp" alt=""></span><b>출진</b></button>
     <button type="button" data-go="heroes"><span><img src="assets/ui/icon/nav-grow.webp" alt=""></span><b>강화</b></button>
     <button type="button" data-go="reward"><span class="nav-emoji">🎁</span><b>보상</b></button>
     <button type="button" data-go="codex"><span><img src="assets/ui/icon/nav-codex.webp" alt=""></span><b>도감</b></button>

@@ -71,4 +71,4 @@ export function claimAchievement(save, id) {
   return { money: a.reward, yeongju: 0 };
 }
 
-export const readyCount = (save) => Object.values(save.ach ?? {}).filter((v) => v === 'ready').length;
+export const readyCount = (save) => ACHIEVEMENTS.filter((a) => save.ach?.[a.id] === 'ready').length;

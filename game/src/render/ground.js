@@ -544,7 +544,381 @@ export const GROUNDS = {
     }
   },
 
-  /** 마계 (무한 전장): black-red rock, glowing lava cracks, bones and drifting embers. */
+  // ------------------------------------------------ ♾️ 무한 전장 전용 맵
+
+  /** 혈월 갯벌: dark red mud under a blood moon, crimson pools with the moon in them. */
+  bloodTide(ctx, v, time) {
+    ctx.fillStyle = '#2a1416';
+    ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
+    const tx0 = Math.floor(v.x0 / TILE) - 1, tx1 = Math.floor(v.x1 / TILE) + 1;
+    const ty0 = Math.floor(v.y0 / TILE) - 1, ty1 = Math.floor(v.y1 / TILE) + 1;
+    for (let tx = tx0; tx <= tx1; tx++) {
+      for (let ty = ty0; ty <= ty1; ty++) {
+        const ox = tx * TILE, oy = ty * TILE;
+        const h = hash2(tx, ty, 1001);
+        ctx.fillStyle = h < 0.5 ? 'rgba(70, 30, 30, 0.6)' : 'rgba(40, 22, 26, 0.6)';
+        ctx.beginPath();
+        ctx.ellipse(ox + hash2(tx, ty, 1002) * TILE, oy + hash2(tx, ty, 1003) * TILE, 70 + h * 110, 36 + h * 50, h * 3, 0, Math.PI * 2);
+        ctx.fill();
+        // Crimson tide pools, each with the red moon shimmering in it.
+        if (hash2(tx, ty, 1004) < 0.3) {
+          const cx = ox + hash2(tx, ty, 1005) * TILE, cy = oy + hash2(tx, ty, 1006) * TILE;
+          const rx = 36 + hash2(tx, ty, 1007) * 70, ry = 16 + hash2(tx, ty, 1008) * 26, rot = hash2(tx, ty, 1009) * 3;
+          ctx.fillStyle = 'rgba(120, 20, 26, 0.75)';
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, rx, ry, rot, 0, Math.PI * 2);
+          ctx.fill();
+          const s = (Math.sin(time * 1.4 + tx * 2 + ty) + 1) / 2;
+          ctx.fillStyle = `rgba(255, 120, 90, ${0.25 + s * 0.25})`;
+          ctx.beginPath();
+          ctx.ellipse(cx - rx * 0.25, cy - ry * 0.1, Math.min(rx, ry) * 0.45, Math.min(rx, ry) * 0.3, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // Mud ridges and broken shells.
+        ctx.strokeStyle = 'rgba(150, 70, 60, 0.25)';
+        ctx.lineWidth = 2;
+        const rx = ox + hash2(tx, ty, 1010) * TILE, ry = oy + hash2(tx, ty, 1011) * TILE;
+        for (let i = 0; i < 3; i++) {
+          ctx.beginPath();
+          ctx.arc(rx, ry + i * 9, 36 + i * 6, Math.PI * 1.15, Math.PI * 1.85);
+          ctx.stroke();
+        }
+        for (let i = 0; i < 4; i++) {
+          ctx.fillStyle = i % 2 ? 'rgba(220, 180, 170, 0.45)' : 'rgba(10, 4, 6, 0.5)';
+          ctx.beginPath();
+          ctx.arc(ox + hash2(tx, ty, 1020 + i) * TILE, oy + hash2(tx, ty, 1030 + i) * TILE, 2 + (i % 2), 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // Dead reeds, black against the red.
+        if (hash2(tx, ty, 1040) < 0.28) {
+          const cx = ox + hash2(tx, ty, 1041) * TILE, cy = oy + hash2(tx, ty, 1042) * TILE;
+          ctx.strokeStyle = '#140808';
+          ctx.lineWidth = 2;
+          for (let i = 0; i < 7; i++) {
+            const a = -Math.PI / 2 + (hash2(tx, ty, 1050 + i) - 0.5) * 1.1 + Math.sin(time * 1.3 + i + tx) * 0.07;
+            const len = 12 + hash2(tx, ty, 1060 + i) * 18;
+            ctx.beginPath();
+            ctx.moveTo(cx + (i - 3) * 4, cy);
+            ctx.lineTo(cx + (i - 3) * 4 + Math.cos(a) * len, cy + Math.sin(a) * len);
+            ctx.stroke();
+          }
+        }
+      }
+    }
+    // A red haze rolling across from the moon.
+    const grd = ctx.createLinearGradient(v.x0, v.y0, v.x0, v.y1);
+    grd.addColorStop(0, `rgba(255, 60, 40, ${0.1 + 0.04 * Math.sin(time * 0.7)})`);
+    grd.addColorStop(1, 'rgba(255, 60, 40, 0)');
+    ctx.fillStyle = grd;
+    ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
+  },
+
+  /** 도깨비불 무덤골: blue-grey grass, burial mounds, stone markers and drifting will-o'-wisps. */
+  ghostBarrow(ctx, v, time) {
+    ctx.fillStyle = '#1f2a2e';
+    ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
+    const tx0 = Math.floor(v.x0 / TILE) - 1, tx1 = Math.floor(v.x1 / TILE) + 1;
+    const ty0 = Math.floor(v.y0 / TILE) - 1, ty1 = Math.floor(v.y1 / TILE) + 1;
+    for (let tx = tx0; tx <= tx1; tx++) {
+      for (let ty = ty0; ty <= ty1; ty++) {
+        const ox = tx * TILE, oy = ty * TILE;
+        const h = hash2(tx, ty, 1101);
+        ctx.fillStyle = h < 0.5 ? 'rgba(52, 72, 70, 0.6)' : 'rgba(36, 44, 54, 0.55)';
+        ctx.beginPath();
+        ctx.ellipse(ox + hash2(tx, ty, 1102) * TILE, oy + hash2(tx, ty, 1103) * TILE, 70 + h * 90, 40 + h * 40, h * 3, 0, Math.PI * 2);
+        ctx.fill();
+        // Withered grass tufts.
+        ctx.strokeStyle = 'rgba(120, 140, 130, 0.35)';
+        ctx.lineWidth = 1.2;
+        for (let i = 0; i < 6; i++) {
+          const x = ox + hash2(tx, ty, 1110 + i) * TILE, y = oy + hash2(tx, ty, 1120 + i) * TILE;
+          ctx.beginPath();
+          ctx.moveTo(x - 3, y);
+          ctx.lineTo(x - 5, y - 8);
+          ctx.moveTo(x, y);
+          ctx.lineTo(x, y - 10);
+          ctx.moveTo(x + 3, y);
+          ctx.lineTo(x + 5, y - 8);
+          ctx.stroke();
+        }
+        // 봉분: a round grave mound with its shadow and a little stone before it.
+        if (hash2(tx, ty, 1130) < 0.32) {
+          const cx = ox + 40 + hash2(tx, ty, 1131) * (TILE - 80), cy = oy + 40 + hash2(tx, ty, 1132) * (TILE - 80);
+          const r = 26 + hash2(tx, ty, 1133) * 14;
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+          ctx.beginPath();
+          ctx.ellipse(cx + 8, cy + r * 0.45, r * 1.1, r * 0.45, 0, 0, Math.PI * 2);
+          ctx.fill();
+          const g = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.35, 2, cx, cy, r);
+          g.addColorStop(0, '#4f6a5e');
+          g.addColorStop(1, '#2b3c36');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, r, r * 0.72, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#7d8584';
+          ctx.fillRect(cx - 7, cy + r * 0.62, 14, 8);
+        }
+      }
+    }
+    // 도깨비불: blue flames bobbing above the ground, fading in and out.
+    for (let tx = tx0; tx <= tx1; tx++) {
+      for (let ty = ty0; ty <= ty1; ty++) {
+        if (hash2(tx, ty, 1140) > 0.45) continue;
+        const ox = tx * TILE, oy = ty * TILE;
+        const k = hash2(tx, ty, 1141) * 10;
+        const x = ox + hash2(tx, ty, 1142) * TILE + Math.sin(time * 0.9 + k) * 18;
+        const y = oy + hash2(tx, ty, 1143) * TILE + Math.cos(time * 1.3 + k) * 10;
+        const a = 0.5 + 0.5 * Math.sin(time * 1.7 + k);
+        const g = ctx.createRadialGradient(x, y, 0, x, y, 26);
+        g.addColorStop(0, `rgba(160, 230, 255, ${0.75 * a})`);
+        g.addColorStop(0.4, `rgba(80, 160, 255, ${0.35 * a})`);
+        g.addColorStop(1, 'rgba(80, 160, 255, 0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(x - 26, y - 26, 52, 52);
+      }
+    }
+  },
+
+  /** 한빙 지옥: blue-black ice, glowing cyan cracks, frozen spikes and drifting frost. */
+  frostHell(ctx, v, time) {
+    ctx.fillStyle = '#16233a';
+    ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
+    const tx0 = Math.floor(v.x0 / TILE) - 1, tx1 = Math.floor(v.x1 / TILE) + 1;
+    const ty0 = Math.floor(v.y0 / TILE) - 1, ty1 = Math.floor(v.y1 / TILE) + 1;
+    const pulse = 0.6 + 0.4 * Math.sin(time * 1.6);
+    for (let tx = tx0; tx <= tx1; tx++) {
+      for (let ty = ty0; ty <= ty1; ty++) {
+        const ox = tx * TILE, oy = ty * TILE;
+        const h = hash2(tx, ty, 1201);
+        // Ice sheets of different depth.
+        ctx.fillStyle = h < 0.5 ? 'rgba(70, 110, 150, 0.4)' : 'rgba(30, 50, 80, 0.5)';
+        ctx.beginPath();
+        ctx.ellipse(ox + hash2(tx, ty, 1202) * TILE, oy + hash2(tx, ty, 1203) * TILE, 70 + h * 100, 40 + h * 40, h * 3, 0, Math.PI * 2);
+        ctx.fill();
+        // A pale sheen on the ice.
+        ctx.strokeStyle = 'rgba(210, 235, 255, 0.18)';
+        ctx.lineWidth = 3;
+        const sx = ox + hash2(tx, ty, 1204) * TILE, sy = oy + hash2(tx, ty, 1205) * TILE;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(sx + 40, sy - 16);
+        ctx.stroke();
+        // Glowing cracks.
+        if (hash2(tx, ty, 1206) < 0.5) {
+          const cx = ox + hash2(tx, ty, 1207) * TILE, cy = oy + hash2(tx, ty, 1208) * TILE;
+          ctx.lineCap = 'round';
+          for (const [w, c] of [[6, `rgba(80, 220, 255, ${0.18 * pulse})`], [1.8, `rgba(170, 245, 255, ${0.8 * pulse})`]]) {
+            ctx.strokeStyle = c;
+            ctx.lineWidth = w;
+            ctx.beginPath();
+            for (let k = 0; k < 3; k++) {
+              let x = cx, y = cy;
+              ctx.moveTo(x, y);
+              for (let j = 0; j < 3; j++) {
+                x += (hash2(tx, ty, 1210 + k * 5 + j) - 0.5) * 60;
+                y += (hash2(tx, ty, 1230 + k * 5 + j) - 0.5) * 60;
+                ctx.lineTo(x, y);
+              }
+            }
+            ctx.stroke();
+          }
+        }
+        // Frozen spikes jutting up.
+        if (hash2(tx, ty, 1250) < 0.25) {
+          const cx = ox + hash2(tx, ty, 1251) * TILE, cy = oy + hash2(tx, ty, 1252) * TILE;
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+          ctx.beginPath();
+          ctx.ellipse(cx + 6, cy + 4, 20, 7, 0, 0, Math.PI * 2);
+          ctx.fill();
+          for (let k = 0; k < 3; k++) {
+            const bx = cx + (k - 1) * 9, hgt = 18 + hash2(tx, ty, 1253 + k) * 22;
+            ctx.fillStyle = k === 1 ? '#bfe6ff' : '#8fc4e8';
+            ctx.beginPath();
+            ctx.moveTo(bx - 5, cy);
+            ctx.lineTo(bx, cy - hgt);
+            ctx.lineTo(bx + 5, cy);
+            ctx.closePath();
+            ctx.fill();
+          }
+        }
+        // Frost motes drifting sideways.
+        for (let k = 0; k < 3; k++) {
+          const fx = ox + ((hash2(tx, ty, 1260 + k) * TILE + time * 26) % TILE);
+          const fy = oy + ((hash2(tx, ty, 1270 + k) * TILE + time * 10) % TILE);
+          ctx.fillStyle = 'rgba(220, 245, 255, 0.85)';
+          ctx.fillRect(fx, fy, 2, 2);
+        }
+      }
+    }
+  },
+
+  /** 화염 궁궐: charred flagstones, toppled burning pillars and falling ash. */
+  ashPalace(ctx, v, time) {
+    ctx.fillStyle = '#2b2422';
+    ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
+    const tx0 = Math.floor(v.x0 / TILE) - 1, tx1 = Math.floor(v.x1 / TILE) + 1;
+    const ty0 = Math.floor(v.y0 / TILE) - 1, ty1 = Math.floor(v.y1 / TILE) + 1;
+    const S = TILE / 4;
+    for (let tx = tx0; tx <= tx1; tx++) {
+      for (let ty = ty0; ty <= ty1; ty++) {
+        const ox = tx * TILE, oy = ty * TILE;
+        // Scorched flagstones.
+        for (let i = 0; i < 4; i++) {
+          for (let j = 0; j < 4; j++) {
+            const h = hash2(tx * 4 + i, ty * 4 + j, 1301);
+            const shift = (j % 2) * S * 0.5;
+            ctx.fillStyle = `rgba(${58 + h * 26 | 0}, ${48 + h * 18 | 0}, ${44 + h * 14 | 0}, 0.95)`;
+            ctx.fillRect(ox + i * S + shift + 2, oy + j * S + 2, S - 4, S - 4);
+            if (h < 0.1) {
+              // Embers glowing in the joints.
+              ctx.fillStyle = `rgba(255, 110, 40, ${0.35 + 0.25 * Math.sin(time * 3 + h * 90)})`;
+              ctx.fillRect(ox + i * S + shift, oy + j * S + S - 3, S, 2);
+            }
+          }
+        }
+        // Soot stains.
+        if (hash2(tx, ty, 1310) < 0.5) {
+          ctx.fillStyle = 'rgba(8, 6, 6, 0.35)';
+          ctx.beginPath();
+          ctx.ellipse(ox + hash2(tx, ty, 1311) * TILE, oy + hash2(tx, ty, 1312) * TILE, 50, 26, hash2(tx, ty, 1313) * 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // A toppled red pillar, still burning at one end.
+        if (hash2(tx, ty, 1320) < 0.18) {
+          const cx = ox + hash2(tx, ty, 1321) * TILE, cy = oy + hash2(tx, ty, 1322) * TILE;
+          const a = hash2(tx, ty, 1323) * Math.PI;
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.rotate(a);
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+          ctx.fillRect(-40, 4, 84, 12);
+          ctx.fillStyle = '#5e1a12';
+          ctx.fillRect(-42, -9, 84, 18);
+          ctx.fillStyle = '#1c1210';
+          ctx.fillRect(-42, -9, 26, 18);
+          ctx.restore();
+          const fl = 0.7 + 0.3 * Math.sin(time * 9 + cx) * Math.sin(time * 5.7 + cy);
+          const fx = cx + Math.cos(a) * 36, fy = cy + Math.sin(a) * 36;
+          const g = ctx.createRadialGradient(fx, fy - 10, 2, fx, fy - 10, 48);
+          g.addColorStop(0, `rgba(255, 200, 90, ${0.7 * fl})`);
+          g.addColorStop(0.5, `rgba(255, 90, 30, ${0.35 * fl})`);
+          g.addColorStop(1, 'rgba(255, 90, 30, 0)');
+          ctx.fillStyle = g;
+          ctx.fillRect(fx - 48, fy - 58, 96, 96);
+        }
+        // Falling ash.
+        for (let k = 0; k < 3; k++) {
+          const ax = ox + ((hash2(tx, ty, 1330 + k) * TILE + Math.sin(time + k) * 10 + time * 6) % TILE);
+          const ay = oy + ((hash2(tx, ty, 1340 + k) * TILE + time * 18) % TILE);
+          ctx.fillStyle = k === 0 ? 'rgba(255, 140, 60, 0.8)' : 'rgba(190, 180, 170, 0.6)';
+          ctx.fillRect(ax, ay, 2.5, 2.5);
+        }
+      }
+    }
+  },
+
+  /** 백골 벌판: ash-grey plain, piles of bones and skulls, a black river of souls. */
+  boneField(ctx, v, time) {
+    ctx.fillStyle = '#5a5650';
+    ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
+    const tx0 = Math.floor(v.x0 / TILE) - 1, tx1 = Math.floor(v.x1 / TILE) + 1;
+    const ty0 = Math.floor(v.y0 / TILE) - 1, ty1 = Math.floor(v.y1 / TILE) + 1;
+    const riverY = (x) => Math.sin(x / 300) * 140 + Math.sin(x / 107) * 26 - 280;
+    for (let tx = tx0; tx <= tx1; tx++) {
+      for (let ty = ty0; ty <= ty1; ty++) {
+        const ox = tx * TILE, oy = ty * TILE;
+        const h = hash2(tx, ty, 1401);
+        ctx.fillStyle = h < 0.5 ? 'rgba(80, 76, 70, 0.55)' : 'rgba(110, 104, 94, 0.4)';
+        ctx.beginPath();
+        ctx.ellipse(ox + hash2(tx, ty, 1402) * TILE, oy + hash2(tx, ty, 1403) * TILE, 70 + h * 90, 34 + h * 34, h * 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    // The river of souls: black water with pale faces of light drifting along it.
+    ctx.fillStyle = 'rgba(18, 16, 24, 0.9)';
+    ctx.beginPath();
+    for (let x = v.x0 - 20; x <= v.x1 + 20; x += 20) {
+      const y = riverY(x) - 60;
+      if (x === v.x0 - 20) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    for (let x = v.x1 + 20; x >= v.x0 - 20; x -= 20) ctx.lineTo(x, riverY(x) + 60 + Math.sin(x / 61) * 8);
+    ctx.closePath();
+    ctx.fill();
+    for (let x = Math.floor(v.x0 / 60) * 60; x <= v.x1; x += 60) {
+      const k = hash2(x / 60, 0, 1410);
+      const gx = x + ((time * 40 + k * 60) % 60);
+      const gy = riverY(gx) + (k - 0.5) * 70;
+      ctx.fillStyle = `rgba(200, 210, 255, ${0.15 + 0.2 * Math.sin(time * 2 + k * 9) ** 2})`;
+      ctx.beginPath();
+      ctx.ellipse(gx, gy, 9, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    for (let tx = tx0; tx <= tx1; tx++) {
+      for (let ty = ty0; ty <= ty1; ty++) {
+        const ox = tx * TILE, oy = ty * TILE;
+        // Scattered bones.
+        for (let i = 0; i < 3; i++) {
+          if (hash2(tx, ty, 1420 + i) > 0.55) continue;
+          const bx = ox + hash2(tx, ty, 1430 + i) * TILE, by = oy + hash2(tx, ty, 1440 + i) * TILE, a = hash2(tx, ty, 1450 + i) * 3;
+          ctx.strokeStyle = 'rgba(226, 218, 200, 0.75)';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(bx - Math.cos(a) * 9, by - Math.sin(a) * 9);
+          ctx.lineTo(bx + Math.cos(a) * 9, by + Math.sin(a) * 9);
+          ctx.stroke();
+          ctx.fillStyle = 'rgba(226, 218, 200, 0.75)';
+          for (const k of [-1, 1]) {
+            ctx.beginPath();
+            ctx.arc(bx + Math.cos(a) * 10 * k, by + Math.sin(a) * 10 * k, 2.6, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        // A heap of skulls.
+        if (hash2(tx, ty, 1460) < 0.2) {
+          const cx = ox + hash2(tx, ty, 1461) * TILE, cy = oy + hash2(tx, ty, 1462) * TILE;
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+          ctx.beginPath();
+          ctx.ellipse(cx + 5, cy + 10, 26, 9, 0, 0, Math.PI * 2);
+          ctx.fill();
+          for (const [dx, dy] of [[-10, 2], [10, 2], [0, -8]]) {
+            ctx.fillStyle = '#e4dccb';
+            ctx.beginPath();
+            ctx.arc(cx + dx, cy + dy, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#2a2622';
+            ctx.beginPath();
+            ctx.arc(cx + dx - 3, cy + dy - 1, 1.8, 0, Math.PI * 2);
+            ctx.arc(cx + dx + 3, cy + dy - 1, 1.8, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        // Broken spears stuck in the ground.
+        if (hash2(tx, ty, 1470) < 0.3) {
+          const cx = ox + hash2(tx, ty, 1471) * TILE, cy = oy + hash2(tx, ty, 1472) * TILE, a = -Math.PI / 2 + (hash2(tx, ty, 1473) - 0.5) * 0.9;
+          ctx.strokeStyle = 'rgba(40, 30, 24, 0.85)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + Math.cos(a) * 26, cy + Math.sin(a) * 26);
+          ctx.stroke();
+        }
+      }
+    }
+    // Grey mist over the field.
+    for (let k = 0; k < 3; k++) {
+      const y = v.y0 + ((k * 0.41 + time * 0.012) % 1) * (v.y1 - v.y0);
+      const x = v.x0 + ((k * 0.57 + time * 0.018) % 1) * (v.x1 - v.x0);
+      const grd = ctx.createRadialGradient(x, y, 0, x, y, 240);
+      grd.addColorStop(0, 'rgba(200, 200, 210, 0.12)');
+      grd.addColorStop(1, 'rgba(200, 200, 210, 0)');
+      ctx.fillStyle = grd;
+      ctx.fillRect(x - 240, y - 240, 480, 480);
+    }
+  },
+
+  /** 마계 심연 (무한 전장 6층): black-red rock, glowing lava cracks, bones and drifting embers. */
   demonRealm(ctx, v, time) {
     ctx.fillStyle = '#160b12';
     ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);

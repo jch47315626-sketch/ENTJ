@@ -1,6 +1,18 @@
 import { TILE, rocksNear, tileBog } from '../systems/terrain.js';
 import { TAU } from '../core/math.js';
 
+/**
+ * 무한 전장 maps (terrain.style): what their slowing pools look like —
+ * fill, rim, rising bubbles — and their boulders' body and glowing veins.
+ */
+const STYLES = {
+  blood: { pool: 'rgba(110, 14, 22, 0.88)', rim: 'rgba(230, 70, 70, 0.55)', bubble: '255, 120, 110', rock: '#3a2224', vein: '255, 70, 60' },
+  ghost: { pool: 'rgba(30, 60, 80, 0.85)', rim: 'rgba(140, 220, 255, 0.5)', bubble: '170, 235, 255', rock: '#6f7778', vein: null },
+  frost: { pool: 'rgba(120, 180, 220, 0.75)', rim: 'rgba(230, 248, 255, 0.85)', bubble: '240, 252, 255', rock: '#a9c8de', vein: '120, 230, 255' },
+  lava: { pool: 'rgba(180, 60, 10, 0.9)', rim: 'rgba(255, 190, 80, 0.75)', bubble: '255, 220, 120', rock: '#2c2220', vein: '255, 120, 40' },
+  soul: { pool: 'rgba(16, 14, 26, 0.92)', rim: 'rgba(170, 180, 255, 0.45)', bubble: '200, 210, 255', rock: '#8a847a', vein: null },
+};
+
 /** Bogs (under everything) for the visible part of a field with stage.terrain. */
 export function drawBogs(ctx, g, v) {
   const T = g.stage.terrain;
@@ -10,7 +22,25 @@ export function drawBogs(ctx, g, v) {
   for (let tx = tx0; tx <= tx1; tx++) for (let ty = ty0; ty <= ty1; ty++) {
     const b = tileBog(T, tx, ty);
     if (!b) continue;
-    if (T.demon) {
+    const S = STYLES[T.style];
+    if (S) {
+      ctx.fillStyle = S.pool;
+      ctx.beginPath();
+      ctx.ellipse(b.x, b.y, b.rx, b.ry, 0, 0, TAU);
+      ctx.fill();
+      ctx.strokeStyle = S.rim;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      for (let i = 0; i < 3; i++) {
+        const k = (((g.time * 0.6 + i * 0.33 + b.x * 0.01) % 1) + 1) % 1;
+        ctx.fillStyle = `rgba(${S.bubble}, ${0.55 * (1 - k)})`;
+        ctx.beginPath();
+        ctx.arc(b.x + (i - 1) * b.rx * 0.4, b.y + Math.sin(i * 2) * b.ry * 0.3, 3 + k * 6, 0, TAU);
+        ctx.fill();
+      }
+      continue;
+    }
+    if (T.demon || T.style === 'demon') {
       // 마계: a pool of violet poison ooze, slowly bubbling.
       ctx.fillStyle = 'rgba(70, 20, 90, 0.88)';
       ctx.beginPath();
@@ -83,7 +113,10 @@ export function drawRocks(ctx, g, v) {
     ctx.beginPath();
     ctx.ellipse(r.x + 6, r.y + r.r * 0.55, r.r * 1.05, r.r * 0.45, 0, 0, TAU);
     ctx.fill();
-    ctx.fillStyle = g.stage.terrain.demon ? '#1e1720' : r.fallen ? '#6e655a' : '#5d5a55';
+    const T = g.stage.terrain;
+    const S = STYLES[T.style];
+    const demon = T.demon || T.style === 'demon';
+    ctx.fillStyle = S ? S.rock : demon ? '#1e1720' : r.fallen ? '#6e655a' : '#5d5a55';
     ctx.strokeStyle = '#26231f';
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -109,15 +142,17 @@ export function drawRocks(ctx, g, v) {
     ctx.lineTo(r.x - r.r * 0.05, r.y);
     ctx.lineTo(r.x + r.r * 0.25, r.y + r.r * 0.35);
     ctx.stroke();
-    if (g.stage.terrain.demon) {
-      // 마계 흑요석: glowing red veins.
-      ctx.strokeStyle = `rgba(255, 70, 40, ${0.6 + 0.3 * Math.sin(g.time * 3 + r.seed * 9)})`;
+    if (demon || S?.vein) {
+      // 마계 흑요석 (and the other maps' rocks): glowing veins.
+      ctx.strokeStyle = `rgba(${S?.vein ?? '255, 70, 40'}, ${0.6 + 0.3 * Math.sin(g.time * 3 + r.seed * 9)})`;
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(r.x - r.r * 0.4, r.y - r.r * 0.2);
       ctx.lineTo(r.x, r.y + r.r * 0.1);
       ctx.lineTo(r.x + r.r * 0.35, r.y - r.r * 0.3);
       ctx.stroke();
+    } else if (S) {
+      // 무덤골의 비석 · 백골 벌판: weathered stone, no moss.
     } else if (g.stage.terrain.snow) {
       // A cap of snow.
       ctx.fillStyle = 'rgba(250, 252, 255, 0.95)';

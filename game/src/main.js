@@ -6,7 +6,7 @@ import { Tutorial } from './ui/tutorial.js';
 import { Sound } from './audio/sound.js';
 import { themeFor } from './audio/music.js';
 import { showScreen, renderIntro, renderChoices, renderResult } from './ui/screens.js';
-import { renderHome, renderHeroes, renderGrow, renderMap, renderPrep, renderNanse, renderCodex, setCodexTab, renderSpirit, setLastDraw, openCoupon, renderReward, setSheet } from './ui/menu.js';
+import { renderHome, renderHeroes, renderGrow, renderMap, renderPrep, renderCodex, setCodexTab, renderSpirit, setLastDraw, openCoupon, renderReward, setSheet } from './ui/menu.js';
 import { redeemCoupon } from './core/coupon.js';
 import { GACHA, SPIRITS, SPIRIT_GRADES, drawSpirits, starUp, setBranch, toggleCompanion, callSasin, countRunForGift } from './data/spirits.js';
 import { loadSave, writeSave, outfitOf, encodeSave, decodeSave } from './core/save.js';
@@ -15,13 +15,16 @@ import { codexReadyCount, claimCodex, claimCodexAll } from './data/codexTiers.js
 import { ACHIEVEMENTS } from './data/achievements.js';
 import { dailyFor, dailyHeroBonus, todayKey } from './data/daily.js';
 import { josa } from './core/korean.js';
-import { NANSE_CARDS, NANSE_MILESTONES, milestoneBonus, nanseLevel } from './data/nanse.js';
+import { TRIAL, trialFor, useTrial, trialDone, attrReward, ATTR_ICON, ATTR_NAME } from './data/trial.js';
 import { gyeolgiCost } from './data/gyeolgi.js';
 import { metaBonus, FORGE, forgeCost, gradeOpen, entryCheck, EQUIPMENT, RELICS } from './data/meta.js';
 import { ensureGearOptions, rollOptions, rerollLine, engraveCost, lineText, NAMES } from './data/gearOptions.js';
 import { UPGRADES } from './data/upgrades.js';
 import { helpById } from './data/help.js';
 import { STAGES } from './data/stages.js';
+import { ENDLESS_MAPS, endlessMapOpen, endlessMapOf } from './data/endless.js';
+import { staminaOf, useStamina, staminaWait, staminaText, endlessLeft, useEndlessEntry, ENDLESS_PER_DAY } from './data/entries.js';
+import { untilTomorrow } from './data/daily.js';
 import { ESSENCE_PER_SASIN, refreshAltar, useTicket, payAltar, ALTAR_TIERS, ALTAR_MAX_TIER, altarTierOpen } from './data/altar.js';
 import { HEROES } from './data/heroes.js';
 
@@ -46,11 +49,13 @@ writeSave(save); // persist any format migration right away
 let introTimer = 0;
 /** The 오늘의 전장 being played (so 다시 출진 replays it), or null. */
 let runDaily = null;
-/** Playing ♾️ 무한 전장 (so 다시 출진 replays it). */
+/** Playing ♾️ 무한 전장 (so 다시 도전 replays it, on the map last played). */
 let runEndless = false;
 const ENDLESS_RUN = { endless: true };
 /** The 사신의 제단 run being played ({ guardian, tier }), or null. */
 let runAltar = null;
+/** 🔥 일일 던전 being played (today's draw), or null. Once a day, so never replayed. */
+let runTrial = null;
 /** The mode 다시 출진 replays. */
 const replayMode = () => runDaily ?? (runAltar ? { altar: runAltar } : runEndless ? ENDLESS_RUN : null);
 
@@ -59,24 +64,48 @@ function newGame(mode = null) {
   runDaily = mode?.rules ? mode : null;
   runEndless = !!mode?.endless;
   runAltar = mode?.altar ?? null;
+  runTrial = mode?.trial ? trialFor(save) : null;
   const heroId = runDaily?.heroId ?? sel.hero;
-  const stageId = runDaily?.stageId ?? (runAltar ? ALTAR_TIERS[runAltar.tier].base : sel.stage);
+  const stageId = runTrial?.stageId ?? runDaily?.stageId ?? (runAltar ? ALTAR_TIERS[runAltar.tier].base : sel.stage);
+  // 🔥 일일 던전: once a day.
+  if (runTrial && !useTrial(save)) {
+    setSheet('trial');
+    toMenu('home');
+    toast(`🔥 오늘의 일일 던전은 이미 도전했어요. ${untilTomorrow()} 뒤 새 던전이 열려요!`, false);
+    return;
+  }
   // 사신의 제단: an open 단계 and one entry ticket.
   if (runAltar && (!altarTierOpen(save, runAltar.tier) || !useTicket(save))) {
     toMenu('home');
     toast(altarTierOpen(save, runAltar.tier) ? '🎟️ 오늘의 입장권을 다 썼어요. 내일 다시 3장이 채워져요!' : '🔒 아직 열리지 않은 단계예요.');
     return;
   }
+  // ♾️ 무한 전장: the map picked on its card, else the one played last time.
+  const endlessMap = runEndless ? (mode.map && endlessMapOpen(save, mode.map) ? mode.map : endlessMapOf(save)) : null;
+  if (endlessMap) save.endlessMap = endlessMap;
   // Gear gate: send the player back to the menu, where the reason is shown.
-  if (!runDaily && !runAltar && !entryCheck(save, sel.hero, STAGES[sel.stage]).ok) {
+  if (!runDaily && !runAltar && !runEndless && !runTrial && !entryCheck(save, sel.hero, STAGES[sel.stage]).ok) {
     toMenu('prep');
     return;
   }
+  // 입장 횟수 (data/entries.js): 무한 전장 3 a day; 일반 전장 spends one 출진 횟수.
+  if (runEndless && !useEndlessEntry(save)) {
+    setSheet('endless');
+    toMenu('home');
+    toast(`♾️ 오늘의 무한 전장 ${ENDLESS_PER_DAY}번을 다 돌았어요. ${untilTomorrow()} 뒤 다시 ${ENDLESS_PER_DAY}번!`, false);
+    return;
+  }
+  if (!runDaily && !runAltar && !runEndless && !runTrial && !useStamina(save)) {
+    toMenu('prep');
+    toast(`⚔️ 출진 횟수가 없어요. ${staminaWait(save)} 뒤 1번 회복돼요`, false);
+    writeSave(save);
+    return;
+  }
   // Remember the choice so the next visit opens on the same hero and field.
-  if (!runDaily) save.sel = { hero: sel.hero, stage: sel.stage };
+  if (!runDaily && !runTrial) save.sel = { hero: sel.hero, stage: sel.stage };
   writeSave(save);
-  // 난세 단계: only on a battlefield already pacified, in a normal run.
-  const nanse = !runDaily && !runEndless && !runAltar && save.best?.[stageId] && nanseLevel(save.nanseCards) > 0 ? { ...save.nanseCards } : null;
+  // 난세 패 now only come with the 일일 던전 (today's random draw).
+  const nanse = runTrial ? { ...runTrial.cards } : null;
   const meta = metaBonus(save, heroId);
   if (runDaily) {
     const hb = dailyHeroBonus(runDaily);
@@ -86,17 +115,20 @@ function newGame(mode = null) {
   sound.unlock();
   input.reset();
   hud.clearBanner();
+  hud.hideEvoProgress();
   game = new Game({
     heroId,
     stageId,
     daily: runDaily,
     endless: runEndless,
+    endlessMap,
     altar: runAltar,
     // 🐾 동행 영물 (data/spirits.js), whoever the hero.
     spirits: (save.companions ?? []).filter((id) => save.spirits?.[id]).map((id) => ({ id, ...save.spirits[id] })),
     nanse,
+    trial: runTrial ? { level: runTrial.level, day: runTrial.day } : null,
     objectsTip: !save.tipsSeen?.objects,
-    quick: !runDaily && !runEndless && !runAltar && $('quickMode').checked,
+    quick: !runDaily && !runEndless && !runAltar && !runTrial && $('quickMode').checked,
     onBanner: (t, size) => hud.banner(t, size),
     onState,
     onBoss: (def) => hud.bossIntro(def),
@@ -115,15 +147,19 @@ function newGame(mode = null) {
   if (!save.tutorialDone) tutor.start();
   else tutor.stop();
   sound.setIntensity(0);
-  sound.startMusic(themeFor(stageId));
+  sound.startMusic(themeFor(endlessMap ? ENDLESS_MAPS[endlessMap].music : stageId));
   if (runDaily) sound.sfx('daily');
 }
 
 function onState(state, g) {
   if (state === 'levelup') {
+    hud.hideEvoProgress(); // the card picker comes first; the next pick shows its own
     const pick = (i) => {
       sound.sfx('pick');
+      const c = g.choices?.[i];
       g.choose(i);
+      // 🌟 Which 궁극기 that 책략 feeds, and how far along each is (top right, a few seconds).
+      if (c && !c.evolution) hud.evoProgress(g, c.id);
     };
     // 🦉 부엉이 · 다시 뽑기: a new hand while rerolls last.
     const reroll = () => {
@@ -138,7 +174,7 @@ function onState(state, g) {
   } else if (state === 'paused') {
     sound.stopMusic();
     hud.fillPause(g);
-    $('quitBtn').textContent = { altar: '🏯 제단으로', daily: '📅 오늘의 전장으로', endless: '♾️ 무한 전장으로' }[dungeonOfRun()] ?? '처음으로';
+    $('quitBtn').textContent = { trial: '🔥 일일 던전으로', altar: '🏯 제단으로', daily: '📅 오늘의 전장으로', endless: '♾️ 무한 전장으로' }[dungeonOfRun()] ?? '처음으로';
     showScreen('pause');
   } else if (state === 'play') {
     sound.startMusic(); // resume this field's theme
@@ -184,41 +220,38 @@ function onState(state, g) {
       if (state === 'clear') c.wins += 1;
       c.earned += g.reward.total;
       for (const [id, n] of Object.entries(g.killsBy)) c.kills[id] = (c.kills[id] ?? 0) + n;
-      // ♾️ 무한 전장: keep the best time per battlefield.
+      // ♾️ 무한 전장: keep the best time per map.
       let endless = null;
       if (g.stage.endless) {
         save.endless ??= {};
-        const prev = save.endless[g.stage.id];
+        const key = g.stage.endlessMap;
+        const prev = save.endless[key];
         const isNew = !prev || g.time > prev.time;
-        if (isNew) save.endless[g.stage.id] = { time: Math.floor(g.time), kills: g.kills, bosses: g.endlessBosses, hero: g.player.hero.id };
-        endless = { time: g.time, bosses: g.endlessBosses, isNew, best: save.endless[g.stage.id] };
+        if (isNew) save.endless[key] = { time: Math.floor(g.time), kills: g.kills, bosses: g.endlessBosses, hero: g.player.hero.id };
+        endless = { time: g.time, bosses: g.endlessBosses, isNew, best: save.endless[key] };
       }
-      // 난세 단계: best 단계 per field and hero, and one-time milestone bonuses.
-      let nanseInfo = null;
-      if (g.stage.nanse && state === 'clear') {
-        const lv = g.stage.nanse.level;
-        save.nanse ??= {};
-        const rec = (save.nanse[g.stage.id] ??= {});
-        const prevBest = Math.max(0, ...Object.values(rec));
-        const isNew = lv > (rec[g.player.hero.id] ?? 0);
-        if (isNew) rec[g.player.hero.id] = lv;
-        let bonus = 0;
-        for (const m of NANSE_MILESTONES) if (lv >= m && prevBest < m) bonus += milestoneBonus(m, g.stage.difficulty.stars);
-        bonus = Math.round(bonus);
-        save.money += bonus;
-        c.earned += bonus;
-        save.stats.nanseBest = Math.max(save.stats.nanseBest ?? 0, lv);
-        // 신물: clearing 난세 10+ may grant one of this hero's relics not yet owned.
+      // 🔥 일일 던전: 속성결정 (a share on defeat); at 난세 10+ a clear may bring a 신물.
+      let trialInfo = null;
+      if (g.stage.trial) {
+        const won = state === 'clear';
+        const lv = g.stage.nanse?.level ?? 0;
+        const attr = attrReward(g.stage.difficulty.stars, lv, won);
+        save.attrStones = (save.attrStones ?? 0) + attr;
+        if (save.trial) save.trial.cleared = won;
         let relic = null;
-        const missing = RELICS.filter((r) => r.hero === g.player.hero.id && !save.owned.includes(r.id));
-        if (lv >= 10 && missing.length && Math.random() < Math.min(0.9, 0.3 + 0.03 * (lv - 10))) {
-          relic = missing[Math.floor(Math.random() * missing.length)];
-          save.owned.push(relic.id);
-          save.gearOpts ??= {};
-          save.gearOpts[relic.id] = rollOptions(relic);
-          save.stats.relics = (save.stats.relics ?? 0) + 1;
+        if (won) {
+          save.stats.nanseBest = Math.max(save.stats.nanseBest ?? 0, lv);
+          save.stats.trialWins = (save.stats.trialWins ?? 0) + 1;
+          const missing = RELICS.filter((r) => r.hero === g.player.hero.id && !save.owned.includes(r.id));
+          if (lv >= TRIAL.relicFrom && missing.length && Math.random() < Math.min(0.9, 0.3 + 0.03 * (lv - TRIAL.relicFrom))) {
+            relic = missing[Math.floor(Math.random() * missing.length)];
+            save.owned.push(relic.id);
+            save.gearOpts ??= {};
+            save.gearOpts[relic.id] = rollOptions(relic);
+            save.stats.relics = (save.stats.relics ?? 0) + 1;
+          }
         }
-        nanseInfo = { level: lv, isNew, bonus, relic: relic?.name };
+        trialInfo = { level: lv, attr, won, relic: relic?.name };
       }
       const run = runFacts(g, state === 'clear', save);
       recordRun(save, run);
@@ -239,7 +272,7 @@ function onState(state, g) {
       writeSave(save);
       updateBadge();
       // What this run added to the 도감, for the result card.
-      g.resultExtra = { dailyBonus, endless, nanse: nanseInfo, unlocks: unlocked.map((a) => `${a.icon} ${a.name}`), newFoes: Object.keys(g.killsBy).filter((id) => !known.has(id)).length };
+      g.resultExtra = { dailyBonus, endless, trial: trialInfo, unlocks: unlocked.map((a) => `${a.icon} ${a.name}`), newFoes: Object.keys(g.killsBy).filter((id) => !known.has(id)).length };
     }
     // 🐾 첫 영물: the fifth 사신의 제단 run brings a 범수 along.
     if (g.stage.altar && g.resultExtra && !g.giftCounted) {
@@ -252,6 +285,7 @@ function onState(state, g) {
       }
     }
     renderResult(g, state === 'clear', g.resultExtra);
+    entryButtons(g);
     if (g.resultExtra?.unlocks.length && !g.achieveSounded) {
       g.achieveSounded = true;
       setTimeout(() => sound.sfx('achieve'), 1900);
@@ -262,7 +296,7 @@ function onState(state, g) {
 
 // ------------------------------------------------------------------ menus
 
-const RENDER = { home: renderHome, heroes: renderHeroes, grow: renderGrow, map: renderMap, prep: renderPrep, nanse: renderNanse, codex: renderCodex, spirit: renderSpirit, reward: renderReward };
+const RENDER = { home: renderHome, heroes: renderHeroes, grow: renderGrow, map: renderMap, prep: renderPrep, nanse: renderMap, codex: renderCodex, spirit: renderSpirit, reward: renderReward };
 let menu = 'home';
 
 /** Leaves any run and opens a menu screen. */
@@ -317,7 +351,7 @@ function menuTips(name) {
   const mine = save.owned.filter((id) => save.gearOpts?.[id] && EQUIPMENT.some((e) => e.id === id));
   const lines = mine.flatMap((id) => save.gearOpts[id]);
   if (name === 'home' && save.codex.runs >= 1) showTip('modes');
-  if ((name === 'nanse' || name === 'prep') && save.best?.[sel.stage]) showTip('nanse');
+  if (name === 'home' && save.codex.runs >= 1) showTip('trial');
   if (name === 'heroes' && save.codex.runs >= 1) showTip('gear');
   if (name === 'reward' && readyCount(save)) showTip('ach');
   if (name === 'heroes' && mine.length) {
@@ -334,6 +368,50 @@ function refresh() {
   RENDER[menu](save, sel, act);
   $(menu).scrollTop = y;
 }
+
+/**
+ * Result card: 다시 출진 / 다음 전장 / 다시 도전 show how many entries are left
+ * and are disabled when none are.
+ */
+function entryButtons(g) {
+  $('nextBtn').disabled = false;
+  if (g.stage.trial) {
+    $('retryBtn').textContent = '🔥 내일 다시 도전';
+    $('retryBtn').disabled = true;
+  } else if (g.stage.endless) {
+    const left = endlessLeft(save);
+    $('retryBtn').textContent = `🔁 다시 도전 · ♾️ ${left}/${ENDLESS_PER_DAY}`;
+    $('retryBtn').disabled = left <= 0;
+  } else if (!g.stage.daily && !g.stage.altar) {
+    const st = staminaOf(save);
+    const wait = staminaWait(save);
+    $('retryBtn').textContent = st.n > 0 ? `다시 출진 · ⚔️ ${st.n}/${st.max}` : `⚔️ ${wait} 뒤 출진`;
+    $('retryBtn').disabled = st.n <= 0;
+    $('nextBtn').disabled = st.n <= 0;
+  }
+}
+
+/**
+ * Once a second: the 출진 횟수 countdowns in the menus tick, and when a
+ * 출진 횟수 (or a new day's 무한 전장) comes back, the open menu redraws.
+ */
+let lastEntries = '';
+setInterval(() => {
+  const key = `${staminaOf(save).n}/${endlessLeft(save)}`;
+  for (const el of document.querySelectorAll('[data-stamina]')) el.textContent = staminaText(save);
+  for (const el of document.querySelectorAll('[data-stamina-wait]')) {
+    const w = staminaWait(save);
+    el.textContent = w ? `${w} 뒤 +1` : '가득';
+  }
+  if (key !== lastEntries) {
+    const changed = lastEntries !== '';
+    lastEntries = key;
+    writeSave(save);
+    if (changed && !game) refresh();
+  }
+  // Result card: keep the "mm:ss 뒤 출진" countdown and counts current.
+  if (game && !$('result').hidden) entryButtons(game);
+}, 1000);
 
 function toast(text, ok = true) {
   const el = $('toast');
@@ -394,7 +472,10 @@ const act = {
   toast,
   start: () => newGame(),
   startDaily: () => newGame(dailyFor(todayKey())),
-  startEndless: () => newGame(ENDLESS_RUN),
+  /** ♾️ 무한 전장 on `map` (or the one played last). */
+  /** 🔥 일일 던전 (once a day). */
+  startTrial: () => newGame({ trial: true }),
+  startEndless: (map) => newGame(map ? { endless: true, map } : ENDLESS_RUN),
   /** 사신의 제단: enter at 단계 `tier` against `guardian` (today's, or the one picked on a 사신의 날). */
   startAltar: (guardian, tier) => newGame({ altar: { guardian, tier } }),
   /** From 🎁 보상: open a home dungeon sheet, or a 도감 tab. */
@@ -472,20 +553,7 @@ const act = {
     writeSave(save);
     refresh();
   },
-  /** 난세 패: change one card's rank (clamped), remembered for the next runs. */
-  setNanse(id, rank) {
-    const card = NANSE_CARDS.find((c) => c.id === id);
-    if (!card) return;
-    save.nanseCards ??= {};
-    save.nanseCards[id] = Math.max(0, Math.min(card.ranks, rank));
-    writeSave(save);
-    refresh();
-  },
-  clearNanse() {
-    save.nanseCards = {};
-    writeSave(save);
-    refresh();
-  },
+
   pickHero(id) {
     sel.hero = id;
     refresh();
@@ -638,7 +706,7 @@ $('homeSave').addEventListener('click', () => {
 $('pauseBtn').addEventListener('click', () => game?.togglePause());
 $('resumeBtn').addEventListener('click', () => game?.togglePause());
 /** After a dungeon run, its own screen (the home sheet) is where the player goes back to. */
-const dungeonOfRun = () => (runAltar ? 'altar' : runDaily ? 'daily' : runEndless ? 'endless' : null);
+const dungeonOfRun = () => (runTrial ? 'trial' : runAltar ? 'altar' : runDaily ? 'daily' : runEndless ? 'endless' : null);
 function backFromRun(fallback) {
   const k = dungeonOfRun();
   if (!k) return toMenu(fallback);

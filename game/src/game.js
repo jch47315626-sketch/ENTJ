@@ -16,7 +16,7 @@ import { planCrows, updateCrows, callCrow, CROW } from './systems/crows.js';
 import { updateFieldObjects, breakObject } from './systems/fieldObjects.js';
 import { planFieldItems, updateFieldItems, takeFieldItem, ITEM_LIFE } from './systems/fieldItems.js';
 import { applyDaily } from './data/daily.js';
-import { ENDLESS, makeEndless, endlessSurge, crystalsOwed, WRATH, CRYSTAL } from './data/endless.js';
+import { ENDLESS, ENDLESS_MAPS, makeEndlessStage, endlessSurge, crystalsOwed, WRATH, CRYSTAL } from './data/endless.js';
 import { applyNanse } from './data/nanse.js';
 import { ALTAR, ALTAR_TIERS, makeAltarStage, altarYeongju } from './data/altar.js';
 import { makeSpirits, spiritMeta, initSpirits, updateSpirits, spiritAbsorb, spiritOnHurt, spiritRevive, spiritOnKill, spiritOnSpecial } from './systems/spirits.js';
@@ -117,11 +117,12 @@ export class Game {
     this.opts = opts;
     const hero = HEROES[opts.heroId];
     // 오늘의 전장: the day's rules are folded into the stage's difficulty.
-    // ♾️ 무한 전장: the same field, with no end (data/endless.js).
+    // ♾️ 무한 전장: its own maps, with no end (data/endless.js).
     // 난세 단계: the chosen hardship cards fold into the stage (data/nanse.js).
     // 사신의 제단: the 단계's field at double pace, with the day's guardian (data/altar.js).
     const raw = STAGES[opts.altar ? ALTAR_TIERS[opts.altar.tier].base : opts.stageId];
-    const base = opts.altar ? makeAltarStage(raw, opts.altar.guardian, opts.altar.tier) : opts.daily ? applyDaily(raw, opts.daily) : opts.endless ? makeEndless(raw) : opts.nanse ? applyNanse(raw, opts.nanse) : raw;
+    const base = opts.altar ? makeAltarStage(raw, opts.altar.guardian, opts.altar.tier) : opts.daily ? applyDaily(raw, opts.daily) : opts.endless ? makeEndlessStage(ENDLESS_MAPS[opts.endlessMap]) : opts.nanse ? applyNanse(raw, opts.nanse) : raw;
+    if (opts.trial) base.trial = opts.trial; // 🔥 일일 던전 (data/trial.js)
     this.endlessBosses = 0;
     this.stage = scaleStage(base, opts.quick ? 0.2 : 1);
     // 영물 동행 (systems/spirits.js): passive gifts go into the hero's bonuses.

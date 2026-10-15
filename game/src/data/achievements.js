@@ -71,8 +71,6 @@ export const ACHIEVEMENTS = [
   { id: 'crow1', group: 'field', icon: '🐦‍⬛', name: '까마귀 친구', desc: '감나무 가지를 주워 까마귀를 부른다', reward: 200, check: (s) => (s.stats.crowCalls ?? 0) >= 1 },
   { id: 'crow50', group: 'field', icon: '🪙', name: '까마귀 대박', desc: '까마귀 한 번에 엽전 50개를 모은다', reward: 800, check: (s) => (s.stats.crowBest ?? 0) >= 50 },
 
-  // 오늘의 전장
-  { id: 'daily1', group: 'field', icon: '📅', name: '오늘의 승자', desc: '오늘의 전장에서 처음 승리한다', reward: 300, check: (s) => (s.stats.dailyWins ?? 0) >= 1 },
 
   // 전장 오브젝트 · 무한 전장
   { id: 'endlessBoss3', group: 'war', icon: '👹', name: '적장 셋을 넘어', desc: '무한 전장 한 판에서 적장을 3번 쓰러뜨린다', reward: 3000, check: (s) => (s.stats.endlessBosses ?? 0) >= 3 },
@@ -80,7 +78,7 @@ export const ACHIEVEMENTS = [
   // 난세 단계
 
   // 장비 옵션 · 신물
-  { id: 'relic1', group: 'camp', icon: '🌟', name: '신물의 주인', desc: '난세 10단계 이상을 평정해 신물을 처음 얻는다', reward: 3000, check: (s) => (s.stats.relics ?? 0) >= 1 },
+  { id: 'relic1', group: 'camp', icon: '🌟', name: '신물의 주인', desc: '일일 던전에서 난세 10단계 이상을 평정해 신물을 처음 얻는다', reward: 3000, check: (s) => (s.stats.relics ?? 0) >= 1 },
 
   // 군영
   { id: 'fullSet', group: 'camp', icon: '🧥', name: '완전 무장', desc: '한 영웅이 장비 6부위를 모두 찬다', reward: 500,
@@ -93,10 +91,9 @@ export const ACHIEVEMENTS = [
   ...series('kills', 'war', '🗡️', '만인적', (v) => `적을 모두 합쳐 ${n(v)}명 쓰러뜨린다`, totalKills, [[1000, 500, 'kills1k'], [10000, 4000, 'kills10k'], [50000, 10000], [200000, 25000], [1000000, 60000]]),
   ...series('bosses', 'war', '💀', '적장 사냥꾼', (v) => `적장을 ${n(v)}번 쓰러뜨린다`, (s) => s.stats.bosses ?? 0, [[10, 1500, 'bosses10'], [30, 4000], [100, 10000], [300, 25000]]),
   ...series('endless', 'war', '♾️', '끝없는 싸움', (v) => `무한 전장에서 ${v / 60}분을 버틴다`, (s) => s.stats.endlessBest ?? 0, [[300, 800, 'endless5'], [600, 2500, 'endless10'], [900, 6000], [1200, 12000]]),
-  ...series('nanse', 'war', '🔥', '난세의 영웅', (v) => `난세 ${v}단계 이상으로 전장을 평정한다`, (s) => s.stats.nanseBest ?? 0, [[5, 1500, 'nanse5'], [10, 4000, 'nanse10'], [15, 7000, 'nanse15'], [20, 10000, 'nanse20'], [25, 15000, 'nanse25']]),
+  ...series('nanse', 'war', '🔥', '난세의 영웅', (v) => `일일 던전에서 난세 ${v}단계 이상을 평정한다`, (s) => s.stats.nanseBest ?? 0, [[5, 1500, 'nanse5'], [8, 2500, 'nanse8'], [10, 4000, 'nanse10'], [12, 7000, 'nanse12'], [14, 10000, 'nanse14']]),
   ...series('crows', 'field', '🌳', '감나무 지기', (v) => `까마귀를 모두 합쳐 ${n(v)}번 부른다`, (s) => s.stats.crowCalls ?? 0, [[20, 800, 'crow20'], [100, 3000], [500, 10000]]),
   ...series('objects', 'field', '🥁', '전장의 지혜', (v) => `전장 오브젝트를 모두 합쳐 ${n(v)}개 부순다`, (s) => s.stats.objects ?? 0, [[30, 800, 'objects30'], [150, 3000], [600, 10000]]),
-  ...series('dailies', 'field', '🗓️', '하루도 빠짐없이', (v) => `오늘의 전장을 ${n(v)}번 (서로 다른 날) 이긴다`, (s) => s.stats.dailyWins ?? 0, [[7, 3000, 'daily7'], [30, 10000], [100, 30000]]),
   ...series('earned', 'camp', '💰', '거부', (v) => `모두 합쳐 ${n(v)}냥을 번다`, (s) => s.codex.earned ?? 0, [[100000, 5000, 'rich'], [1000000, 20000], [10000000, 60000]]),
 
   // 사신의 제단 (보상: 영주)

@@ -1,5 +1,5 @@
 import { pickWeighted, rand, lerp, TAU } from '../core/math.js';
-import { ENDLESS } from '../data/endless.js';
+import { ENDLESS, endlessBossFor } from '../data/endless.js';
 import { rockfall } from './terrain.js';
 
 /** Drives the stage timeline: spawn rates, events, supply carts and the boss. */
@@ -28,7 +28,9 @@ export class Spawner {
     const t = g.time;
     if (t >= this.stage.bossAt) {
       this.bossStarted = true;
-      g.startBoss(this.stage.bossAlt[g.player.hero.id] ?? this.stage.boss);
+      // 무한 전장: the map's 적장 take turns.
+      const hero = g.player.hero.id;
+      g.startBoss(this.stage.bossCycle ? endlessBossFor(this.stage, g.endlessBosses, hero) : this.stage.bossAlt[hero] ?? this.stage.boss);
       return;
     }
 

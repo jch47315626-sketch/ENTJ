@@ -10,14 +10,17 @@ import {
 import { ACHIEVEMENTS, ACH_GROUPS, progressOf } from '../data/achievements.js';
 import { heroUltimates } from '../data/upgrades.js';
 import { GYEOLGI, gyeolgiCost } from '../data/gyeolgi.js';
-import { dailyFor, todayKey, untilTomorrow } from '../data/daily.js';
 import { SPIRITS, SPIRIT_LIST, SPIRIT_GRADES, GACHA, STAR_DUPES, MAX_STARS, SASIN_STAR_ESSENCE, COMBOS, combosOf, companionSlots, spiritOf, dupesForNext, FIRST_SPIRIT_RUNS, altarRunsDone } from '../data/spirits.js';
 import { GUARDIANS, ALTAR_TICKETS, ESSENCE_PER_SASIN, ALTAR_TIERS, ALTAR_MAX_TIER, guardianOf, dayNumber, refreshAltar, altarTierOpen, wispWorth, clearBonus } from '../data/altar.js';
+import { ENDLESS_MAPS, ENDLESS_MAP_ORDER, endlessMapOpen, endlessMapOf } from '../data/endless.js';
+import { staminaOf, staminaText, staminaWait, endlessLeft, ENDLESS_PER_DAY } from '../data/entries.js';
 import { josa } from '../core/korean.js';
 import { lineText, lineMax, engraveCost } from '../data/gearOptions.js';
 import { HELP } from '../data/help.js';
 import { codexEntry, FOES, GENERALS } from '../data/codexTiers.js';
-import { NANSE_CARDS, NANSE_MAX, NANSE_MILESTONES, nanseLevel, nanseRewardMul, bestNanse, milestoneBonus } from '../data/nanse.js';
+import { NANSE_CARDS } from '../data/nanse.js';
+import { TRIAL, trialFor, trialDone, ATTR_ICON, ATTR_NAME } from '../data/trial.js';
+import { untilTomorrow } from '../data/daily.js';
 import { SPECIALS } from '../systems/specials.js';
 import { drawUnit } from '../render/sprites.js';
 import { iconCanvas } from '../render/icons.js';
@@ -161,15 +164,12 @@ function purse(save) {
   box.append(el('span', 'coin-pill', `${COIN()}<b>${fmt(save.money)}</b>`));
   if ((save.yeongju ?? 0) > 0 || (save.altarRuns ?? 0) > 0) box.append(el('span', 'coin-pill yj', `🔮<b>${fmt(save.yeongju ?? 0)}</b>`));
   if ((save.crystals ?? 0) > 0 || Object.keys(save.gyeolgi ?? {}).length) box.append(el('span', 'coin-pill gem', `💎<b>${fmt(save.crystals ?? 0)}</b>`));
+  if ((save.attrStones ?? 0) > 0) box.append(el('span', 'coin-pill attr', `${ATTR_ICON}<b>${fmt(save.attrStones)}</b>`));
   return box;
 }
 
 // ------------------------------------------------------------ 메뉴 묶음
 
-/** ⚔️ 출진: 전장 지도 · 난세. */
-function sortieTabs(act, current) {
-  return tabStrip([['map', '🗺️ 전장'], ['nanse', '🔥 난세']], current, (id) => act.go(id));
-}
 
 /** 💪 강화: 장비 · 제련 · 비전 · 결기 · 영물 (영물 once the altar has been tried). */
 const POWER_TABS = [['gear', '🛡️ 장비', 'heroes'], ['forge', '🔨 제련', 'heroes'], ['secret', '📜 비전', 'grow'], ['gyeolgi', '💎 결기', 'grow'], ['spirit', '🐾 영물', 'spirit']];
@@ -249,6 +249,7 @@ export function renderHome(save, sel, act) {
   $('homeMoney').textContent = fmt(save.money);
   $('homeYeongju').textContent = fmt(save.yeongju ?? 0);
   $('homeCrystals').textContent = fmt(save.crystals ?? 0);
+  $('homeAttr').textContent = fmt(save.attrStones ?? 0);
   $('homeYeongjuPill').hidden = !((save.yeongju ?? 0) > 0 || (save.altarRuns ?? 0) > 0);
   $('homeCrystalPill').hidden = !((save.crystals ?? 0) > 0 || Object.keys(save.gyeolgi ?? {}).length);
   const body = $('homeBody');
@@ -268,29 +269,45 @@ export function renderHome(save, sel, act) {
   card.append(button(`<span class="hs-stars">${starText(st.difficulty.stars)}</span><span class="hm-stage">${st.numeral} ${st.name}</span><small>보상 ×${rewardOf(st)} · 적장 ${boss.name} · 전장 바꾸기 ›</small>`, 'hm-field', () => act.go('map')));
   if (!gate.ok) card.append(el('p', 'gate-msg', `🔒 ${gate.text}`));
   card.append(button('⚔️ 출진하기', 'seal-btn cta', () => act.go('prep')));
+  card.append(staminaLine(save));
   body.append(card);
 
   // 던전: one line each; the full card opens in a sheet.
   const list = el('div', 'dg-list');
-  const d = dailyFor(todayKey());
-  const dDone = save.daily?.date === d.date && save.daily.cleared;
-  list.append(dungeonRow('📅', '오늘의 전장', `${HEROES[d.heroId].name} · ${STAGES[d.stageId].name}`,
-    dDone ? '✅ 오늘 보상 받음' : `첫 승리 🪙 ${fmt(d.reward)} · ${untilTomorrow()} 남음`, !dDone, () => openSheet('daily', save, sel, act)));
+  const tr = trialFor(save);
+  const tDone = trialDone(save);
+  list.append(dungeonRow('🔥', '일일 던전', `난세 ${tr.level}단계 · ${STAGES[tr.stageId].name}`,
+    tDone ? `✅ 오늘 도전함 · ${untilTomorrow()} 뒤 새 던전` : `하루 1번 · ${ATTR_ICON} ${ATTR_NAME} +${fmt(tr.reward)}`, !tDone, () => openSheet('trial', save, sel, act)));
   const a = refreshAltar(save);
   const g = GUARDIANS[guardianOf()];
   list.append(dungeonRow('🏯', '사신의 제단', `${g ? `${g.icon} ${g.name}` : '✨ 사신의 날'} · ${Math.max(1, save.altarTier ?? 1)}단계`,
     `🎟️ 입장권 ${a.tickets}/${ALTAR_TICKETS.cap}${save.spiritGift ? '' : ` · 🐾 ${Math.max(1, FIRST_SPIRIT_RUNS - altarRunsDone(save))}판 더 돌면 첫 영물`}`, a.tickets > 0, () => openSheet('altar', save, sel, act)));
-  const best = save.endless?.[sel.stage];
+  const em = ENDLESS_MAPS[endlessMapOf(save)];
+  const best = save.endless?.[em.id];
   const mmss = (t) => `${Math.floor(t / 60)}분 ${String(Math.floor(t % 60)).padStart(2, '0')}초`;
-  list.append(dungeonRow('♾️', '무한 전장', `${h.name} · ${st.name}`, best ? `🏆 최고 ${mmss(best.time)} · 💎 결기수정` : '쓰러질 때까지 · 💎 결기수정', false, () => openSheet('endless', save, sel, act)));
+  const eLeft = endlessLeft(save);
+  list.append(dungeonRow('♾️', '무한 전장', `${h.name} · ${em.icon} ${em.name}`,
+    `♾️ 오늘 ${eLeft}/${ENDLESS_PER_DAY}번${best ? ` · 🏆 최고 ${mmss(best.time)}` : ''} · 💎 결기수정`, eLeft > 0, () => openSheet('endless', save, sel, act)));
   body.append(list);
-  if (ui.sheet) openSheet(ui.sheet, save, sel, act);
+  if (ui.sheet === 'altar' || ui.sheet === 'endless' || ui.sheet === 'trial') openSheet(ui.sheet, save, sel, act);
+  else ui.sheet = null;
 }
 
 /** One line of the home's dungeon list. */
 function dungeonRow(icon, name, line, status, glow, onOpen) {
   const b = button(`<span class="dg-icon">${icon}</span><span class="dg-text"><b>${name}</b><span>${line}</span><small>${status}</small></span><span class="dg-go">›</span>`, `dg-row${glow ? ' glow' : ''}`, onOpen);
   return b;
+}
+
+/** ⚔️ 출진 횟수 n/5 as pips, with the live countdown to the next one. */
+function staminaLine(save) {
+  const st = staminaOf(save);
+  const line = el('div', `stamina-line${st.n ? '' : ' empty'}`);
+  const pips = Array.from({ length: st.max }, (_, i) => `<i class="${i < st.n ? 'on' : ''}"></i>`).join('');
+  const wait = staminaWait(save);
+  line.innerHTML = `<b>⚔️ 출진 횟수</b><span class="st-pips">${pips}</span><b class="st-n">${st.n}/${st.max}</b><small data-stamina-wait>${wait ? `${wait} 뒤 +1` : '가득'}</small>`;
+  line.title = '일반 전장은 한 번에 5번까지, 30분마다 1번씩 회복돼요';
+  return line;
 }
 
 /** A dungeon's full card in a sheet over the home screen (kept open across refreshes). */
@@ -306,17 +323,42 @@ function openSheet(kind, save, sel, act) {
     close();
     fn(...args);
   };
-  const sAct = { ...act, go: leave(act.go), startDaily: leave(act.startDaily), startEndless: leave(act.startEndless), startAltar: leave(act.startAltar) };
+  const sAct = { ...act, go: leave(act.go), startDaily: leave(act.startDaily), startEndless: leave(act.startEndless), startAltar: leave(act.startAltar), startTrial: leave(act.startTrial) };
   const back = el('div', 'sheet-back');
   const sheet = el('div', 'sheet');
   const x = button('✕', 'sheet-x', close);
   x.setAttribute('aria-label', '닫기');
   sheet.append(x);
-  sheet.append(kind === 'daily' ? dailyCard(save, sAct) : kind === 'altar' ? altarCard(save, sel, sAct) : endlessCard(save, sel, sAct));
+  sheet.append(kind === 'trial' ? trialCard(save, sel, sAct) : kind === 'altar' ? altarCard(save, sel, sAct) : endlessCard(save, sel, sAct));
   back.append(sheet);
   back.addEventListener('click', (e) => e.target === back && close());
   // On top of everything (the bottom menu included) until closed.
   $('app').append(back);
+}
+
+/** 🔥 일일 던전: today's random 난세 패 on the field two below the furthest pacified one; once a day. */
+function trialCard(save, sel, act) {
+  const tr = trialFor(save);
+  const st = STAGES[tr.stageId];
+  const h = HEROES[sel.hero];
+  const done = trialDone(save);
+  const card = el('div', `trial-card${done ? ' done' : ''}`);
+  card.append(el('div', 'dc-head', `<b>🔥 일일 던전</b><span>${done ? `새 던전까지 ${untilTomorrow()}` : '하루 1번'}</span>`));
+  card.append(el('div', 'tc-level', `<b>난세 <em>${tr.level}</em>단계</b><span>${starText(st.difficulty.stars)} ${st.numeral} ${st.name}</span>`));
+  const who = el('div', 'dc-who');
+  who.append(portrait(h, 48));
+  who.append(el('div', 'dc-where', `<b>${josa(h.name, '으로')} 출전</b><span>마지막으로 평정한 전장보다 두 단계 아래</span>`));
+  card.append(who);
+  const list = el('ul', 'tc-cards');
+  for (const c of NANSE_CARDS) {
+    const r = tr.cards[c.id];
+    if (r) list.append(el('li', '', `<span>${c.icon}</span><b>${c.name}${c.ranks > 1 ? ` ${'Ⅰ Ⅱ Ⅲ'.split(' ')[r - 1]}` : ''}</b><small>${c.desc(r)}</small>`));
+  }
+  card.append(list);
+  card.append(el('p', 'ec-rule', `오늘의 난세 패는 날마다 무작위로 바뀌어요. 평정하면 <b>${ATTR_ICON} ${ATTR_NAME} ${fmt(tr.reward)}개</b>, 패퇴해도 30%를 받아요.${tr.level >= TRIAL.relicFrom ? ` <b>🌟 난세 ${TRIAL.relicFrom}단계 이상 — 평정하면 신물이 나올 수 있어요!</b>` : ''}`));
+  const btn = button(done ? (save.trial?.cleared ? '✅ 오늘 평정 완료' : '오늘 도전 끝 · 내일 다시') : '🔥 일일 던전 도전', 'trial-btn', () => act.startTrial(), done);
+  card.append(btn);
+  return card;
 }
 
 /** 🏯 사신의 제단: today's guardian (or a choice on 사신의 날), 단계, entries left, 영주 and 사신 정수. */
@@ -362,52 +404,60 @@ function altarCard(save, sel, act) {
   return card;
 }
 
-/** ♾️ 무한 전장: the chosen hero and field with no end; best time per field. */
+/**
+ * ♾️ 무한 전장: its own maps (◀ ▶ to browse), the chosen hero, best time per map.
+ * The card opens on the map played last; browsing only changes what is shown
+ * until a run is started there.
+ */
 function endlessCard(save, sel, act) {
-  const st = STAGES[sel.stage];
+  const order = ENDLESS_MAP_ORDER;
+  const id = ui.endlessView && ENDLESS_MAPS[ui.endlessView] ? ui.endlessView : endlessMapOf(save);
+  const m = ENDLESS_MAPS[id];
+  const i = order.indexOf(id);
+  const open = endlessMapOpen(save, id);
   const h = HEROES[sel.hero];
-  const best = save.endless?.[sel.stage];
+  const best = save.endless?.[id];
   const mmss = (s) => `${Math.floor(s / 60)}분 ${String(Math.floor(s % 60)).padStart(2, '0')}초`;
+  const view = (to) => {
+    ui.endlessView = to;
+    act.refresh();
+  };
   const card = el('div', 'endless-card');
-  card.append(el('div', 'dc-head', `<b>♾️ 무한 전장</b><span>쓰러질 때까지 버티기</span>`));
-  const who = el('div', 'dc-who');
-  who.append(portrait(h, 56));
-  who.append(el('div', 'dc-where', `<b>${josa(h.name, '으로')} 출전</b><span>${starText(st.difficulty.stars)} ${st.numeral} ${st.name}</span>`));
-  card.append(who);
-  card.append(el('p', 'ec-rule', '어둠의 <b>마계</b>에서 싸워요. 적이 더 빠르고 많으며, 적장은 <b>3분마다</b> 더 강해져 돌아와요. 냥 대신 <b>💎 결기수정</b>이 떨어져요. <b>⚡ 한 자리에 20초 머물면 신의 분노!</b> 고른 전장이 난이도와 적을 정해요.'));
-  card.append(el('p', 'ec-best', best
-    ? `🏆 이 전장 최고 기록 <b>${mmss(best.time)}</b> · 적장 ${best.bosses}명 · ${HEROES[best.hero]?.name ?? ''}`
-    : '아직 기록이 없어요 — 첫 기록을 세워 보세요!'));
-  const row = el('div', 'ec-btns');
-  row.append(button('🗺️ 전장 바꾸기', 'plain-btn small', () => act.go('map')));
-  row.append(button('♾️ 무한 전장 도전', 'endless-btn', () => act.startEndless()));
+  const left = endlessLeft(save);
+  card.append(el('div', 'dc-head', `<b>♾️ 무한 전장</b><span>오늘 남은 도전 <b>${left}</b> / ${ENDLESS_PER_DAY}</span>`));
+  // Map picker: ◀ map ▶, with its rank and whether it is the one played last.
+  const row = el('div', 'ac-tier ec-map');
+  row.append(button('◀', 'ac-step', () => view(order[i - 1]), i <= 0));
+  const last = id === endlessMapOf(save) && save.endlessMap ? ' · 마지막 도전' : '';
+  row.append(el('div', 'ac-tier-mid', `<b>${m.icon} ${m.name}</b><small>${m.place} · ${starText(m.difficulty.stars)}${last}</small>`));
+  row.append(button('▶', 'ac-step', () => view(order[i + 1]), i >= order.length - 1));
   card.append(row);
+  const dots = el('div', 'ec-dots');
+  order.forEach((mid, k) => {
+    const d = el('i', `${k === i ? 'on' : ''}${endlessMapOpen(save, mid) ? '' : ' locked'}`);
+    dots.append(d);
+  });
+  card.append(dots);
+  card.append(el('p', 'ec-rule', m.intro));
+  if (!open) card.append(el('p', 'ac-lock', `🔒 전장 「${STAGES[m.unlockAfter].name}」을 평정하면 열려요`));
+  const who = el('div', 'dc-who');
+  who.append(portrait(h, 48));
+  who.append(el('div', 'dc-where', `<b>${josa(h.name, '으로')} 출전</b><span>적장 ${m.bosses.map((b) => BOSSES[b].name).join(' · ')} 번갈아 등장</span>`));
+  card.append(who);
+  card.append(el('p', 'ec-rule', '적이 더 빠르고 많으며, 적장은 <b>3분마다</b> 더 강해져 돌아와요. 냥 대신 <b>💎 결기수정</b> — 깊은 층일수록 많이 떨어져요. <b>⚡ 한 자리에 20초 머물면 신의 분노!</b>'));
+  card.append(el('p', 'ec-best', best
+    ? `🏆 이 맵 최고 기록 <b>${mmss(best.time)}</b> · 적장 ${best.bosses}명 · ${HEROES[best.hero]?.name ?? ''}`
+    : '아직 기록이 없어요 — 첫 기록을 세워 보세요!'));
+  const btns = el('div', 'ec-btns');
+  btns.append(button('👑 영웅 바꾸기', 'plain-btn small', () => act.go('heroes')));
+  btns.append(button(!open ? '🔒 잠긴 맵' : left > 0 ? `♾️ 도전하기 · ${left}/${ENDLESS_PER_DAY}` : '오늘 도전 끝 · 내일 다시', 'endless-btn', () => {
+    ui.endlessView = null;
+    act.startEndless(id);
+  }, !open || left <= 0));
+  card.append(btns);
   return card;
 }
 
-/** 📅 오늘의 전장: today's hero, field and rules, and whether its bonus is taken. */
-function dailyCard(save, act) {
-  const d = dailyFor(todayKey());
-  const st = STAGES[d.stageId];
-  const h = HEROES[d.heroId];
-  const done = save.daily?.date === d.date && save.daily.cleared;
-  const [, mm, dd] = d.date.split('-').map(Number);
-  const card = el('div', `daily-card${done ? ' done' : ''}`);
-  card.append(el('div', 'dc-head', `<b>📅 오늘의 전장</b><span>${mm}월 ${dd}일 · 새 도전까지 ${untilTomorrow()}</span>`));
-  const who = el('div', 'dc-who');
-  who.append(portrait(h, 56));
-  who.append(el('div', 'dc-where', `<b>${josa(h.name, '으로')} 출전</b><span>${starText(st.difficulty.stars)} ${st.numeral} ${st.name}</span>`));
-  card.append(who);
-  const [hard, boon] = d.rules;
-  card.append(el('div', 'dc-rules', `
-    <span class="dc-rule hard">${hard.icon} <b>${hard.name}</b> ${hard.desc}</span>
-    <span class="dc-rule boon">${boon.icon} <b>${boon.name}</b> ${boon.desc}</span>`));
-  card.append(el('p', 'dc-reward', done
-    ? `✅ 오늘의 첫 승리 보상 🪙 ${fmt(d.reward)}은 받았어요. 다시 도전하면 <b>판 보상(냥)만</b> 받아요 — 첫 승리 보상은 내일 다시!`
-    : `첫 승리 보상 <b>🪙 ${fmt(d.reward)}</b> <small>(하루 한 번 · 판 보상과 별도, 지면 다시 도전 가능)</small>`));
-  card.append(button(done ? '🔁 다시 도전하기' : '📅 도전하기', 'daily-btn', () => act.startDaily()));
-  return card;
-}
 
 // =================================================================== 영웅
 
@@ -482,7 +532,7 @@ function itemCard(save, h, item, act) {
   card.style.setProperty('--grade', GRADES[item.grade].color);
   card.append(iconCanvas(open || owned ? item.id : `empty:${item.slot}`, 40, 'row-icon'));
   const txt = el('div', 'ic-text');
-  const sub = item.relic && !owned ? '🔥 난세 10단계 이상을 평정하면 얻을 수 있어요' : open || owned ? bonusText(itemBonus(item, lv)) : `★${GRADES[item.grade].needStars} 전장을 깨면 풀려요`;
+  const sub = item.relic && !owned ? `🔥 일일 던전에서 난세 ${TRIAL.relicFrom}단계 이상을 평정하면 얻을 수 있어요` : open || owned ? bonusText(itemBonus(item, lv)) : `★${GRADES[item.grade].needStars} 전장을 깨면 풀려요`;
   txt.innerHTML = `<b>${gradeTag(item.grade)} ${open || owned ? itemName(save, item) : '???'}</b><span>${sub}</span>`;
   card.append(txt);
   // 장비 옵션: random lines; each can be rerolled (각인) for 냥.
@@ -505,7 +555,7 @@ function itemCard(save, h, item, act) {
   if (owned) {
     ctrl.append(worn ? tag('착용 중') : button('착용', 'wear-btn', () => act.wear(item)));
   } else if (item.relic) {
-    ctrl.append(tag('🔥 난세 전용', 'locked'));
+    ctrl.append(tag('🔥 일일 던전', 'locked'));
   } else if (open) {
     ctrl.append(priceBtn(item.price, save.money, () => act.buy(item)));
   } else {
@@ -519,7 +569,7 @@ function itemCard(save, h, item, act) {
     open || owned ? `기본 능력: ${bonusText(itemBonus(item, lv))}${lv ? ` (제련 +${lv} 포함)` : ''}` : '',
     item.note ? item.note : '',
     lines.length ? `옵션: ${lines.map(lineText).join(' · ')}` : owned ? '' : '얻을 때 무작위 옵션이 1~4줄 붙어요 (진품 이상은 비기가 붙기도 해요).',
-    owned ? (worn ? '지금 차고 있어요' : '가진 장비 — 눌러서 착용') : item.relic ? '난세 10단계 이상을 평정하면 얻을 수 있어요.'
+    owned ? (worn ? '지금 차고 있어요' : '가진 장비 — 눌러서 착용') : item.relic ? `일일 던전에서 난세 ${TRIAL.relicFrom}단계 이상을 평정하면 얻을 수 있어요.`
       : open ? `값: ${fmt(item.price)}냥` : `★${G.needStars} 전장을 평정하면 상점에 나와요.`,
   ]));
   return card;
@@ -657,12 +707,11 @@ const MAP_W = 124; // the painted maps are 1.24 times as wide as tall
 /** Hold tip for a battlefield: difficulty, reward, boss, gear and record. */
 function stageTip(save, sel, st) {
   const { boss, gate, cleared } = stageInfo(save, sel, st);
-  const best = bestNanse(save, st.id);
   return tipHtml(`${st.numeral} ${st.name}`, [
     `${starRow(st)} ${st.difficulty.label} · 보상 ×${rewardOf(st)}`,
     `적장: ${boss.name}${boss.epithet ? ` (${boss.epithet})` : ''}`,
     `권장 장비: ${st.difficulty.stars > 1 ? `${GRADES[REC_GRADE[st.difficulty.stars]].name}${st.difficulty.stars > 5 ? ' +제련' : ' 이상'}` : '없어도 OK'}`,
-    cleared ? `🏆 평정함${best ? ` · 난세 최고 ${best}단계` : ''}` : gate.ok ? '아직 평정하지 못했어요' : `🔒 ${gate.text}`,
+    cleared ? '🏆 평정함' : gate.ok ? '아직 평정하지 못했어요' : `🔒 ${gate.text}`,
   ]);
 }
 
@@ -696,7 +745,7 @@ export function renderMap(save, sel, act) {
   const body = $('mapBody');
   body.innerHTML = '';
   body.append(header('출진', save, act, '出陣'));
-  body.append(sortieTabs(act, 'map'));
+  body.append(staminaLine(save));
   const cur = ui.mapStage ?? sel.stage;
   // Themes: 삼한 통일 · 양길의 등장 (each its own map).
   ui.mapChapter ??= chapterOf(STAGES[cur]);
@@ -808,87 +857,9 @@ export function renderPrep(save, sel, act) {
       act.go('heroes');
     }));
   }
-  const cleared = !!save.best?.[sel.stage];
-  const lv = cleared ? nanseLevel(save.nanseCards) : 0;
-  // 난세 단계: chosen on its own tab; here just what will apply.
-  const nr = el('div', `prep-nanse${lv ? ' on' : ''}`);
-  nr.append(el('span', 'pn-text', !cleared ? `🔥 난세 — 🔒 ${josa(st.name, '을')} 평정하면 열려요`
-    : lv ? `🔥 난세 <b>${lv}단계</b> · 냥 ×${nanseRewardMul(lv).toFixed(1)}` : '🔥 난세 꺼짐 — 보통 난이도'));
-  if (cleared) nr.append(button(lv ? '바꾸기' : '고르기', 'plain-btn small', () => act.go('nanse')));
-  body.append(nr);
-  body.append(button(lv ? `🔥 난세 ${lv}단계 출진` : '⚔️ 출진', 'seal-btn cta', act.start, !gate.ok));
-}
-
-// =================================================================== 난세
-
-/** 🔥 난세 tab: pick the battlefield and stack hardship cards before setting out. */
-export function renderNanse(save, sel, act) {
-  const body = $('nanseBody');
-  body.innerHTML = '';
-  body.append(header('출진', save, act, '出陣'));
-  body.append(sortieTabs(act, 'nanse'));
-  // Battlefield cards: only pacified ones can carry 난세.
-  const row = el('div', 'nanse-stages');
-  for (const id of STAGE_ORDER) {
-    const st = STAGES[id];
-    const ok = !!save.best?.[id];
-    const best = bestNanse(save, id);
-    const b = button(`<span class="ns-no">${st.numeral}${ok ? '' : '<i class="ns-lock">🔒</i>'}</span><span class="ns-text"><b>${st.name}</b><small>${ok ? (best ? `최고 ${best}단계` : '평정 완료') : '미평정'}</small></span>`,
-      `ns-stage${id === sel.stage ? ' on' : ''}${ok ? '' : ' locked'}`, () => act.selectStage(id), !ok);
-    b.style.setProperty('--art', STAGE_ART(id));
-    holdTip(b, stageTip(save, sel, st));
-    row.append(b);
-  }
-  body.append(row);
-  body.append(holdHint());
-  const cleared = !!save.best?.[sel.stage];
-  body.append(nansePanel(save, sel, act, cleared));
-  if (cleared) body.append(button('⚔️ 이 난세로 출진 준비', 'seal-btn cta', () => act.go('prep')));
-}
-
-/** Painted icons for the first hardship cards; the rest keep their emoji. */
-const NANSE_ICON = { iron: 'nanse-iron', blade: 'nanse-blade' };
-
-/** 🔥 난세 단계: stack hardship cards on a pacified field for more 냥 and a record. */
-function nansePanel(save, sel, act, cleared) {
-  const box = el('div', 'nanse-box');
-  const st = STAGES[sel.stage];
-  if (!cleared) {
-    box.classList.add('locked');
-    box.append(el('div', 'nb-head', `${img('icon/nanse-flame', 'nb-flame')}<b>난세 단계</b><span>🔒 ${josa(st.name, '을')} 평정하면 열려요</span>`));
-    box.append(el('p', 'nb-note', '전장을 한 번 평정하면, 출진 전에 고난 카드를 골라 더 어려운 싸움에 도전할 수 있어요. 단계가 높을수록 냥을 더 받아요.'));
-    return box;
-  }
-  const cards = save.nanseCards ?? {};
-  const lv = nanseLevel(cards);
-  const mine = bestNanse(save, sel.stage, sel.hero);
-  const any = bestNanse(save, sel.stage);
-  const next = NANSE_MILESTONES.find((m) => m > any);
-  box.append(el('div', 'nb-head', `${img('icon/nanse-flame', 'nb-flame')}<b>난세 <em>${lv}</em><small> / ${NANSE_MAX}</small></b>
-    <span>냥 ×${nanseRewardMul(lv).toFixed(1)} · ${HEROES[sel.hero].name} 최고 ${mine}단계</span>`));
-  if (next) box.append(el('p', 'nb-note', `${COIN()} 이 전장에서 처음으로 난세 ${next}단계를 평정하면 돌파 보상 <b>${fmt(Math.round(milestoneBonus(next, st.difficulty.stars)))}냥</b>`));
-  const list = el('div', 'nb-list');
-  for (const c of NANSE_CARDS) {
-    const r = Math.min(c.ranks, cards[c.id] ?? 0);
-    const row = el('div', `nb-card${r ? ' on' : ''}`);
-    row.append(el('span', 'nb-icon', NANSE_ICON[c.id] ? img(`icon/${NANSE_ICON[c.id]}`) : c.icon));
-    const pips = c.ranks > 1 ? `<span class="nb-pips">${Array.from({ length: c.ranks }, (_, i) => `<i class="${i < r ? 'on' : ''}"></i>`).join('')}</span>` : '';
-    row.append(el('div', 'nb-text', `<b>${c.name} <small>+${c.points}점${c.ranks > 1 ? ' / 단' : ''}</small></b><span>${c.desc(Math.max(1, r))}</span>${pips}`));
-    const ctl = el('div', 'nb-ctl');
-    ctl.append(button('−', 'nb-btn', () => act.setNanse(c.id, r - 1), r === 0));
-    ctl.append(el('span', 'nb-count', String(r)));
-    ctl.append(button('+', 'nb-btn', () => act.setNanse(c.id, r + 1), r >= c.ranks));
-    row.append(ctl);
-    holdTip(row, tipHtml(`${c.icon} ${c.name}`, [
-      ...Array.from({ length: c.ranks }, (_, i) => `${c.ranks > 1 ? `${i + 1}단: ` : ''}${c.desc(i + 1)}${i < r ? ' ✔' : ''}`),
-      `난세 점수 +${c.points}${c.ranks > 1 ? ' (단마다)' : ''} — 점수의 합이 난세 단계예요`,
-      '단계가 높을수록 판 보상 냥이 늘어요',
-    ]));
-    list.append(row);
-  }
-  box.append(list);
-  if (lv) box.append(button('모두 끄기', 'plain-btn small nb-clear', () => act.clearNanse()));
-  return box;
+  const sta = staminaOf(save);
+  body.append(staminaLine(save));
+  body.append(button(sta.n <= 0 ? `⚔️ ${staminaWait(save)} 뒤 출진 가능` : `⚔️ 출진 · ${sta.n}/${sta.max}`, 'seal-btn cta', act.start, !gate.ok || sta.n <= 0));
 }
 
 // =================================================================== 도감
@@ -1300,7 +1271,7 @@ export function openCoupon(act) {
 
 // =================================================================== 보상
 
-/** Open a home dungeon sheet (오늘의 전장 · 사신의 제단 · 무한 전장) on the next home render. */
+/** Open a home dungeon sheet (사신의 제단 · 무한 전장) on the next home render. */
 export const setSheet = (kind) => (ui.sheet = kind);
 
 /** 🎁 보상: 오늘 할 일, rewards waiting (업적 · 도감), 쿠폰, and the 업적 list. */
@@ -1312,15 +1283,16 @@ export function renderReward(save, sel, act) {
   // 오늘 할 일
   const today = el('div', 'grow-card todo-card');
   today.append(el('div', 'sp-gacha-head', '<b>📋 오늘 할 일</b><span>매일 0시에 새로</span>'));
-  const d = dailyFor(todayKey());
-  const dDone = save.daily?.date === d.date && save.daily.cleared;
   const a = refreshAltar(save);
+  const trT = trialFor(save);
   const todo = (done, icon, text, sub, btnText, onGo) => {
     const row = el('div', `todo-row${done ? ' done' : ''}`, `<span class="todo-check">${done ? '✅' : icon}</span><div><b>${text}</b><small>${sub}</small></div>`);
     if (!done && onGo) row.append(button(btnText, 'plain-btn small', onGo));
     today.append(row);
   };
-  todo(dDone, '📅', '오늘의 전장 첫 승리', dDone ? '오늘 보상을 받았어요' : `${HEROES[d.heroId].name} · ${STAGES[d.stageId].name} · 🪙 ${fmt(d.reward)}`, '도전', () => act.startDaily());
+  todo(trialDone(save), '🔥', '일일 던전', trialDone(save) ? '오늘 도전했어요' : `난세 ${trT.level}단계 · ${ATTR_ICON} ${ATTR_NAME} +${fmt(trT.reward)}`, '도전', () => act.openSheet('trial'));
+  const eLeft = endlessLeft(save);
+  todo(eLeft <= 0, '♾️', '무한 전장', eLeft > 0 ? `오늘 ${eLeft}/${ENDLESS_PER_DAY}번 남음 · 💎 결기수정` : '오늘 도전을 다 했어요', '도전', () => act.openSheet('endless'));
   todo(a.tickets <= 0, '🏯', '사신의 제단', a.tickets > 0 ? `입장권 ${a.tickets}장 남음 · 영기를 모아 영주로` : '오늘 입장권을 다 썼어요', '입장', () => act.openSheet('altar'));
   if (!guardianOf()) {
     const got = (save.altar?.essenceDay ?? -1) >= dayNumber();

@@ -71,20 +71,43 @@ export class Hud {
     this.updateEvo(g);
   }
 
-  updateEvo(g) {
-    const p = g.player;
-    const key = JSON.stringify([p.weapon.level, p.upgrades]);
-    if (key === this.evoKey) return;
-    this.evoKey = key;
-    const list = evolutionStatus(g);
-    // Started 궁극기 get their full checklist; the rest fold into one dim line of names.
-    const started = list.filter((e) => e.owned), rest = list.filter((e) => !e.owned);
-    this.el.evo.hidden = !list.length;
-    this.el.evo.innerHTML = started
-      .map((e) => `<div class="evo-row${e.ready ? ' ready' : ''}"><b class="evo-name">🌟 ${e.name}</b>${e.checks
-        .map((c) => `<span class="evo-check${c.done ? ' done' : ''}"><i>${c.done ? '✔' : ''}</i>${c.label} <em>${c.now}/${c.need}</em></span>`)
-        .join('')}${e.ready ? '<span class="evo-go">다음 레벨업에 진화!</span>' : ''}</div>`)
-      .join('') + (rest.length ? `<div class="evo-row off evo-more">🌟 ${started.length ? '다른 궁극기' : '궁극기'}: ${rest.map((e) => e.name).join(' · ')}</div>` : '');
+  /** 궁극기 진행 체크 is no longer shown in battle (강화 → 🛡️ 장비 lists the conditions). */
+  updateEvo() {
+    this.el.evo.hidden = true;
+  }
+
+  /**
+   * After a 책략 is picked: a card under the top-right buttons shows each
+   * 궁극기 that 책략 counts toward — its skills and how far each is — for a
+   * few seconds, then slides away.
+   */
+  evoProgress(g, id) {
+    const box = $('evoPop');
+    clearTimeout(this.evoPopTimer);
+    const list = evolutionStatus(g).filter((e) => e.checks.some((c) => c.id === id));
+    if (!list.length) {
+      box.hidden = true;
+      return;
+    }
+    box.innerHTML = list.slice(0, 3).map((e) => `<div class="ep-card${e.ready ? ' ready' : ''}">
+      <b class="ep-name">🌟 ${e.name}</b>${e.checks.map((c) => `
+      <div class="ep-row${c.done ? ' done' : ''}${c.id === id ? ' now' : ''}"><span>${c.done ? '✔' : '·'} ${c.label}</span><em>${c.now}/${c.need}</em>
+        <i class="ep-bar"><i style="width:${Math.round((100 * c.now) / c.need)}%"></i></i></div>`).join('')}
+      ${e.ready ? '<span class="ep-go">다음 레벨업에 진화!</span>' : `<small>남은 책략 ${e.checks.reduce((n, c) => n + Math.max(0, c.need - c.now), 0)}장</small>`}
+    </div>`).join('');
+    box.hidden = false;
+    box.classList.remove('out');
+    void box.offsetWidth; // restart the slide-in
+    box.classList.add('in');
+    this.evoPopTimer = setTimeout(() => {
+      box.classList.add('out');
+      this.evoPopTimer = setTimeout(() => (box.hidden = true), 350);
+    }, 4200);
+  }
+
+  hideEvoProgress() {
+    clearTimeout(this.evoPopTimer);
+    $('evoPop').hidden = true;
   }
 
   /** Pause screen: the weapons and 책략 taken so far (kept off the battle HUD). */

@@ -1,10 +1,11 @@
 /**
  * Offline support for the installed app. Network first, so a new version
- * shows up as soon as the player is online; the cache is the fallback when
+ * shows up as soon as the player is online (each request asks the server
+ * whether the file changed, skipping the browser's 10-minute HTTP cache); the cache is the fallback when
  * there is no connection. Everything the game fetches (its own files and the
  * Google fonts) is kept after the first visit.
  */
-const CACHE = 'samhan-v1';
+const CACHE = 'samhan-v2';
 const CORE = ['./', 'index.html', 'style.css', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -27,7 +28,7 @@ self.addEventListener('fetch', (e) => {
   const font = url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
   if (!ours && !font) return;
   e.respondWith(
-    fetch(req)
+    fetch(ours ? new Request(req, { cache: 'no-cache' }) : req)
       .then((res) => {
         if (res.ok || res.type === 'opaque') {
           const copy = res.clone();

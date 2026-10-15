@@ -211,8 +211,9 @@ export class Renderer {
       // 마계: the edges of sight sink into a red-black gloom.
       const p = g.player;
       const grd = ctx.createRadialGradient(p.x, p.y, 220, p.x, p.y, Math.max(v.x1 - v.x0, v.y1 - v.y0) * 0.65);
-      grd.addColorStop(0, 'rgba(10, 0, 8, 0)');
-      grd.addColorStop(1, 'rgba(10, 0, 8, 0.72)');
+      const tint = g.stage.darkTint ?? '10, 0, 8';
+      grd.addColorStop(0, `rgba(${tint}, 0)`);
+      grd.addColorStop(1, `rgba(${tint}, 0.72)`);
       ctx.fillStyle = grd;
       ctx.fillRect(v.x0 - 40, v.y0 - 40, v.x1 - v.x0 + 80, v.y1 - v.y0 + 80);
     }
