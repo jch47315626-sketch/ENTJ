@@ -77,7 +77,7 @@ export class Hud {
   }
 
   /**
-   * After a 책략 is picked: a card under the top-right buttons shows each
+   * After a 책략 is picked: a card at the bottom right (above the bars) shows each
    * 궁극기 that 책략 counts toward — its skills and how far each is — for a
    * few seconds, then slides away.
    */
@@ -96,6 +96,9 @@ export class Hud {
       ${e.ready ? '<span class="ep-go">다음 레벨업에 진화!</span>' : `<small>남은 책략 ${e.checks.reduce((n, c) => n + Math.max(0, c.need - c.now), 0)}장</small>`}
     </div>`).join('');
     box.hidden = false;
+    // Bottom right, just above the bars and the 궁극기 checklist at the bottom of the screen.
+    const bottom = document.querySelector('#hud .hud-bottom');
+    box.style.bottom = `${Math.round(window.innerHeight - (bottom?.getBoundingClientRect().top ?? window.innerHeight - 140) + 8)}px`;
     box.classList.remove('out');
     void box.offsetWidth; // restart the slide-in
     box.classList.add('in');
