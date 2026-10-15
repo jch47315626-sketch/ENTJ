@@ -100,6 +100,7 @@ function newGame(mode = null) {
     onBanner: (t, size) => hud.banner(t, size),
     onState,
     onBoss: (def) => hud.bossIntro(def),
+    onRoulette: (r) => hud.roulette(r),
     onSfx: (name) => sound.sfx(name),
     meta,
   });

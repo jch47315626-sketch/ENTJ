@@ -23,6 +23,26 @@ export const BOSS_REWARD = 700;
 export const WIN_BONUS = 150;
 
 /**
+ * 황금 룰렛: when a general falls, its 토벌 reward (냥 · 제단 영기 · 무한
+ * 결기수정) is multiplied by a spin. Odds by weight; about ×1.4 on average.
+ * WHEEL is the order of the 8 painted slices (×1 twice).
+ */
+export const ROULETTE = [
+  { mul: 0.5, w: 30 }, { mul: 1, w: 30 }, { mul: 1.5, w: 17 }, { mul: 2, w: 12 },
+  { mul: 3, w: 6 }, { mul: 5, w: 4 }, { mul: 10, w: 1 },
+];
+export const WHEEL = [0.5, 2, 1, 5, 1.5, 10, 1, 3];
+export const ROULETTE_SPIN = 2.6;
+export function rollRoulette(rand = Math.random) {
+  let u = rand() * ROULETTE.reduce((a, r) => a + r.w, 0);
+  for (const r of ROULETTE) {
+    if (u < r.w) return r.mul;
+    u -= r.w;
+  }
+  return 1;
+}
+
+/**
  * A lost run still earns part of the victory bonus (150 + 적장 400) by how far
  * it got: up to 35% for holding out until the boss, plus up to 25% for the
  * boss's HP taken off. It goes through the stage multiplier like the rest,

@@ -1705,3 +1705,20 @@ body { background: var(--night); }
 .todo-row.done { opacity: 0.6; }
 .todo-check { flex: none; width: 30px; text-align: center; font-size: 20px; }
 .todo-row .seal-btn.small { padding: 6px 12px; font-size: 14px; }
+
+/* 🎰 황금 룰렛 (적장 토벌) */
+.roulette { position: fixed; left: 50%; top: 31%; z-index: 70; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; animation: rl-in 0.35s ease-out; }
+.rl-title { display: none; font: 400 30px/1 var(--font-brush); color: #ffe08a; text-shadow: 0 0 10px rgba(255, 190, 60, 0.9), 0 2px 0 #5a3a08; margin-bottom: 6px; }
+.rl-pointer { position: relative; z-index: 2; margin-bottom: -14px; font-size: 30px; color: #fff3c0; text-shadow: 0 0 8px #ffb84a, 0 2px 0 #7a4a08; }
+.rl-wheel { position: relative; width: 220px; height: 220px; border-radius: 50%; box-shadow: 0 0 0 6px #7a4a10, 0 0 0 10px #ffd76a, 0 0 40px rgba(255, 200, 80, 0.85), inset 0 0 30px rgba(120, 60, 0, 0.5); }
+.rl-lines { position: absolute; inset: 0; border-radius: 50%; }
+.rl-slice { position: absolute; left: 50%; top: 50%; width: 52px; margin: -12px 0 0 -26px; text-align: center; font: 700 18px/24px var(--font-body, sans-serif); color: #3a2206; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6); transform-origin: 50% 50%; }
+.rl-slice.big { color: #fff; text-shadow: 0 0 6px #7a1a00, 0 1px 0 #7a1a00; font-size: 20px; }
+.rl-hub { position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px 0 0 -27px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 35% 30%, #fff3c0, #e8a42e 60%, #8a5410); color: #5a2a00; font: 400 28px/1 var(--font-brush); box-shadow: 0 0 0 3px #7a4a10; }
+.rl-result { margin-top: 12px; min-height: 52px; font: 400 48px/1 var(--font-brush); color: #fff3c0; text-shadow: 0 0 14px #ffb84a, 0 3px 0 #7a4a08; opacity: 0; transform: scale(0.4); }
+.roulette.done .rl-result { opacity: 1; transform: scale(1); transition: transform 0.35s cubic-bezier(0.2, 1.8, 0.4, 1), opacity 0.2s; }
+.roulette.jackpot .rl-result { font-size: 60px; color: #fff; text-shadow: 0 0 18px #ff5a2a, 0 0 32px #ffd76a, 0 3px 0 #7a1a00; }
+.roulette.jackpot .rl-wheel { animation: rl-glow 0.4s ease-in-out infinite alternate; }
+.roulette.low .rl-result { color: #d8c8a8; text-shadow: 0 2px 0 #3a2a10; }
+@keyframes rl-in { from { opacity: 0; transform: translateX(-50%) scale(0.5); } }
+@keyframes rl-glow { to { box-shadow: 0 0 0 6px #7a4a10, 0 0 0 10px #fff3a0, 0 0 80px rgba(255, 120, 40, 1), inset 0 0 30px rgba(120, 60, 0, 0.5); } }

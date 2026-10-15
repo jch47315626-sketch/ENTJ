@@ -125,7 +125,7 @@ export function renderResult(g, won, extra = {}) {
   } else if (r && en) rows.push(['💎', '결기수정', `<span class="count-up" data-to="${r.crystals ?? 0}">+0</span>`]);
   else if (r) rows.push(['🪙', '냥', `<span class="count-up" data-to="${r.total}">+0</span>`]);
   if (r && g.opts.quick) rows.push(['⚡', '빠른 시험 모드', '냥 35%']);
-  if (r?.bossBonus) rows.push(['👑', '적장 토벌 보상', `+${r.bossBonus.toLocaleString()}`]);
+  if (r?.bossBonus) rows.push(['👑', `적장 토벌 보상${g.bossMul && g.bossMul !== 1 ? ` (🎰 ×${g.bossMul})` : ''}`, `+${r.bossBonus.toLocaleString()}`]);
   if (extra.dailyBonus) rows.push(['📅', '오늘의 전장 보상', `+${extra.dailyBonus.toLocaleString()}`]);
   if (extra.nanse) rows.push(['🔥', `난세 ${extra.nanse.level}단계 평정`, extra.nanse.isNew ? '최고 기록!' : '']);
   if (extra.nanse?.bonus) rows.push(['🏮', '난세 돌파 보상', `+${extra.nanse.bonus.toLocaleString()}`]);

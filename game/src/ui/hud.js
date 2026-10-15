@@ -113,6 +113,36 @@ export class Hud {
     this.introTimer = setTimeout(() => (box.hidden = true), 2400);
   }
 
+  /** 🎰 황금 룰렛: a gold wheel spins over the field and stops on the 토벌 multiplier. */
+  roulette(r) {
+    document.getElementById('roulette')?.remove();
+    clearTimeout(this.rouletteTimer);
+    const n = r.wheel.length, seg = 360 / n;
+    const color = (m) => (m >= 10 ? '#ff4a2e' : m >= 5 ? '#ff9a2a' : m >= 2 ? '#f2c84a' : m >= 1 ? '#e8b448' : '#b8873a');
+    const stops = r.wheel.map((m, i) => `${color(m)} ${i * seg}deg ${(i + 1) * seg}deg`).join(', ');
+    const box = document.createElement('div');
+    box.id = 'roulette';
+    box.className = 'roulette';
+    box.innerHTML = `<div class="rl-title">🎰 황금 룰렛</div><div class="rl-pointer">▼</div>
+      <div class="rl-wheel" style="background: conic-gradient(${stops})">${r.wheel
+        .map((m, i) => `<span class="rl-slice${m >= 5 ? ' big' : ''}" style="transform: rotate(${i * seg + seg / 2}deg) translateY(-78px)">×${m}</span>`)
+        .join('')}<i class="rl-lines" style="background: repeating-conic-gradient(rgba(60,30,0,0.55) 0deg 1deg, transparent 1deg ${seg}deg)"></i><b class="rl-hub">金</b></div>
+      <div class="rl-result"></div>`;
+    document.getElementById('app').append(box);
+    const wheel = box.querySelector('.rl-wheel');
+    const turn = 360 * 6 - (r.slot * seg + seg / 2) + (Math.random() - 0.5) * seg * 0.5;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      wheel.style.transition = `transform ${r.spin}s cubic-bezier(0.12, 0.7, 0.12, 1)`;
+      wheel.style.transform = `rotate(${turn}deg)`;
+    }));
+    this.rouletteTimer = setTimeout(() => {
+      const res = box.querySelector('.rl-result');
+      res.textContent = r.mul >= 5 ? `×${r.mul} 대박!` : `×${r.mul}`;
+      box.classList.add('done', r.mul >= 5 ? 'jackpot' : r.mul < 1 ? 'low' : 'mid');
+      this.rouletteTimer = setTimeout(() => box.remove(), 1800);
+    }, r.spin * 1000);
+  }
+
   banner(text, size = 'normal') {
     const b = $('banner');
     b.textContent = text;
@@ -124,6 +154,8 @@ export class Hud {
 
   clearBanner() {
     clearTimeout(this.bannerTimer);
+    clearTimeout(this.rouletteTimer);
+    document.getElementById('roulette')?.remove();
     clearTimeout(this.introTimer);
     $('banner').className = 'banner';
     $('bossIntro').hidden = true;

@@ -5,7 +5,7 @@ import { STAGES, scaleStage } from './data/stages.js';
 import { enemyHpScale, enemyDamageScale, ENEMY_BOOST, ENEMY_ARMOR, BOSS_BOOST, HP_REGEN } from './data/balance.js';
 import { UPGRADES, FALLBACKS, evolutionStatus } from './data/upgrades.js';
 import { MAGUNI_LV, FURY_LV, GWANSIM } from './data/skills.js';
-import { baseReward, REWARD_BY_STARS, BOSS_REWARD, QUICK_REWARD, armorCut } from './data/meta.js';
+import { baseReward, REWARD_BY_STARS, BOSS_REWARD, QUICK_REWARD, ROULETTE_SPIN, WHEEL, rollRoulette, armorCut } from './data/meta.js';
 import { SpatialGrid } from './core/grid.js';
 import { clamp, rand, TAU, dist2, angleDiff } from './core/math.js';
 import { updateWeapon, hitArc, currentWeaponLevel } from './systems/weapons.js';
@@ -466,10 +466,10 @@ export class Game {
     } else if (e.isBoss && this.stage.endless) {
       this.endBossWave(e);
     } else if (e.isBoss) {
-      this.bossSpoils(e);
+      this.startRoulette(e);
       this.state = 'clearing';
-      this.endTimer = 3;
-      this.banner(`${e.def.name} 격파${this.spoilsLine ?? ''}`, 'big');
+      this.endTimer = ROULETTE_SPIN + 2.4;
+      this.banner(`${e.def.name} 격파 — 🎰 황금 룰렛!`, 'big');
       for (const o of this.enemies) if (!o.dead && o !== e) this.killEnemy(o);
     }
   }
@@ -479,25 +479,59 @@ export class Game {
    * ground flies to the hero. 냥 (normal fields: the 토벌 reward, shown as a
    * shower of gold), 영기 (제단), 결기수정 (무한 전장, more for each boss).
    */
-  bossSpoils(e) {
+  /** 🎰 황금 룰렛: spin for the 토벌 multiplier; the spoils burst out when it stops. */
+  startRoulette(e) {
+    const mul = rollRoulette();
+    // Which painted slice it stops on (one with that value).
+    const slots = WHEEL.map((m, i) => (m === mul ? i : -1)).filter((i) => i >= 0);
+    const slot = slots[Math.floor(Math.random() * slots.length)];
+    this.roulette = { mul, slot, t: 0, spin: ROULETTE_SPIN, at: { x: e.x, y: e.y, def: e.def }, done: false };
+    this.opts.onRoulette?.({ mul, slot, spin: ROULETTE_SPIN, wheel: WHEEL });
+    this.sfx('drumRoll');
+  }
+
+  updateRoulette(dt) {
+    const r = this.roulette;
+    r.t += dt;
+    if (!r.done && r.t >= r.spin) {
+      r.done = true;
+      if (!this.stage.endless) this.bossMul = r.mul;
+      this.bossSpoils(r.at, r.mul);
+      this.banner(r.mul >= 5 ? `🎰 ×${r.mul} 대박!!${this.spoilsLine ?? ''}` : `🎰 ×${r.mul}${this.spoilsLine ?? ''}`, 'big');
+      if (r.mul >= 5) {
+        this.ultFlash?.('255, 215, 90', 0.45, 0.6);
+        this.sfx('achieve');
+      }
+    }
+    if (r.t > r.spin + 2) this.roulette = null;
+  }
+
+  bossSpoils(e, rm = 1) {
     const burst = (kind, n, extra = {}) => {
       for (let i = 0; i < n; i++) {
         const a = rand(0, TAU), v = rand(160, 420);
         this.pickups.push({ kind, x: e.x, y: e.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, fly: rand(0.25, 0.5), magnet: true, t: 0, seed: Math.random(), life: 99, ...extra });
       }
     };
+    const shower = Math.max(8, Math.min(90, Math.round(30 * rm)));
     if (this.stage.altar) {
-      burst('wisp', ALTAR.bossWisps);
-      this.texts.push({ x: e.x, y: e.y - 50, v: `🔮 영기 +${ALTAR.bossWisps}`, t: 0, life: 2, order: true, big: true });
+      // Up to 60 영기 fly in; the rest of a big spin is counted straight away.
+      const n = Math.round(ALTAR.bossWisps * rm);
+      burst('wisp', Math.min(60, n));
+      if (n > 60) this.runStats.wisps = (this.runStats.wisps ?? 0) + n - 60;
+      this.texts.push({ x: e.x, y: e.y - 50, v: `🔮 영기 +${n}`, t: 0, life: 2, order: true, big: true });
+      this.spoilsLine = ` — 🔮 영기 +${n}`;
     } else if (this.stage.endless) {
-      const n = Math.round((1 + this.endlessBosses) * Math.sqrt(CRYSTAL.byStars[this.stage.difficulty.stars] ?? 1));
-      burst('crystal', n);
+      const n = Math.max(1, Math.round((1 + this.endlessBosses) * Math.sqrt(CRYSTAL.byStars[this.stage.difficulty.stars] ?? 1) * rm));
+      burst('crystal', Math.min(60, n));
+      if (n > 60) this.runStats.crystals = (this.runStats.crystals ?? 0) + n - 60;
       this.texts.push({ x: e.x, y: e.y - 50, v: `💎 결기수정 +${n}`, t: 0, life: 2, order: true, big: true });
+      this.spoilsLine = ` — 💎 결기수정 +${n}`;
     } else {
       const d = this.stage.difficulty;
       const mul = REWARD_BY_STARS[d.stars] * (1 + (this.opts.meta?.reward ?? 0)) * (d.rewardMul ?? 1) * (this.opts.quick ? QUICK_REWARD : 1);
-      const gold = Math.round(BOSS_REWARD * mul); // the 적장 토벌 line on the result card
-      burst('gold', 36);
+      const gold = Math.round(BOSS_REWARD * mul * rm); // the 적장 토벌 line on the result card
+      burst('gold', shower);
       this.texts.push({ x: e.x, y: e.y - 50, v: `💰 +${gold.toLocaleString()}냥`, t: 0, life: 2.4, order: true, big: true });
       this.spoilsLine = ` — 💰 토벌 보상 +${gold.toLocaleString()}냥!`;
     }
@@ -533,7 +567,7 @@ export class Game {
     // Spoils: a spray of coins and a rice ball, 결기수정 bursting out, and everything on the ground flies in.
     for (let i = 0; i < 12; i++) this.dropCoin(e.x + rand(-50, 50), e.y + rand(-50, 50), 5);
     this.pickups.push({ kind: 'rice', x: e.x, y: e.y, heal: 40, magnet: false, t: 0 });
-    this.bossSpoils(e);
+    this.startRoulette(e);
     // Two more 감나무 branches before the next boss.
     this.crowPlan.push(this.time + rand(25, 70), this.time + rand(90, 150));
     this.crowPlan.sort((a, b) => a - b);
@@ -745,9 +779,11 @@ export class Game {
       return { base: 0, mul: 0, total: 0, stars: this.stage.difficulty.stars, bossBonus: 0, altar: { wisps, tier, guardian, yeongju: altarYeongju(wisps, tier, won) } };
     }
     const stars = this.stage.difficulty.stars;
-    const base = baseReward({ kills: this.kills, seconds: this.time, won, bossKilled: won, ...this.progress() });
+    // 🎰 황금 룰렛 multiplies the 토벌 part.
+    const rm = this.bossMul ?? 1;
+    const base = baseReward({ kills: this.kills, seconds: this.time, won, bossKilled: won, ...this.progress() }) + (won ? Math.round(BOSS_REWARD * (rm - 1)) : 0);
     const mul = REWARD_BY_STARS[stars] * (1 + (this.opts.meta?.reward ?? 0)) * (this.stage.difficulty.rewardMul ?? 1) * (this.opts.quick ? QUICK_REWARD : 1);
-    const bossBonus = won ? Math.round(BOSS_REWARD * mul) : this.stage.endless ? Math.round(BOSS_REWARD * mul * ENDLESS.bossBounty * this.endlessBosses) : 0;
+    const bossBonus = won ? Math.round(BOSS_REWARD * rm * mul) : this.stage.endless ? Math.round(BOSS_REWARD * mul * ENDLESS.bossBounty * this.endlessBosses) : 0;
     return { base, mul, total: Math.round(base * mul) + (this.stage.endless ? bossBonus : 0), stars, bossBonus };
   }
 
@@ -787,6 +823,7 @@ export class Game {
       // Slow-motion wind-down before the result screen; spoils still fly in.
       this.endTimer -= dt;
       this.updateFx(dt * 0.4);
+      if (this.roulette) this.updateRoulette(dt);
       if (this.state === 'clearing') this.updatePickups(dt);
       if (this.endTimer <= 0) this.setState(this.state === 'dying' ? 'over' : 'clear');
       return;
@@ -861,6 +898,7 @@ export class Game {
     updateFieldObjects(this, dt);
     updateFieldItems(this, dt);
     if (this.stage.endless) this.updateWrath(dt);
+    if (this.roulette) this.updateRoulette(dt);
     if (this.stage.altar) this.updateAltar(dt);
     this.taunts = this.allies.filter((a) => a.lure && !a.dead);
     this.updateEnemies(dt);
