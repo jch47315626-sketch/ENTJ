@@ -16,7 +16,7 @@ import { planCrows, updateCrows, callCrow, CROW } from './systems/crows.js';
 import { updateFieldObjects, breakObject } from './systems/fieldObjects.js';
 import { planFieldItems, updateFieldItems, takeFieldItem, ITEM_LIFE } from './systems/fieldItems.js';
 import { applyDaily } from './data/daily.js';
-import { ENDLESS, makeEndless, endlessSurge, crystalsOwed, WRATH } from './data/endless.js';
+import { ENDLESS, makeEndless, endlessSurge, crystalsOwed, WRATH, CRYSTAL } from './data/endless.js';
 import { applyNanse } from './data/nanse.js';
 import { ALTAR, ALTAR_TIERS, makeAltarStage, altarYeongju } from './data/altar.js';
 import { makeSpirits, spiritMeta, initSpirits, updateSpirits, spiritAbsorb, spiritOnHurt, spiritRevive, spiritOnKill, spiritOnSpecial } from './systems/spirits.js';
@@ -466,15 +466,51 @@ export class Game {
     } else if (e.isBoss && this.stage.endless) {
       this.endBossWave(e);
     } else if (e.isBoss) {
-      if (this.stage.altar) {
-        this.runStats.wisps = (this.runStats.wisps ?? 0) + ALTAR.bossWisps;
-        this.texts.push({ x: e.x, y: e.y - 40, v: `🔮 영기 +${ALTAR.bossWisps}`, t: 0, life: 1.6, order: true });
-      }
+      this.bossSpoils(e);
       this.state = 'clearing';
-      this.endTimer = 2.2;
-      this.banner(`${e.def.name} 격파`, 'big');
+      this.endTimer = 3;
+      this.banner(`${e.def.name} 격파${this.spoilsLine ?? ''}`, 'big');
       for (const o of this.enemies) if (!o.dead && o !== e) this.killEnemy(o);
     }
+  }
+
+  /**
+   * A general falls: the spoils burst out of it and everything lying on the
+   * ground flies to the hero. 냥 (normal fields: the 토벌 reward, shown as a
+   * shower of gold), 영기 (제단), 결기수정 (무한 전장, more for each boss).
+   */
+  bossSpoils(e) {
+    const burst = (kind, n, extra = {}) => {
+      for (let i = 0; i < n; i++) {
+        const a = rand(0, TAU), v = rand(160, 420);
+        this.pickups.push({ kind, x: e.x, y: e.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, fly: rand(0.25, 0.5), magnet: true, t: 0, seed: Math.random(), life: 99, ...extra });
+      }
+    };
+    if (this.stage.altar) {
+      burst('wisp', ALTAR.bossWisps);
+      this.texts.push({ x: e.x, y: e.y - 50, v: `🔮 영기 +${ALTAR.bossWisps}`, t: 0, life: 2, order: true, big: true });
+    } else if (this.stage.endless) {
+      const n = Math.round((1 + this.endlessBosses) * Math.sqrt(CRYSTAL.byStars[this.stage.difficulty.stars] ?? 1));
+      burst('crystal', n);
+      this.texts.push({ x: e.x, y: e.y - 50, v: `💎 결기수정 +${n}`, t: 0, life: 2, order: true, big: true });
+    } else {
+      const d = this.stage.difficulty;
+      const mul = REWARD_BY_STARS[d.stars] * (1 + (this.opts.meta?.reward ?? 0)) * (d.rewardMul ?? 1) * (this.opts.quick ? QUICK_REWARD : 1);
+      const gold = Math.round(BOSS_REWARD * mul); // the 적장 토벌 line on the result card
+      burst('gold', 36);
+      this.texts.push({ x: e.x, y: e.y - 50, v: `💰 +${gold.toLocaleString()}냥`, t: 0, life: 2.4, order: true, big: true });
+      this.spoilsLine = ` — 💰 토벌 보상 +${gold.toLocaleString()}냥!`;
+    }
+    // Everything still on the ground comes to the hero.
+    const p = this.player;
+    for (const k of this.pickups) {
+      if (k.taken) continue;
+      if (k.kind === 'item') { k.taken = true; takeFieldItem(this, k); }
+      else if (k.kind === 'crowFeed') { k.taken = true; callCrow(this, p.x, p.y); }
+      else k.magnet = true;
+    }
+    this.shake(10);
+    this.sfx('coin');
   }
 
   /** Later endless bosses are tougher: ×(1 + step × bosses already felled). */
@@ -494,9 +530,10 @@ export class Game {
     this.arena = null;
     this.spawner.bossStarted = false;
     this.stage.bossAt = this.time + ENDLESS.bossEvery;
-    // Spoils: a spray of coins and a rice ball.
+    // Spoils: a spray of coins and a rice ball, 결기수정 bursting out, and everything on the ground flies in.
     for (let i = 0; i < 12; i++) this.dropCoin(e.x + rand(-50, 50), e.y + rand(-50, 50), 5);
     this.pickups.push({ kind: 'rice', x: e.x, y: e.y, heal: 40, magnet: false, t: 0 });
+    this.bossSpoils(e);
     // Two more 감나무 branches before the next boss.
     this.crowPlan.push(this.time + rand(25, 70), this.time + rand(90, 150));
     this.crowPlan.sort((a, b) => a - b);
@@ -747,9 +784,10 @@ export class Game {
     if (this.state === 'levelup' || this.state === 'paused' || this.state === 'over' || this.state === 'clear') return;
 
     if (this.state === 'dying' || this.state === 'clearing') {
-      // Slow-motion wind-down before the result screen.
+      // Slow-motion wind-down before the result screen; spoils still fly in.
       this.endTimer -= dt;
       this.updateFx(dt * 0.4);
+      if (this.state === 'clearing') this.updatePickups(dt);
       if (this.endTimer <= 0) this.setState(this.state === 'dying' ? 'over' : 'clear');
       return;
     }
@@ -1147,6 +1185,15 @@ export class Game {
     const pr2 = p.stats.pickup ** 2;
     for (const k of this.pickups) {
       k.t += dt;
+      // Spoils first burst outward, then fly in.
+      if (k.fly > 0) {
+        k.fly -= dt;
+        k.x += k.vx * dt;
+        k.y += k.vy * dt;
+        k.vx *= 0.92;
+        k.vy *= 0.92;
+        continue;
+      }
       const dx = p.x - k.x, dy = p.y - k.y;
       const d2 = dx * dx + dy * dy;
       // 감나무 가지 must be walked onto; it is not pulled in.
@@ -1195,6 +1242,7 @@ export class Game {
             this.gainXp(k.value);
             this.sfx('coin');
           }
+          else if (k.kind === 'gold') this.sfx('coin');
           else if (k.kind === 'wisp') {
             this.runStats.wisps = (this.runStats.wisps ?? 0) + 1;
             this.texts.push({ x: p.x, y: p.y - 30, v: '🔮 +1', t: 0, life: 0.8, order: true });

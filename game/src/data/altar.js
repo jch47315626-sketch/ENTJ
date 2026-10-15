@@ -99,7 +99,7 @@ export const ALTAR = {
   wispLife: 14,
   wispNear: [240, 520], // spawn distance from the hero
   eliteWisps: 1, // 정예 처치 → 영기
-  bossWisps: 15, // 수호 영수 격파 → 영기
+  bossWisps: 25, // 수호 영수 격파 → 영기 (burst out of it)
 };
 
 /** 단계 1–10: which field's strength it borrows, and a toughness step on top. */

@@ -18,8 +18,9 @@ export const REWARD_BY_STARS = { 1: 1, 2: 1.8, 3: 3, 4: 4.5, 5: 6.5, 6: 10 };
  */
 export const QUICK_REWARD = 0.35;
 
-/** Base 냥 for felling the boss (before the stage multiplier). */
-export const BOSS_REWARD = 400;
+/** Base 냥 for felling the boss, and for winning (before the stage multiplier). */
+export const BOSS_REWARD = 700;
+export const WIN_BONUS = 150;
 
 /**
  * A lost run still earns part of the victory bonus (150 + 적장 400) by how far
@@ -36,10 +37,11 @@ export const LOSS_SHARE = { reach: 0.35, boss: 0.25 };
  * run's whole pay is scaled by `reach`.
  */
 export function baseReward({ kills, seconds, won, bossKilled, reach = 0, bossDone = 0 }) {
-  if (won) return Math.round(kills * 0.6 + seconds * 0.4 + 150 + (bossKilled ? BOSS_REWARD : 0));
+  if (won) return Math.round(kills * 0.6 + seconds * 0.4 + WIN_BONUS + (bossKilled ? BOSS_REWARD : 0));
   // A defeat is scaled by `reach` as well, so dying early on a field far
   // above one's level (×10–22 냥) never pays better than winning a fitting one.
-  const consolation = (150 + BOSS_REWARD) * (LOSS_SHARE.reach * reach + LOSS_SHARE.boss * bossDone);
+  // (kept on the old 150 + 400 so a defeat pays what it did when the 토벌 reward rose)
+  const consolation = 550 * (LOSS_SHARE.reach * reach + LOSS_SHARE.boss * bossDone);
   return Math.round((kills * 0.6 + seconds * 0.4 + consolation) * Math.min(1, reach));
 }
 

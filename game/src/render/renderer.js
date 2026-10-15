@@ -139,6 +139,16 @@ export class Renderer {
 
     for (const k of g.pickups) {
       if (k.kind === 'coin') drawCoin(ctx, k.x, k.y, k.tier, k.t);
+      else if (k.kind === 'gold') {
+        // 적장 토벌 냥: big gold coins with a glint.
+        ctx.save();
+        ctx.translate(k.x, k.y);
+        ctx.scale(1.9, 1.9);
+        drawCoin(ctx, 0, 0, 'gold', k.t + k.seed * 6);
+        ctx.restore();
+        ctx.fillStyle = `rgba(255, 240, 180, ${0.5 + 0.5 * Math.sin(k.t * 14 + k.seed * 9)})`;
+        ctx.fillRect(k.x - 1, k.y - 9, 2, 5);
+      }
       else if (k.kind === 'crowFeed') this.drawCrowFeed(ctx, k, g.time);
       else if (k.kind === 'item') this.drawFieldItem(ctx, k, g.time);
       else if (k.kind === 'wisp') this.drawWisp(ctx, k, g.time);
