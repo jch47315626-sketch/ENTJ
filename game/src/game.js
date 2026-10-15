@@ -18,6 +18,7 @@ import { planFieldItems, updateFieldItems, takeFieldItem, ITEM_LIFE } from './sy
 import { applyDaily } from './data/daily.js';
 import { ENDLESS, ENDLESS_MAPS, makeEndlessStage, endlessSurge, crystalsOwed, WRATH, CRYSTAL } from './data/endless.js';
 import { applyNanse } from './data/nanse.js';
+import { attrReward, ATTR_ICON, ATTR_NAME } from './data/trial.js';
 import { ALTAR, ALTAR_TIERS, makeAltarStage, altarYeongju } from './data/altar.js';
 import { makeSpirits, spiritMeta, initSpirits, updateSpirits, spiritAbsorb, spiritOnHurt, spiritRevive, spiritOnKill, spiritOnSpecial } from './systems/spirits.js';
 import { Spawner } from './systems/spawner.js';
@@ -535,6 +536,12 @@ export class Game {
       burst('gold', shower);
       this.texts.push({ x: e.x, y: e.y - 50, v: `💰 +${gold.toLocaleString()}냥`, t: 0, life: 2.4, order: true, big: true });
       this.spoilsLine = ` — 💰 토벌 보상 +${gold.toLocaleString()}냥!`;
+      // 🔥 일일 던전: the day's 속성결정 rides the same spin.
+      if (this.stage.trial) {
+        const attr = Math.round(attrReward(d.stars, this.stage.nanse?.level ?? 0, true) * rm);
+        this.texts.push({ x: e.x, y: e.y - 80, v: `${ATTR_ICON} ${ATTR_NAME} +${attr}`, t: 0, life: 2.4, order: true, big: true });
+        this.spoilsLine += ` ${ATTR_ICON} +${attr}`;
+      }
     }
     // Everything still on the ground comes to the hero.
     const p = this.player;

@@ -235,7 +235,8 @@ function onState(state, g) {
       if (g.stage.trial) {
         const won = state === 'clear';
         const lv = g.stage.nanse?.level ?? 0;
-        const attr = attrReward(g.stage.difficulty.stars, lv, won);
+        // 🎰 황금 룰렛 multiplies a clear's 속성결정 too.
+        const attr = Math.round(attrReward(g.stage.difficulty.stars, lv, won) * (won ? g.bossMul ?? 1 : 1));
         save.attrStones = (save.attrStones ?? 0) + attr;
         if (save.trial) save.trial.cleared = won;
         let relic = null;
@@ -251,7 +252,7 @@ function onState(state, g) {
             save.stats.relics = (save.stats.relics ?? 0) + 1;
           }
         }
-        trialInfo = { level: lv, attr, won, relic: relic?.name };
+        trialInfo = { level: lv, attr, won, relic: relic?.name, mul: won ? g.bossMul ?? 1 : 1 };
       }
       const run = runFacts(g, state === 'clear', save);
       recordRun(save, run);

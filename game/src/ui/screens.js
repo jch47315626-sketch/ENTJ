@@ -130,7 +130,7 @@ export function renderResult(g, won, extra = {}) {
   if (extra.dailyBonus) rows.push(['📅', '오늘의 전장 보상', `+${extra.dailyBonus.toLocaleString()}`]);
   const tr = extra.trial;
   if (tr) {
-    rows.push([ATTR_ICON, ATTR_NAME, `+${tr.attr.toLocaleString()}${tr.won ? '' : ' (패퇴 30%)'}`]);
+    rows.push([ATTR_ICON, `${ATTR_NAME}${tr.mul && tr.mul !== 1 ? ` (🎰 ×${tr.mul})` : ''}`, `+${tr.attr.toLocaleString()}${tr.won ? '' : ' (패퇴 30%)'}`]);
     rows.push(['🔥', `일일 던전 · 난세 ${tr.level}단계`, tr.won ? '평정!' : '패퇴']);
     if (tr.relic) rows.push(['🌟', `신물 획득 · ${tr.relic}`, '획득!']);
   }
