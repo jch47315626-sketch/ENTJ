@@ -48,6 +48,8 @@ export class Hud {
     e.hpText.textContent = `❤️ ${Math.ceil(h.hp)} / ${Math.round(h.maxHp)}`;
     e.mom.style.width = `${h.momentum * 100}%`;
     e.momBar.classList.toggle('full', h.momentum > 0.9);
+    // Full and waiting for a good moment to burst.
+    e.momBar.classList.toggle('held', !!h.momHeld);
     e.loot.textContent = g.stage.endless ? `💎 결기수정 ${g.runStats.crystals ?? 0}` : g.stage.altar ? `🔮 영기 ${g.runStats.wisps ?? 0}` : `🪙 +${g.liveReward().toLocaleString()}`;
     e.timer.textContent = fmt(h.time);
     e.timerSub.textContent = h.bossPhase ? '적장을 쓰러뜨려라' : `적장 출현까지 ${fmt(h.remaining)}`;

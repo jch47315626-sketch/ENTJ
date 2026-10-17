@@ -150,21 +150,24 @@ export const EDICT = [
 ];
 
 /**
- * 패기 (견훤): 패왕의 일격 grows. The 궁극기, 후백제의 패왕, makes him
- * stronger the closer he is to falling.
+ * 패기 (견훤): 패왕의 일격 grows — harder, longer stun, wider. The 궁극기,
+ * 후백제의 패왕, makes him stronger the closer he is to falling, and turns
+ * the strike into 패왕 진격: a second blow `gap` s later and a red shockwave
+ * that runs straight on through everything.
  */
 export const FURY_LV = [
-  { name: '패기', desc: '패왕의 일격 피해 +30%, 기절 +0.2초' },
-  { name: '패기', desc: '패왕의 일격 피해 +30%, 기절 +0.2초' },
-  { name: '패기', desc: '패왕의 일격 피해 +30%, 기절 +0.2초' },
+  { name: '패기', desc: '패왕의 일격 피해 +30%, 기절 +0.2초, 범위 +10%' },
+  { name: '패기', desc: '패왕의 일격 피해 +30%, 기절 +0.2초, 범위 +10%' },
+  { name: '패기', desc: '패왕의 일격 피해 +30%, 기절 +0.2초, 범위 +10%' },
   { name: '후백제의 패왕', evolution: true,
     rage: {
       always: { might: 0.2, haste: 0.09 },
       half: { might: 0.6, haste: 0.17 },
       low: { might: 1.0, haste: 0.23, leech: 0.01 },
     },
+    strike: { gap: 0.32, mul: 0.7, wave: { mul: 0.9, speed: 520, life: 1.1, thick: 16, span: 70 } },
     requires: { upgrade: 'might', level: 3 },
-    desc: '늘 피해 +20%, 공격 속도 +10%. 체력 50% 아래: 피해 +60%, 공격 속도 +20%. 30% 아래: 피해 2배, 공격 속도 +30%, 준 피해의 1% 회복.' },
+    desc: '패왕의 일격이 「패왕 진격」으로: 한 번 더 되베고 정면으로 붉은 충격파가 뻗어 나간다. 늘 피해 +20%, 공격 속도 +10%. 체력 50% 아래: 피해 +60%, 공격 속도 +20%. 30% 아래: 피해 2배, 공격 속도 +30%, 준 피해의 1% 회복.' },
 ];
 
 /**

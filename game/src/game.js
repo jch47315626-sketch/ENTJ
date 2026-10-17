@@ -85,7 +85,7 @@ class Player {
       guard: u('guard'),
       caltrops: u('caltrops'),
       specialMul: 1 + 0.3 * Math.min(3, u('fury')) + (m.specialMul ?? 0),
-      specialArea: 1 + (m.specialArea ?? 0),
+      specialArea: 1 + 0.1 * Math.min(3, u('fury')) + (m.specialArea ?? 0),
       specialStun: 0.2 * Math.min(3, u('fury')),
     };
   }
@@ -651,12 +651,19 @@ export class Game {
 
   addMomentum(v) {
     const p = this.player;
-    p.momentum += v * p.stats.momentumMul;
-    if (p.momentum >= MOMENTUM.max) {
-      p.momentum = 0;
-      SPECIALS[p.hero.special].fire(this);
-      if (this.spirits.length) spiritOnSpecial(this, MOMENTUM.max);
+    p.momentum = Math.min(MOMENTUM.max, p.momentum + v * p.stats.momentumMul);
+    if (p.momentum < MOMENTUM.max) return;
+    // Full: hold for a worthwhile moment, at most MOMENTUM.hold seconds.
+    const S = SPECIALS[p.hero.special];
+    if (p.momReadyAt == null) {
+      p.momReadyAt = this.time;
+      this.sfx('ready');
     }
+    if (this.time - p.momReadyAt < MOMENTUM.hold && S.worth && !S.worth(this)) return;
+    p.momentum = 0;
+    p.momReadyAt = null;
+    S.fire(this);
+    if (this.spirits.length) spiritOnSpecial(this, MOMENTUM.max);
   }
 
   gainXp(v) {
@@ -1334,6 +1341,7 @@ export class Game {
       hp: p.hp, maxHp: p.stats.maxHp,
       level: p.level, xp: p.xp, xpNext: XP_TO_NEXT(p.level),
       momentum: p.momentum / MOMENTUM.max,
+      momHeld: p.momReadyAt != null,
       time: this.time, remaining, bossAt: this.stage.bossAt,
       kills: this.kills,
       boss: this.bossStatus(),

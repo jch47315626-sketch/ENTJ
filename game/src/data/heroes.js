@@ -51,5 +51,9 @@ export const HEROES = {
   },
 };
 
-/** Momentum (기세) gauge shared by all heroes. */
-export const MOMENTUM = { max: 100, perSecond: 3, perKill: 1 };
+/**
+ * Momentum (기세) gauge shared by all heroes. When it is full the special
+ * waits up to `hold` seconds for a worthwhile moment (enough foes close by,
+ * or the general in reach — see SPECIALS[…].worth), then fires anyway.
+ */
+export const MOMENTUM = { max: 100, perSecond: 3, perKill: 1, hold: 3, crowd: 5 };
