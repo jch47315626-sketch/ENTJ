@@ -23,7 +23,11 @@ import { ALTAR, ALTAR_TIERS, makeAltarStage, altarYeongju } from './data/altar.j
 import { makeSpirits, spiritMeta, initSpirits, updateSpirits, spiritAbsorb, spiritOnHurt, spiritRevive, spiritOnKill, spiritOnSpecial } from './systems/spirits.js';
 import { Spawner } from './systems/spawner.js';
 import { updateSkills, curseFoe } from './systems/skills.js';
+import { withOver, overOf } from './systems/over.js';
 import { updateTerrain, inBog } from './systems/terrain.js';
+
+/** The 책략 that grows each hero's special (its 초월 boosts the special). */
+const SPECIAL_LINE = { paewang: 'fury', gwansim: 'gwansim' };
 
 /** 공훈 needed for the next level: gentle at first, steeper and steeper later on. */
 export /** A card that moves a started 궁극기 forward is offered this many times as often. */
@@ -43,6 +47,8 @@ class Player {
     this.r = PLAYER_RADIUS;
     this.facing = 0;
     this.upgrades = {};
+    this.bonusPicks = {}; // 책략 handed out at the start more than once: extra picks (초월, systems/over.js)
+    this.over = {}; // 초월 picks taken
     this.weapon = { id: hero.weapon, level: 0, timer: 0.3 };
     this.subs = {}; // second weapons gained from level-ups, by id
     this.skillTimers = {}; // cooldown skills gained from level-ups, by id
@@ -365,7 +371,8 @@ export class Game {
   }
 
   syncArcherAllies() {
-    const want = Math.min(3, this.player.upgrades.archers ?? 0); // the 4th level is the 궁극기, not an archer
+    // The 4th level is the 궁극기, not an archer; each 초월 adds one more.
+    const want = Math.min(3, this.player.upgrades.archers ?? 0) + overOf(this.player, 'archers');
     let have = this.allies.filter((a) => a.kind === 'archer' && !a.maxLife).length; // event archers don't count
     while (have < want) {
       this.allies.push({ kind: 'archer', x: this.player.x, y: this.player.y, r: 10, cd: 0.5, facing: 0 });
@@ -662,7 +669,7 @@ export class Game {
     if (this.time - p.momReadyAt < MOMENTUM.hold && S.worth && !S.worth(this)) return;
     p.momentum = 0;
     p.momReadyAt = null;
-    S.fire(this);
+    withOver(p, SPECIAL_LINE[p.hero.special], () => S.fire(this));
     if (this.spirits.length) spiritOnSpecial(this, MOMENTUM.max);
   }
 
@@ -683,7 +690,7 @@ export class Game {
     const p = this.player;
     const lvl = (u) => p.upgrades[u.id] ?? 0;
     // 한계 돌파 (gear 비기): some 책략 may go one level higher.
-    const cap = (u) => u.maxLevel + (p.meta.caps?.[u.id] ?? 0);
+    const cap = (u) => u.maxLevel + (p.meta.caps?.[u.id] ?? 0) + (p.bonusPicks[u.id] ?? 0);
     const pool = UPGRADES.filter((u) => (!u.heroes || u.heroes.includes(p.hero.id)) && (u.available ? u.available(this) : lvl(u) < cap(u)));
     const choices = [];
     // 궁핍 (난세 패): fewer cards to choose from.
@@ -721,6 +728,7 @@ export class Game {
       category: u.category,
       name: typeof u.name === 'function' ? u.name(this) : u.name,
       desc: u.describe(this),
+      over: !!u.isOver?.(this),
       level: u.id === 'weapon' ? p.weapon.level + 2 : u.maxLevel === Infinity ? (u.stack ? lvl(u) + 1 : null) : lvl(u) + 1,
       maxLevel: u.id === 'weapon' ? null : u.maxLevel,
       evolution: !!u.isEvolution?.(this),
@@ -745,10 +753,19 @@ export class Game {
   choose(index) {
     if (this.state !== 'levelup' || !this.choices?.[index]) return;
     const c = this.choices[index];
-    if (c.id !== 'weapon' && (c.up.maxLevel !== Infinity || c.up.stack)) {
-      this.player.upgrades[c.id] = (this.player.upgrades[c.id] ?? 0) + 1;
+    if (c.over) {
+      // 초월: the line stays at its last level and grows stronger instead.
+      const p = this.player;
+      p.over[c.id] = (p.over[c.id] ?? 0) + 1;
+      p.recalc();
+      this.syncArcherAllies();
+      this.banner(`✨ 초월 — ${c.name}`, 'small');
+    } else {
+      if (c.id !== 'weapon' && (c.up.maxLevel !== Infinity || c.up.stack)) {
+        this.player.upgrades[c.id] = (this.player.upgrades[c.id] ?? 0) + 1;
+      }
+      c.up.apply(this);
     }
-    c.up.apply(this);
     if (c.evolution) {
       this.banner(`🌟 궁극기 — ${c.name}`, 'big');
       this.sfx('evolve');
@@ -802,14 +819,23 @@ export class Game {
     return { base, mul, total: Math.round(base * mul) + (this.stage.endless ? bossBonus : 0), stars, bossBonus };
   }
 
-  /** Start-of-run perks: 책략 granted by 비전 and gear. */
+  /**
+   * Start-of-run perks: 책략 granted by 비전 and gear. Each copy is one level
+   * (never the 궁극기 itself), and as many extra picks open after the last
+   * level (초월).
+   */
   applyStartPerks() {
     const m = this.opts.meta ?? {};
     const p = this.player;
-    for (const id of m.grants ?? []) {
+    const count = {};
+    for (const id of m.grants ?? []) count[id] = (count[id] ?? 0) + 1;
+    for (const [id, n] of Object.entries(count)) {
       const up = UPGRADES.find((u) => u.id === id);
       if (!up) continue; // a 책략 that no longer exists
-      p.upgrades[id] = Math.max(p.upgrades[id] ?? 0, 1);
+      const evo = up.levels?.findIndex((l) => l?.evolution) ?? -1;
+      const top = evo >= 0 ? evo : up.levels?.length ?? up.maxLevel;
+      p.upgrades[id] = Math.max(p.upgrades[id] ?? 0, Math.min(n, top));
+      p.bonusPicks[id] = n;
       up.apply(this);
     }
     p.recalc();

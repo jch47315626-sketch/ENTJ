@@ -1,11 +1,12 @@
 import { TAU } from '../core/math.js';
 import { hitArc } from './weapons.js';
 import { MAGUNI_LV } from '../data/skills.js';
+import { withOver } from './over.js';
 
 /** Updates summoned soldiers and following archers. */
 export function updateAllies(g, dt) {
   const p = g.player;
-  updateMaguniSkill(g, dt);
+  withOver(p, 'maguni', () => updateMaguniSkill(g, dt));
   let archerIndex = 0;
   const archerCount = g.allies.filter((a) => a.kind === 'archer').length;
   let maguniIndex = 0;

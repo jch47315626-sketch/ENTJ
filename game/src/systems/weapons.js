@@ -1,5 +1,6 @@
 import { WEAPONS } from '../data/weapons.js';
 import { TAU, angleDiff } from '../core/math.js';
+import { withOver } from './over.js';
 
 /**
  * Attack patterns, keyed by the `pattern` field of a weapon level.
@@ -207,7 +208,8 @@ export function updateWeapon(g, dt) {
     if (w.timer > 0) continue;
     w.timer = lv.cooldown * p.stats.haste * (1 - (m[`${w.id}Cd`] ?? 0));
     // A pattern may return a shorter wait (e.g. nothing was in reach).
-    const wait = pat.fire(g, p, lv, s);
+    // A second weapon's 초월 (systems/over.js) raises its damage and reach.
+    const wait = main ? pat.fire(g, p, lv, s) : withOver(p, w.id, () => pat.fire(g, p, lv, s));
     if (typeof wait === 'number') w.timer = wait;
     else if (main) {
       g.afterSwing();

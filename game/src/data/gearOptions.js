@@ -26,7 +26,8 @@ export const GEAR_OPTIONS = [
 
 /**
  * 비기 lines: instead of a number, they change how the hero fights.
- *   grant — start every battle already holding a 책략 at Lv1
+ *   grant — start every battle already holding a 책략 at Lv1; copies stack
+ *           (one level each) and open as many 초월 picks (systems/over.js)
  *   cap   — a 책략 can go one level higher
  *   proc  — a new technique (see Game: 낙뢰 · 사기충천 · 수호 깃발 · 연환)
  * Found on 진품 (35%) up to 국보 (50%) pieces; every 신물 has one.
@@ -66,7 +67,7 @@ function rollSpecial(item, takenKinds = []) {
 }
 
 export const specialText = (l) => {
-  if (l.k === 'grant') return `📜 출진할 때 「${NAMES.upgrade[l.v] ?? l.v}」 Lv1`;
+  if (l.k === 'grant') return `📜 출진할 때 「${NAMES.upgrade[l.v] ?? l.v}」 +1단계 (겹쳐 쌓임)`;
   if (l.k === 'cap') return `⬆️ 「${NAMES.upgrade[l.v] ?? l.v}」 최대 레벨 +1`;
   const p = PROCS[l.v];
   return p ? `${p.icon} ${p.name} — ${p.desc}` : l.v;

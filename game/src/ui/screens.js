@@ -46,7 +46,9 @@ export function renderChoices(choices, onPick, onReroll = null, rerolls = 0) {
     b.style.setProperty('--i', i);
     const lvl = c.evolution
       ? '🌟 무기 진화'
-      : c.level == null
+      : c.over
+        ? '✨ 초월'
+        : c.level == null
         ? '보급'
         : c.id === 'weapon' || c.sub
           ? c.level === 1 ? '🆕 새 무기' : `무기 ${c.level}단계`

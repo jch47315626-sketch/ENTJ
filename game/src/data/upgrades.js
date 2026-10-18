@@ -1,5 +1,8 @@
 import { WEAPONS } from './weapons.js';
+import { OVER } from '../systems/over.js';
 import { GWANSIM, GWANSIM_LINE, TIER_NAMES, SHIN, HORSE, CHAIN, TIGER, MAGUNI_LV, ARCHERS_LV, EDICT, FURY_LV, BOULDER, CURSE } from './skills.js';
+
+const GWANSIM_UP = skillUpgrade('gwansim', GWANSIM_LINE, ['gungye'], '병법', 11, (g) => g.player.recalc());
 
 /**
  * Level-up choices (책략). `apply` runs after the level has been increased,
@@ -46,8 +49,9 @@ export const UPGRADES = [
   skillUpgrade('fury', FURY_LV, ['gyeonhwon'], '무예', 9, (g) => g.player.recalc()),
   skillUpgrade('boulder', BOULDER, ['gyeonhwon'], '무예', 12),
   {
-    ...skillUpgrade('gwansim', GWANSIM_LINE, ['gungye'], '병법', 11, (g) => g.player.recalc()),
+    ...GWANSIM_UP,
     describe: (g) => {
+      if (GWANSIM_UP.isOver(g)) return GWANSIM_UP.describe(g);
       const lv = g.player.upgrades.gwansim ?? 0;
       const now = GWANSIM[lv], next = GWANSIM[lv + 1];
       if (next.evolution) return next.desc;
@@ -100,7 +104,7 @@ export const FALLBACKS = [
 /** Level-up entry that grants a cooldown skill (systems/skills.js), then grows it. */
 function skillUpgrade(id, levels, heroes, category, weight, onApply) {
   const next = (g) => levels[g.player.upgrades[id] ?? 0];
-  return {
+  return withOverPicks(id, levels, {
     id, category, maxLevel: levels.length, weight, heroes, skill: true, title: levels[0].name,
     name: (g) => next(g)?.name ?? levels[0].name,
     ownedName: (g) => levels[(g.player.upgrades[id] ?? 1) - 1].name,
@@ -116,6 +120,31 @@ function skillUpgrade(id, levels, heroes, category, weight, onApply) {
       g.player.skillTimers[id] = Math.min(g.player.skillTimers[id] ?? 2, 2);
       onApply?.(g);
     },
+  });
+}
+
+/** 초월 text for lines whose extra pick does more than damage and reach. */
+const OVER_TEXT = {
+  gwansim: `홀리는 적 +2, 홀린 적의 공격력 +${Math.round(OVER.dmg * 100)}%, 범위 +${Math.round(OVER.area * 100)}%`,
+  archers: `곁을 따르는 궁수 +1, 불화살 피해·범위 증가`,
+};
+
+/**
+ * 초월 (systems/over.js): once a line's last level is taken, the levels its
+ * stacked start skipped come up as 「… · 초월」 cards (see Game.choose).
+ */
+function withOverPicks(id, levels, u) {
+  const at = (g) => (g.player.upgrades[id] ?? 0) >= levels.length;
+  const left = (g) => (g.player.bonusPicks?.[id] ?? 0) - (g.player.over?.[id] ?? 0);
+  const isOver = (g) => at(g) && left(g) > 0;
+  return {
+    ...u,
+    levels,
+    isOver,
+    name: (g) => (isOver(g) ? `${u.title} · 초월 ${(g.player.over?.[id] ?? 0) + 1}` : u.name(g)),
+    describe: (g) => (isOver(g) ? (OVER_TEXT[id] ?? `${u.title}의 피해 +${Math.round(OVER.dmg * 100)}%, 범위 +${Math.round(OVER.area * 100)}%`) + ' (겹쳐 쌓임)' : u.describe(g)),
+    isEvolution: (g) => !isOver(g) && u.isEvolution(g),
+    available: (g) => isOver(g) || u.available(g),
   };
 }
 
@@ -124,7 +153,7 @@ function subWeapon(id, heroes) {
   const W = WEAPONS[id];
   const lvl = (g) => g.player.upgrades[id] ?? 0;
   const next = (g) => W.levels[lvl(g)];
-  return {
+  return withOverPicks(id, W.levels, {
     id, category: '무예', maxLevel: W.levels.length, weight: 16, heroes, subWeapon: true, title: W.levels[0].name,
     name: (g) => next(g)?.name ?? W.levels[0].name,
     describe: (g) => next(g)?.desc ?? '',
@@ -135,7 +164,7 @@ function subWeapon(id, heroes) {
       return !n.requires || (g.player.upgrades[n.requires.upgrade] ?? 0) >= n.requires.level;
     },
     apply: (g) => g.player.syncSubWeapons(),
-  };
+  });
 }
 
 function nextWeaponLevel(g) {

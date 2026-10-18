@@ -2,6 +2,7 @@ import { SHIN, HORSE, CHAIN, RANGED_BEHAVIORS, TIGER, ARCHERS_LV, EDICT, BOULDER
 import { hitArc, currentWeaponLevel } from './weapons.js';
 import { enemyHpScale } from '../data/balance.js';
 import { rand } from '../core/math.js';
+import { withOver } from './over.js';
 
 /**
  * Cooldown skills gained from level-ups (separate from the momentum
@@ -221,7 +222,7 @@ export function updateSkills(g, dt) {
     if (p.skillTimers[id] <= 0) {
       p.skillTimers[id] = cooldown;
       // A skill may return a shorter wait (e.g. no valid target yet).
-      const wait = skill.fire(g, L);
+      const wait = withOver(p, id, () => skill.fire(g, L));
       if (typeof wait === 'number') p.skillTimers[id] = wait;
     }
   }

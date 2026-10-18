@@ -2,6 +2,7 @@ import { TAU, rand } from '../core/math.js';
 import { hitArc, currentWeaponLevel } from './weapons.js';
 import { GWANSIM, FURY_LV } from '../data/skills.js';
 import { MOMENTUM } from '../data/heroes.js';
+import { OVER, overOf } from './over.js';
 
 /** Foes within `r` of the hero that `ok` accepts (charmed ones never count). */
 function foesNear(g, r, ok = () => true) {
@@ -94,12 +95,13 @@ export const SPECIALS = {
     worth: (g) => {
       const p = g.player;
       const L = GWANSIM[Math.min(GWANSIM.length - 1, p.upgrades.gwansim ?? 0)];
-      return foesNear(g, 340 * p.stats.specialArea, (e) => !e.isBoss && (e.def.tier ?? 1) + (e.elite ? 1 : 0) <= L.tier) >= Math.min(MOMENTUM.crowd, L.count);
+      return foesNear(g, 340 * p.stats.specialArea * (1 + OVER.area * overOf(p, 'gwansim')), (e) => !e.isBoss && (e.def.tier ?? 1) + (e.elite ? 1 : 0) <= L.tier) >= Math.min(MOMENTUM.crowd, L.count);
     },
     fire(g) {
       const p = g.player;
       const L = GWANSIM[Math.min(GWANSIM.length - 1, p.upgrades.gwansim ?? 0)];
-      const R = 340 * p.stats.specialArea;
+      const over = overOf(p, 'gwansim');
+      const R = 340 * p.stats.specialArea * (1 + OVER.area * over);
       const picks = [];
       g.grid.query(p.x, p.y, R, (e) => {
         if (e.dead || e.isBoss || e.def.behavior === 'static' || g.isCharmed(e)) return;
@@ -110,10 +112,11 @@ export const SPECIALS = {
       });
       // The strongest eligible soldiers turn first.
       picks.sort((a, b) => b.maxHp - a.maxHp);
-      const chosen = picks.slice(0, L.count);
+      // 초월: two more sway per pick, and they hit harder.
+      const chosen = picks.slice(0, L.count + 2 * over);
       for (const e of chosen) {
         e.charmUntil = g.time + L.duration;
-        e.charmPower = L.power;
+        e.charmPower = L.power * (1 + OVER.dmg * over);
         e.hp = e.maxHp;
         g.fx.push({ type: 'eye', x: e.x, y: e.y - e.r - 6, t: 0, life: 0.9, follow: e, size: 9 });
       }

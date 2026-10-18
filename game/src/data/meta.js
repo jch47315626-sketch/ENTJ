@@ -353,5 +353,6 @@ export function metaBonus(save, heroId) {
   // 결기 상점 (무한 전장's 결기수정).
   add(gyeolgiBonus(save));
   const grants = SECRETS.filter((s) => s.hero === heroId && save.secrets.includes(s.id)).map((s) => s.grant);
-  return { ...total, grants: [...new Set([...grants, ...gearGrants])] };
+  // Copies stack: each one is a level at the start and an extra pick (초월, systems/over.js).
+  return { ...total, grants: [...grants, ...gearGrants] };
 }
