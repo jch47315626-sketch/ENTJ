@@ -371,8 +371,8 @@ export class Game {
   }
 
   syncArcherAllies() {
-    // The 4th level is the 궁극기, not an archer; each 초월 adds one more.
-    const want = Math.min(3, this.player.upgrades.archers ?? 0) + overOf(this.player, 'archers');
+    // The 4th level is the 궁극기, not an archer; each 초월 adds two more.
+    const want = Math.min(3, this.player.upgrades.archers ?? 0) + 2 * overOf(this.player, 'archers');
     let have = this.allies.filter((a) => a.kind === 'archer' && !a.maxLife).length; // event archers don't count
     while (have < want) {
       this.allies.push({ kind: 'archer', x: this.player.x, y: this.player.y, r: 10, cd: 0.5, facing: 0 });

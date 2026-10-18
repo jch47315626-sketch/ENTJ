@@ -126,7 +126,7 @@ function skillUpgrade(id, levels, heroes, category, weight, onApply) {
 /** 초월 text for lines whose extra pick does more than damage and reach. */
 const OVER_TEXT = {
   gwansim: `홀리는 적 +2, 홀린 적의 공격력 +${Math.round(OVER.dmg * 100)}%, 범위 +${Math.round(OVER.area * 100)}%`,
-  archers: `곁을 따르는 궁수 +1, 불화살 피해·범위 증가`,
+  archers: `곁을 따르는 궁수 +2, 불화살 피해·범위 증가`,
 };
 
 /**
