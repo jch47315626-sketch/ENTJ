@@ -16,7 +16,7 @@ import { planCrows, updateCrows, callCrow, CROW } from './systems/crows.js';
 import { updateFieldObjects, breakObject } from './systems/fieldObjects.js';
 import { planFieldItems, updateFieldItems, takeFieldItem, ITEM_LIFE } from './systems/fieldItems.js';
 import { applyDaily } from './data/daily.js';
-import { ENDLESS, ENDLESS_MAPS, makeEndlessStage, endlessSurge, crystalsOwed, WRATH, CRYSTAL } from './data/endless.js';
+import { ENDLESS, ENDLESS_MAPS, makeEndlessStage, endlessSurge, crystalsOwed, WRATH } from './data/endless.js';
 import { applyNanse } from './data/nanse.js';
 import { attrReward, ATTR_ICON, ATTR_NAME } from './data/trial.js';
 import { ALTAR, ALTAR_TIERS, makeAltarStage, altarYeongju } from './data/altar.js';
@@ -403,7 +403,7 @@ export class Game {
     }
     if (e.def.armor) amount = Math.max(1, amount - e.def.armor);
     // Stage armour: harder battlefields shrug off a share of every blow (supply carts excepted).
-    if (e.def.behavior !== 'static') amount = Math.max(1, amount * (1 - (ENEMY_ARMOR[this.stage.difficulty.stars] ?? 0)));
+    if (e.def.behavior !== 'static') amount = Math.max(1, amount * (1 - (this.stage.difficulty.armor ?? ENEMY_ARMOR[this.stage.difficulty.stars] ?? 0)));
     if (opts?.stun) e.stun = Math.max(e.stun ?? 0, opts.stun * (e.isBoss ? 0.25 : 1));
     // 진돗개 사냥개 · 까마귀 흉조: a marked foe takes more.
     if (e.spiritAmp && e.spiritAmp.until > this.time) amount *= 1 + e.spiritAmp.amp;
@@ -463,7 +463,7 @@ export class Game {
     }
     if (e.xp > 0) this.dropCoin(e.x, e.y, e.xp);
     // 무한 전장: 결기수정 drop from the fallen as the run earns them.
-    if (this.stage.endless && (this.crystalsDropped ?? 0) < Math.floor(crystalsOwed(this.time, this.stage.difficulty.stars))) {
+    if (this.stage.endless && (this.crystalsDropped ?? 0) < Math.floor(crystalsOwed(this.time))) {
       this.crystalsDropped = (this.crystalsDropped ?? 0) + 1;
       this.pickups.push({ kind: 'crystal', x: e.x, y: e.y, magnet: false, t: 0 });
     }
@@ -531,11 +531,13 @@ export class Game {
       this.texts.push({ x: e.x, y: e.y - 50, v: `🔮 영기 +${n}`, t: 0, life: 2, order: true, big: true });
       this.spoilsLine = ` — 🔮 영기 +${n}`;
     } else if (this.stage.endless) {
-      const n = Math.max(1, Math.round((1 + this.endlessBosses) * Math.sqrt(CRYSTAL.byStars[this.stage.difficulty.stars] ?? 1) * rm));
+      // Each crystal is worth crystalWorth (×5 per layer of 마계).
+      const n = Math.max(1, Math.round((1 + this.endlessBosses) * rm));
+      const worth = this.stage.crystalWorth ?? 1;
       burst('crystal', Math.min(60, n));
-      if (n > 60) this.runStats.crystals = (this.runStats.crystals ?? 0) + n - 60;
-      this.texts.push({ x: e.x, y: e.y - 50, v: `💎 결기수정 +${n}`, t: 0, life: 2, order: true, big: true });
-      this.spoilsLine = ` — 💎 결기수정 +${n}`;
+      if (n > 60) this.runStats.crystals = (this.runStats.crystals ?? 0) + (n - 60) * worth;
+      this.texts.push({ x: e.x, y: e.y - 50, v: `💎 결기수정 +${(n * worth).toLocaleString()}`, t: 0, life: 2, order: true, big: true });
+      this.spoilsLine = ` — 💎 결기수정 +${(n * worth).toLocaleString()}`;
     } else {
       const d = this.stage.difficulty;
       const mul = REWARD_BY_STARS[d.stars] * (1 + (this.opts.meta?.reward ?? 0)) * (d.rewardMul ?? 1) * (this.opts.quick ? QUICK_REWARD : 1);
@@ -1328,8 +1330,9 @@ export class Game {
             this.sfx('buy');
           }
           else if (k.kind === 'crystal') {
-            this.runStats.crystals = (this.runStats.crystals ?? 0) + 1;
-            this.texts.push({ x: p.x, y: p.y - 30, v: '💎 +1', t: 0, life: 0.8, order: true });
+            const worth = this.stage.crystalWorth ?? 1;
+            this.runStats.crystals = (this.runStats.crystals ?? 0) + worth;
+            this.texts.push({ x: p.x, y: p.y - 30, v: `💎 +${worth.toLocaleString()}`, t: 0, life: 0.8, order: true });
             this.sfx('buy');
           }
           else if (k.kind === 'rice') {

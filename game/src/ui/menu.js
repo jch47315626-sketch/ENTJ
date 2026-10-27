@@ -12,7 +12,7 @@ import { heroUltimates } from '../data/upgrades.js';
 import { GYEOLGI, gyeolgiCost } from '../data/gyeolgi.js';
 import { SPIRITS, SPIRIT_LIST, SPIRIT_GRADES, GACHA, STAR_DUPES, MAX_STARS, SASIN_STAR_ESSENCE, COMBOS, combosOf, companionSlots, spiritOf, dupesForNext, FIRST_SPIRIT_RUNS, altarRunsDone } from '../data/spirits.js';
 import { GUARDIANS, ALTAR_TICKETS, ESSENCE_PER_SASIN, ALTAR_TIERS, ALTAR_MAX_TIER, guardianOf, dayNumber, refreshAltar, altarTierOpen, wispWorth, clearBonus } from '../data/altar.js';
-import { ENDLESS_MAPS, ENDLESS_MAP_ORDER, endlessMapOpen, endlessMapOf } from '../data/endless.js';
+import { ENDLESS_MAPS, ENDLESS_MAP_ORDER, endlessMapOpen, endlessMapOf, LAYER, crystalWorth } from '../data/endless.js';
 import { staminaOf, staminaText, staminaWait, endlessLeft, ENDLESS_PER_DAY } from '../data/entries.js';
 import { josa } from '../core/korean.js';
 import { lineText, lineMax, engraveCost } from '../data/gearOptions.js';
@@ -429,7 +429,7 @@ function endlessCard(save, sel, act) {
   const row = el('div', 'ac-tier ec-map');
   row.append(button('◀', 'ac-step', () => view(order[i - 1]), i <= 0));
   const last = id === endlessMapOf(save) && save.endlessMap ? ' · 마지막 도전' : '';
-  row.append(el('div', 'ac-tier-mid', `<b>${m.icon} ${m.name}</b><small>${m.place} · ${starText(m.difficulty.stars)}${last}</small>`));
+  row.append(el('div', 'ac-tier-mid', `<b>${m.icon} ${m.name}</b><small>${m.place} · 적 강함 ×${LAYER.hard ** (m.layer - 1)} · 💎 1개 = ${crystalWorth(m.layer).toLocaleString()}${last}</small>`));
   row.append(button('▶', 'ac-step', () => view(order[i + 1]), i >= order.length - 1));
   card.append(row);
   const dots = el('div', 'ec-dots');
@@ -444,7 +444,7 @@ function endlessCard(save, sel, act) {
   who.append(portrait(h, 48));
   who.append(el('div', 'dc-where', `<b>${josa(h.name, '으로')} 출전</b><span>적장 ${m.bosses.map((b) => BOSSES[b].name).join(' · ')} 번갈아 등장</span>`));
   card.append(who);
-  card.append(el('p', 'ec-rule', '적이 더 빠르고 많으며, 적장은 <b>3분마다</b> 더 강해져 돌아와요. 냥 대신 <b>💎 결기수정</b> — 깊은 층일수록 많이 떨어져요. <b>⚡ 한 자리에 20초 머물면 신의 분노!</b>'));
+  card.append(el('p', 'ec-rule', '적이 더 빠르고 많으며, 적장은 <b>3분마다</b> 더 강해져 돌아와요. 냥 대신 <b>💎 결기수정</b> — 한 층 내려갈 때마다 적은 2배 강해지고, 결기수정 1개의 값은 5배가 돼요. <b>⚡ 한 자리에 20초 머물면 신의 분노!</b>'));
   card.append(el('p', 'ec-best', best
     ? `🏆 이 맵 최고 기록 <b>${mmss(best.time)}</b> · 적장 ${best.bosses}명 · ${HEROES[best.hero]?.name ?? ''}`
     : '아직 기록이 없어요 — 첫 기록을 세워 보세요!'));

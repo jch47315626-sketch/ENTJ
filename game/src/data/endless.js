@@ -31,13 +31,30 @@ export const MAGYE = {
 };
 
 /**
+ * Layers of 마계 are spaced evenly: each one down doubles enemy (and 적장)
+ * health and damage, and each 결기수정 picked up there is worth 5× as much
+ * as one a layer above. Everything else (spawn rate, armour, 공훈) stays as
+ * on the first layer, so the step is exactly the doubling.
+ */
+export const LAYER = { hard: 2, worth: 5, armor: 0.05 };
+const BASE_DIFF = STAGES.seonamhae.difficulty;
+const layerDiff = (n, label) => {
+  const k = LAYER.hard ** (n - 1);
+  return {
+    ...BASE_DIFF, label, stars: n, armor: LAYER.armor,
+    enemyHp: BASE_DIFF.enemyHp * k, enemyDamage: BASE_DIFF.enemyDamage * k,
+    bossHp: BASE_DIFF.bossHp * k, bossDamage: BASE_DIFF.bossDamage * k,
+  };
+};
+/** What one 결기수정 is worth on a layer: 1, 5, 25, 125 … */
+export const crystalWorth = (layer) => LAYER.worth ** (layer - 1);
+
+/**
  * 무한 전장 전용 맵: six layers of 마계, each with its own ground, terrain,
  * foes, rotating 적장 and recurring events (`cycle`, repeated every
- * `period` seconds for the whole run). Difficulty is borrowed from the
- * campaign field of the same rank; a map opens once `unlockAfter` (a
+ * `period` seconds for the whole run). A map opens once `unlockAfter` (a
  * campaign field) has been pacified.
  */
-const diffOf = (id, extra = {}) => ({ ...STAGES[id].difficulty, ...extra });
 
 export const ENDLESS_MAPS = {
   hyeolwol: {
@@ -45,7 +62,7 @@ export const ENDLESS_MAPS = {
     intro: '붉은 달이 뜬 갯벌. 핏빛 물웅덩이마다 달이 비치고, 물살을 타고 해적 망령이 끝없이 밀려온다.',
     ground: 'bloodTide', music: 'seonamhae', darkTint: '18, 0, 4',
     terrain: { rocks: 0.08, bog: 0.3, clear: 240, bogSlow: 0.35, style: 'blood' },
-    difficulty: diffOf('seonamhae', { label: '마계 Ⅰ' }),
+    difficulty: layerDiff(1, '마계 Ⅰ'),
     unlockAfter: null, supplyEvery: 40,
     bosses: ['neungchang', 'kimak', 'gyeonhwon'],
     phases: [
@@ -64,7 +81,7 @@ export const ENDLESS_MAPS = {
     intro: '봉분이 끝없이 이어진 골짜기. 푸른 도깨비불이 떠다니다 꺼질 때마다, 어둠 속에서 무언가가 다가온다.',
     ground: 'ghostBarrow', music: 'gochang', darkTint: '0, 6, 16',
     terrain: { rocks: 0.22, bog: 0.18, clear: 240, bogSlow: 0.35, style: 'ghost' },
-    difficulty: diffOf('gongsan', { label: '마계 Ⅱ' }),
+    difficulty: layerDiff(2, '마계 Ⅱ'),
     unlockAfter: 'seonamhae', supplyEvery: 38,
     bosses: ['shinsunggyeom', 'gyeonhwon', 'yugeumpil'],
     phases: [
@@ -83,7 +100,7 @@ export const ENDLESS_MAPS = {
     intro: '모든 것이 얼어붙은 지옥. 푸른 얼음 틈으로 차가운 빛이 새고, 녹은 얼음물이 발목을 붙잡는다.',
     ground: 'frostHell', music: 'gochang', darkTint: '0, 8, 20',
     terrain: { rocks: 0.3, bog: 0.34, clear: 240, bogSlow: 0.45, style: 'frost' },
-    difficulty: diffOf('gochang', { label: '마계 Ⅲ' }),
+    difficulty: layerDiff(3, '마계 Ⅲ'),
     unlockAfter: 'gongsan', supplyEvery: 36,
     bosses: ['kimak', 'yugeumpil', 'heukpung'],
     phases: [
@@ -102,7 +119,7 @@ export const ENDLESS_MAPS = {
     intro: '불타는 궁궐. 그을린 돌바닥에 붉은 기둥이 쓰러져 있고, 녹아내린 쇳물이 웅덩이를 이룬다. 재가 눈처럼 내린다.',
     ground: 'ashPalace', music: 'cheorwon', darkTint: '20, 4, 0',
     terrain: { rocks: 0.26, bog: 0.22, clear: 240, bogSlow: 0.4, style: 'lava' },
-    difficulty: diffOf('cheorwon', { label: '마계 Ⅳ' }),
+    difficulty: layerDiff(4, '마계 Ⅳ'),
     unlockAfter: 'gochang', supplyEvery: 34,
     bosses: ['gungyeBoss', 'gongsin', 'wanggeonBoss'],
     phases: [
@@ -122,7 +139,7 @@ export const ENDLESS_MAPS = {
     intro: '쓰러진 군사들의 뼈가 산을 이룬 잿빛 벌판. 검은 혼의 강이 흐르고, 땅 밑에서 해골 군단이 기어 나온다.',
     ground: 'boneField', music: 'illicheon', darkTint: '6, 6, 10',
     terrain: { rocks: 0.3, bog: 0.28, clear: 240, bogSlow: 0.4, style: 'soul' },
-    difficulty: diffOf('illicheon', { label: '마계 Ⅴ' }),
+    difficulty: layerDiff(5, '마계 Ⅴ'),
     unlockAfter: 'cheorwon', supplyEvery: 32,
     bosses: ['singeom', 'wanggeonBoss', 'gyeonhwon', 'beombawi'],
     phases: [
@@ -142,7 +159,7 @@ export const ENDLESS_MAPS = {
     intro: '빛이 닿지 않는 마계의 밑바닥. 용암 틈이 맥박치고, 흑요석 바위 사이로 독 웅덩이가 끓는다. 초적의 망령들이 모두 여기 모였다.',
     ground: 'demonRealm', music: 'illicheon', darkTint: '10, 0, 8',
     terrain: { rocks: 0.14, bog: 0.22, clear: 240, bogSlow: 0.35, style: 'demon' },
-    difficulty: diffOf('munmak', { label: '마계 Ⅵ', rewardMul: 1 }),
+    difficulty: layerDiff(6, '마계 Ⅵ'),
     unlockAfter: 'seomgang', supplyEvery: 34,
     bosses: ['heukpung', 'maehwa', 'yanggil', 'gihwon'],
     phases: [
@@ -214,6 +231,7 @@ export function makeEndlessStage(map) {
     darkTint: map.darkTint,
     difficulty: { ...d, spawnRate: (d.spawnRate ?? 1) * MAGYE.spawnRate, enemySpeed: (d.enemySpeed ?? 1) * MAGYE.enemySpeed },
     endless: true,
+    crystalWorth: crystalWorth(map.layer),
     clearText: '',
     next: null,
     ending: null,
@@ -234,9 +252,10 @@ export function endlessSurge(t) {
 }
 
 /**
- * 결기수정 (무한 전장's only reward): the total owed after `t` seconds grows
- * faster than the time survived (t^1.6), more on harder fields. About 3–5 for
- * a hero with no gear (★1, ~4 min), 50–70 with 명품 gear (★3, ~10 min).
+ * 결기수정 (무한 전장's only reward): how many drop after `t` seconds grows
+ * faster than the time survived (t^1.6) — the same count on every layer;
+ * a deeper layer pays through what each one is worth (crystalWorth).
+ * About 3–5 drop for a hero with no gear in ~4 min.
  */
-export const CRYSTAL = { a: 0.31, pow: 1.6, byStars: { 1: 1, 2: 2.6, 3: 4.9, 4: 7, 5: 9.5, 6: 12 } };
-export const crystalsOwed = (t, stars) => CRYSTAL.a * (t / 60) ** CRYSTAL.pow * (CRYSTAL.byStars[stars] ?? 1);
+export const CRYSTAL = { a: 0.31, pow: 1.6 };
+export const crystalsOwed = (t) => CRYSTAL.a * (t / 60) ** CRYSTAL.pow;
