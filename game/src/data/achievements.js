@@ -73,7 +73,7 @@ export const ACHIEVEMENTS = [
 
 
   // 전장 오브젝트 · 무한 전장
-  { id: 'endlessBoss3', group: 'war', icon: '👹', name: '적장 셋을 넘어', desc: '무한 전장 한 판에서 적장을 3번 쓰러뜨린다', reward: 3000, check: (s) => (s.stats.endlessBosses ?? 0) >= 3 },
+  { id: 'endlessBoss3', group: 'war', icon: '👹', name: '마계의 밑바닥', desc: '무한 전장 마계 여섯째 층(마계 심연)의 적장을 쓰러뜨린다', reward: 25000, check: (s) => (s.stats.endlessLayer ?? 0) >= 6 },
 
   // 난세 단계
 
@@ -90,7 +90,7 @@ export const ACHIEVEMENTS = [
   ...series('wins', 'war', '🏯', '평정의 길', (v) => `전장을 ${n(v)}번 평정한다`, (s) => s.codex.wins, [[10, 800], [50, 3000], [200, 10000], [500, 25000]]),
   ...series('kills', 'war', '🗡️', '만인적', (v) => `적을 모두 합쳐 ${n(v)}명 쓰러뜨린다`, totalKills, [[1000, 500, 'kills1k'], [10000, 4000, 'kills10k'], [50000, 10000], [200000, 25000], [1000000, 60000]]),
   ...series('bosses', 'war', '💀', '적장 사냥꾼', (v) => `적장을 ${n(v)}번 쓰러뜨린다`, (s) => s.stats.bosses ?? 0, [[10, 1500, 'bosses10'], [30, 4000], [100, 10000], [300, 25000]]),
-  ...series('endless', 'war', '♾️', '끝없는 싸움', (v) => `무한 전장에서 ${v / 60}분을 버틴다`, (s) => s.stats.endlessBest ?? 0, [[300, 800, 'endless5'], [600, 2500, 'endless10'], [900, 6000], [1200, 12000]]),
+  ...series('endless', 'war', '♾️', '마계 토벌', (v) => `무한 전장 마계 ${v}층의 적장을 쓰러뜨린다`, (s) => s.stats.endlessLayer ?? 0, [[1, 800, 'endless5'], [2, 2500, 'endless10'], [3, 6000], [4, 10000], [5, 15000]]),
   ...series('nanse', 'war', '🔥', '난세의 영웅', (v) => `일일 던전에서 난세 ${v}단계 이상을 평정한다`, (s) => s.stats.nanseBest ?? 0, [[5, 1500, 'nanse5'], [8, 2500, 'nanse8'], [10, 4000, 'nanse10'], [12, 7000, 'nanse12'], [14, 10000, 'nanse14']]),
   ...series('crows', 'field', '🌳', '감나무 지기', (v) => `까마귀를 모두 합쳐 ${n(v)}번 부른다`, (s) => s.stats.crowCalls ?? 0, [[20, 800, 'crow20'], [100, 3000], [500, 10000]]),
   ...series('objects', 'field', '🥁', '전장의 지혜', (v) => `전장 오브젝트를 모두 합쳐 ${n(v)}개 부순다`, (s) => s.stats.objects ?? 0, [[30, 800, 'objects30'], [150, 3000], [600, 10000]]),

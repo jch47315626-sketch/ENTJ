@@ -4,7 +4,7 @@ import { WEAPONS } from '../data/weapons.js';
 
 import { CROW } from '../systems/crows.js';
 import { FIELD_ITEMS, ITEM_LIFE } from '../systems/fieldItems.js';
-import { WRATH } from '../data/endless.js';
+import { WRATH, endlessCrystals } from '../data/endless.js';
 
 const $ = (id) => document.getElementById(id);
 /** Screen direction (east first, clockwise, y down) as an arrow. */
@@ -50,7 +50,7 @@ export class Hud {
     e.momBar.classList.toggle('full', h.momentum > 0.9);
     // Full and waiting for a good moment to burst.
     e.momBar.classList.toggle('held', !!h.momHeld);
-    e.loot.textContent = g.stage.endless ? `💎 결기수정 ${g.runStats.crystals ?? 0}` : g.stage.altar ? `🔮 영기 ${g.runStats.wisps ?? 0}` : `🪙 +${g.liveReward().toLocaleString()}`;
+    e.loot.textContent = g.stage.endless ? `💎 토벌 ${endlessCrystals(g.stage.layer, { won: true }).toLocaleString()}+` : g.stage.altar ? `🔮 영기 ${g.runStats.wisps ?? 0}` : `🪙 +${g.liveReward().toLocaleString()}`;
     e.timer.textContent = fmt(h.time);
     e.timerSub.textContent = h.bossPhase ? '적장을 쓰러뜨려라' : `적장 출현까지 ${fmt(h.remaining)}`;
     e.bossBar.hidden = !h.boss;

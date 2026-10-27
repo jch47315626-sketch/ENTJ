@@ -24,8 +24,7 @@ export function runFacts(g, won, save) {
     crowCalls: g.runStats.crowCalls,
     objects: g.runStats.objects ?? 0,
     endless: !!g.stage.endless,
-    endlessTime: g.stage.endless ? Math.floor(g.time) : 0,
-    endlessBosses: g.endlessBosses ?? 0,
+    endlessLayer: g.stage.endless && won ? g.stage.layer : 0,
     crowBest: g.runStats.crowBest,
   };
 }
@@ -36,12 +35,15 @@ export function recordRun(save, run) {
   st.crowCalls = (st.crowCalls ?? 0) + run.crowCalls;
   st.crowBest = Math.max(st.crowBest ?? 0, run.crowBest);
   st.objects = (st.objects ?? 0) + run.objects;
-  st.endlessBest = Math.max(st.endlessBest ?? 0, run.endlessTime);
-  st.endlessBosses = Math.max(st.endlessBosses ?? 0, run.endlessBosses);
+  // 무한 전장: the deepest layer of 마계 felled.
+  st.endlessLayer = Math.max(st.endlessLayer ?? 0, run.endlessLayer ?? 0);
   if (run.won) {
     st.bosses = (st.bosses ?? 0) + 1;
-    st.heroBest = { ...(st.heroBest ?? {}) };
-    st.heroBest[run.hero] = Math.max(st.heroBest[run.hero] ?? 0, run.stars);
+    // A 마계 layer is not a campaign field: it does not count as that hero's win.
+    if (!run.endless) {
+      st.heroBest = { ...(st.heroBest ?? {}) };
+      st.heroBest[run.hero] = Math.max(st.heroBest[run.hero] ?? 0, run.stars);
+    }
   }
 }
 

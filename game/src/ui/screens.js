@@ -26,7 +26,7 @@ export function renderIntro(stage, daily = null, endless = false) {
   $('introName').textContent = stage.name;
   $('introText').textContent = daily
     ? daily.rules.map((r) => `${r.icon} ${r.name} — ${r.desc}`).join('\n')
-    : endless ? `${stage.intro}\n적은 갈수록 많아지고, 적장은 3분마다 더 강해져 돌아온다. 한 자리에 머물면 신의 분노 — 쓰러질 때까지 움직여라!`
+    : endless ? `${stage.intro}\n3분을 버티면 적장이 나타난다 — 쓰러뜨리면 토벌, 결기수정을 얻는다. 한 자리에 머물면 신의 분노, 계속 움직여라!`
     : stage.nanse ? NANSE_CARDS.filter((c) => stage.nanse.cards[c.id]).map((c) => `${c.icon} ${c.name} — ${c.desc(stage.nanse.cards[c.id])}`).join('\n') : stage.intro;
 }
 
@@ -101,13 +101,15 @@ export function renderResult(g, won, extra = {}) {
     $('resultTitle').textContent = end.title;
     $('resultText').textContent = end.alt?.[g.player.hero.id] ?? end.text;
   }
-  // ♾️ 무한 전장 ends only in defeat: show it as a record, not a loss.
+  // ♾️ 무한 전장: a 토벌 (with the fastest time kept) or a fall short of it.
   const en = extra.endless;
   if (en) {
-    seal.textContent = '無\n限';
-    seal.classList.remove('lose');
-    $('resultTitle').textContent = en.isNew ? '♾️ 새 최고 기록!' : '♾️ 무한 전장';
-    $('resultText').textContent = `${fmt(en.time)} 버티고 적장 ${en.bosses}명을 쓰러뜨렸다.${en.isNew ? '' : ` (최고 ${fmt(en.best.time)})`}`;
+    seal.textContent = '魔\n界';
+    seal.classList.toggle('lose', !en.won);
+    $('resultTitle').textContent = en.won ? (en.isNew ? `♾️ 마계 ${en.layer}층 토벌 · 새 기록!` : `♾️ 마계 ${en.layer}층 토벌!`) : `♾️ 마계 ${en.layer}층 — 패퇴`;
+    $('resultText').textContent = en.won
+      ? `${fmt(en.time)} 만에 적장을 쓰러뜨렸다.${en.isNew || !en.best ? '' : ` (최단 ${fmt(en.best.time)})`}`
+      : `${fmt(en.time)} 버텼지만 적장을 넘지 못했다. 결기수정은 거기까지의 몫만 (최대 10%).`;
   }
   $('nextBtn').hidden = !(won && g.stage.next) || !!g.stage.daily || !!g.stage.trial || !!en;
   // Dungeons: try again right away, or go back to that dungeon's own screen.
@@ -125,7 +127,7 @@ export function renderResult(g, won, extra = {}) {
     if (al.essence) rows.push(['🌟', '사신 정수', `+${al.essence}`]);
     if (al.newTier) rows.push(['🏯', `제단 ${al.tier}단계 첫 평정`, `${al.tier + 1 <= al.maxTier ? `${al.tier + 1}단계 열림!` : '최고 단계!'}`]);
     rows.push(['🎟️', '남은 입장권', `${al.tickets}장`]);
-  } else if (r && en) rows.push(['💎', '결기수정', `<span class="count-up" data-to="${r.crystals ?? 0}">+0</span>`]);
+  } else if (r && en) rows.push(['💎', `결기수정${en.mul && en.mul !== 1 ? ` (🎰 ×${en.mul})` : ''}`, `<span class="count-up" data-to="${r.crystals ?? 0}">+0</span>`]);
   else if (r) rows.push(['🪙', '냥', `<span class="count-up" data-to="${r.total}">+0</span>`]);
   if (r && g.opts.quick) rows.push(['⚡', '빠른 시험 모드', '냥 35%']);
   if (r?.bossBonus) rows.push(['👑', `적장 토벌 보상${g.bossMul && g.bossMul !== 1 ? ` (🎰 ×${g.bossMul})` : ''}`, `+${r.bossBonus.toLocaleString()}`]);
@@ -136,7 +138,6 @@ export function renderResult(g, won, extra = {}) {
     rows.push(['🔥', `일일 던전 · 난세 ${tr.level}단계`, tr.won ? '평정!' : '패퇴']);
     if (tr.relic) rows.push(['🌟', `신물 획득 · ${tr.relic}`, '획득!']);
   }
-  if (en) rows.push(['♾️', '적장 격파', `${en.bosses}명`]);
   rows.push(['⭐', '공훈', `Lv ${g.player.level}`]);
   rows.push(['⚔️', '처치', `${g.kills}`]);
   rows.push(['⏱️', '버틴 시간', fmt(g.time)]);

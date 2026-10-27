@@ -12,7 +12,7 @@ import { heroUltimates } from '../data/upgrades.js';
 import { GYEOLGI, gyeolgiCost } from '../data/gyeolgi.js';
 import { SPIRITS, SPIRIT_LIST, SPIRIT_GRADES, GACHA, STAR_DUPES, MAX_STARS, SASIN_STAR_ESSENCE, COMBOS, combosOf, companionSlots, spiritOf, dupesForNext, FIRST_SPIRIT_RUNS, altarRunsDone } from '../data/spirits.js';
 import { GUARDIANS, ALTAR_TICKETS, ESSENCE_PER_SASIN, ALTAR_TIERS, ALTAR_MAX_TIER, guardianOf, dayNumber, refreshAltar, altarTierOpen, wispWorth, clearBonus } from '../data/altar.js';
-import { ENDLESS_MAPS, ENDLESS_MAP_ORDER, endlessMapOpen, endlessMapOf, LAYER, crystalWorth } from '../data/endless.js';
+import { ENDLESS_MAPS, ENDLESS_MAP_ORDER, endlessMapOpen, endlessMapOf, LAYER, endlessCrystals } from '../data/endless.js';
 import { staminaOf, staminaText, staminaWait, endlessLeft, ENDLESS_PER_DAY } from '../data/entries.js';
 import { josa } from '../core/korean.js';
 import { lineText, lineMax, engraveCost } from '../data/gearOptions.js';
@@ -287,7 +287,7 @@ export function renderHome(save, sel, act) {
   const mmss = (t) => `${Math.floor(t / 60)}분 ${String(Math.floor(t % 60)).padStart(2, '0')}초`;
   const eLeft = endlessLeft(save);
   list.append(dungeonRow('♾️', '무한 전장', `${h.name} · ${em.icon} ${em.name}`,
-    `♾️ 오늘 ${eLeft}/${ENDLESS_PER_DAY}번${best ? ` · 🏆 최고 ${mmss(best.time)}` : ''} · 💎 결기수정`, eLeft > 0, () => openSheet('endless', save, sel, act)));
+    `♾️ 오늘 ${eLeft}/${ENDLESS_PER_DAY}번${best?.cleared ? ` · 🏆 최단 ${mmss(best.time)}` : ''} · 💎 토벌 ${fmt(endlessCrystals(em.layer, { won: true }))}+`, eLeft > 0, () => openSheet('endless', save, sel, act)));
   body.append(list);
   if (ui.sheet === 'altar' || ui.sheet === 'endless' || ui.sheet === 'trial') openSheet(ui.sheet, save, sel, act);
   else ui.sheet = null;
@@ -429,7 +429,7 @@ function endlessCard(save, sel, act) {
   const row = el('div', 'ac-tier ec-map');
   row.append(button('◀', 'ac-step', () => view(order[i - 1]), i <= 0));
   const last = id === endlessMapOf(save) && save.endlessMap ? ' · 마지막 도전' : '';
-  row.append(el('div', 'ac-tier-mid', `<b>${m.icon} ${m.name}</b><small>${m.place} · 적 강함 ×${LAYER.hard ** (m.layer - 1)} · 💎 1개 = ${crystalWorth(m.layer).toLocaleString()}${last}</small>`));
+  row.append(el('div', 'ac-tier-mid', `<b>${m.icon} ${m.name}</b><small>${m.place} · 적 강함 ×${LAYER.hard ** (m.layer - 1)} · 💎 토벌 ${fmt(endlessCrystals(m.layer, { won: true }))}+${last}</small>`));
   row.append(button('▶', 'ac-step', () => view(order[i + 1]), i >= order.length - 1));
   card.append(row);
   const dots = el('div', 'ec-dots');
@@ -442,12 +442,12 @@ function endlessCard(save, sel, act) {
   if (!open) card.append(el('p', 'ac-lock', `🔒 전장 「${STAGES[m.unlockAfter].name}」을 평정하면 열려요`));
   const who = el('div', 'dc-who');
   who.append(portrait(h, 48));
-  who.append(el('div', 'dc-where', `<b>${josa(h.name, '으로')} 출전</b><span>적장 ${m.bosses.map((b) => BOSSES[b].name).join(' · ')} 번갈아 등장</span>`));
+  who.append(el('div', 'dc-where', `<b>${josa(h.name, '으로')} 출전</b><span>적장 ${m.bosses.map((b) => BOSSES[b].name).join(' · ')} 중 하나</span>`));
   card.append(who);
-  card.append(el('p', 'ec-rule', '적이 더 빠르고 많으며, 적장은 <b>3분마다</b> 더 강해져 돌아와요. 냥 대신 <b>💎 결기수정</b> — 한 층 내려갈 때마다 적은 2배 강해지고, 결기수정 1개의 값은 5배가 돼요. <b>⚡ 한 자리에 20초 머물면 신의 분노!</b>'));
-  card.append(el('p', 'ec-best', best
-    ? `🏆 이 맵 최고 기록 <b>${mmss(best.time)}</b> · 적장 ${best.bosses}명 · ${HEROES[best.hero]?.name ?? ''}`
-    : '아직 기록이 없어요 — 첫 기록을 세워 보세요!'));
+  card.append(el('p', 'ec-rule', '적이 더 빠르고 많아요. <b>3분</b>을 버티면 적장이 나타나고, 쓰러뜨리면 <b>토벌</b> — 🎰 황금 룰렛을 돌려 <b>💎 결기수정</b>을 받아요. 한 층 내려갈 때마다 적은 2배 강해지고 결기수정은 5배. 적장을 못 잡으면 최대 10%만. <b>⚡ 한 자리에 20초 머물면 신의 분노!</b>'));
+  card.append(el('p', 'ec-best', best?.cleared
+    ? `🏆 최단 토벌 <b>${mmss(best.time)}</b> · ${HEROES[best.hero]?.name ?? ''}`
+    : '아직 토벌하지 못했어요 — 첫 토벌에 도전해 보세요!'));
   const btns = el('div', 'ec-btns');
   btns.append(button('👑 영웅 바꾸기', 'plain-btn small', () => act.go('heroes')));
   btns.append(button(!open ? '🔒 잠긴 맵' : left > 0 ? `♾️ 도전하기 · ${left}/${ENDLESS_PER_DAY}` : '오늘 도전 끝 · 내일 다시', 'endless-btn', () => {

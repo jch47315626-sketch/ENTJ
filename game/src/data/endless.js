@@ -1,10 +1,9 @@
 import { STAGES } from './stages.js';
 
 /**
- * ♾️ 무한 전장: any battlefield with no end. The field's own enemy waves keep
- * coming and keep getting tougher; every ENDLESS.bossEvery seconds its boss
- * returns, stronger each time. The run ends only when the hero falls; the
- * record is how long they lasted.
+ * ♾️ 무한 전장 (마계): a short climb through six layers. The field's waves come
+ * faster than anywhere else; after ENDLESS.bossEvery seconds its 적장
+ * arrives, and felling it wins the run. The record is the fastest 토벌.
  */
 export const ENDLESS = {
   bossEvery: 180, // seconds between bosses
@@ -14,7 +13,6 @@ export const ENDLESS = {
   rampFrom: 240, // after 4:00 the waves harden:
   damageGrowth: 240, // enemy damage ×(1 + (t − rampFrom) / damageGrowth)
   hpGrowth: 300, // enemy health ×(1 + (t − rampFrom) / hpGrowth)
-  bossBounty: 0.5, // share of the normal boss reward paid per boss felled
   // From 7:00 the climb itself steepens: every minute adds a bigger step of
   // enemy damage than the one before (+8%, +16%, +24% … on top).
   surgeFrom: 420,
@@ -231,7 +229,7 @@ export function makeEndlessStage(map) {
     darkTint: map.darkTint,
     difficulty: { ...d, spawnRate: (d.spawnRate ?? 1) * MAGYE.spawnRate, enemySpeed: (d.enemySpeed ?? 1) * MAGYE.enemySpeed },
     endless: true,
-    crystalWorth: crystalWorth(map.layer),
+    layer: map.layer,
     clearText: '',
     next: null,
     ending: null,
@@ -252,10 +250,17 @@ export function endlessSurge(t) {
 }
 
 /**
- * 결기수정 (무한 전장's only reward): how many drop after `t` seconds grows
- * faster than the time survived (t^1.6) — the same count on every layer;
- * a deeper layer pays through what each one is worth (crystalWorth).
- * About 3–5 drop for a hero with no gear in ~4 min.
+ * 결기수정 (무한 전장's only reward): nothing for time survived. Felling the
+ * 적장 pays `clear` crystals × the 🎰 spin, each worth crystalWorth(layer);
+ * falling before that pays a share of it by how far the run got (up to
+ * `lossShare`: half for reaching the 적장, half for its health taken).
  */
-export const CRYSTAL = { a: 0.31, pow: 1.6 };
-export const crystalsOwed = (t) => CRYSTAL.a * (t / 60) ** CRYSTAL.pow;
+// lossShare stays well under 1/5, so falling a layer down never beats clearing the one above.
+export const CRYSTAL = { clear: 10, lossShare: 0.1 };
+
+/** 결기수정 for a run on `layer`: won (× spin `mul`), or lost with `reach`/`bossDone` (0–1). */
+export function endlessCrystals(layer, { won, mul = 1, reach = 0, bossDone = 0 }) {
+  const full = CRYSTAL.clear * crystalWorth(layer);
+  if (won) return Math.round(full * mul);
+  return Math.floor(full * CRYSTAL.lossShare * (0.5 * reach + 0.5 * bossDone));
+}

@@ -16,7 +16,7 @@ import { planCrows, updateCrows, callCrow, CROW } from './systems/crows.js';
 import { updateFieldObjects, breakObject } from './systems/fieldObjects.js';
 import { planFieldItems, updateFieldItems, takeFieldItem, ITEM_LIFE } from './systems/fieldItems.js';
 import { applyDaily } from './data/daily.js';
-import { ENDLESS, ENDLESS_MAPS, makeEndlessStage, endlessSurge, crystalsOwed, WRATH } from './data/endless.js';
+import { ENDLESS, ENDLESS_MAPS, makeEndlessStage, endlessSurge, endlessCrystals, CRYSTAL, WRATH } from './data/endless.js';
 import { applyNanse } from './data/nanse.js';
 import { attrReward, ATTR_ICON, ATTR_NAME } from './data/trial.js';
 import { ALTAR, ALTAR_TIERS, makeAltarStage, altarYeongju } from './data/altar.js';
@@ -462,18 +462,11 @@ export class Game {
       if (this.spirits.length) spiritOnKill(this, e);
     }
     if (e.xp > 0) this.dropCoin(e.x, e.y, e.xp);
-    // 무한 전장: 결기수정 drop from the fallen as the run earns them.
-    if (this.stage.endless && (this.crystalsDropped ?? 0) < Math.floor(crystalsOwed(this.time))) {
-      this.crystalsDropped = (this.crystalsDropped ?? 0) + 1;
-      this.pickups.push({ kind: 'crystal', x: e.x, y: e.y, magnet: false, t: 0 });
-    }
     if (this.stage.altar && e.elite && !e.isBoss) for (let i = 0; i < ALTAR.eliteWisps; i++) this.addWisp(e.x, e.y);
     if (e.def.drop === 'rice') this.pickups.push({ kind: 'rice', x: e.x, y: e.y, heal: 25 * (this.stage.difficulty.riceMul ?? 1), magnet: false, t: 0 });
     if (e.isBoss && (e.def.minion || this.bosses.some((o) => !o.dead && !o.def.minion))) {
       // A clone, or one of several generals: the fight goes on.
       this.banner(`${e.def.name} 쓰러짐`, 'small');
-    } else if (e.isBoss && this.stage.endless) {
-      this.endBossWave(e);
     } else if (e.isBoss) {
       this.startRoulette(e);
       this.state = 'clearing';
@@ -504,7 +497,7 @@ export class Game {
     r.t += dt;
     if (!r.done && r.t >= r.spin) {
       r.done = true;
-      if (!this.stage.endless) this.bossMul = r.mul;
+      this.bossMul = r.mul;
       this.bossSpoils(r.at, r.mul);
       this.banner(r.mul >= 5 ? `🎰 ×${r.mul} 대박!!${this.spoilsLine ?? ''}` : `🎰 ×${r.mul}${this.spoilsLine ?? ''}`, 'big');
       if (r.mul >= 5) {
@@ -531,13 +524,11 @@ export class Game {
       this.texts.push({ x: e.x, y: e.y - 50, v: `🔮 영기 +${n}`, t: 0, life: 2, order: true, big: true });
       this.spoilsLine = ` — 🔮 영기 +${n}`;
     } else if (this.stage.endless) {
-      // Each crystal is worth crystalWorth (×5 per layer of 마계).
-      const n = Math.max(1, Math.round((1 + this.endlessBosses) * rm));
-      const worth = this.stage.crystalWorth ?? 1;
-      burst('crystal', Math.min(60, n));
-      if (n > 60) this.runStats.crystals = (this.runStats.crystals ?? 0) + (n - 60) * worth;
-      this.texts.push({ x: e.x, y: e.y - 50, v: `💎 결기수정 +${(n * worth).toLocaleString()}`, t: 0, life: 2, order: true, big: true });
-      this.spoilsLine = ` — 💎 결기수정 +${(n * worth).toLocaleString()}`;
+      // The 토벌 reward (paid in computeReward): a shower of crystals to show it.
+      const total = endlessCrystals(this.stage.layer, { won: true, mul: rm });
+      burst('crystal', Math.min(60, Math.max(6, Math.round(CRYSTAL.clear * rm))), { show: true });
+      this.texts.push({ x: e.x, y: e.y - 50, v: `💎 결기수정 +${total.toLocaleString()}`, t: 0, life: 2.4, order: true, big: true });
+      this.spoilsLine = ` — 💎 결기수정 +${total.toLocaleString()}`;
     } else {
       const d = this.stage.difficulty;
       const mul = REWARD_BY_STARS[d.stars] * (1 + (this.opts.meta?.reward ?? 0)) * (d.rewardMul ?? 1) * (this.opts.quick ? QUICK_REWARD : 1);
@@ -569,26 +560,6 @@ export class Game {
     if (!this.stage.endless) return 1;
     if (kind === 'hp') return 1 + this.endlessBosses * ENDLESS.bossHpStep;
     return (1 + this.endlessBosses * ENDLESS.bossDamageStep) * endlessSurge(this.time);
-  }
-
-  /** 무한 전장: a boss fell — the field opens again and the next one is on its way. */
-  endBossWave(e) {
-    this.endlessBosses++;
-    for (const o of this.enemies) if (!o.dead && o !== e && o.isBoss) this.killEnemy(o);
-    this.boss = null;
-    this.bosses = [];
-    this.bossGroup = null;
-    this.arena = null;
-    this.spawner.bossStarted = false;
-    this.stage.bossAt = this.time + ENDLESS.bossEvery;
-    // Spoils: a spray of coins and a rice ball, 결기수정 bursting out, and everything on the ground flies in.
-    for (let i = 0; i < 12; i++) this.dropCoin(e.x + rand(-50, 50), e.y + rand(-50, 50), 5);
-    this.pickups.push({ kind: 'rice', x: e.x, y: e.y, heal: 40, magnet: false, t: 0 });
-    this.startRoulette(e);
-    // Two more 감나무 branches before the next boss.
-    this.crowPlan.push(this.time + rand(25, 70), this.time + rand(90, 150));
-    this.crowPlan.sort((a, b) => a - b);
-    this.banner(`${e.def.name} 격파! (${this.endlessBosses}번째) — 다음 적장까지 ${ENDLESS.bossEvery / 60}분`, 'big');
   }
 
   /** Gear 비기 techniques that fire when a foe falls: 낙뢰, 사기충천. */
@@ -805,7 +776,10 @@ export class Game {
   /** 냥 for this run: base by performance, scaled by stage stars and gear (판 보상 냥). */
   computeReward(won) {
     // 무한 전장: no 냥 at all — the reward is the 결기수정 picked up.
-    if (this.stage.endless) return { base: 0, mul: 0, total: 0, stars: this.stage.difficulty.stars, bossBonus: 0, crystals: this.runStats.crystals ?? 0 };
+    if (this.stage.endless) {
+      const crystals = endlessCrystals(this.stage.layer, { won, mul: this.bossMul ?? 1, ...this.progress() });
+      return { base: 0, mul: 0, total: 0, stars: this.stage.difficulty.stars, bossBonus: 0, crystals };
+    }
     // 사신의 제단: no 냥 — the 영기 gathered turn into 영주 (paid by main.js).
     if (this.stage.altar) {
       const wisps = this.runStats.wisps ?? 0;
@@ -817,8 +791,8 @@ export class Game {
     const rm = this.bossMul ?? 1;
     const base = baseReward({ kills: this.kills, seconds: this.time, won, bossKilled: won, ...this.progress() }) + (won ? Math.round(BOSS_REWARD * (rm - 1)) : 0);
     const mul = REWARD_BY_STARS[stars] * (1 + (this.opts.meta?.reward ?? 0)) * (this.stage.difficulty.rewardMul ?? 1) * (this.opts.quick ? QUICK_REWARD : 1);
-    const bossBonus = won ? Math.round(BOSS_REWARD * rm * mul) : this.stage.endless ? Math.round(BOSS_REWARD * mul * ENDLESS.bossBounty * this.endlessBosses) : 0;
-    return { base, mul, total: Math.round(base * mul) + (this.stage.endless ? bossBonus : 0), stars, bossBonus };
+    const bossBonus = won ? Math.round(BOSS_REWARD * rm * mul) : 0;
+    return { base, mul, total: Math.round(base * mul), stars, bossBonus };
   }
 
   /**
@@ -1330,9 +1304,7 @@ export class Game {
             this.sfx('buy');
           }
           else if (k.kind === 'crystal') {
-            const worth = this.stage.crystalWorth ?? 1;
-            this.runStats.crystals = (this.runStats.crystals ?? 0) + worth;
-            this.texts.push({ x: p.x, y: p.y - 30, v: `💎 +${worth.toLocaleString()}`, t: 0, life: 0.8, order: true });
+            // The 토벌 shower: already counted in the reward, just a sparkle.
             this.sfx('buy');
           }
           else if (k.kind === 'rice') {

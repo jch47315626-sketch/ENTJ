@@ -214,21 +214,23 @@ function onState(state, g) {
       const known = new Set(Object.keys(save.codex.kills));
       save.money += g.reward.total;
       if (g.reward.crystals) save.crystals = (save.crystals ?? 0) + g.reward.crystals;
-      if (state === 'clear') save.best[g.stage.id] = Math.max(save.best[g.stage.id] ?? 0, g.reward.stars);
+      // 무한 전장 has no campaign stars to keep (its layers would count as fields).
+      if (state === 'clear' && !g.stage.endless) save.best[g.stage.id] = Math.max(save.best[g.stage.id] ?? 0, g.reward.stars);
       const c = save.codex;
       c.runs += 1;
-      if (state === 'clear') c.wins += 1;
+      if (state === 'clear' && !g.stage.endless) c.wins += 1; // 평정 counts battlefields, not 마계 layers
       c.earned += g.reward.total;
       for (const [id, n] of Object.entries(g.killsBy)) c.kills[id] = (c.kills[id] ?? 0) + n;
-      // ♾️ 무한 전장: keep the best time per map.
+      // ♾️ 무한 전장: keep the fastest 토벌 per map (older saves kept survival times: a 토벌 beats those).
       let endless = null;
       if (g.stage.endless) {
         save.endless ??= {};
         const key = g.stage.endlessMap;
         const prev = save.endless[key];
-        const isNew = !prev || g.time > prev.time;
-        if (isNew) save.endless[key] = { time: Math.floor(g.time), kills: g.kills, bosses: g.endlessBosses, hero: g.player.hero.id };
-        endless = { time: g.time, bosses: g.endlessBosses, isNew, best: save.endless[key] };
+        const won = state === 'clear';
+        const isNew = won && (!prev?.cleared || g.time < prev.time);
+        if (isNew) save.endless[key] = { cleared: true, time: Math.floor(g.time), kills: g.kills, hero: g.player.hero.id };
+        endless = { won, time: g.time, layer: g.stage.layer, isNew, best: save.endless[key]?.cleared ? save.endless[key] : null, mul: won ? g.bossMul ?? 1 : null };
       }
       // 🔥 일일 던전: 속성결정 (a share on defeat); at 난세 10+ a clear may bring a 신물.
       let trialInfo = null;

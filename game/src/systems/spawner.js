@@ -28,9 +28,9 @@ export class Spawner {
     const t = g.time;
     if (t >= this.stage.bossAt) {
       this.bossStarted = true;
-      // 무한 전장: the map's 적장 take turns.
+      // 무한 전장: one of the map's 적장 at random.
       const hero = g.player.hero.id;
-      g.startBoss(this.stage.bossCycle ? endlessBossFor(this.stage, g.endlessBosses, hero) : this.stage.bossAlt[hero] ?? this.stage.boss);
+      g.startBoss(this.stage.bossCycle ? endlessBossFor(this.stage, Math.floor(Math.random() * 12), hero) : this.stage.bossAlt[hero] ?? this.stage.boss);
       return;
     }
 
