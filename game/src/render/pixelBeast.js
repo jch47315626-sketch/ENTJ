@@ -8,6 +8,17 @@
  * (0, 0) is the spot on the ground under it; flyers hover above their shadow.
  */
 import { sheet, toCanvas, silhouette, C, lighten, darken, ball, INK, HANJI } from './pixelUnit.js';
+import { SPIRIT_SPRITES } from '../data/spiritSprites.js';
+
+// Drawn sprites (game/assets/spirits/<id>.png, from tools/spirits/import.py) win over the templates below.
+const sprites = {};
+for (const id of Object.keys(SPIRIT_SPRITES)) {
+  const img = new Image();
+  img.src = `assets/spirits/${id}.png`;
+  sprites[id] = { img, flash: null };
+}
+/** The 영물 id whose sprite stands for a kind (a 사신 boss's kind maps to its 영물). */
+const spriteId = (kind) => ({ dragon: 'cheongnyong', phoenix: 'jujak' }[kind] ?? kind);
 
 const TAU = Math.PI * 2;
 const W = C('#ffffff');
@@ -317,6 +328,8 @@ function framesFor(kind, R, pal) {
  * drives its 4-frame motion; pal recolours a 사신 boss (its look's body/accent/trim).
  */
 export function drawPixelBeast(ctx, kind, x, y, R, left, t, o = {}) {
+  const sp = sprites[spriteId(kind)];
+  if (sp?.img.complete && sp.img.naturalWidth) return drawSprite(ctx, sp, kind, x, y, R, left, t, o);
   if (!KINDS[kind]) return false;
   const set = framesFor(kind, R, o.pal);
   const f = Math.floor(t * (o.fps ?? 8)) % 4;
@@ -331,6 +344,45 @@ export function drawPixelBeast(ctx, kind, x, y, R, left, t, o = {}) {
   ctx.restore();
   return true;
 }
+
+/**
+ * A drawn sprite, its feet on (x, y) (flyers hover above), about 3R across at
+ * its longest side; it hops on the step, flyers rise and fall.
+ */
+function drawSprite(ctx, sp, kind, x, y, R, left, t, o) {
+  const img = sp.img, k = (R * 3) / Math.max(img.naturalWidth, img.naturalHeight);
+  const fly = FLYERS.has(kind);
+  const lift = fly ? R * 1.1 + Math.sin(t * 5) * R * 0.12 : Math.abs(Math.sin(t * 9)) * R * 0.08;
+  let src = img;
+  if (o.flash) src = sp.flash ??= silhouette(toImageCanvas(img), HANJI);
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  if (o.alpha !== undefined) ctx.globalAlpha *= o.alpha;
+  if (fly) {
+    // Its shadow stays on the floor.
+    ctx.fillStyle = 'rgba(22, 19, 15, 0.3)';
+    ctx.beginPath();
+    ctx.ellipse(x, y, R * 0.8, R * 0.3, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.translate(Math.round(x), Math.round(y - lift));
+  if (left) ctx.scale(-1, 1);
+  ctx.scale(k, k);
+  ctx.drawImage(src, -img.naturalWidth / 2, -img.naturalHeight);
+  ctx.restore();
+  return true;
+}
+
+function toImageCanvas(img) {
+  const c = document.createElement('canvas');
+  c.width = img.naturalWidth;
+  c.height = img.naturalHeight;
+  c.getContext('2d').drawImage(img, 0, 0);
+  return c;
+}
+
+/** URL of a 영물's drawn sprite, if it has one. */
+export const spriteUrl = (id) => (SPIRIT_SPRITES[id] ? `assets/spirits/${id}.png` : null);
 
 export const isFlyer = (kind) => FLYERS.has(kind);
 export const BEAST_KINDS = Object.keys(KINDS);

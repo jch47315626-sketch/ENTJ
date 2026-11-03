@@ -4,12 +4,15 @@
  * small image. spiritIcon(id) gives the HTML for one (an <img>), sized by CSS
  * (.px-ic, 1em by default so it sits where the emoji used to).
  */
-import { drawPixelBeast, isFlyer } from './pixelBeast.js';
+import { drawPixelBeast, isFlyer, spriteUrl } from './pixelBeast.js';
 
 const urls = new Map();
 
 /** A data URL of 영물 `id` (or a 사신 guardian id), or null if it has no pixel creature. */
 export function spiritIconUrl(id) {
+  // A drawn sprite is its own icon.
+  const drawn = spriteUrl(id);
+  if (drawn) return drawn;
   if (urls.has(id)) return urls.get(id);
   const size = 96;
   const cv = document.createElement('canvas');

@@ -1,0 +1,131 @@
+#!/usr/bin/env python3
+"""
+영물 그림 가져오기: turns the large "pixel art" images an image model made
+(1024-1254 px, each art pixel drawn as a block of roughly 16-20 px, sometimes on
+white) into real small pixel sprites for the game.
+
+  python3 tools/spirits/import.py <id> <image> [<id> <image> ...]
+
+For each: the white background (if any) touching the edge is removed, the
+picture is cropped, the size of one art pixel is measured from the image's
+own blocks, and every block is replaced by its most common colour. Pictures
+that are not pixel art (smooth drawings) are cut into a 64-pixel grid and
+reduced to 48 colours instead. Writes game/assets/spirits/<id>.png and
+updates game/src/data/spiritSprites.js (id → { w, h }).
+"""
+import json, os, re, sys
+from collections import Counter, deque
+from PIL import Image
+
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+OUT = os.path.join(ROOT, 'game/assets/spirits')
+MANIFEST = os.path.join(ROOT, 'game/src/data/spiritSprites.js')
+
+
+def clear_white(im):
+    """Make near-white pixels connected to the border transparent."""
+    w, h = im.size
+    px = im.load()
+    seen = set()
+    q = deque([(x, y) for x in range(w) for y in (0, h - 1)] + [(x, y) for y in range(h) for x in (0, w - 1)])
+    while q:
+        x, y = q.popleft()
+        if (x, y) in seen or not (0 <= x < w and 0 <= y < h):
+            continue
+        seen.add((x, y))
+        r, g, b, a = px[x, y]
+        if a < 20 or (r > 232 and g > 232 and b > 232):
+            px[x, y] = (0, 0, 0, 0)
+            q.extend(((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)))
+    return im
+
+
+def block_size(im):
+    """
+    The size of one art pixel: colour changes along rows and columns fall on a
+    regular grid, so try every candidate size and keep the largest one whose
+    grid lines up with most of the changes (a half-size grid lines up too,
+    but bigger is the real one when both fit).
+    """
+    w, h = im.size
+    px = im.load()
+    diff = lambda a, b: abs(a[3] - b[3]) > 100 or (a[3] > 128 and b[3] > 128 and sum(abs(a[i] - b[i]) for i in range(3)) > 60)
+    xs, ys = [], []
+    for y in range(0, h, 5):
+        for x in range(1, w):
+            if diff(px[x, y], px[x - 1, y]): xs.append(x)
+    for x in range(0, w, 5):
+        for y in range(1, h):
+            if diff(px[x, y], px[x, y - 1]): ys.append(y)
+    if len(xs) < 50:
+        return None
+
+    def score(pos, p):
+        bins = Counter(int((v % p) / p * 8) for v in pos)
+        # The changes of a real grid crowd into one or two neighbouring phase bins.
+        top = bins.most_common(1)[0][0]
+        return (bins[top] + bins[(top + 1) % 8] + bins[(top - 1) % 8]) / len(pos)
+
+    cands = [10 + i * 0.1 for i in range(250)]
+    scored = [(p, (score(xs, p) + score(ys, p)) / 2) for p in cands]
+    best = max(v for _, v in scored)
+    if best < 0.6:
+        return None  # no grid: a smooth drawing
+    good = [p for p, v in scored if v >= best * 0.93]
+    return max(good)
+
+
+def downsample(im, bs):
+    w, h = im.size
+    gw, gh = max(1, round(w / bs)), max(1, round(h / bs))
+    sx, sy = w / gw, h / gh
+    px = im.load()
+    out = Image.new('RGBA', (gw, gh))
+    op = out.load()
+    for gy in range(gh):
+        for gx in range(gw):
+            # Sample the middle of the cell (edges are blurred), most common colour wins.
+            c = Counter()
+            for yy in range(int(gy * sy + sy * 0.25), int(gy * sy + sy * 0.75) + 1):
+                for xx in range(int(gx * sx + sx * 0.25), int(gx * sx + sx * 0.75) + 1):
+                    if 0 <= xx < w and 0 <= yy < h:
+                        r, g, b, a = px[xx, yy]
+                        c[(r >> 3 << 3, g >> 3 << 3, b >> 3 << 3, 255 if a > 140 else 0)] += 1
+            op[gx, gy] = c.most_common(1)[0][0] if c else (0, 0, 0, 0)
+    return out
+
+
+def main(pairs):
+    os.makedirs(OUT, exist_ok=True)
+    manifest = {}
+    if os.path.exists(MANIFEST):
+        m = re.search(r'=\s*(\{.*\});', open(MANIFEST).read(), re.S)
+        if m: manifest = json.loads(m.group(1))
+    for sid, path in pairs:
+        im = Image.open(path).convert('RGBA')
+        im = clear_white(im)
+        im = im.crop(im.getbbox())
+        bs = block_size(im)
+        smooth = bs is None or bs > 30
+        if smooth:
+            bs = max(im.size) / 64
+        small = downsample(im, bs)
+        if smooth:
+            # A drawing, not pixel art: fewer colours so it sits with the rest.
+            alpha = small.getchannel('A')
+            small = small.convert('RGB').quantize(48, method=Image.Quantize.FASTOCTREE).convert('RGBA')
+            small.putalpha(alpha)
+        small = small.crop(small.getbbox())
+        small.save(os.path.join(OUT, f'{sid}.png'))
+        manifest[sid] = {'w': small.width, 'h': small.height}
+        print(f'{sid:12s} {path}  block {bs:.1f}px  ->  {small.width}x{small.height}{"  (smooth drawing, pixelated)" if smooth else ""}')
+    with open(MANIFEST, 'w') as f:
+        f.write('// Generated by tools/spirits/import.py: 영물 sprites in game/assets/spirits/ (id → size in pixels).\n')
+        f.write('export const SPIRIT_SPRITES = ' + json.dumps(manifest, indent=2, ensure_ascii=False) + ';\n')
+
+
+if __name__ == '__main__':
+    a = sys.argv[1:]
+    if len(a) < 2 or len(a) % 2:
+        sys.exit(__doc__)
+    main(list(zip(a[::2], a[1::2])))
