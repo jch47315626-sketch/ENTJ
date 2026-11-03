@@ -16,9 +16,15 @@ for (const id of Object.keys(SPIRIT_SPRITES)) {
   const img = new Image();
   img.src = `assets/spirits/${id}.png`;
   sprites[id] = { img, flash: null };
+  // 사신 have a finer version for when they are bosses (drawn large).
+  if (SPIRIT_SPRITES[id].big) {
+    const big = new Image();
+    big.src = `assets/spirits/${id}_big.png`;
+    sprites[id].big = { img: big, flash: null };
+  }
 }
 /** The 영물 id whose sprite stands for a kind (a 사신 boss's kind maps to its 영물). */
-const spriteId = (kind) => ({ dragon: 'cheongnyong', phoenix: 'jujak' }[kind] ?? kind);
+const spriteId = (kind) => ({ dragon: 'cheongnyong', phoenix: 'jujak', tiger: 'baekho', turtle: 'hyeonmu' }[kind] ?? kind);
 
 const TAU = Math.PI * 2;
 const W = C('#ffffff');
@@ -328,7 +334,9 @@ function framesFor(kind, R, pal) {
  * drives its 4-frame motion; pal recolours a 사신 boss (its look's body/accent/trim).
  */
 export function drawPixelBeast(ctx, kind, x, y, R, left, t, o = {}) {
-  const sp = sprites[spriteId(kind)];
+  let sp = sprites[spriteId(kind)];
+  // Big on screen (a boss): the finer version when there is one.
+  if (sp?.big && R > 20 && sp.big.img.complete && sp.big.img.naturalWidth) sp = sp.big;
   if (sp?.img.complete && sp.img.naturalWidth) return drawSprite(ctx, sp, kind, x, y, R, left, t, o);
   if (!KINDS[kind]) return false;
   const set = framesFor(kind, R, o.pal);

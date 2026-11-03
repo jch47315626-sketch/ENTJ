@@ -19,5 +19,33 @@ export const SPIRIT_SPRITES = {
   "falcon": {
     "w": 63,
     "h": 64
+  },
+  "baekho": {
+    "w": 64,
+    "h": 63,
+    "big": {
+      "w": 127,
+      "h": 127
+    }
+  },
+  "cheongnyong": {
+    "w": 60,
+    "h": 64,
+    "big": {
+      "w": 119,
+      "h": 128
+    }
+  },
+  "crane": {
+    "w": 64,
+    "h": 63
+  },
+  "cub": {
+    "w": 64,
+    "h": 64
+  },
+  "dragonmaid": {
+    "w": 63,
+    "h": 64
   }
 };
