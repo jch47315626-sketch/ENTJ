@@ -12,9 +12,11 @@ import { ATTR_ICON } from './trial.js';
 
 export const IMPRINT = {
   max: 10,
-  first: 30, // 처음 각인 (Lv1)
-  step: 30, // Lv n → n+1 costs step × n
-  change: 40, // 속성 바꾸기 (Lv 그대로)
+  first: 50, // 처음 각인 (Lv1)
+  // Lv n → n+1 costs step × n^pow (rounded to 10): 40 · 120 · 230 … 1,350 — 5,400 to Lv10.
+  step: 40,
+  pow: 1.6,
+  change: 80, // 속성 바꾸기 (Lv 그대로)
   sets: [2, 4, 6], // pieces of one 속성 for set tiers 1–3
 };
 
@@ -72,7 +74,7 @@ export const ELEMENTS = {
 export const ELEMENT_ORDER = ['fire', 'water', 'wood', 'metal', 'earth'];
 
 /** 속성결정 for the next step of a piece: first 각인, or Lv → Lv+1. */
-export const imprintCost = (lv) => (lv ? IMPRINT.step * lv : IMPRINT.first);
+export const imprintCost = (lv) => (lv ? Math.round((IMPRINT.step * lv ** IMPRINT.pow) / 10) * 10 : IMPRINT.first);
 
 /** Stats one imprinted piece gives. */
 export function imprintBonus(rec) {
