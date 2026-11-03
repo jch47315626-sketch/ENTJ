@@ -14,6 +14,22 @@
  */
 import { createFrame, composite, painterFor } from '../vendor/pixelfx/fx.js';
 import { mix } from '../vendor/pixelfx/color.js';
+import { HERO_SPRITES } from '../data/heroSprites.js';
+
+// Drawn hero pictures (game/assets/heroes/<hero>_front|back|weapon.png, from tools/spirits/import.py).
+// A hero with them is drawn from them; the generated figure stays for the rest.
+const heroPics = {};
+for (const [id, parts] of Object.entries(HERO_SPRITES)) {
+  heroPics[id] = {};
+  for (const part of Object.keys(parts)) {
+    const img = new Image();
+    img.src = `assets/heroes/${id}_${part}.png`;
+    heroPics[id][part] = { img, flash: null };
+  }
+}
+const ready = (pic) => pic && pic.img.complete && pic.img.naturalWidth;
+/** Where the hand closes on each hero's weapon picture, as a fraction of its length from the left. */
+const GRIP = { wanggeon: 0.12, gyeonhwon: 0.1, gungye: 0.2 };
 
 const INK = 0xff171a1d; // #1d1a17 as ABGR
 const HANJI = '#f1e8d2';
@@ -651,6 +667,8 @@ export function drawPixelFigure(ctx, look, R, facing, phase, flash, hand) {
   }
   // A small hop with the step, in whole pixels.
   ctx.translate(0, -Math.round(Math.abs(Math.sin(phase)) * R * 0.1));
+  const pics = look.model && heroPics[look.model];
+  if (pics && ready(pics.front)) return drawHeroPicture(ctx, look, pics, R, sx, back, flash, hand);
   const side = back ? 'back' : 'front';
   const drawWeapon = () => {
     if (!set.weapon) return;
@@ -668,6 +686,34 @@ export function drawPixelFigure(ctx, look, R, facing, phase, flash, hand) {
   ctx.save();
   ctx.scale(sx, 1);
   ctx.drawImage(flash ? flashOf(set, side, f) : set.frames[side][f], -set.ox, -set.oy);
+  ctx.restore();
+  if (!back) drawWeapon();
+  return true;
+}
+
+/** A hero drawn from their pictures: body 2.6R tall, feet at 0.82R; the weapon in the hand, turned to the aim. */
+function drawHeroPicture(ctx, look, pics, R, sx, back, flash, hand) {
+  const body = back && ready(pics.back) ? pics.back : pics.front;
+  const img = body.img, k = (R * 2.6) / img.naturalHeight;
+  const weapon = ready(pics.weapon) ? pics.weapon : null;
+  const drawWeapon = () => {
+    if (!weapon) return;
+    const h = hand(), w = weapon.img;
+    const kw = (R * 1.9) / w.naturalWidth;
+    ctx.save();
+    ctx.translate(Math.round(h.x), Math.round(h.y));
+    ctx.rotate(h.rot);
+    // Keep its top side up when it points left.
+    ctx.scale(kw * (h.scale ?? 1), kw * (h.scale ?? 1) * (Math.cos(h.rot) < 0 ? -1 : 1));
+    if (flash) weapon.flash ??= silhouette(w, HANJI);
+    ctx.drawImage(flash ? weapon.flash : w, -w.naturalWidth * (GRIP[look.model] ?? 0.12), -w.naturalHeight / 2);
+    ctx.restore();
+  };
+  if (back) drawWeapon();
+  ctx.save();
+  ctx.scale(sx * k, k);
+  if (flash) body.flash ??= silhouette(img, HANJI);
+  ctx.drawImage(flash ? body.flash : img, -img.naturalWidth / 2, (R * 0.82) / k - img.naturalHeight);
   ctx.restore();
   if (!back) drawWeapon();
   return true;
