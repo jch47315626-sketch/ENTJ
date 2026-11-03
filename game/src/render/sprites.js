@@ -1,5 +1,9 @@
 import { MODELS, drawModelBackHair, drawModelHead } from './heroModel.js';
+import { drawPixelFigure } from './pixelUnit.js';
 import { drawBeast } from './beasts.js';
+
+/** Draw people as pixel art (render/pixelUnit.js); false brings back the path drawings. */
+export const PIXEL_UNITS = true;
 
 const INK = '#1d1a17';
 const HANJI = '#f1e8d2';
@@ -58,11 +62,6 @@ export function drawUnit(ctx, look, x, y, r, facing, o = {}) {
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
-  if (look.mount) {
-    drawHorse(ctx, look.mount, r, o.flash, sx, phase);
-    ctx.translate(0, -r * 0.55);
-  }
-  ctx.translate(0, -hop);
 
   const bulk = look.bulk ?? 1;
   const weaponFirst = back;
@@ -97,6 +96,19 @@ export function drawUnit(ctx, look, x, y, r, facing, o = {}) {
     const sxh = sx * r * 0.55 * bulk, syh = r * 0.15;
     return { x: sxh + Math.cos(a) * r * reach, y: syh + Math.sin(a) * r * reach };
   };
+  // Pixel art (render/pixelUnit.js) for every person; beasts and carts keep their drawing.
+  if (PIXEL_UNITS && drawPixelFigure(ctx, look, r, facing, phase, o.flash, () => {
+    const h = handAt();
+    return { x: h.x, y: h.y, rot: facing + swingRot, scale: swingScale };
+  })) {
+    ctx.restore();
+    return;
+  }
+  if (look.mount) {
+    drawHorse(ctx, look.mount, r, o.flash, sx, phase);
+    ctx.translate(0, -r * 0.55);
+  }
+  ctx.translate(0, -hop);
   const weapon = () => {
     ctx.save();
     const h = handAt();
