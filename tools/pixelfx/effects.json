@@ -1,9 +1,597 @@
 {
-  "_doc": "책략 이펙트 목록. id는 이펙트(samhan/은 tools/pixelfx/fx/의 우리 것), opts.r은 바닥 원 반경(px) = 게임 판정 반경에 맞춘 값. from/to(초)·speed(배속)는 생략하면 처음부터 끝까지 1배속.",
-  "edict": { "id": "samhan/royal-edict", "opts": { "r": 26, "seed": 9 } },
-  "edictBig": { "id": "samhan/royal-edict", "opts": { "r": 34, "height": 200, "seed": 4 } },
-  "slam": { "id": "samhan/earth-slam", "opts": { "r": 100, "seed": 5 } },
-  "fireRing": { "id": "samhan/fire-bloom", "opts": { "r": 110, "seed": 3 } },
-  "rage": { "id": "samhan/tiger-roar", "opts": { "r": 130, "seed": 7 } },
-  "voidBurst": { "id": "samhan/mind-burst", "opts": { "r": 80, "seed": 6 } }
+ "_doc": "책략·고유기·무기 이펙트 목록. id는 이펙트(samhan/은 tools/pixelfx/fx/의 우리 것). opts.r은 바닥 원 반경이나 사거리(px)로, 게임은 실제 판정 반경 ÷ r 배율로 그린다. from/to(초)·speed(배속)는 생략하면 처음부터 끝까지 1배속.",
+ "edict": {
+  "id": "samhan/royal-edict",
+  "opts": {
+   "r": 26,
+   "seed": 9
+  }
+ },
+ "edictBig": {
+  "id": "samhan/royal-edict",
+  "opts": {
+   "r": 34,
+   "height": 200,
+   "seed": 4
+  }
+ },
+ "slam": {
+  "id": "samhan/earth-slam",
+  "opts": {
+   "r": 100,
+   "seed": 5
+  }
+ },
+ "fireRing": {
+  "id": "samhan/fire-bloom",
+  "opts": {
+   "r": 110,
+   "seed": 3
+  }
+ },
+ "rage": {
+  "id": "samhan/tiger-roar",
+  "opts": {
+   "r": 130,
+   "seed": 7
+  }
+ },
+ "voidBurst": {
+  "id": "samhan/mind-burst",
+  "opts": {
+   "r": 80,
+   "seed": 6
+  }
+ },
+ "kingSlash110": {
+  "id": "samhan/blade-arc",
+  "opts": {
+   "r": 78,
+   "arc": 110,
+   "palette": [
+    "#0c1a3a",
+    "#1c3a78",
+    "#3a6ac0",
+    "#6aa8f0",
+    "#b0dcff",
+    "#e8f6ff",
+    "#ffffff"
+   ],
+   "width": 0.36,
+   "seed": 110
+  },
+  "to": 0.32
+ },
+ "kingSlash120": {
+  "id": "samhan/blade-arc",
+  "opts": {
+   "r": 86,
+   "arc": 120,
+   "palette": [
+    "#0c1a3a",
+    "#1c3a78",
+    "#3a6ac0",
+    "#6aa8f0",
+    "#b0dcff",
+    "#e8f6ff",
+    "#ffffff"
+   ],
+   "width": 0.36,
+   "seed": 120
+  },
+  "to": 0.32
+ },
+ "kingSlash130": {
+  "id": "samhan/blade-arc",
+  "opts": {
+   "r": 95,
+   "arc": 130,
+   "palette": [
+    "#0c1a3a",
+    "#1c3a78",
+    "#3a6ac0",
+    "#6aa8f0",
+    "#b0dcff",
+    "#e8f6ff",
+    "#ffffff"
+   ],
+   "width": 0.36,
+   "seed": 130
+  },
+  "to": 0.32
+ },
+ "royalSpin": {
+  "id": "samhan/blade-arc",
+  "opts": {
+   "r": 110,
+   "arc": 360,
+   "palette": [
+    "#3a2408",
+    "#6e4710",
+    "#a87418",
+    "#e0a82a",
+    "#ffd84a",
+    "#fff09a",
+    "#ffffff"
+   ],
+   "width": 0.3,
+   "seed": 11
+  },
+  "to": 0.32
+ },
+ "chop120": {
+  "id": "samhan/blade-arc",
+  "opts": {
+   "r": 88,
+   "arc": 120,
+   "palette": [
+    "#1a0a08",
+    "#3a1410",
+    "#6e2418",
+    "#b04a2a",
+    "#e89060",
+    "#ffe0c8",
+    "#ffffff"
+   ],
+   "width": 0.48,
+   "heavy": true,
+   "seed": 120
+  }
+ },
+ "chop126": {
+  "id": "samhan/blade-arc",
+  "opts": {
+   "r": 94,
+   "arc": 126,
+   "palette": [
+    "#1a0a08",
+    "#3a1410",
+    "#6e2418",
+    "#b04a2a",
+    "#e89060",
+    "#ffe0c8",
+    "#ffffff"
+   ],
+   "width": 0.48,
+   "heavy": true,
+   "seed": 126
+  }
+ },
+ "chop132": {
+  "id": "samhan/blade-arc",
+  "opts": {
+   "r": 100,
+   "arc": 132,
+   "palette": [
+    "#1a0a08",
+    "#3a1410",
+    "#6e2418",
+    "#b04a2a",
+    "#e89060",
+    "#ffe0c8",
+    "#ffffff"
+   ],
+   "width": 0.48,
+   "heavy": true,
+   "seed": 132
+  }
+ },
+ "chop140": {
+  "id": "samhan/blade-arc",
+  "opts": {
+   "r": 110,
+   "arc": 140,
+   "palette": [
+    "#1a0a08",
+    "#3a1410",
+    "#6e2418",
+    "#b04a2a",
+    "#e89060",
+    "#ffe0c8",
+    "#ffffff"
+   ],
+   "width": 0.48,
+   "heavy": true,
+   "seed": 140
+  }
+ },
+ "chop70": {
+  "id": "samhan/blade-arc",
+  "opts": {
+   "r": 88,
+   "arc": 70,
+   "palette": [
+    "#1a0a08",
+    "#3a1410",
+    "#6e2418",
+    "#b04a2a",
+    "#e89060",
+    "#ffe0c8",
+    "#ffffff"
+   ],
+   "width": 0.48,
+   "heavy": true,
+   "seed": 70
+  }
+ },
+ "paewang160": {
+  "id": "samhan/blade-arc",
+  "opts": {
+   "r": 240,
+   "arc": 160,
+   "palette": [
+    "#1a0406",
+    "#4a0a0c",
+    "#8a1410",
+    "#d02a18",
+    "#ff5a3a",
+    "#ffc0a0",
+    "#ffffff"
+   ],
+   "width": 0.26,
+   "heavy": true,
+   "seed": 16
+  }
+ },
+ "allySlash": {
+  "id": "samhan/blade-arc",
+  "opts": {
+   "r": 44,
+   "arc": 120,
+   "palette": [
+    "#0c1a3a",
+    "#1c3a78",
+    "#3a6ac0",
+    "#6aa8f0",
+    "#b0dcff",
+    "#e8f6ff",
+    "#ffffff"
+   ],
+   "width": 0.4,
+   "seed": 5
+  },
+  "to": 0.32
+ },
+ "crackZone": {
+  "id": "samhan/crack-zone",
+  "opts": {
+   "r": 54,
+   "seed": 4
+  }
+ },
+ "swordWave": {
+  "id": "samhan/projectiles",
+  "opts": {
+   "kind": "wave",
+   "r": 18,
+   "palette": [
+    "#0c1a3a",
+    "#1c3a78",
+    "#3a6ac0",
+    "#6aa8f0",
+    "#b0dcff",
+    "#e8f6ff",
+    "#ffffff"
+   ]
+  }
+ },
+ "redWave": {
+  "id": "samhan/projectiles",
+  "opts": {
+   "kind": "redWave",
+   "r": 34,
+   "palette": [
+    "#1a0406",
+    "#4a0a0c",
+    "#8a1410",
+    "#d02a18",
+    "#ff5a3a",
+    "#ffc0a0",
+    "#ffffff"
+   ]
+  }
+ },
+ "redWaveBig": {
+  "id": "samhan/projectiles",
+  "opts": {
+   "kind": "redWave",
+   "r": 50,
+   "palette": [
+    "#1a0406",
+    "#4a0a0c",
+    "#8a1410",
+    "#d02a18",
+    "#ff5a3a",
+    "#ffc0a0",
+    "#ffffff"
+   ]
+  }
+ },
+ "orb": {
+  "id": "samhan/projectiles",
+  "opts": {
+   "kind": "orb",
+   "r": 10,
+   "palette": [
+    "#3a2408",
+    "#6e4710",
+    "#a87418",
+    "#e0a82a",
+    "#ffd84a",
+    "#fff09a",
+    "#ffffff"
+   ]
+  }
+ },
+ "beam": {
+  "id": "samhan/projectiles",
+  "opts": {
+   "kind": "beam",
+   "r": 9,
+   "palette": [
+    "#3a2408",
+    "#6e4710",
+    "#a87418",
+    "#e0a82a",
+    "#ffd84a",
+    "#fff09a",
+    "#ffffff"
+   ]
+  }
+ },
+ "boulder": {
+  "id": "samhan/projectiles",
+  "opts": {
+   "kind": "boulder",
+   "r": 20
+  }
+ },
+ "arrow": {
+  "id": "samhan/projectiles",
+  "opts": {
+   "kind": "arrow",
+   "r": 10
+  }
+ },
+ "lotus": {
+  "id": "samhan/bursts",
+  "opts": {
+   "kind": "lotus",
+   "r": 46,
+   "palette": [
+    "#3a2408",
+    "#6e4710",
+    "#a87418",
+    "#e0a82a",
+    "#ffd84a",
+    "#fff09a",
+    "#ffffff"
+   ]
+  },
+  "to": 0.7
+ },
+ "thunderHit": {
+  "id": "samhan/bursts",
+  "opts": {
+   "kind": "thunderHit",
+   "r": 26,
+   "palette": [
+    "#1a1440",
+    "#3a3aa0",
+    "#5a7ae8",
+    "#9ac8ff",
+    "#c8e8ff",
+    "#e8f6ff",
+    "#ffffff"
+   ]
+  },
+  "to": 0.6
+ },
+ "rally": {
+  "id": "samhan/bursts",
+  "opts": {
+   "kind": "arrival",
+   "r": 16,
+   "palette": [
+    "#0c1a3a",
+    "#1c3a78",
+    "#3a6ac0",
+    "#6aa8f0",
+    "#b0dcff",
+    "#e8f6ff",
+    "#ffffff"
+   ]
+  },
+  "to": 0.6
+ },
+ "shinArrive": {
+  "id": "samhan/bursts",
+  "opts": {
+   "kind": "arrival",
+   "r": 24,
+   "palette": [
+    "#3a2408",
+    "#6e4710",
+    "#a87418",
+    "#e0a82a",
+    "#ffd84a",
+    "#fff09a",
+    "#ffffff"
+   ]
+  },
+  "to": 0.65
+ },
+ "arrowVolley": {
+  "id": "samhan/bursts",
+  "opts": {
+   "kind": "arrowVolley",
+   "r": 110,
+   "palette": [
+    "#3a0e0c",
+    "#7a1a12",
+    "#c42c18",
+    "#f0601c",
+    "#ff9a2a",
+    "#ffd04a",
+    "#fff2a8"
+   ]
+  },
+  "to": 0.95
+ },
+ "eye": {
+  "id": "samhan/bursts",
+  "opts": {
+   "kind": "eye",
+   "r": 9,
+   "h": 0,
+   "palette": [
+    "#12081e",
+    "#2c1248",
+    "#4e1e80",
+    "#7a34b8",
+    "#a85ce8",
+    "#d4a0ff",
+    "#f6e8ff"
+   ],
+   "life": 0.9
+  },
+  "to": 0.9
+ },
+ "eyeBig": {
+  "id": "samhan/bursts",
+  "opts": {
+   "kind": "eye",
+   "r": 20,
+   "h": 0,
+   "palette": [
+    "#12081e",
+    "#2c1248",
+    "#4e1e80",
+    "#7a34b8",
+    "#a85ce8",
+    "#d4a0ff",
+    "#f6e8ff"
+   ],
+   "life": 1.1
+  },
+  "to": 1.1
+ },
+ "mindWave": {
+  "id": "samhan/mind-wave",
+  "opts": {
+   "r": 170
+  }
+ },
+ "martyr": {
+  "id": "samhan/earth-slam",
+  "opts": {
+   "r": 190,
+   "palette": [
+    "#3a0e0c",
+    "#7a1a12",
+    "#c42c18",
+    "#f0601c",
+    "#ff9a2a",
+    "#ffd04a",
+    "#fff2a8"
+   ],
+   "seed": 8
+  }
+ },
+ "mountDust": {
+  "id": "samhan/earth-slam",
+  "opts": {
+   "r": 40,
+   "seed": 2
+  }
+ },
+ "maguniBomb": {
+  "id": "samhan/mind-burst",
+  "opts": {
+   "r": 110,
+   "palette": [
+    "#140608",
+    "#3a0a28",
+    "#6a1460",
+    "#a82a8a",
+    "#e85a9a",
+    "#ffb0c8",
+    "#fff0f4"
+   ],
+   "seed": 3
+  }
+ },
+ "curseEye": {
+  "id": "samhan/marks",
+  "opts": {
+   "kind": "curseEye",
+   "r": 7,
+   "h": 0,
+   "palette": [
+    "#1a0a12",
+    "#4a0e22",
+    "#8a1a3a",
+    "#c83a5a",
+    "#f07a8a",
+    "#ffc0c8",
+    "#ffffff"
+   ]
+  }
+ },
+ "curseEyeBig": {
+  "id": "samhan/marks",
+  "opts": {
+   "kind": "curseEye",
+   "r": 10,
+   "h": 0,
+   "palette": [
+    "#1a0a12",
+    "#4a0e22",
+    "#8a1a3a",
+    "#c83a5a",
+    "#f07a8a",
+    "#ffc0c8",
+    "#ffffff"
+   ]
+  }
+ },
+ "hoofFire": {
+  "id": "samhan/marks",
+  "opts": {
+   "kind": "hoofFire",
+   "r": 26,
+   "palette": [
+    "#3a0e0c",
+    "#7a1a12",
+    "#c42c18",
+    "#f0601c",
+    "#ff9a2a",
+    "#ffd04a",
+    "#fff2a8"
+   ]
+  }
+ },
+ "maguni": {
+  "id": "samhan/marks",
+  "opts": {
+   "kind": "maguni",
+   "r": 9,
+   "palette": [
+    "#12081e",
+    "#2c1248",
+    "#4e1e80",
+    "#7a34b8",
+    "#a85ce8",
+    "#d4a0ff",
+    "#f6e8ff"
+   ]
+  }
+ },
+ "boulderBig": {
+  "id": "samhan/projectiles",
+  "opts": {
+   "kind": "boulder",
+   "r": 40
+  }
+ }
 }

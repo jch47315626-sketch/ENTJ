@@ -22,7 +22,7 @@ export const ACTIVE_SKILLS = {
         hp, maxHp: hp, life: L.duration, maxLife: L.duration, lure: L.lure,
         damage: L.damage * (1 + (p.meta.allyMul ?? 0)), explode: L.explode, cd: 0.5, facing: a,
       });
-      g.fx.push({ type: 'puff', x: p.x + Math.cos(a) * 60, y: p.y + Math.sin(a) * 60, t: 0, life: 0.6, size: 26, tone: 'light' });
+      g.fx.push(pixelFx('shinArrive', p.x + Math.cos(a) * 60, p.y + Math.sin(a) * 60));
       g.banner('신숭겸 — 왕의 깃발 아래로 모여라!', 'small');
       g.sfx('shin');
     },
@@ -33,7 +33,7 @@ export const ACTIVE_SKILLS = {
     fire(g, L) {
       const p = g.player;
       p.mount = { until: g.time + L.duration, invulnUntil: g.time + L.invuln, L, drop: 0 };
-      g.fx.push({ type: 'puff', x: p.x, y: p.y, t: 0, life: 0.6, size: 30, tone: 'mud' });
+      g.fx.push(pixelFx('mountDust', p.x, p.y));
       g.banner(`${L.name} — 말에 오른다`, 'small');
       g.sfx('gallop');
     },
@@ -128,7 +128,7 @@ ACTIVE_SKILLS.archers = {
     for (const s of spots) {
       const r = R.radius * Math.sqrt(p.stats.area);
       // The arrows fall first; the ground catches fire as they land.
-      g.fx.push({ type: 'arrowRain', x: s.x, y: s.y, range: r, t: 0, life: 0.9, seed: Math.random() });
+      g.fx.push(pixelFx('arrowVolley', s.x, s.y, r));
       g.later(0.3, () => {
         g.zones.push({ team: 'player', kind: 'fire', x: s.x, y: s.y, r, dps, life: R.life, t: 0 });
         g.fx.push(pixelFx('fireRing', s.x, s.y, r));
@@ -208,7 +208,7 @@ export function curseFoe(g, e, L) {
   // The curse burns too: `dot` × weapon damage every second, at the hero's might when cast.
   const dps = (L.dot ?? 0) * Math.max(currentWeaponLevel(p).damage, 30) * p.stats.might;
   e.curse = { until: g.time + L.duration, amp: L.amp, slow: L.slow ?? 0, spread: L.spread ?? 0, dps, tick: 0.5, L };
-  g.fx.push({ type: 'curseMark', x: e.x, y: e.y, t: 0, life: L.duration, follow: e, big: !!L.evolution, seed: Math.random() });
+  g.fx.push(pixelFx(L.evolution ? 'curseEyeBig' : 'curseEye', e.x, e.y, null, { follow: e, dy: -e.r * 2.5 - 14, life: L.duration, fadeOut: 0.4 }));
 }
 
 /** Counts down each owned skill and casts it when ready. */

@@ -2,6 +2,7 @@ import { TAU } from '../core/math.js';
 import { hitArc } from './weapons.js';
 import { MAGUNI_LV } from '../data/skills.js';
 import { withOver } from './over.js';
+import { arcFx, pixelFx } from '../render/pixelFx.js';
 
 /** Updates summoned soldiers and following archers. */
 export function updateAllies(g, dt) {
@@ -80,7 +81,7 @@ export function updateAllies(g, dt) {
         if (a.cd <= 0) {
           a.cd = 0.8 * p.stats.haste;
           g.damageEnemy(target, a.damage * p.stats.might, a.x, a.y, 70);
-          g.fx.push({ type: 'slash', x: a.x, y: a.y, angle: a.facing, range: 44, arc: 120, t: 0, life: 0.18 });
+          g.fx.push(arcFx('slash', a.x, a.y, a.facing, 44, 120) ?? { type: 'slash', x: a.x, y: a.y, angle: a.facing, range: 44, arc: 120, t: 0, life: 0.18 });
         }
       }
       if (a.hp <= 0 || a.life <= 0) fallShin(g, a);
@@ -190,7 +191,7 @@ function updateMaguniBomb(g, a, dt) {
   const p = g.player;
   hitArc(g, a.x, a.y, 0, a.radius * p.stats.area, 360, a.damage * p.stats.might, 160, 'blast', { stun: 0.5 });
   g.fx.push({ type: 'ink', x: a.x, y: a.y, t: 0, life: 0.9, size: 30, seed: 0.6 });
-  g.fx.push({ type: 'mindBurst', x: a.x, y: a.y, range: a.radius * p.stats.area, t: 0, life: 0.7, seed: Math.random() });
+  g.fx.push(pixelFx('maguniBomb', a.x, a.y, a.radius * p.stats.area));
   g.shake(6);
   g.sfx('blast');
 }
@@ -245,7 +246,7 @@ export function updateMaguniSkill(g, dt) {
   const L = MAGUNI_LV[Math.min(lv, MAGUNI_LV.length) - 1];
   const spawn = () => {
     g.allies.push({ kind: 'maguni', x: p.x, y: p.y, r: 10, facing: 0, rest: 0, hitAt: new WeakMap(), born: g.time });
-    g.fx.push({ type: 'puff', x: p.x, y: p.y, t: 0, life: 0.45, size: 16, tone: 'light' });
+    g.fx.push(pixelFx('eye', p.x, p.y - 30));
   };
   let list = g.allies.filter((a) => a.kind === 'maguni' && !a.dead);
   if (L.ward) while (list.length < L.max) {
@@ -296,8 +297,7 @@ function fallShin(g, a) {
   if (a.explode) {
     const E = a.explode;
     hitArc(g, a.x, a.y, 0, E.radius, 360, E.damage * g.player.stats.might, 260, 'blast', { stun: E.stun });
-    g.fx.push({ type: 'shatter', x: a.x, y: a.y, range: E.radius, t: 0, life: 0.9, seed: Math.random() });
-    g.fx.push({ type: 'awaken', x: a.x, y: a.y, t: 0, life: 1.0, seed: Math.random() });
+    g.fx.push(pixelFx('martyr', a.x, a.y, E.radius));
     g.ultFlash('255, 200, 120', 0.35, 0.4);
     g.shake(12);
     g.sfx('blast');

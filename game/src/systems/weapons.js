@@ -1,6 +1,7 @@
 import { WEAPONS } from '../data/weapons.js';
 import { TAU, angleDiff } from '../core/math.js';
 import { withOver } from './over.js';
+import { arcFx, pixelFx } from '../render/pixelFx.js';
 
 /**
  * Attack patterns, keyed by the `pattern` field of a weapon level.
@@ -152,6 +153,7 @@ export const PATTERNS = {
       for (let i = 0; i < lv.strikes && pool.length; i++) {
         const t = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
         chain(g, { x: t.x + 10, y: t.y - 220 }, t, chainJumps(p, lv), lv.chainRange * s.area, lv.damage * s.might);
+        g.fx.push(pixelFx('thunderHit', t.x, t.y));
       }
       g.shake(4);
       g.sfx('thunder');
@@ -246,6 +248,6 @@ export function hitArc(g, x, y, angle, range, arcDeg, damage, knockback, style, 
     g.damageEnemy(e, damage, x, y, knockback, opts);
   });
   const life = { royal: 0.3, kingSlash: 0.24, burst: 0.4, chop: 0.34, blast: 0.6 }[style] ?? 0.2;
-  g.fx.push({ type: style, x, y, angle, range, arc: arcDeg, t: 0, life });
+  g.fx.push(arcFx(style, x, y, angle, range, arcDeg) ?? { type: style, x, y, angle, range, arc: arcDeg, t: 0, life });
   return hits;
 }

@@ -46,7 +46,8 @@ for (const [key, E] of Object.entries(list)) {
   const [W, H] = meta.size, [OX, OY] = meta.origin;
   const from = E.from ?? 0, to = E.to ?? meta.duration, speed = E.speed ?? 1;
   const step = speed / PLAY_FPS;
-  const n = Math.max(1, Math.round((to - from) / step) + 1);
+  // A loop stops one step short of its start so it wraps without a doubled frame.
+  const n = Math.max(1, Math.round((to - from) / step) + (meta.loop ? 0 : 1));
   const frame = core.createFrame(W, H);
   const inst = core.createFx(fx.mod, { x: OX, y: OY, ...(E.opts ?? {}) });
   // Run up to `from` without keeping anything.
@@ -87,7 +88,7 @@ for (const [key, E] of Object.entries(list)) {
     rmSync(png);
     file = `${key}.webp`;
   }
-  sheets[key] = { file, w, h, cols, frames: n, fps: PLAY_FPS, pivot: [OX - x0, OY - y0], r: inst.options.r ?? null, source: E.id };
+  sheets[key] = { file, w, h, cols, frames: n, fps: PLAY_FPS, pivot: [OX - x0, OY - y0], r: inst.options.r ?? null, ...(meta.loop ? { loop: true } : {}), source: E.id };
   console.log(`${key.padEnd(10)} ${E.id.padEnd(24)} ${n} frames ${w}x${h} (${cols}x${rows})`);
 }
 

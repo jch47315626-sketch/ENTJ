@@ -3,6 +3,7 @@ import { hitArc, currentWeaponLevel } from './weapons.js';
 import { GWANSIM, FURY_LV } from '../data/skills.js';
 import { MOMENTUM } from '../data/heroes.js';
 import { OVER, overOf } from './over.js';
+import { pixelFx } from '../render/pixelFx.js';
 
 /** Foes within `r` of the hero that `ok` accepts (charmed ones never count). */
 function foesNear(g, r, ok = () => true) {
@@ -41,7 +42,7 @@ export const SPECIALS = {
         const ring = 40 + (i % 2) * 22;
         const x = p.x + Math.cos(a) * ring, y = p.y + Math.sin(a) * ring;
         g.allies.push({ kind: 'soldier', x, y, r: 11, life, maxLife: life, cd: rand(0, 0.4), facing: a });
-        g.fx.push({ type: 'puff', x, y, t: 0, life: 0.5, size: 18, tone: 'light' });
+        g.fx.push(pixelFx('rally', x, y, null, { t: -i * 0.04 }));
       }
       g.banner(`통솔 — 고려 창병 ${count}명 합류`, 'small');
       g.sfx('horn');
@@ -118,14 +119,13 @@ export const SPECIALS = {
         e.charmUntil = g.time + L.duration;
         e.charmPower = L.power * (1 + OVER.dmg * over);
         e.hp = e.maxHp;
-        g.fx.push({ type: 'eye', x: e.x, y: e.y - e.r - 6, t: 0, life: 0.9, follow: e, size: 9 });
+        g.fx.push(pixelFx('eye', e.x, e.y, null, { follow: e, dy: -e.r * 2.5 - 8 }));
       }
-      g.fx.push({ type: 'eye', x: p.x, y: p.y, t: 0, life: 1.1, follow: p, size: 40, big: true });
-      // 독심 관심법: a violet wave under a great eye in the sky.
-      if (L.evolution) {
-        g.fx.push({ type: 'mindWave', x: p.x, y: p.y, range: R, t: 0, life: 1.2, seed: Math.random() });
-        g.ultFlash('150, 80, 220', 0.32, 0.45);
-      }
+      g.fx.push(pixelFx('eyeBig', p.x, p.y, null, { follow: p, dy: -64 }));
+      // The wave runs out to exactly the sway reach.
+      g.fx.push(pixelFx('mindWave', p.x, p.y, R));
+      // 독심 관심법: the whole field flashes violet.
+      if (L.evolution) g.ultFlash('150, 80, 220', 0.32, 0.45);
       g.banner(chosen.length ? `관심법 — ${chosen.length}명이 서로를 벤다` : '관심법 — 홀릴 자가 없다', 'small');
       g.sfx('gwansim');
       // Nothing to sway: keep most of the gauge instead of wasting it.

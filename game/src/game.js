@@ -1137,7 +1137,10 @@ export class Game {
           if (pr.span ? hitsBlade(pr, e) : dist2(pr.x, pr.y, e.x, e.y) < (pr.r + e.r) ** 2) {
             pr.hit.add(e);
             this.damageEnemy(e, pr.damage, pr.x - pr.vx * 0.05, pr.y - pr.vy * 0.05, pr.knockback, pr.stun ? { stun: pr.stun } : undefined);
-            if (pr.burst) hitArc(this, e.x, e.y, 0, pr.burst.radius, 360, pr.burst.damage, 30, 'burst');
+            if (pr.burst) {
+              hitArc(this, e.x, e.y, 0, pr.burst.radius, 360, pr.burst.damage, 30, 'burst');
+              this.fx.push(pixelFx('lotus', e.x, e.y, pr.burst.radius));
+            }
             pr.pierce -= 1;
             if (pr.pierce <= 0) pr.life = 0;
           }
@@ -1178,7 +1181,7 @@ export class Game {
       this.fx.push(pixelFx('slam', e.x, e.y, e.pull.slam.radius));
       this.shake(4);
     }
-    this.fx.push({ type: 'puff', x: e.x, y: e.y, t: 0, life: 0.4, size: 18, tone: 'mud' });
+    this.fx.push(pixelFx('mountDust', e.x, e.y, 22));
     e.pull = null;
   }
 
@@ -1235,7 +1238,7 @@ export class Game {
     if (!m) return;
     if (this.time >= m.until) {
       p.mount = null;
-      this.fx.push({ type: 'puff', x: p.x, y: p.y, t: 0, life: 0.5, size: 24, tone: 'mud' });
+      this.fx.push(pixelFx('mountDust', p.x, p.y, 30));
       return;
     }
     m.drop -= dt;

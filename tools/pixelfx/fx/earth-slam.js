@@ -7,8 +7,8 @@ export const meta = {
   name: "Earth slam",
   desc: "A white flash, a shock front races across the floor to the edge of the blast, cracks split from a crater, rocks fly up and clatter down inside the ring, dust rolls up.",
   tags: ["impact", "ground", "rocks", "dust", "top-down", "one-shot"],
-  size: [260, 330],
-  origin: [130, 200],
+  size: [420, 480],
+  origin: [210, 280],
   duration: 1.5,
   loop: false,
   fps: 30,
@@ -99,7 +99,7 @@ export function create(o) {
         p.circle(0, 0, (14 * (1 - k * 0.3)) * Math.min(1, k * 2.2), WHITE);
         p.glow(0, 0, 60, C[5], 0.8 * k);
       }
-      p.glow(0, 0, r * 1.1, C[3], 0.25 * (1 - seg(t, 0, 0.5)));
+      p.glow(0, 0, r * 0.8, C[3], 0.12 * (1 - seg(t, 0, 0.4)));
       for (const b of dust.live()) puff(p, b, D, 0.55);
       for (const b of bits.live()) b.kind === "rock" ? chunk(p, b, S) : spark(p, b, C);
     },
