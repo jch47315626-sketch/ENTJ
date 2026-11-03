@@ -1,6 +1,7 @@
 import { STAGES } from './stages.js';
 import { josa } from '../core/korean.js';
 import { gyeolgiBonus } from './gyeolgi.js';
+import { imprintBonus, imprintSets } from './imprint.js';
 
 /**
  * Progression between runs: money (냥) earned per run, equipment bought
@@ -331,6 +332,7 @@ export const SECRETS = [
 /** Sums every owned bonus for one hero into a single object. */
 export function metaBonus(save, heroId) {
   const gearGrants = [];
+  const worn = [];
   const total = {};
   const add = (b) => {
     for (const k in b) total[k] = (total[k] ?? 0) + b[k];
@@ -340,6 +342,12 @@ export function metaBonus(save, heroId) {
     const item = EQUIPMENT.find((e) => e.id === outfit[slot.id]);
     if (item && item.hero === heroId) {
       add(itemBonus(item, save.forge?.[item.id] ?? 0));
+      // 🔷 속성 각인 (data/imprint.js): the piece's own 속성 stats; sets are counted below.
+      const rec = save.imprint?.[item.id];
+      if (rec) {
+        add(imprintBonus(rec));
+        worn.push(rec);
+      }
       // 장비 옵션 (data/gearOptions.js): random lines rolled when the piece was obtained.
       for (const l of save.gearOpts?.[item.id] ?? []) {
         if (!l.special) add({ [l.k]: l.v });
@@ -352,6 +360,8 @@ export function metaBonus(save, heroId) {
   }
   // 결기 상점 (무한 전장's 결기수정).
   add(gyeolgiBonus(save));
+  const sets = imprintSets(worn);
+  if (Object.keys(sets).length) total.imprintSets = sets;
   const grants = SECRETS.filter((s) => s.hero === heroId && save.secrets.includes(s.id)).map((s) => s.grant);
   // Copies stack: each one is a level at the start and an extra pick (초월, systems/over.js).
   return { ...total, grants: [...grants, ...gearGrants] };

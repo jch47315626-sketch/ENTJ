@@ -16,6 +16,7 @@ import { ENDLESS_MAPS, ENDLESS_MAP_ORDER, endlessMapOpen, endlessMapOf, LAYER, e
 import { staminaOf, staminaText, staminaWait, endlessLeft, ENDLESS_PER_DAY } from '../data/entries.js';
 import { josa } from '../core/korean.js';
 import { lineText, lineMax, engraveCost } from '../data/gearOptions.js';
+import { IMPRINT, ELEMENTS, ELEMENT_ORDER, imprintCost, imprintText, imprintSets } from '../data/imprint.js';
 import { HELP } from '../data/help.js';
 import { codexEntry, FOES, GENERALS } from '../data/codexTiers.js';
 import { NANSE_CARDS } from '../data/nanse.js';
@@ -515,6 +516,7 @@ function gearPanel(save, h, act) {
   }
   box.append(doll);
 
+  box.append(imprintSetCard(save, h));
   const slot = SLOTS.find((s) => s.id === ui.slot);
   box.append(el('h4', 'list-title', `${SLOT_ICON[slot.id]} ${h.name}의 ${slot.name} <small>영웅마다 장비가 따로예요 — ${h.name}만 찰 수 있어요</small>`));
   const list = el('div', 'item-list');
@@ -551,6 +553,7 @@ function itemCard(save, h, item, act) {
       opts.append(row);
     });
   }
+  const imp = owned ? imprintRow(save, item, act) : null;
   const ctrl = el('div', 'ic-ctrl');
   if (owned) {
     ctrl.append(worn ? tag('착용 중') : button('착용', 'wear-btn', () => act.wear(item)));
@@ -563,6 +566,7 @@ function itemCard(save, h, item, act) {
   }
   card.append(ctrl);
   if (opts) card.append(opts); // full-width row under the controls
+  if (imp) card.append(imp);
   const G = GRADES[item.grade];
   holdTip(card, () => tipHtml(`${gradeTag(item.grade)} ${open || owned ? itemName(save, item) : '???'}`, [
     `${h.name} 전용 · ${SLOTS.find((s) => s.id === item.slot).name}`,
@@ -572,6 +576,74 @@ function itemCard(save, h, item, act) {
     owned ? (worn ? '지금 차고 있어요' : '가진 장비 — 눌러서 착용') : item.relic ? `일일 던전에서 난세 ${TRIAL.relicFrom}단계 이상을 평정하면 얻을 수 있어요.`
       : open ? `값: ${fmt(item.price)}냥` : `★${G.needStars} 전장을 평정하면 상점에 나와요.`,
   ]));
+  return card;
+}
+
+/**
+ * 🔷 속성 각인 on one owned piece: the 속성 and its Lv, a button to raise
+ * it, and the 속성 picker (first 각인, or a change that keeps the Lv).
+ */
+function imprintRow(save, item, act) {
+  const rec = save.imprint?.[item.id];
+  const have = save.attrStones ?? 0;
+  const row = el('div', `ic-imprint${rec ? ' on' : ''}`);
+  if (rec) row.style.setProperty('--el', ELEMENTS[rec.el].color);
+  row.append(el('span', 'im-text', rec ? imprintText(rec) : `${ATTR_ICON} 속성 각인 — 속성결정으로 오행의 힘을 새겨요`));
+  const btns = el('span', 'im-btns');
+  if (rec && rec.lv < IMPRINT.max) {
+    const cost = imprintCost(rec.lv);
+    btns.append(button(`⬆️ Lv${rec.lv + 1} <small>${ATTR_ICON}${fmt(cost)}</small>`, 'io-btn im-up', () => act.imprintUp(item), have < cost));
+  } else if (rec) btns.append(tag('최대'));
+  btns.append(button(rec ? '🔄' : `새기기 <small>${ATTR_ICON}${fmt(imprintCost(0))}</small>`, 'io-btn', () => {
+    ui.imprintPick = ui.imprintPick === item.id ? null : item.id;
+    act.refresh();
+  }));
+  row.append(btns);
+  if (ui.imprintPick === item.id) {
+    const cost = rec ? IMPRINT.change : imprintCost(0);
+    const pick = el('div', 'im-pick');
+    pick.append(el('small', '', rec ? `속성 바꾸기 (Lv${rec.lv} 그대로) · ${ATTR_ICON}${fmt(cost)}` : `처음 각인 (Lv1) · ${ATTR_ICON}${fmt(cost)}`));
+    for (const id of ELEMENT_ORDER) {
+      const E = ELEMENTS[id];
+      const b = button(`${E.icon} ${E.name}<small>${E.text(rec?.lv ?? 1)}</small>`, 'im-el', () => {
+        ui.imprintPick = null;
+        act.imprint(item, id);
+      }, have < cost || rec?.el === id);
+      b.style.setProperty('--el', E.color);
+      pick.append(b);
+    }
+    row.append(pick);
+  }
+  return row;
+}
+
+/** Worn 속성 각인 by 속성, with the set techniques they open (2 · 4 · 6 pieces). */
+function imprintSetCard(save, h) {
+  const recs = SLOTS.map((sl) => save.imprint?.[outfit(save, h.id)[sl.id]]).filter(Boolean);
+  const card = el('div', 'imprint-sets');
+  card.append(el('b', 'is-title', `${ATTR_ICON} 속성 각인 세트 <small>${ATTR_NAME} ${fmt(save.attrStones ?? 0)} · 같은 속성 2 · 4 · 6부위</small>`));
+  const count = {};
+  for (const r of recs) count[r.el] = (count[r.el] ?? 0) + 1;
+  const tiers = imprintSets(recs);
+  const shown = ELEMENT_ORDER.filter((id) => count[id]);
+  if (!shown.length) {
+    card.append(el('small', 'is-hint', '🔥 일일 던전에서 얻은 속성결정으로 장비에 속성을 새겨요. 같은 속성을 여러 부위에 새기면 세트 기술이 열려요.'));
+    for (const id of ELEMENT_ORDER) {
+      const E = ELEMENTS[id];
+      card.append(el('div', 'is-row', `<span>${E.icon} ${E.name}</span><small>2부위: ${E.set[0].desc}</small>`));
+    }
+    return card;
+  }
+  for (const id of shown) {
+    const E = ELEMENTS[id];
+    const t = tiers[id] ?? 0;
+    const next = IMPRINT.sets[t];
+    const row = el('div', `is-row${t ? ' on' : ''}`, `<span>${E.icon} ${E.name} <b>${count[id]}부위</b></span>`
+      + (t ? `<small>✨ ${E.set[t - 1].desc}</small>` : '')
+      + (next ? `<small class="is-next">${next}부위: ${E.set[t].desc}</small>` : ''));
+    row.style.setProperty('--el', E.color);
+    card.append(row);
+  }
   return card;
 }
 

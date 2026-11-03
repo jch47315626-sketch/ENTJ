@@ -24,6 +24,7 @@ import { makeSpirits, spiritMeta, initSpirits, updateSpirits, spiritAbsorb, spir
 import { Spawner } from './systems/spawner.js';
 import { updateSkills, curseFoe } from './systems/skills.js';
 import { withOver, overOf } from './systems/over.js';
+import { ELEMENTS } from './data/imprint.js';
 import { updateTerrain, inBog } from './systems/terrain.js';
 
 /** The 책략 that grows each hero's special (its 초월 boosts the special). */
@@ -84,7 +85,7 @@ class Player {
       pickup: b.pickup * (1 + 0.35 * u('magnet') + (m.pickup ?? 0)),
       armor: b.armor + (m.armor ?? 0),
       // 단단한 갑옷: each stack takes 2% off what is left of every blow.
-      taken: 0.98 ** u('bArmor'),
+      taken: 0.98 ** u('bArmor') * (this.imprintSet('earth')?.taken ?? 1),
       leech: (m.leech ?? 0) + 0.0001 * u('bLeech') + (rageLv?.leech ?? 0),
       momentumMul: 1 + 0.25 * u('momentum') + (m.momentum ?? 0) + (GWANSIM[u('gwansim')]?.momentum ?? 0),
       xpMul: 1 + (m.xp ?? 0),
@@ -94,6 +95,12 @@ class Player {
       specialArea: 1 + 0.1 * Math.min(3, u('fury')) + (m.specialArea ?? 0),
       specialStun: 0.2 * Math.min(3, u('fury')),
     };
+  }
+
+  /** The worn 속성 각인 set technique of `el` (data/imprint.js), or null. */
+  imprintSet(el) {
+    const t = this.meta.imprintSets?.[el];
+    return t ? ELEMENTS[el].set[t - 1] : null;
   }
 
   heal(v) {
@@ -562,10 +569,45 @@ export class Game {
     return (1 + this.endlessBosses * ENDLESS.bossDamageStep) * endlessSurge(this.time);
   }
 
+  /** 🔷 속성 각인 세트 techniques that run on their own: 💧 회복, 🌪️ 회오리, ⚡ 벼락. */
+  imprintTick(dt) {
+    const p = this.player;
+    if (!p.meta.imprintSets) return;
+    const wd = Math.max(currentWeaponLevel(p).damage, 30) * p.stats.might;
+    const W = p.imprintSet('water');
+    if (W && p.hp < p.stats.maxHp) p.hp = Math.min(p.stats.maxHp, p.hp + p.stats.maxHp * W.regen * dt);
+    const T = (p.imprintT ??= {});
+    const G = p.imprintSet('wood');
+    if (G && (T.wood = (T.wood ?? G.every) - dt) <= 0) {
+      T.wood = G.every;
+      hitArc(this, p.x, p.y, p.facing, G.radius * Math.sqrt(p.stats.area), 360, wd * G.mul, 240, 'royal');
+      this.sfx('royal');
+    }
+    const M = p.imprintSet('metal');
+    if (M && (T.metal = (T.metal ?? M.every) - dt) <= 0) {
+      const foes = this.nearestEnemies(p.x, p.y, 460, M.count).filter((e) => !this.isCharmed(e) && e.def.behavior !== 'static');
+      // Nothing near: try again soon instead of wasting the strike.
+      T.metal = foes.length ? M.every : 0.5;
+      for (const e of foes) {
+        this.damageEnemy(e, wd * M.mul, e.x, e.y - 40, 40, { stun: M.stun });
+        this.fx.push({ type: 'pillar', x: e.x, y: e.y, t: 0, life: 0.5, seed: Math.random() });
+      }
+      if (foes.length) this.sfx('thunder');
+    }
+  }
+
   /** Gear 비기 techniques that fire when a foe falls: 낙뢰, 사기충천. */
   killProcs(e) {
     const p = this.player;
     const m = p.meta;
+    // 🔥 화(火) 각인 세트: the fallen burst into flame.
+    const F = p.imprintSet('fire');
+    if (F && Math.random() < F.chance) {
+      const r = F.radius * Math.sqrt(p.stats.area);
+      const dmg = Math.max(currentWeaponLevel(p).damage, 30) * F.mul * p.stats.might;
+      hitArc(this, e.x, e.y, 0, r, 360, dmg, 120, 'burst');
+      if (F.burn) this.zones.push({ team: 'player', kind: 'fire', x: e.x, y: e.y, r, dps: dmg * 0.4, life: F.burn, t: 0 });
+    }
     if (m.thunder && !e.isBoss && Math.random() < 0.15) {
       hitArc(this, e.x, e.y, 0, 80, 360, 30 * p.stats.might, 60, 'burst');
       this.fx.push({ type: 'spark', x: e.x, y: e.y, t: 0, life: 0.3 });
@@ -619,6 +661,9 @@ export class Game {
       this.sfx('gong');
     }
     if (this.spirits.length) spiritOnHurt(this, attacker);
+    // 🪨 토(土) 각인 세트 Ⅲ: the blow comes back to whoever struck.
+    const E = p.imprintSet('earth');
+    if (E?.thorns && attacker && !attacker.dead) this.damageEnemy(attacker, Math.max(currentWeaponLevel(p).damage, 30) * E.thorns * p.stats.might, p.x, p.y, 120);
     if (p.hp <= 0 && this.spirits.length && spiritRevive(this)) return true;
     if (p.hp <= 0) {
       p.hp = 0;
@@ -899,6 +944,7 @@ export class Game {
     for (const e of this.enemies) this.grid.insert(e);
 
     updateWeapon(this, dt);
+    this.imprintTick(dt);
     updateSkills(this, dt);
     // 후백제의 패왕: the moment the rage takes hold (or deepens), it flares up.
     const rage = p.enraged ? (p.hp < p.stats.maxHp * 0.3 ? 2 : 1) : 0;
@@ -936,6 +982,7 @@ export class Game {
     const p = this.player;
     const slowR = 120;
     const slow = 1 - 0.15 * p.stats.caltrops;
+    const W = p.imprintSet('water');
     for (const e of this.enemies) {
       if (e.dead) continue;
       const charmed = this.isCharmed(e);
@@ -960,6 +1007,8 @@ export class Game {
       // 무당's blessing: faster for a while.
       if (e.hasteUntil > this.time) mul *= 1.35;
       if (p.stats.caltrops && !e.isBoss && dist2(e.x, e.y, p.x, p.y) < slowR * slowR) mul = slow;
+      // 💧 수(水) 각인 세트: foes near the hero wade as through deep water (적장 half as much).
+      if (W && dist2(e.x, e.y, p.x, p.y) < W.radius * W.radius) mul *= 1 - W.slow * (e.isBoss ? 0.5 : 1);
       // 천안: the mark burns every half second; 애꾸눈의 저주 also slows (bosses half as much).
       if (e.curse && e.curse.until > this.time) {
         if (e.curse.slow) mul *= 1 - e.curse.slow * (e.isBoss ? 0.5 : 1);

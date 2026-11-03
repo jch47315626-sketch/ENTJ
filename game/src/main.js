@@ -19,6 +19,7 @@ import { TRIAL, trialFor, useTrial, trialDone, attrReward, ATTR_ICON, ATTR_NAME 
 import { gyeolgiCost } from './data/gyeolgi.js';
 import { metaBonus, FORGE, forgeCost, gradeOpen, entryCheck, EQUIPMENT, RELICS } from './data/meta.js';
 import { ensureGearOptions, rollOptions, rerollLine, engraveCost, lineText, NAMES } from './data/gearOptions.js';
+import { IMPRINT, ELEMENTS, imprintCost, imprintText } from './data/imprint.js';
 import { UPGRADES } from './data/upgrades.js';
 import { helpById } from './data/help.js';
 import { STAGES } from './data/stages.js';
@@ -607,6 +608,39 @@ const act = {
     done();
   },
   /** 각인: reroll one option line of an owned piece for 냥. */
+  /**
+   * 🔷 속성 각인: give an owned piece a 속성 (Lv1), or change it (Lv kept).
+   * Paid in 속성결정.
+   */
+  imprint(item, el) {
+    if (!save.owned.includes(item.id) || !ELEMENTS[el]) return;
+    save.imprint ??= {};
+    const rec = save.imprint[item.id];
+    if (rec?.el === el) return;
+    const cost = rec ? IMPRINT.change : imprintCost(0);
+    if ((save.attrStones ?? 0) < cost) return;
+    save.attrStones -= cost;
+    save.imprint[item.id] = { el, lv: rec?.lv ?? 1 };
+    writeSave(save);
+    sound.unlock();
+    sound.sfx('forgeOk');
+    refresh();
+    toast(`${ATTR_ICON} 속성 각인 — ${item.name}: ${imprintText(save.imprint[item.id])}`);
+  },
+  /** 🔷 각인 강화: Lv → Lv+1 (always succeeds). */
+  imprintUp(item) {
+    const rec = save.imprint?.[item.id];
+    if (!rec || rec.lv >= IMPRINT.max) return;
+    const cost = imprintCost(rec.lv);
+    if ((save.attrStones ?? 0) < cost) return;
+    save.attrStones -= cost;
+    rec.lv += 1;
+    writeSave(save);
+    sound.unlock();
+    sound.sfx('forgeOk');
+    refresh();
+    toast(`${ATTR_ICON} 각인 강화 — ${item.name}: ${imprintText(rec)}`);
+  },
   engrave(item, index) {
     const lines = save.gearOpts?.[item.id];
     if (!lines?.[index] || !spend(engraveCost(item))) return;
