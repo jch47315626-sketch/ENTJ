@@ -260,6 +260,36 @@ for (const heroId of Object.keys(RELIC_NAMES)) {
 }
 export const RELICS = EQUIPMENT.filter((e) => e.relic);
 
+/**
+ * 하 · 중 · 상: every grade is climbed in three steps. A bought piece starts
+ * at 하; 승급 (냥) raises it to 중 and 상, its bonus moving a third and two
+ * thirds of the way to the next grade's (국보 and 신물 toward ×`top`).
+ * save.gearTier = { [itemId]: 0 | 1 | 2 }.
+ */
+export const TIER = { names: ['하', '중', '상'], cost: [0.6, 1], top: 1.3 };
+export const TOP_TIER = TIER.names.length - 1;
+for (const it of EQUIPMENT) {
+  const next = !it.relic && it.grade < TOP_GRADE && GEAR_BASE.find((b) => b.slot === it.slot && b.grade === it.grade + 1);
+  it.nextBonus = {};
+  for (const k of new Set([...Object.keys(it.bonus), ...Object.keys(next ? next.bonus : {})])) {
+    it.nextBonus[k] = next ? next.bonus[k] ?? 0 : (it.bonus[k] ?? 0) * TIER.top;
+  }
+}
+export const tierOf = (save, item) => save.gearTier?.[item.id] ?? 0;
+/** 냥 to raise a piece from `tier` to the next. */
+export const tierCost = (item, tier) => Math.round((item.price * TIER.cost[tier]) / 10) * 10;
+
+/**
+ * Whether a piece may be bought: 범품 always; above that, the hero must hold
+ * the grade below in the same slot at 상 (or already own something higher).
+ */
+export function canBuy(save, item) {
+  if (item.relic) return false;
+  if (item.grade <= 1) return true;
+  return EQUIPMENT.some((o) => o.hero === item.hero && o.slot === item.slot && !o.relic && save.owned.includes(o.id)
+    && (o.grade > item.grade || (o.grade === item.grade - 1 && tierOf(save, o) >= TOP_TIER)));
+}
+
 const BONUS_TEXT = {
   maxHp: (v) => `최대 체력 +${Math.round(v)}`,
   armor: (v) => `갑주 +${+v.toFixed(1)}`,
@@ -285,11 +315,16 @@ export const FORGE = {
 };
 export const forgeCost = (item, lv) => Math.round((item.price * FORGE.cost[lv]) / 10) * 10;
 
-/** An item's bonus at forge level `lv`. */
-export function itemBonus(item, lv = 0) {
+/** An item's bonus at forge level `lv` and 하·중·상 `tier`. */
+export function itemBonus(item, lv = 0, tier = 0) {
   const k = 1 + FORGE.step * lv;
+  const f = tier / (TOP_TIER + 1);
   const out = {};
-  for (const key in item.bonus) out[key] = item.bonus[key] * k;
+  for (const key in item.nextBonus ?? item.bonus) {
+    const a = item.bonus[key] ?? 0, b = item.nextBonus?.[key] ?? a;
+    const v = (a + (b - a) * f) * k;
+    if (v) out[key] = key === 'maxHp' ? Math.round(v) : Math.round(v * 1000) / 1000;
+  }
   return out;
 }
 
@@ -341,7 +376,7 @@ export function metaBonus(save, heroId) {
   for (const slot of SLOTS) {
     const item = EQUIPMENT.find((e) => e.id === outfit[slot.id]);
     if (item && item.hero === heroId) {
-      add(itemBonus(item, save.forge?.[item.id] ?? 0));
+      add(itemBonus(item, save.forge?.[item.id] ?? 0, tierOf(save, item)));
       // 🔷 속성 각인 (data/imprint.js): the piece's own 속성 stats; sets are counted below.
       const rec = save.imprint?.[item.id];
       if (rec) {

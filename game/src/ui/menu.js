@@ -6,6 +6,7 @@ import { WEAPONS } from '../data/weapons.js';
 import {
   SLOTS, EQUIPMENT, SECRETS, REWARD_BY_STARS, GRADES, FORGE,
   forgeCost, gradeOpen, itemBonus, bonusText, metaBonus, entryCheck, armorCut,
+  TIER, TOP_TIER, tierOf, tierCost, canBuy,
 } from '../data/meta.js';
 import { ACHIEVEMENTS, ACH_GROUPS, progressOf } from '../data/achievements.js';
 import { heroUltimates } from '../data/upgrades.js';
@@ -39,7 +40,10 @@ const fmt = (n) => n.toLocaleString();
 const outfit = (save, heroId) => save.equipped[heroId] ?? {};
 const itemById = (id) => EQUIPMENT.find((e) => e.id === id);
 const forgeLv = (save, item) => save.forge?.[item.id] ?? 0;
-const itemName = (save, item) => `${item.name}${forgeLv(save, item) ? ` +${forgeLv(save, item)}` : ''}`;
+/** "고려 찰갑 · 중 +2": 하·중·상 for owned pieces, then the forge level. */
+const itemName = (save, item) => `${item.name}${save.owned?.includes(item.id) ? ` · ${TIER.names[tierOf(save, item)]}` : ''}${forgeLv(save, item) ? ` +${forgeLv(save, item)}` : ''}`;
+/** An owned piece's bonus at its forge level and 하·중·상. */
+const ownBonus = (save, item, lv = forgeLv(save, item)) => itemBonus(item, lv, tierOf(save, item));
 
 const SLOT_ICON = { head: '🪖', body: '🛡️', charm: '📿', wrist: '💠', belt: '🎗️', feet: '👢' };
 
@@ -534,7 +538,7 @@ function itemCard(save, h, item, act) {
   card.style.setProperty('--grade', GRADES[item.grade].color);
   card.append(iconCanvas(open || owned ? item.id : `empty:${item.slot}`, 40, 'row-icon'));
   const txt = el('div', 'ic-text');
-  const sub = item.relic && !owned ? `🔥 일일 던전에서 난세 ${TRIAL.relicFrom}단계 이상을 평정하면 얻을 수 있어요` : open || owned ? bonusText(itemBonus(item, lv)) : `★${GRADES[item.grade].needStars} 전장을 깨면 풀려요`;
+  const sub = item.relic && !owned ? `🔥 일일 던전에서 난세 ${TRIAL.relicFrom}단계 이상을 평정하면 얻을 수 있어요` : open || owned ? bonusText(ownBonus(save, item, lv)) : `★${GRADES[item.grade].needStars} 전장을 깨면 풀려요`;
   txt.innerHTML = `<b>${gradeTag(item.grade)} ${open || owned ? itemName(save, item) : '???'}</b><span>${sub}</span>`;
   card.append(txt);
   // 장비 옵션: random lines; each can be rerolled (각인) for 냥.
@@ -554,11 +558,14 @@ function itemCard(save, h, item, act) {
     });
   }
   const imp = owned ? imprintRow(save, item, act) : null;
+  const up = owned ? tierRow(save, item, act) : null;
   const ctrl = el('div', 'ic-ctrl');
   if (owned) {
     ctrl.append(worn ? tag('착용 중') : button('착용', 'wear-btn', () => act.wear(item)));
   } else if (item.relic) {
     ctrl.append(tag('🔥 일일 던전', 'locked'));
+  } else if (open && !canBuy(save, item)) {
+    ctrl.append(tag(`🔒 ${GRADES[item.grade - 1].name} 상 필요`, 'locked'));
   } else if (open) {
     ctrl.append(priceBtn(item.price, save.money, () => act.buy(item)));
   } else {
@@ -566,17 +573,44 @@ function itemCard(save, h, item, act) {
   }
   card.append(ctrl);
   if (opts) card.append(opts); // full-width row under the controls
+  if (up) card.append(up);
   if (imp) card.append(imp);
   const G = GRADES[item.grade];
   holdTip(card, () => tipHtml(`${gradeTag(item.grade)} ${open || owned ? itemName(save, item) : '???'}`, [
     `${h.name} 전용 · ${SLOTS.find((s) => s.id === item.slot).name}`,
-    open || owned ? `기본 능력: ${bonusText(itemBonus(item, lv))}${lv ? ` (제련 +${lv} 포함)` : ''}` : '',
+    open || owned ? `기본 능력: ${bonusText(ownBonus(save, item, lv))}${lv ? ` (제련 +${lv} 포함)` : ''}` : '',
+    owned && tierOf(save, item) < TOP_TIER ? `⬆️ ${TIER.names[tierOf(save, item) + 1]}(으)로 승급하면: ${bonusText(itemBonus(item, lv, tierOf(save, item) + 1))}` : '',
+    !owned && !item.relic && !canBuy(save, item) ? `🔒 ${josa(belowName(item), '을')} 「상」까지 올려야 살 수 있어요.` : '',
     item.note ? item.note : '',
     lines.length ? `옵션: ${lines.map(lineText).join(' · ')}` : owned ? '' : '얻을 때 무작위 옵션이 1~4줄 붙어요 (진품 이상은 비기가 붙기도 해요).',
     owned ? (worn ? '지금 차고 있어요' : '가진 장비 — 눌러서 착용') : item.relic ? `일일 던전에서 난세 ${TRIAL.relicFrom}단계 이상을 평정하면 얻을 수 있어요.`
       : open ? `값: ${fmt(item.price)}냥` : `★${G.needStars} 전장을 평정하면 상점에 나와요.`,
   ]));
   return card;
+}
+
+/** The piece one grade below in the same slot (for the 🔒 hint). */
+function belowName(item) {
+  const b = EQUIPMENT.find((o) => o.hero === item.hero && o.slot === item.slot && o.grade === item.grade - 1 && !o.relic);
+  return b ? `${GRADES[b.grade].name} ${b.name}` : '아래 등급';
+}
+
+/** 하·중·상 on one owned piece: pips, and the 승급 button with what it gives. */
+function tierRow(save, item, act) {
+  const t = tierOf(save, item);
+  const row = el('div', 'ic-tier');
+  const pips = TIER.names.map((n, i) => `<i class="${i <= t ? 'on' : ''}">${n}</i>`).join('');
+  row.append(el('span', 'it-pips', pips));
+  if (t < TOP_TIER) {
+    const cost = tierCost(item, t);
+    const nb = itemBonus(item, forgeLv(save, item), t + 1);
+    row.append(el('small', 'it-next', `${TIER.names[t + 1]}: ${bonusText(nb)}`));
+    row.append(button(`⬆️ ${TIER.names[t + 1]} 승급 <small>${COIN()}${fmt(cost)}</small>`, 'io-btn it-up', () => act.promote(item), save.money < cost));
+  } else {
+    const nxt = !item.relic && EQUIPMENT.find((o) => o.hero === item.hero && o.slot === item.slot && o.grade === item.grade + 1 && !o.relic);
+    row.append(el('small', 'it-next', nxt ? `✔ 상 — ${josa(`${GRADES[nxt.grade].name} ${nxt.name}`, '을')} 살 수 있어요` : '✔ 상 — 최고 단계'));
+  }
+  return row;
 }
 
 /**
@@ -666,9 +700,9 @@ function forgePanel(save, h, act) {
     card.append(iconCanvas(item.id, 40, 'row-icon'));
     const txt = el('div', 'ic-text');
     const pips = Array.from({ length: FORGE.max }, (_, i) => `<i class="${i < lv ? 'on' : ''}"></i>`).join('');
-    const next = lv < FORGE.max ? `<span class="fc-next">다음 +${lv + 1} → ${bonusText(itemBonus(item, lv + 1))}</span>` : '';
+    const next = lv < FORGE.max ? `<span class="fc-next">다음 +${lv + 1} → ${bonusText(ownBonus(save, item, lv + 1))}</span>` : '';
     txt.innerHTML = `<b>${gradeTag(item.grade)} ${itemName(save, item)}${worn.has(item.id) ? ' <small class="fc-worn">착용 중</small>' : ''}</b>
-      <span class="fc-pips">${pips}</span><span>${bonusText(itemBonus(item, lv))}</span>${next}`;
+      <span class="fc-pips">${pips}</span><span>${bonusText(ownBonus(save, item, lv))}</span>${next}`;
     card.append(txt);
     const ctrl = el('div', 'ic-ctrl');
     if (lv < FORGE.max) {
@@ -679,8 +713,8 @@ function forgePanel(save, h, act) {
     } else ctrl.append(tag(`+${FORGE.max} 완성`));
     card.append(ctrl);
     holdTip(card, () => tipHtml(`🔨 ${itemName(save, item)}`, [
-      `지금: ${bonusText(itemBonus(item, lv))}`,
-      lv < FORGE.max ? `+${lv + 1} 성공 시: ${bonusText(itemBonus(item, lv + 1))}` : '최대 +5까지 제련했어요',
+      `지금: ${bonusText(ownBonus(save, item, lv))}`,
+      lv < FORGE.max ? `+${lv + 1} 성공 시: ${bonusText(ownBonus(save, item, lv + 1))}` : '최대 +5까지 제련했어요',
       lv < FORGE.max ? `비용 ${fmt(forgeCost(item, lv))}냥 · 성공 확률 ${Math.round(FORGE.chance[lv] * 100)}% — 실패해도 장비는 그대로예요` : '',
       `단계마다 기본 능력치 +${Math.round(FORGE.step * 100)}%`,
     ]));

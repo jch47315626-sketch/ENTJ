@@ -17,7 +17,7 @@ import { dailyFor, dailyHeroBonus, todayKey } from './data/daily.js';
 import { josa } from './core/korean.js';
 import { TRIAL, trialFor, useTrial, trialDone, attrReward, ATTR_ICON, ATTR_NAME } from './data/trial.js';
 import { gyeolgiCost } from './data/gyeolgi.js';
-import { metaBonus, FORGE, forgeCost, gradeOpen, entryCheck, EQUIPMENT, RELICS } from './data/meta.js';
+import { metaBonus, FORGE, forgeCost, gradeOpen, entryCheck, EQUIPMENT, RELICS, TIER, TOP_TIER, tierOf, tierCost, canBuy } from './data/meta.js';
 import { ensureGearOptions, rollOptions, rerollLine, engraveCost, lineText, NAMES } from './data/gearOptions.js';
 import { IMPRINT, ELEMENTS, imprintCost, imprintText } from './data/imprint.js';
 import { UPGRADES } from './data/upgrades.js';
@@ -569,12 +569,24 @@ const act = {
   // Gear belongs to one hero only.
   buy(item) {
     if (item.hero !== sel.hero || item.relic || save.owned.includes(item.id)) return;
-    if (!gradeOpen(save, item) || !spend(item.price)) return;
+    if (!gradeOpen(save, item) || !canBuy(save, item) || !spend(item.price)) return;
     save.owned.push(item.id);
     save.gearOpts ??= {};
     save.gearOpts[item.id] = rollOptions(item);
     outfitOf(save, sel.hero)[item.slot] = item.id;
     done();
+  },
+  /** 하 → 중 → 상: raise an owned piece one step (냥, always succeeds). */
+  promote(item) {
+    if (!save.owned.includes(item.id)) return;
+    const t = tierOf(save, item);
+    if (t >= TOP_TIER || !spend(tierCost(item, t))) return;
+    (save.gearTier ??= {})[item.id] = t + 1;
+    writeSave(save);
+    sound.unlock();
+    sound.sfx('forgeOk');
+    refresh();
+    toast(`⬆️ 승급 — ${item.name} · ${TIER.names[t + 1]}${t + 1 === TOP_TIER && !item.relic && item.grade < 8 ? ' · 다음 등급을 살 수 있어요!' : ''}`);
   },
   wear(item) {
     if (item.hero !== sel.hero) return;

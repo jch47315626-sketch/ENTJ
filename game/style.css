@@ -1166,6 +1166,14 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 .ic-opt.special .io-text { color: #e2d2ff; font-family: "Jua", sans-serif; font-size: 13px; line-height: 1.35; }
 .ic-opt.special .io-text::before { content: '비기 '; color: var(--candy-lilac); font-size: 11px; }
 
+/* 하·중·상 */
+.ic-tier { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 4px; padding: 4px 8px; border-radius: 10px; background: rgba(120, 80, 30, 0.08); border: 1px solid rgba(140, 100, 50, 0.25); color: #3a2a18; font-size: 12px; }
+.it-pips { display: inline-flex; gap: 3px; flex: none; }
+.it-pips i { font: 400 12px "Jua", sans-serif; font-style: normal; padding: 1px 7px; border-radius: 999px; background: rgba(0, 0, 0, 0.08); color: rgba(58, 42, 24, 0.45); }
+.it-pips i.on { background: linear-gradient(180deg, #ffe29a, #e0a83a); color: #3a2208; box-shadow: 0 0 6px rgba(224, 168, 58, 0.5); }
+.it-next { flex: 1 1 120px; min-width: 0; color: #5a4632; }
+.ic-tier .io-btn { color: #3a2a18; border-color: rgba(140, 100, 50, 0.45); background: rgba(255, 255, 255, 0.6); }
+.ic-tier .io-btn .coin-img { width: 12px; height: 12px; vertical-align: -2px; }
 /* 🔷 속성 각인 */
 .ic-imprint { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; margin-top: 4px; padding: 5px 8px; border-radius: 10px; font-size: 12.5px; color: #24405e; border: 1px dashed rgba(60, 120, 200, 0.55); background: rgba(80, 150, 255, 0.1); }
 .ic-imprint.on { border: 1px solid var(--el); background: color-mix(in srgb, var(--el) 16%, transparent); box-shadow: 0 0 10px color-mix(in srgb, var(--el) 30%, transparent); }
