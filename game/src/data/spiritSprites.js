@@ -95,5 +95,21 @@ export const SPIRIT_SPRITES = {
   "samjogo": {
     "w": 64,
     "h": 63
+  },
+  "snake": {
+    "w": 61,
+    "h": 64
+  },
+  "turtle": {
+    "w": 64,
+    "h": 56
+  },
+  "wolf": {
+    "w": 62,
+    "h": 63
+  },
+  "worm": {
+    "w": 61,
+    "h": 63
   }
 };
