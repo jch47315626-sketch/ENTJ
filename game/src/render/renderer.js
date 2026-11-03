@@ -3,6 +3,7 @@ import { drawBogs, drawRocks } from './terrain.js';
 import { drawUnit, drawCart, drawCoin, drawRice, drawProjectile } from './sprites.js';
 import { clamp, TAU } from '../core/math.js';
 import { drawUltFx, drawScreenFlash } from './ultFx.js';
+import { preloadPixelFx, drawPixelFx } from './pixelFx.js';
 import { drawSpirit, drawSpiritsUnder, drawSpiritShield, drawSpiritZone, drawSpiritFx } from './spiritFx.js';
 
 const ALLY_LOOKS = {
@@ -83,6 +84,7 @@ export class Renderer {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.cam = { x: 0, y: 0, zoom: 1 };
+    preloadPixelFx();
     this.resize();
     window.addEventListener('resize', () => this.resize());
   }
@@ -1424,6 +1426,9 @@ export class Renderer {
           ctx.fill();
           break;
         }
+        case 'pfx':
+          drawPixelFx(ctx, f); // 픽셀 이펙트 (render/pixelFx.js)
+          break;
         default:
           if (!drawSpiritFx(ctx, f, p)) drawUltFx(ctx, f, p, g); // 영물 (render/spiritFx.js), 궁극기 연출 (render/ultFx.js)
       }

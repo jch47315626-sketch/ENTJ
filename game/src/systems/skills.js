@@ -3,6 +3,7 @@ import { hitArc, currentWeaponLevel } from './weapons.js';
 import { enemyHpScale } from '../data/balance.js';
 import { rand } from '../core/math.js';
 import { withOver } from './over.js';
+import { pixelFx } from '../render/pixelFx.js';
 
 /**
  * Cooldown skills gained from level-ups (separate from the momentum
@@ -62,7 +63,7 @@ ACTIVE_SKILLS.tiger = {
     const p = g.player;
     p.tiger = { mul: L.mul, until: g.time + L.duration };
     p.recalc();
-    g.fx.push({ type: 'puff', x: p.x, y: p.y, t: 0, life: 0.6, size: 34, tone: 'light' });
+    g.fx.push(pixelFx('rage', p.x, p.y, 0.55));
     g.sfx('paewang');
     if (!L.eight) {
       g.banner(`🐯 ${L.name} — ${L.duration}초 동안 피해 ${L.mul}배`, 'small');
@@ -75,6 +76,7 @@ ACTIVE_SKILLS.tiger = {
     g.banner('🐯 무자식이 상팔자!', 'big');
     g.ultFlash('255, 70, 30', 0.35, 0.4);
     g.fx.push({ type: 'rageBurst', x: p.x, y: p.y, t: 0, life: 0.8, seed: Math.random() });
+    g.fx.push(pixelFx('rage', p.x, p.y, Math.min(radius / 104, 1.6))); // larger than this, the pixels turn to blocks
     g.fx.push({ type: 'eight', x: p.x, y: p.y, range: radius, angle: p.facing, t: 0, life: 1.2 });
     for (let i = 0; i < E.swings; i++) {
       g.later(i * E.gap, () => {
@@ -127,7 +129,10 @@ ACTIVE_SKILLS.archers = {
       const r = R.radius * Math.sqrt(p.stats.area);
       // The arrows fall first; the ground catches fire as they land.
       g.fx.push({ type: 'arrowRain', x: s.x, y: s.y, range: r, t: 0, life: 0.9, seed: Math.random() });
-      g.later(0.3, () => g.zones.push({ team: 'player', kind: 'fire', x: s.x, y: s.y, r, dps, life: R.life, t: 0 }));
+      g.later(0.3, () => {
+        g.zones.push({ team: 'player', kind: 'fire', x: s.x, y: s.y, r, dps, life: R.life, t: 0 });
+        g.fx.push(pixelFx('fireRing', s.x, s.y, r / 95));
+      });
     }
     g.sfx('volley');
   },
@@ -145,10 +150,12 @@ ACTIVE_SKILLS.edict = {
       foes = foes.slice(0, L.count);
     }
     const dmg = weaponDmg(p) * L.mul * p.stats.might;
-    // Shafts of light fall on each foe (drawn for the first few dozen; every one is struck).
+    // A bolt of light drops on each foe (pixel art for the nearest dozen, plain shafts for
+    // the next few; every one is struck).
     foes.forEach((e, i) => {
       g.damageEnemy(e, dmg, e.x, e.y - 40, 40, L.stun ? { stun: e.isBoss ? L.bossStun : L.stun } : undefined);
-      if (i < 28) g.fx.push({ type: 'pillar', x: e.x, y: e.y, t: 0, life: 0.55, big: !!L.evolution, seed: Math.random() });
+      if (i < 12) g.fx.push(pixelFx('edict', e.x, e.y, L.evolution ? 0.85 : 0.65));
+      else if (i < 28) g.fx.push({ type: 'pillar', x: e.x, y: e.y, t: 0, life: 0.55, big: !!L.evolution, seed: Math.random() });
     });
     if (L.evolution) {
       g.banner('📜 훈요십조 — 어명이 전장을 내리친다!', 'small');
