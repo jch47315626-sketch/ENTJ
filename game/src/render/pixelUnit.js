@@ -126,8 +126,9 @@ function figure(p, look, R, frame, back) {
   const accent = C(look.accent, '#2a2420');
   const skin = C(look.skin, '#e6c49c');
   const trim = look.trim ? C(look.trim) : 0;
-  const hr = R * 0.66, hy = -R * 0.62;
   const model = look.model;
+  // Heroes get a slightly smaller head so their armour shows.
+  const hr = R * (model ? 0.6 : 0.66), hy = -R * (model ? 0.6 : 0.62);
 
   // Cape behind everything, flapping a little with the step.
   if (look.cape) {
@@ -142,6 +143,13 @@ function figure(p, look, R, frame, back) {
   if (!look.mount)
     for (const [k, l] of [[-1, lift[0]], [1, lift[1]]]) p.ellipse(k * R * 0.26, R * 0.68 - l, R * 0.2, R * 0.13, accent);
 
+  // The three heroes wear their own armour (heroBody); everyone else a robe with trimmings.
+  if (model && HERO_BODY[model]) {
+    HERO_BODY[model](p, look, R, frame, back, bulk);
+    ball(p, -R * 0.55 * bulk, R * 0.25, Math.max(1.2, R * 0.13), skin);
+    head(p, look, R, hr, hy, frame, back, model);
+    return;
+  }
   // Robe: rounded, lit on the left, shaded on the right, a hem line.
   const top = -R * 0.12, bot = R * 0.66, wt = R * 0.42 * bulk, wb = R * 0.56 * bulk;
   p.poly([[-wt, top], [wt, top], [wb, bot - R * 0.06], [wb * 0.9, bot], [-wb * 0.9, bot], [-wb, bot - R * 0.06]], (x, y) => {
@@ -170,6 +178,107 @@ function figure(p, look, R, frame, back) {
 
   head(p, look, R, hr, hy, frame, back, model);
 }
+
+// ---------------------------------------------------------------- heroes
+
+/** Rows of small lamellar plates over a box: each plate a lit top and a dark lower edge. */
+function lamellar(p, x0, y0, x1, y1, plate, lace, rivet) {
+  const ph = 2, pw = 3;
+  for (let y = y0, row = 0; y < y1; y += ph, row++)
+    for (let x = x0 + (row % 2 ? -1 : 0); x < x1; x += pw) {
+      p.rect(x, y, pw, ph, plate);
+      p.px(x, y, lighten(plate, 0.25));
+      p.px(x + pw - 1, y + ph - 1, darken(plate, 0.35));
+      if (lace) p.px(x + 1, y + ph - 1, lace);
+    }
+  if (rivet) for (let x = x0 + 1; x < x1; x += 4) p.px(x, y0, rivet);
+}
+
+/** The robe/armour outline every hero body shares: a trapezoid from shoulders to hem. */
+function torso(p, R, bulk, top, bot, wt, wb, fill) {
+  p.poly([[-wt, top], [wt, top], [wb, bot - R * 0.06], [wb * 0.9, bot], [-wb * 0.9, bot], [-wb, bot - R * 0.06]], fill);
+}
+
+const HERO_BODY = {
+  /** 왕건: blue lamellar over a blue robe, gold-edged; layered gold pauldrons; red sash with a jade disc. */
+  wanggeon(p, look, R, frame, back, bulk) {
+    const blue = C(look.body ?? look.robe ?? '#1f4596'), gold = C(look.trim ?? '#e8c060'), steel = C('#5a7ec8');
+    const top = -R * 0.14, bot = R * 0.68, wt = R * 0.44 * bulk, wb = R * 0.6 * bulk;
+    // Robe skirt split at the front over white under-robe.
+    torso(p, R, bulk, top, bot, wt, wb, (x) => (x < -wb * 0.5 ? lighten(blue, 0.15) : x > wb * 0.55 ? darken(blue, 0.25) : blue));
+    if (!back) p.tri(-R * 0.08, R * 0.42, R * 0.08, R * 0.42, 0, bot, C('#e8e4d8'));
+    p.line(-wb * 0.9, bot - 1, wb * 0.9, bot - 1, gold);
+    // Lamellar cuirass on the chest, gold edged.
+    lamellar(p, -wt * 0.92, top + 1, wt * 0.92, R * 0.34, back ? darken(steel, 0.15) : steel, 0, gold);
+    p.line(-wt * 0.92, R * 0.34, wt * 0.92, R * 0.34, gold);
+    // Sash with jade and a tassel.
+    p.rect(-wt * 1.05, R * 0.34, wt * 2.1, Math.max(2, R * 0.1), C('#b3261e'));
+    if (!back) {
+      ball(p, R * 0.05, R * 0.39, Math.max(1.5, R * 0.08), C('#5fc49a'), 0.3, 0.2);
+      p.line(R * 0.05, R * 0.45, R * 0.02, R * 0.6 + (frame % 2), C('#b3261e'));
+    }
+    // Layered gold pauldrons and a little fur at the collar.
+    for (const k of [-1, 1]) {
+      ball(p, k * wt * 1.02, top + R * 0.06, R * 0.2, gold, 0.35, 0.25);
+      p.arc(k * wt * 1.02, top + R * 0.16, R * 0.18, 1, Math.PI * 0.1, Math.PI * 0.9, darken(gold, 0.35));
+    }
+    for (let i = 0; i < 4; i++) ball(p, (i / 3 - 0.5) * wt * 1.1, top - 1, Math.max(1.2, R * 0.08), C(look.fur ?? '#f4f1ea'), 0.1, 0.1);
+  },
+  /** 견훤: black lamellar laced with crimson, a heavy fur mantle, a tiger buckle, leather bracers. */
+  gyeonhwon(p, look, R, frame, back, bulk) {
+    const dark = C(look.body ?? look.robe ?? '#2a2321'), red = C('#a8241c'), gold = C(look.trim ?? '#e0aa3a');
+    const top = -R * 0.14, bot = R * 0.68, wt = R * 0.46 * bulk, wb = R * 0.6 * bulk;
+    torso(p, R, bulk, top, bot, wt, wb, dark);
+    lamellar(p, -wb * 0.9, top + 2, wb * 0.9, bot - 2, C('#3a3436'), red, gold);
+    // Tasset split at the front.
+    if (!back) p.line(0, R * 0.42, 0, bot, darken(dark, 0.5));
+    // Belt with a gold tiger-head buckle.
+    p.rect(-wt * 1.05, R * 0.3, wt * 2.1, Math.max(2, R * 0.11), C('#4a2a18'));
+    if (!back) {
+      ball(p, R * 0.04, R * 0.35, Math.max(2, R * 0.12), gold, 0.3, 0.3);
+      p.px(R * 0.0, R * 0.33, INK);
+      p.px(R * 0.08, R * 0.33, INK);
+    }
+    // Heavy fur mantle across the shoulders, shaggy at its lower edge.
+    const fur = C(look.fur ?? '#f1ece2');
+    for (let i = 0; i < 7; i++) {
+      const t = i / 6 - 0.5;
+      ball(p, t * wt * 2.3, top + R * 0.02 + Math.abs(t) * R * 0.1, R * 0.17, i % 2 ? darken(fur, 0.12) : fur, 0.08, 0.15);
+    }
+    for (let i = 0; i < 6; i++) p.px((i / 5 - 0.5) * wt * 2.1, top + R * 0.2 + (i % 2), darken(fur, 0.3));
+    // Gold-capped pauldrons under the fur.
+    for (const k of [-1, 1]) p.rect(k > 0 ? wt * 0.85 : -wt * 1.25, top + R * 0.12, R * 0.18, R * 0.16, gold);
+    // Leather bracer on the off arm.
+    p.rect(-R * 0.66 * bulk, R * 0.12, R * 0.2, R * 0.1, C('#5a3a20'));
+  },
+  /** 궁예: a saffron robe to the feet, a purple patchwork kasaya across it, great beads, a gold collar. */
+  gungye(p, look, R, frame, back, bulk) {
+    const saffron = C(look.body ?? look.robe ?? '#d9a531'), purple = C('#5a2a78'), gold = C(look.trim ?? '#f6d77a');
+    const top = -R * 0.14, bot = R * 0.74, wt = R * 0.42 * bulk, wb = R * 0.64 * bulk;
+    // A faint gold halo of light behind him.
+    for (let i = 0; i < 28; i++) {
+      const g = (i / 28) * Math.PI * 2;
+      if (i % 2) p.px(Math.cos(g) * R * 0.95, -R * 0.62 + Math.sin(g) * R * 0.95, C('#f6d77a'));
+    }
+    torso(p, R, bulk, top, bot, wt, wb, (x) => (x < -wb * 0.5 ? lighten(saffron, 0.15) : x > wb * 0.55 ? darken(saffron, 0.2) : saffron));
+    // Kasaya: a purple band over the left shoulder down to the right hip, patched in a gold grid.
+    const band = [[-wt * 1.05, top], [wt * 0.05, top], [wb * 1.0, R * 0.42], [wb * 0.75, R * 0.72], [wb * 0.3, R * 0.72]];
+    p.poly(band, (x, y) => ((Math.floor((x + 40) / 4) + Math.floor((y + 40) / 4)) % 2 ? purple : lighten(purple, 0.12)));
+    for (let y = top + 3; y < R * 0.6; y += 4) {
+      const t = (y - top) / (R * 0.6 - top), x0 = -wt + (wb * 0.6 + wt) * t, x1 = -wt * 0.2 + (wb * 0.95 + wt * 0.2) * t;
+      p.line(x0, y, x1, y, gold);
+    }
+    // Gold collar and the great beads (one big gold bead at the bottom).
+    p.line(-wt * 0.6, top, 0, top + R * 0.16, gold);
+    p.line(0, top + R * 0.16, wt * 0.6, top, gold);
+    if (!back)
+      for (let i = 0; i <= 10; i++) {
+        const t = i / 10 - 0.5, big = i === 5;
+        ball(p, t * R * 0.6 * bulk, R * 0.0 + (1 - (2 * t) ** 2) * R * 0.3, big ? Math.max(1.5, R * 0.09) : Math.max(1, R * 0.055), big ? gold : C(look.beads ?? '#2a1e14'), 0.3, 0.1);
+      }
+    p.line(-wb * 0.9, bot - 1, wb * 0.9, bot - 1, darken(saffron, 0.35));
+  },
+};
 
 function backHair(p, look, R, hr, hy, frame, back) {
   const sway = frame % 2 ? 1 : 0;
@@ -274,6 +383,12 @@ function hatOn(p, look, R, hr, hy, frame, back, model) {
     for (const k of [-1, 0, 1]) p.tri(k * hr * 0.32 - hr * 0.13, cy, k * hr * 0.32 + hr * 0.13, cy, k * hr * 0.32, cy - hr * 0.35, gold);
     p.line(-hr * 0.45, cy + hr * 0.34, hr * 0.45, cy + hr * 0.34, darken(gold, 0.35));
     p.px(0, cy + hr * 0.15, C(model ? '#2f6fe8' : look.jewel ?? '#2f6fe0'));
+    if (model) {
+      // 태조's crown: a tall gold finial with a blue jewel, and a hairpin through it.
+      p.rect(-1, cy - hr * 0.75, 2, hr * 0.45, gold);
+      ball(p, 0, cy - hr * 0.8, Math.max(1.5, hr * 0.13), C('#2f6fe8'), 0.4, 0.2);
+      p.line(-hr * 0.7, cy + hr * 0.1, hr * 0.7, cy + hr * 0.02, C('#f6e7b0'));
+    }
     return;
   }
   if (model === 'gyeonhwon' || look.hat === 'warband') {
@@ -290,6 +405,8 @@ function hatOn(p, look, R, hr, hy, frame, back, model) {
     p.line(-hr * 1.0, hy - hr * 0.45, -hr * 1.6, hy - hr * 0.1 + (frame % 2), band);
     p.line(-hr * 1.0, hy - hr * 0.35, -hr * 1.5, hy + hr * 0.15 + (frame % 2), darken(band, 0.3));
     p.px(hr * 0.1, hy - hr * 0.45, C(look.trim ?? '#f0c050'));
+    // 견훤: an old scar across the near cheek.
+    if (model && !back) p.line(hr * 0.35, hy - hr * 0.05, hr * 0.62, hy + hr * 0.3, C('#a0503a'));
     return;
   }
   if (model === 'gungye' || look.hat === 'monk') {
@@ -555,3 +672,6 @@ export function drawPixelFigure(ctx, look, R, facing, phase, flash, hand) {
   if (!back) drawWeapon();
   return true;
 }
+
+// Shared with render/pixelBeast.js.
+export { sheet, toCanvas, silhouette, C, lighten, darken, ball, INK, HANJI };

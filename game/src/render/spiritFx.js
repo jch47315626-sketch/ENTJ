@@ -1,4 +1,5 @@
 import { SPIRIT_GRADES } from '../data/spirits.js';
+import { drawPixelBeast, isFlyer } from './pixelBeast.js';
 
 /**
  * 영물 on the field: each companion is its emoji in a small glowing orb of
@@ -44,7 +45,8 @@ export function drawSpiritsUnder(ctx, g) {
   const p = g.player;
   for (const s of g.spirits ?? []) {
     if (s.id === 'elephant' && s.data.until > g.time) {
-      orb(ctx, p.x, p.y + 10, '🐘', '#f1e8d2', 40, g.time);
+      // 백상 carrying the hero: a big white elephant under him.
+      drawPixelBeast(ctx, 'elephant', p.x - Math.cos(p.facing) * 4, p.y + 14, 26, Math.cos(p.facing) < 0, g.time);
     }
     if (s.id === 'samjogo' && s.data.beams) {
       for (let i = 0; i < s.data.beams; i++) {
@@ -73,8 +75,32 @@ export function drawSpirit(ctx, g, s) {
   const { x, y } = spot(s);
   const color = SPIRIT_GRADES[s.def.grade].color;
   const grow = s.id === 'cub' ? 0.8 + 0.8 * (s.data.grow ?? 0) : 1;
-  orb(ctx, x, y - 14, s.id === 'cub' && (s.data.grow ?? 0) >= 1 ? '🐅' : s.def.icon, color, 25 * grow, g.time + s.slot);
-  if (s.id === 'wolf') for (const w of s.data.pack ?? []) orb(ctx, w.x, w.y - 8, '🐺', '#c9d0e0', w.bite > 0 ? 18 : 14, g.time + w.x * 0.01);
+  // Face the way it moves (kept while it stands still).
+  if (s._px !== undefined && Math.abs(x - s._px) > 0.2) s._left = x < s._px;
+  s._px = x;
+  // A ring of its grade's colour on the floor, then the creature (render/pixelBeast.js).
+  const kind = s.id === 'cub' && (s.data.grow ?? 0) >= 1 ? 'tiger' : s.id;
+  const R = [0, 12, 13, 14, 16, 18][s.def.grade] * grow;
+  ctx.strokeStyle = color;
+  ctx.globalAlpha = 0.7;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.ellipse(x, y, R * 0.95, R * 0.38, 0, 0, TAU);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  if (!isFlyer(kind)) {
+    ctx.fillStyle = 'rgba(22, 19, 15, 0.3)';
+    ctx.beginPath();
+    ctx.ellipse(x, y, R * 0.8, R * 0.3, 0, 0, TAU);
+    ctx.fill();
+  }
+  if (!drawPixelBeast(ctx, kind, x, y, R, !!s._left, g.time + s.slot * 0.37)) orb(ctx, x, y - 14, s.def.icon, color, 25 * grow, g.time + s.slot);
+  if (s.id === 'wolf')
+    for (const w of s.data.pack ?? []) {
+      if (w._px !== undefined && Math.abs(w.x - w._px) > 0.2) w._left = w.x < w._px;
+      w._px = w.x;
+      drawPixelBeast(ctx, 'wolf', w.x, w.y, w.bite > 0 ? 12 : 10, !!w._left, g.time + w.x * 0.01);
+    }
   for (const w of s.data.pack ?? []) if (w.bite > 0) w.bite -= 1 / 60;
 }
 
