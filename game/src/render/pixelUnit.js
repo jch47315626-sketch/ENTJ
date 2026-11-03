@@ -29,7 +29,9 @@ for (const [id, parts] of Object.entries(HERO_SPRITES)) {
 }
 const ready = (pic) => pic && pic.img.complete && pic.img.naturalWidth;
 /** Where the hand closes on each hero's weapon picture, as a fraction of its length from the left. */
-const GRIP = { wanggeon: 0.12, gyeonhwon: 0.1, gungye: 0.2 };
+const GRIP = { wanggeon: 0.12, gyeonhwon: 0.16, gungye: 0.2 };
+/** How long each hero's weapon is drawn, in R (the 대도 is heavier and longer than the sword). */
+const WEAPON_LEN = { wanggeon: 1.9, gyeonhwon: 2.3, gungye: 2.6 };
 
 const INK = 0xff171a1d; // #1d1a17 as ABGR
 const HANJI = '#f1e8d2';
@@ -699,7 +701,7 @@ function drawHeroPicture(ctx, look, pics, R, sx, back, flash, hand) {
   const drawWeapon = () => {
     if (!weapon) return;
     const h = hand(), w = weapon.img;
-    const kw = (R * 1.9) / w.naturalWidth;
+    const kw = (R * (WEAPON_LEN[look.model] ?? 1.9)) / w.naturalWidth;
     ctx.save();
     ctx.translate(Math.round(h.x), Math.round(h.y));
     ctx.rotate(h.rot);

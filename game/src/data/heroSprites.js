@@ -13,5 +13,19 @@ export const HERO_SPRITES = {
       "w": 37,
       "h": 64
     }
+  },
+  "gyeonhwon": {
+    "front": {
+      "w": 52,
+      "h": 64
+    },
+    "weapon": {
+      "w": 64,
+      "h": 17
+    },
+    "back": {
+      "w": 44,
+      "h": 64
+    }
   }
 };
