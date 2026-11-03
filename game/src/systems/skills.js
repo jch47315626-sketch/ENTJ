@@ -63,7 +63,7 @@ ACTIVE_SKILLS.tiger = {
     const p = g.player;
     p.tiger = { mul: L.mul, until: g.time + L.duration };
     p.recalc();
-    g.fx.push(pixelFx('rage', p.x, p.y, 0.55));
+    g.fx.push(pixelFx('rage', p.x, p.y));
     g.sfx('paewang');
     if (!L.eight) {
       g.banner(`🐯 ${L.name} — ${L.duration}초 동안 피해 ${L.mul}배`, 'small');
@@ -76,7 +76,7 @@ ACTIVE_SKILLS.tiger = {
     g.banner('🐯 무자식이 상팔자!', 'big');
     g.ultFlash('255, 70, 30', 0.35, 0.4);
     g.fx.push({ type: 'rageBurst', x: p.x, y: p.y, t: 0, life: 0.8, seed: Math.random() });
-    g.fx.push(pixelFx('rage', p.x, p.y, Math.min(radius / 104, 1.6))); // larger than this, the pixels turn to blocks
+    g.fx.push(pixelFx('rage', p.x, p.y)); // the roar at the king; the swings ('eight') show the full reach
     g.fx.push({ type: 'eight', x: p.x, y: p.y, range: radius, angle: p.facing, t: 0, life: 1.2 });
     for (let i = 0; i < E.swings; i++) {
       g.later(i * E.gap, () => {
@@ -131,7 +131,7 @@ ACTIVE_SKILLS.archers = {
       g.fx.push({ type: 'arrowRain', x: s.x, y: s.y, range: r, t: 0, life: 0.9, seed: Math.random() });
       g.later(0.3, () => {
         g.zones.push({ team: 'player', kind: 'fire', x: s.x, y: s.y, r, dps, life: R.life, t: 0 });
-        g.fx.push(pixelFx('fireRing', s.x, s.y, r / 95));
+        g.fx.push(pixelFx('fireRing', s.x, s.y, r));
       });
     }
     g.sfx('volley');
@@ -154,7 +154,7 @@ ACTIVE_SKILLS.edict = {
     // the next few; every one is struck).
     foes.forEach((e, i) => {
       g.damageEnemy(e, dmg, e.x, e.y - 40, 40, L.stun ? { stun: e.isBoss ? L.bossStun : L.stun } : undefined);
-      if (i < 12) g.fx.push(pixelFx('edict', e.x, e.y, L.evolution ? 0.85 : 0.65));
+      if (i < 12) g.fx.push(pixelFx(L.evolution ? 'edictBig' : 'edict', e.x, e.y));
       else if (i < 28) g.fx.push({ type: 'pillar', x: e.x, y: e.y, t: 0, life: 0.55, big: !!L.evolution, seed: Math.random() });
     });
     if (L.evolution) {

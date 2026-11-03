@@ -1,7 +1,10 @@
 /**
- * 픽셀 이펙트: pixel-art effects from pixelfx (https://github.com/patch-gg/pixelfx),
- * baked into sprite strips by tools/pixelfx/bake.mjs. A g.fx entry
- * { type: 'pfx', key, x, y, scale, t, life } plays one; `pixelFx()` builds it.
+ * 픽셀 이펙트: our own pixel-art effects (tools/pixelfx/fx/, drawn with pixelfx's
+ * core, https://github.com/patch-gg/pixelfx), baked into sprite strips by
+ * tools/pixelfx/bake.mjs. They are drawn top-down like the field: the floor is
+ * undistorted and height goes up the screen, so each effect's floor circle is a
+ * true circle. A g.fx entry { type: 'pfx', key, x, y, scale, t, life } plays
+ * one; `pixelFx()` builds it.
  */
 import { PIXEL_FX_SHEETS } from '../data/pixelFxSheets.js';
 
@@ -19,11 +22,13 @@ export function preloadPixelFx() {
 }
 
 /**
- * A g.fx entry that plays sheet `key` once at (x, y), where the effect's
- * ground point lands. `scale` is world units per effect pixel.
+ * A g.fx entry that plays sheet `key` once centred on (x, y). Given `radius`
+ * (world units), the effect's floor circle is scaled to exactly that radius,
+ * so it lines up with the hit area; without it, it plays at its own size.
  */
-export function pixelFx(key, x, y, scale = 1, extra) {
+export function pixelFx(key, x, y, radius, extra) {
   const s = PIXEL_FX_SHEETS[key];
+  const scale = radius && s?.r ? radius / s.r : 1;
   return { type: 'pfx', key, x, y, scale, t: 0, life: s ? s.frames / s.fps : 0, ...extra };
 }
 
