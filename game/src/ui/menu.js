@@ -26,6 +26,7 @@ import { untilTomorrow } from '../data/daily.js';
 import { SPECIALS } from '../systems/specials.js';
 import { drawUnit } from '../render/sprites.js';
 import { iconCanvas } from '../render/icons.js';
+import { spiritIcon } from '../render/spiritIcon.js';
 import { starText, gradeTag } from './screens.js';
 
 /**
@@ -285,7 +286,7 @@ export function renderHome(save, sel, act) {
     tDone ? `✅ 오늘 도전함 · ${untilTomorrow()} 뒤 새 던전` : `하루 1번 · ${ATTR_ICON} ${ATTR_NAME} +${fmt(tr.reward)}`, !tDone, () => openSheet('trial', save, sel, act)));
   const a = refreshAltar(save);
   const g = GUARDIANS[guardianOf()];
-  list.append(dungeonRow('🏯', '사신의 제단', `${g ? `${g.icon} ${g.name}` : '✨ 사신의 날'} · ${Math.max(1, save.altarTier ?? 1)}단계`,
+  list.append(dungeonRow('🏯', '사신의 제단', `${g ? `${spiritIcon(g.id, g.icon)} ${g.name}` : '✨ 사신의 날'} · ${Math.max(1, save.altarTier ?? 1)}단계`,
     `🎟️ 입장권 ${a.tickets}/${ALTAR_TICKETS.cap}${save.spiritGift ? '' : ` · 🐾 ${Math.max(1, FIRST_SPIRIT_RUNS - altarRunsDone(save))}판 더 돌면 첫 영물`}`, a.tickets > 0, () => openSheet('altar', save, sel, act)));
   const em = ENDLESS_MAPS[endlessMapOf(save)];
   const best = save.endless?.[em.id];
@@ -376,7 +377,7 @@ function altarCard(save, sel, act) {
   const card = el('div', 'altar-card');
   card.append(el('div', 'dc-head', `<b>🏯 사신의 제단</b><span>입장권 <b>${a.tickets}</b> / ${ALTAR_TICKETS.cap} · 하루 ${ALTAR_TICKETS.perDay}장</span>`));
   card.append(el('p', 'ac-guard', g
-    ? `오늘의 수호 영수 <b style="color:${g.color}">${g.icon} ${g.name}</b> <small>(${g.dir}녘 · ${g.trait})</small>`
+    ? `오늘의 수호 영수 <b style="color:${g.color}">${spiritIcon(g.id, g.icon)} ${g.name}</b> <small>(${g.dir}녘 · ${g.trait})</small>`
     : `<b>✨ 사신의 날</b> — 수호 영수를 골라 도전해요. 오늘 첫 평정에 <b>사신 정수</b>!`));
   card.append(el('div', 'ac-purse', `<span>🔮 영주 <b>${fmt(save.yeongju ?? 0)}</b></span><span>✨ 사신 정수 <b>${fmt(save.essence ?? 0)}</b> / ${ESSENCE_PER_SASIN}</span>`));
   // 단계: ◀ n단계 ▶, with what it borrows and pays.
@@ -395,11 +396,11 @@ function altarCard(save, sel, act) {
   card.append(button(`🐾 영물 뽑기·동행 <small>영물 ${Object.keys(save.spirits ?? {}).length}/${SPIRIT_LIST.length}</small>`, 'plain-btn small ac-spirit', () => goPower(act, 'spirit')));
   card.append(el('p', 'ec-rule', `${josa(HEROES[sel.hero].name, '으로')} 출전 · 떠도는 <b>영기</b>를 모으면 판이 끝날 때 <b>영주</b>가 돼요. 2분 30초 뒤 수호 영수를 쓰러뜨리면 보너스!`));
   const none = a.tickets <= 0;
-  if (g) card.append(button(none ? '🎟️ 오늘의 입장권을 다 썼어요' : `${g.icon} ${g.name}의 제단 입장`, 'altar-btn go', () => act.startAltar(gid, tier), none));
+  if (g) card.append(button(none ? '🎟️ 오늘의 입장권을 다 썼어요' : `${spiritIcon(g.id, g.icon)} ${g.name}의 제단 입장`, 'altar-btn go', () => act.startAltar(gid, tier), none));
   else {
     const pick = el('div', 'ac-pick');
     for (const G of Object.values(GUARDIANS)) {
-      const b = button(`${G.icon}<b>${G.name}</b><small>${G.trait}</small>`, 'ac-guardian', () => act.startAltar(G.id, tier), none);
+      const b = button(`${spiritIcon(G.id, G.icon, 'big')}<b>${G.name}</b><small>${G.trait}</small>`, 'ac-guardian', () => act.startAltar(G.id, tier), none);
       b.style.setProperty('--gc', G.color);
       pick.append(b);
     }
@@ -1071,7 +1072,7 @@ export function renderCodex(save, sel, act) {
     if (all) body.append(all);
     for (const s of SPIRIT_LIST) {
       const own = spiritOf(save, s.id);
-      const ic = el('span', 'row-icon codex-emoji', s.icon);
+      const ic = el('span', 'row-icon codex-emoji', spiritIcon(s.id, s.icon, 'fill'));
       ic.style.setProperty('--gc', SPIRIT_GRADES[s.grade].color);
       grid.append(cell(ic, s.name, `${SPIRIT_GRADES[s.grade].name} · ${s.role}${own ? ` · ★${own.stars}${own.branch ? ` · ${s.branches[own.branch].name}` : ''}` : ''}`, !own,
         [s.base, `갈래 A ${s.branches.a.name} — ${s.branches.a.desc}`, `갈래 B ${s.branches.b.name} — ${s.branches.b.desc}`, `★5 각성 — ${s.awaken}`],
@@ -1276,7 +1277,7 @@ export function renderSpirit(save, sel, act) {
     const res = el('div', `sp-result${lastDraw.length > 1 ? ' ten' : ''}`);
     lastDraw.forEach((d, i) => {
       const s = SPIRITS[d.id];
-      const c = el('div', `sp-pull g${s.grade}${d.isNew ? ' new' : ''}`, `<span class="sp-ic">${s.icon}</span><b>${s.name}</b><small>${d.isNew ? 'NEW!' : d.refund ? `🔮+${d.refund}` : '중복 +1'}</small>`);
+      const c = el('div', `sp-pull g${s.grade}${d.isNew ? ' new' : ''}`, `<span class="sp-ic">${spiritIcon(s.id, s.icon)}</span><b>${s.name}</b><small>${d.isNew ? 'NEW!' : d.refund ? `🔮+${d.refund}` : '중복 +1'}</small>`);
       c.style.setProperty('--gc', SPIRIT_GRADES[s.grade].color);
       c.style.setProperty('--i', i);
       res.append(c);
@@ -1294,7 +1295,7 @@ export function renderSpirit(save, sel, act) {
     const id = save.companions?.[i];
     const s = id && SPIRITS[id];
     pr.append(el('div', `sp-slot${s ? '' : ' empty'}${i >= slots ? ' locked' : ''}`, s
-      ? `<span class="sp-ic">${s.icon}</span><b>${s.name}</b>${starPips(save.spirits[id].stars)}`
+      ? `<span class="sp-ic">${spiritIcon(s.id, s.icon)}</span><b>${s.name}</b>${starPips(save.spirits[id].stars)}`
       : i >= slots ? '🔒<small>사신과 함께 열려요</small>' : '<small>아래에서 영물을 눌러<br>동행으로 데려가요</small>'));
   }
   party.append(pr);
@@ -1328,7 +1329,7 @@ function comboCard(save) {
     const [a, b] = c.ids.map((id) => SPIRITS[id]);
     const have = c.ids.every(owned);
     const on = c.ids.every((id) => save.companions?.includes(id));
-    box.append(el('div', `sp-combo${have ? '' : ' off'}${on ? ' on' : ''}`, `<span class="sp-combo-pair">${owned(a.id) ? a.icon : '❔'}${owned(b.id) ? b.icon : '❔'}</span><div><b>${c.icon} ${c.name}${on ? ' <i>발동 중</i>' : ''}</b><small>${a.name} + ${b.name} — ${c.desc}</small></div>`));
+    box.append(el('div', `sp-combo${have ? '' : ' off'}${on ? ' on' : ''}`, `<span class="sp-combo-pair">${owned(a.id) ? spiritIcon(a.id, a.icon) : '❔'}${owned(b.id) ? spiritIcon(b.id, b.icon) : '❔'}</span><div><b>${c.icon} ${c.name}${on ? ' <i>발동 중</i>' : ''}</b><small>${a.name} + ${b.name} — ${c.desc}</small></div>`));
   }
   return box;
 }
@@ -1340,7 +1341,7 @@ function spiritCard(save, s, act) {
   const need = own ? (s.grade === 5 ? SASIN_STAR_ESSENCE[own.stars] : dupesForNext(own.stars)) : 0;
   const have = own ? (s.grade === 5 ? save.essence ?? 0 : own.dupes) : 0;
   const maxed = own && own.stars >= MAX_STARS;
-  c.append(el('div', 'sp-top', `<span class="sp-ic">${own ? s.icon : '❔'}</span><div><b>${s.name}</b><small>${s.role}</small>${own ? starPips(own.stars) : ''}</div>`));
+  c.append(el('div', 'sp-top', `<span class="sp-ic">${own ? spiritIcon(s.id, s.icon) : '❔'}</span><div><b>${s.name}</b><small>${s.role}</small>${own ? starPips(own.stars) : ''}</div>`));
   if (own) {
     const pct = maxed ? 100 : Math.min(100, (have / need) * 100);
     c.append(el('div', 'sp-bar', `<i style="width:${pct}%"></i><span>${maxed ? '★5 각성' : s.grade === 5 ? `정수 ${have}/${need}` : `중복 ${have}/${need}`}</span>`));
@@ -1357,7 +1358,7 @@ function spiritCard(save, s, act) {
   } else if (s.grade === 5) {
     c.append(button(`✨ 정수 ${ESSENCE_PER_SASIN}로 부르기`, 'sp-btn up', () => act.callSasin(s.id), (save.essence ?? 0) < ESSENCE_PER_SASIN));
   }
-  holdTip(c, () => tipHtml(`${s.icon} ${s.name} <small>${SPIRIT_GRADES[s.grade].name} · ${s.role}</small>`, [
+  holdTip(c, () => tipHtml(`${spiritIcon(s.id, s.icon)} ${s.name} <small>${SPIRIT_GRADES[s.grade].name} · ${s.role}</small>`, [
     s.base,
     `★마다 위력이 커져요${own ? ` — 지금 ★${own.stars}` : ''}`,
     `<b>★3 갈래</b> (언제든 바꿀 수 있어요)<br>A ${s.branches.a.name} — ${s.branches.a.desc}<br>B ${s.branches.b.name} — ${s.branches.b.desc}${own?.branch ? `<br>고른 갈래: <b>${s.branches[own.branch].name}</b>` : ''}`,

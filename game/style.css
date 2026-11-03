@@ -1818,3 +1818,9 @@ body { background: var(--night); }
 .lv-btn.cleared { border-color: #f2c55c; background: rgba(70, 50, 18, 0.95); color: #ffe6a8; }
 .lv-btn.on { border-color: #ff8a6a; box-shadow: 0 0 0 2px rgba(255, 138, 106, 0.35); }
 .lv-btn.locked { color: #8a7a66; border-color: rgba(255, 244, 223, 0.12); background: rgba(12, 9, 6, 0.92); }
+
+/* 영물 icons drawn as pixel art (render/spiritIcon.js), where the emoji used to be. */
+.px-ic { width: 1.15em; height: 1.15em; vertical-align: -0.2em; image-rendering: pixelated; object-fit: contain; display: inline-block; }
+.px-ic.big { width: 1.8em; height: 1.8em; }
+.px-ic.fill { width: 100%; height: 100%; vertical-align: middle; padding: 3px; box-sizing: border-box; }
+.sp-ic .px-ic { width: 1.6em; height: 1.6em; }
