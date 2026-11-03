@@ -1,5 +1,5 @@
 import { HEROES } from '../data/heroes.js';
-import { STAGES, STAGE_ORDER, CHAPTERS, chapterOf } from '../data/stages.js';
+import { STAGES, STAGE_ORDER, CHAPTERS, chapterOf, mapOf, levelsOf, LEVELS } from '../data/stages.js';
 import { BOSSES } from '../data/bosses.js';
 import { ENEMIES } from '../data/enemies.js';
 import { WEAPONS } from '../data/weapons.js';
@@ -138,7 +138,7 @@ const holdHint = () => el('p', 'hold-hint', '💡 카드를 꾹 누르고 있으
 
 const STAGE_ART = (id) => `url(${UI}/stage/${id}.webp)`;
 /** Bigger scene for the stage panel: the painted map around the node (삼한), or the field's own card art. */
-const STAGE_SCENE = (id) => (chapterOf(STAGES[id]) === 'samhan' ? `url(${UI}/scene/${id}.webp)` : STAGE_ART(id));
+const STAGE_SCENE = (id) => (chapterOf(STAGES[id]) === 'samhan' ? `url(${UI}/scene/${mapOf(STAGES[id])}.webp)` : STAGE_ART(id));
 
 function tabStrip(tabs, current, onPick) {
   const nav = el('div', 'sub-tabs');
@@ -866,7 +866,8 @@ export function renderMap(save, sel, act) {
   });
   tabs.classList.add('chapter-tabs');
   body.append(tabs);
-  const ids = STAGE_ORDER.filter((id) => chapterOf(STAGES[id]) === chap);
+  // One node per field: a 삼한 field's node stands for its five 단계 (its id is 5단계's).
+  const ids = STAGE_ORDER.filter((id) => chapterOf(STAGES[id]) === chap && (STAGES[id].level ?? LEVELS) === LEVELS);
   const info = CHAPTERS.find((c) => c.id === chap);
   if (chap !== 'samhan') body.append(el('p', 'chapter-sub', `${info.icon} ${info.name} — ${info.sub}. 일곱 전장을 차례로 평정하고 북원성의 양길을 정복하라!`));
 
@@ -875,12 +876,18 @@ export function renderMap(save, sel, act) {
   map.innerHTML = routeSvg(ids, save);
   for (const id of ids) {
     const st = STAGES[id];
-    const { gate, cleared } = stageInfo(save, sel, st);
+    const lv = levelsOf(id), steps = lv.length ? lv : [st];
+    const done = steps.filter((s) => save.best?.[s.id]).length;
+    const { gate } = stageInfo(save, sel, steps[0]);
     const [x, y] = MAP_POS[id];
-    const n = button(`<span class="mn-no">${st.numeral}</span><span class="mn-name">${st.name}</span><span class="mn-stars">${starRow(st)}</span>`,
-      `map-node${id === cur ? ' on' : ''}${cleared ? ' cleared' : ''}${gate.ok ? '' : ' locked'}`, () => {
-        ui.mapStage = id;
-        act.selectStage(id);
+    // Progress pips: one per 단계.
+    const pips = steps.length > 1 ? `<span class="mn-pips">${steps.map((s) => `<i class="${save.best?.[s.id] ? 'on' : ''}"></i>`).join('')}</span>` : '';
+    const n = button(`<span class="mn-no">${st.numeral}</span><span class="mn-name">${st.mapName ?? st.name}</span><span class="mn-stars">${starRow(st)}</span>${pips}`,
+      `map-node${mapOf(STAGES[cur]) === id ? ' on' : ''}${done === steps.length ? ' cleared' : ''}${gate.ok ? '' : ' locked'}`, () => {
+        // Open on the first 단계 not yet pacified (or the last, when all are).
+        const pick = steps.find((s) => !save.best?.[s.id] && stageInfo(save, sel, s).gate.ok) ?? steps.filter((s) => stageInfo(save, sel, s).gate.ok).at(-1) ?? steps[0];
+        ui.mapStage = pick.id;
+        act.selectStage(pick.id);
       });
     n.style.left = `${x}%`;
     n.style.top = `${y}%`;
@@ -889,7 +896,7 @@ export function renderMap(save, sel, act) {
   }
   body.append(map);
 
-  const st = STAGES[ids.includes(cur) ? cur : ids[0]];
+  const st = STAGES[ids.includes(mapOf(STAGES[cur])) ? cur : ids[0]];
   const { boss, cleared } = stageInfo(save, sel, st);
   const card = el('div', 'stage-detail');
   card.style.setProperty('--art', STAGE_SCENE(st.id));
@@ -901,6 +908,23 @@ export function renderMap(save, sel, act) {
       <li>${img('icon/sd-gear', 'sd-ic')}<span>권장 장비</span><b>${st.difficulty.stars > 1 ? `${GRADES[REC_GRADE[st.difficulty.stars]].name}${st.difficulty.stars > 5 ? ' +제련' : ' 이상'}` : '없어도 OK'}</b></li>
       <li>${img('icon/sd-record', 'sd-ic')}<span>기록</span><b>${cleared ? '평정함' : '아직'}</b></li>
     </ul>`;
+  // 단계 picker: 1–5, pacified ones sealed, locked ones greyed.
+  if (st.map) {
+    const row = el('div', 'lv-pick');
+    for (const s of levelsOf(st.map)) {
+      const g = stageInfo(save, sel, s).gate;
+      const b = button(`<b>${s.level}</b><small>${save.best?.[s.id] ? '평정' : g.ok ? `${Math.round(s.bossAt / 60 * 10) / 10}분` : '🔒'}</small>`,
+        `lv-btn${s.id === st.id ? ' on' : ''}${save.best?.[s.id] ? ' cleared' : ''}${g.ok ? '' : ' locked'}`, () => {
+          ui.mapStage = s.id;
+          act.selectStage(s.id);
+        });
+      holdTip(b, stageTip(save, sel, s));
+      row.append(b);
+    }
+    card.insertBefore(row, card.querySelector('.sd-rows'));
+  }
+  const gate = stageInfo(save, sel, st).gate;
+  if (!gate.ok) card.append(el('p', 'gate-msg', `🔒 ${gate.text}`));
   card.append(button('출진 준비 ▶', 'seal-btn', () => {
     if (sel.stage !== st.id) act.selectStage(st.id);
     act.go('prep');
@@ -1147,7 +1171,10 @@ function recordPanel(save, act) {
     <li><span>🏆 승리</span><b>${fmt(c.wins ?? 0)}회</b></li>
     <li><span>💀 처치한 적</span><b>${fmt(totalKills)}</b></li>
     <li><span>🪙 모은 냥</span><b>${fmt(c.earned ?? 0)}</b></li>
-    ${STAGE_ORDER.map((id) => `<li><span>${STAGES[id].numeral} ${STAGES[id].name}</span><b>${save.best?.[id] ? '평정' : '—'}</b></li>`).join('')}`));
+    ${STAGE_ORDER.filter((id) => (STAGES[id].level ?? 5) === 5).map((id) => {
+      const st = STAGES[id], lv = st.map ? levelsOf(st.map) : [st], done = lv.filter((s) => save.best?.[s.id]).length;
+      return `<li><span>${st.numeral} ${st.mapName ?? st.name}</span><b>${done === lv.length ? '평정' : lv.length > 1 && done ? `${done}/${lv.length}단계` : '—'}</b></li>`;
+    }).join('')}`));
 
   const rec = el('div', 'record');
   rec.innerHTML = `

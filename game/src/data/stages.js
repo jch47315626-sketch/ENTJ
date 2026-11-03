@@ -1,3 +1,5 @@
+import { ENEMY_ARMOR, REWARD_BY_STARS } from './balance.js';
+
 /**
  * Stages. Phases drive spawning (rate is spawns/second interpolated across the
  * phase); events are one-shot moments; the boss arrives at `bossAt` seconds.
@@ -340,6 +342,74 @@ export const STAGES = {
     ],
   },
 };
+
+// ------------------------------------------------------------- 단계 (levels)
+
+/**
+ * 삼한 통일's five battlefields each come in five 단계. The entries above are
+ * 5단계 (their ids, difficulty and full five-minute run are unchanged); 1–4단계
+ * are made here. Their difficulty climbs evenly from the previous field's
+ * 5단계 to this field's 5단계 (multipliers geometrically, the rest linearly),
+ * so moving on is five small steps instead of one wall; their runs are
+ * shorter, the whole timeline compressed (3:00, 3:30, 4:00, 4:30). Each 단계
+ * opens when the one before it is pacified; a field's 1단계 opens with the
+ * previous field's 5단계.
+ */
+export const LEVELS = 5;
+const LEVEL_LENGTH = [0, 0.6, 0.7, 0.8, 0.9, 1];
+const SAMHAN_MAPS = ['seonamhae', 'gongsan', 'gochang', 'cheorwon', 'illicheon'];
+// Before 서남해 1단계: a gentle start below the old ★1.
+const START = { enemyHp: 0.95, enemyDamage: 0.8, spawnRate: 1.0, eliteBonus: 0, bossHp: 0.9, bossDamage: 0.9, xpScale: 0.6, armor: 0, reward: 0.5 };
+
+const measures = (d) => ({
+  enemyHp: d.enemyHp, enemyDamage: d.enemyDamage, spawnRate: d.spawnRate, eliteBonus: d.eliteBonus ?? 0,
+  bossHp: d.bossHp, bossDamage: d.bossDamage, xpScale: d.xpScale ?? 0.6,
+  armor: d.armor ?? ENEMY_ARMOR[d.stars] ?? 0, reward: REWARD_BY_STARS[d.stars] * (d.rewardMul ?? 1),
+});
+const GEOMETRIC = new Set(['enemyHp', 'enemyDamage', 'bossHp', 'bossDamage', 'reward']);
+
+/** Difficulty at step t (0 → `from`, 1 → `to`). */
+function between(from, to, t) {
+  const out = {};
+  for (const k of Object.keys(to)) out[k] = GEOMETRIC.has(k) ? from[k] * (to[k] / from[k]) ** t : from[k] + (to[k] - from[k]) * t;
+  return out;
+}
+
+SAMHAN_MAPS.forEach((mapId, m) => {
+  const top = STAGES[mapId];
+  const from = m ? measures(STAGES[SAMHAN_MAPS[m - 1]].difficulty) : START, to = measures(top.difficulty);
+  const id = (level) => (level === LEVELS ? mapId : `${mapId}_${level}`);
+  for (let level = 1; level <= LEVELS; level++) {
+    let st;
+    if (level < LEVELS) {
+      const v = between(from, to, level / LEVELS), f3 = (x) => +x.toFixed(3);
+      st = {
+        ...scaleStage(top, LEVEL_LENGTH[level]),
+        id: id(level),
+        difficulty: {
+          ...top.difficulty, enemyHp: f3(v.enemyHp), enemyDamage: f3(v.enemyDamage), spawnRate: f3(v.spawnRate),
+          eliteBonus: f3(v.eliteBonus), bossHp: f3(v.bossHp), bossDamage: f3(v.bossDamage), xpScale: f3(v.xpScale),
+          armor: f3(v.armor), rewardMul: f3(v.reward / REWARD_BY_STARS[top.difficulty.stars]),
+        },
+        clearText: `${top.name} ${level}단계를 평정했다. ${level + 1}단계가 열린다.`,
+      };
+    } else st = { ...top, difficulty: { ...top.difficulty } };
+    Object.assign(st, {
+      map: mapId, mapName: top.name, level, name: `${top.name} ${level}단계`, order: m * LEVELS + level,
+      unlockAfter: level > 1 ? id(level - 1) : m ? SAMHAN_MAPS[m - 1] : undefined,
+      next: level < LEVELS ? id(level + 1) : top.next,
+    });
+    st.difficulty.label = `${top.difficulty.label} · ${level}단계`;
+    STAGES[id(level)] = st;
+  }
+});
+// 양길의 등장 follows all twenty-five.
+for (const st of Object.values(STAGES)) if (st.chapter === 'yanggil') st.order += SAMHAN_MAPS.length * (LEVELS - 1);
+
+/** The battlefield a stage belongs to (a 삼한 field's id; other stages are their own). */
+export const mapOf = (st) => st.map ?? st.id;
+/** The 단계 of one field, 1단계 first. */
+export const levelsOf = (mapId) => Object.values(STAGES).filter((s) => s.map === mapId).sort((a, b) => a.level - b.level);
 
 /** Ordered list for the stage picker. */
 export const STAGE_ORDER = Object.values(STAGES).sort((a, b) => a.order - b.order).map((s) => s.id);

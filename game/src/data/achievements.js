@@ -9,7 +9,8 @@ import { SPIRITS, COMBOS } from './spirits.js';
  * checked from the menus). Groups only order the list.
  */
 const totalKills = (s) => Object.values(s.codex?.kills ?? {}).reduce((a, b) => a + b, 0);
-const bestStars = (s) => Math.max(0, ...Object.keys(s.best ?? {}).map((id) => (s.best[id] ? STAGES[id]?.difficulty.stars ?? 0 : 0)));
+// A field counts once its last 단계 is pacified (삼한 fields have five; the rest one).
+const bestStars = (s) => Math.max(0, ...Object.keys(s.best ?? {}).map((id) => (s.best[id] && (STAGES[id]?.level ?? 5) === 5 ? STAGES[id]?.difficulty.stars ?? 0 : 0)));
 const heroBest = (s, h) => s.stats?.heroBest?.[h] ?? 0;
 const grade = (id) => EQUIPMENT.find((e) => e.id === id)?.grade ?? 0;
 

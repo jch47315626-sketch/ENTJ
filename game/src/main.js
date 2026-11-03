@@ -22,7 +22,7 @@ import { ensureGearOptions, rollOptions, rerollLine, engraveCost, lineText, NAME
 import { IMPRINT, ELEMENTS, imprintCost, imprintText } from './data/imprint.js';
 import { UPGRADES } from './data/upgrades.js';
 import { helpById } from './data/help.js';
-import { STAGES } from './data/stages.js';
+import { STAGES, STAGE_ORDER, mapOf } from './data/stages.js';
 import { ENDLESS_MAPS, endlessMapOpen, endlessMapOf } from './data/endless.js';
 import { staminaOf, useStamina, staminaWait, staminaText, endlessLeft, useEndlessEntry, ENDLESS_PER_DAY } from './data/entries.js';
 import { untilTomorrow } from './data/daily.js';
@@ -38,7 +38,7 @@ const sound = new Sound();
 const tutor = new Tutorial();
 
 let game = null;
-const sel = { hero: 'wanggeon', stage: 'seonamhae' };
+const sel = { hero: 'wanggeon', stage: 'seonamhae_1' };
 const save = loadSave();
 // 사신의 제단: top up today's entry tickets and keep the day it was done.
 refreshAltar(save);
@@ -148,7 +148,7 @@ function newGame(mode = null) {
   if (!save.tutorialDone) tutor.start();
   else tutor.stop();
   sound.setIntensity(0);
-  sound.startMusic(themeFor(endlessMap ? ENDLESS_MAPS[endlessMap].music : stageId));
+  sound.startMusic(themeFor(endlessMap ? ENDLESS_MAPS[endlessMap].music : mapOf(STAGES[stageId])));
   if (runDaily) sound.sfx('daily');
 }
 
@@ -964,6 +964,10 @@ function frame(now) {
 
 // Open on the hero and field chosen last time.
 if (save.sel && HEROES[save.sel.hero] && STAGES[save.sel.stage]) Object.assign(sel, save.sel);
+// A field chosen before it had 단계 may now be locked: start on the furthest 단계 that is open.
+if (STAGES[sel.stage].unlockAfter && !save.best?.[STAGES[sel.stage].unlockAfter]) {
+  sel.stage = STAGE_ORDER.filter((id) => !STAGES[id].unlockAfter || save.best?.[STAGES[id].unlockAfter]).filter((id) => !STAGES[id].chapter).at(-1) ?? 'seonamhae_1';
+}
 setMuted(sound.muted);
 setVolume(Math.round(sound.volume * 100));
 // Older saves: anything already achieved shows up as a reward to collect.

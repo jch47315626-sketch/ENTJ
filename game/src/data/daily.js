@@ -52,7 +52,8 @@ export function dailyFor(date = todayKey()) {
   const r = rng(`samhan-${date}`);
   const pick = (list) => list[Math.floor(r() * list.length)];
   const heroId = pick(Object.keys(HEROES));
-  const stageId = pick(STAGE_ORDER.filter((id) => STAGES[id].difficulty.stars <= 3));
+  // Whole fields only (a 삼한 field's 5단계), up to ★3.
+  const stageId = pick(STAGE_ORDER.filter((id) => STAGES[id].difficulty.stars <= 3 && (STAGES[id].level ?? 5) === 5));
   const hardship = pick(HARDSHIPS);
   const boon = pick(BOONS);
   const stars = STAGES[stageId].difficulty.stars;

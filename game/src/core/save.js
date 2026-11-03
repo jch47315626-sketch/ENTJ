@@ -4,6 +4,7 @@
  * game keeps working with an in-memory save.
  */
 import { HEROES } from '../data/heroes.js';
+import { STAGES, levelsOf } from '../data/stages.js';
 import { SLOTS, GEAR_BASE_IDS, gearId } from '../data/meta.js';
 
 const KEY = 'samhan-save-v1';
@@ -82,9 +83,21 @@ function migrate(save) {
     for (const id in HEROES) save.equipped[id] = { ...outfit };
   }
   splitSharedGear(save);
+  splitFieldLevels(save);
   refundBuilds(save);
   refundTraining(save);
   return save;
+}
+
+/**
+ * 삼한 fields came in one difficulty before they had five 단계; that one is
+ * now 5단계 (same id). A field pacified back then counts its 1–4단계 too.
+ */
+function splitFieldLevels(save) {
+  for (const [id, v] of Object.entries(save.best ?? {})) {
+    if (!v) continue;
+    for (const st of levelsOf(STAGES[id]?.map === id ? id : '')) if (st.id !== id) save.best[st.id] = Math.max(save.best[st.id] ?? 0, v);
+  }
 }
 
 /** 영주·사신 정수·영물 (added later): fill in what an older save lacks and drop anything malformed. */

@@ -1806,3 +1806,15 @@ body { background: var(--night); }
 .roulette.low .rl-result { color: #d8c8a8; text-shadow: 0 2px 0 #3a2a10; }
 @keyframes rl-in { from { opacity: 0; transform: translateX(-50%) scale(0.5); } }
 @keyframes rl-glow { to { box-shadow: 0 0 0 6px #7a4a10, 0 0 0 10px #fff3a0, 0 0 80px rgba(255, 120, 40, 1), inset 0 0 30px rgba(120, 60, 0, 0.5); } }
+
+/* 단계: progress pips on a field's map node, and the 1–5단계 picker on its card. */
+.mn-pips { display: flex; gap: 2px; margin-top: 1px; }
+.mn-pips i { width: 6px; height: 6px; border-radius: 50%; background: rgba(42, 22, 8, 0.45); box-shadow: 0 0 0 1px rgba(255, 244, 223, 0.8); }
+.mn-pips i.on { background: #f2c55c; }
+.lv-pick { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; position: relative; z-index: 1; }
+.lv-btn { min-width: 0; width: 100%; margin: 0; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 0 5px; border-radius: 12px; border: 2px solid rgba(255, 244, 223, 0.25); background: rgba(24, 16, 10, 0.92); color: #f3e7cf; cursor: pointer; }
+.lv-btn b { font: 400 20px/1 var(--font-brush); }
+.lv-btn small { font-size: 10.5px; opacity: 0.8; }
+.lv-btn.cleared { border-color: #f2c55c; background: rgba(70, 50, 18, 0.95); color: #ffe6a8; }
+.lv-btn.on { border-color: #ff8a6a; box-shadow: 0 0 0 2px rgba(255, 138, 106, 0.35); }
+.lv-btn.locked { color: #8a7a66; border-color: rgba(255, 244, 223, 0.12); background: rgba(12, 9, 6, 0.92); }

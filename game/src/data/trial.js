@@ -39,11 +39,13 @@ function rng(seedText) {
 
 /** The field the dungeon is fought on: two below the furthest pacified one (the first if none). */
 export function trialStageId(save) {
+  // Counted in whole fields (a 삼한 field's 5단계), as before fields had 단계.
+  const fields = STAGE_ORDER.filter((id) => (STAGES[id].level ?? 5) === 5);
   let top = -1;
-  STAGE_ORDER.forEach((id, i) => {
+  fields.forEach((id, i) => {
     if (save.best?.[id]) top = i;
   });
-  return STAGE_ORDER[Math.max(0, top - TRIAL.below)];
+  return fields[Math.max(0, top - TRIAL.below)];
 }
 
 /** Today's 난세 패: { cardId: rank }, adding random ranks until the drawn 단계 is reached. */
