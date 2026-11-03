@@ -47,5 +47,29 @@ export const SPIRIT_SPRITES = {
   "dragonmaid": {
     "w": 63,
     "h": 64
+  },
+  "elephant": {
+    "w": 64,
+    "h": 64
+  },
+  "fox": {
+    "w": 64,
+    "h": 64
+  },
+  "gull": {
+    "w": 64,
+    "h": 49
+  },
+  "haetae": {
+    "w": 64,
+    "h": 64
+  },
+  "hyeonmu": {
+    "w": 63,
+    "h": 64,
+    "big": {
+      "w": 127,
+      "h": 128
+    }
   }
 };
