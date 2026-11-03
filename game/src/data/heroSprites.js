@@ -27,5 +27,19 @@ export const HERO_SPRITES = {
       "w": 44,
       "h": 64
     }
+  },
+  "gungye": {
+    "front": {
+      "w": 37,
+      "h": 64
+    },
+    "weapon": {
+      "w": 64,
+      "h": 19
+    },
+    "back": {
+      "w": 33,
+      "h": 64
+    }
   }
 };
