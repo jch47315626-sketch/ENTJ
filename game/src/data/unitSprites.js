@@ -19,5 +19,25 @@ export const UNIT_SPRITES = {
   "beombawi": {
     "w": 64,
     "h": 64
+  },
+  "bokjigyeom": {
+    "w": 60,
+    "h": 64
+  },
+  "cavalry": {
+    "w": 64,
+    "h": 64
+  },
+  "eliteArcher": {
+    "w": 55,
+    "h": 64
+  },
+  "eliteCavalry": {
+    "w": 63,
+    "h": 64
+  },
+  "gihwon": {
+    "w": 64,
+    "h": 64
   }
 };

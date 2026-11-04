@@ -716,7 +716,8 @@ export function drawPixelFigure(ctx, look, R, facing, phase, flash, hand) {
 
 /** A soldier or general from one picture: about 2.7R tall, feet at 0.82R, hopping with the step; flipped to face left. */
 function drawUnitPicture(ctx, look, unit, R, sx, phase, flash) {
-  const img = unit.img, k = (R * 2.75) / img.naturalHeight;
+  // A rider's picture holds the horse too: it stands taller.
+  const img = unit.img, k = (R * (look.mount ? 3.4 : 2.75)) / img.naturalHeight;
   ctx.translate(0, -Math.round(Math.abs(Math.sin(phase)) * R * 0.1));
   ctx.save();
   ctx.scale(sx * k, k);
