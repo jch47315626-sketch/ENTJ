@@ -6,7 +6,7 @@ import { Tutorial } from './ui/tutorial.js';
 import { Sound } from './audio/sound.js';
 import { themeFor } from './audio/music.js';
 import { showScreen, renderIntro, renderChoices, renderResult } from './ui/screens.js';
-import { renderHome, renderHeroes, renderGrow, renderMap, renderPrep, renderCodex, setCodexTab, renderSpirit, setLastDraw, openCoupon, renderReward, setSheet } from './ui/menu.js';
+import { renderHome, renderHeroes, renderGrow, renderMap, renderPrep, renderCodex, setCodexTab, renderSpirit, setLastDraw, openCoupon, renderReward, setSheet, renderPurseBar } from './ui/menu.js';
 import { redeemCoupon } from './core/coupon.js';
 import { GACHA, SPIRITS, SPIRIT_GRADES, drawSpirits, starUp, setBranch, toggleCompanion, callSasin, countRunForGift } from './data/spirits.js';
 import { loadSave, writeSave, outfitOf, encodeSave, decodeSave, loadState, listBackups, backupSave, backupNow } from './core/save.js';
@@ -320,6 +320,7 @@ function toMenu(name = 'home') {
 function go(name) {
   menu = name;
   RENDER[name](save, sel, act);
+  renderPurseBar(save);
   showScreen(name);
   $(name).scrollTop = 0;
   menuTips(name);
@@ -373,6 +374,7 @@ function menuTips(name) {
 function refresh() {
   const y = $(menu).scrollTop;
   RENDER[menu](save, sel, act);
+  renderPurseBar(save);
   $(menu).scrollTop = y;
 }
 

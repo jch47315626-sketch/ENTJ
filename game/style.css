@@ -1845,3 +1845,19 @@ body { background: var(--night); }
 .bak-row small { opacity: 0.7; }
 .bak-row b { font-weight: 400; opacity: 0.85; white-space: nowrap; }
 .bak-empty { opacity: 0.6; font-size: 12.5px; }
+
+/* 💰 재화 줄: 메뉴 화면 오른쪽 위 고정, 넷이 한 줄 */
+.purse-bar { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 6px); right: 8px; z-index: 40; display: flex; gap: 4px; pointer-events: auto; }
+.purse-bar[hidden] { display: none; }
+.pb-pill { display: inline-flex; align-items: center; gap: 3px; padding: 3px 9px 3px 5px; border-radius: 999px; background: linear-gradient(180deg, #4a3a5c, #2f2540); border: 1.5px solid rgba(255, 224, 138, 0.5); color: #f8ead0; font-size: 13px; line-height: 1; white-space: nowrap; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); }
+.pb-pill .coin-img { width: 16px; height: 16px; }
+.pb-pill b { font: 700 13px "Gowun Batang", serif; color: var(--gold); font-variant-numeric: tabular-nums; }
+.pb-pill.yj b { color: #e2c6ff; }
+.pb-pill.gem b { color: #b8c4ff; }
+.pb-pill.attr b { color: #9fd8ff; }
+/* room for it above every menu screen's own header */
+.menu-screen { padding-top: calc(env(safe-area-inset-top, 0px) + 44px) !important; }
+/* the old purses are replaced by the bar */
+#home .home-top .purse { display: none; }
+#home .home-top { justify-content: flex-end; }
+@media (max-width: 360px) { .pb-pill { padding: 3px 7px 3px 4px; font-size: 12px; } .pb-pill b { font-size: 12px; } }

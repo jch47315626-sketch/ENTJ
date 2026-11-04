@@ -162,18 +162,38 @@ function header(title, save, act, seal = '') {
   home.setAttribute('aria-label', '홈으로');
   h.append(home);
   h.append(el('h2', 'page-title', `<span>${title}</span>${seal ? sealOf(seal) : ''}`));
-  h.append(purse(save));
   return h;
 }
 
-/** The same purse on every screen: 냥, and 영주 · 결기수정 once the player has met them. */
-function purse(save) {
-  const box = el('span', 'purse');
-  box.append(el('span', 'coin-pill', `${COIN()}<b>${fmt(save.money)}</b>`));
-  if ((save.yeongju ?? 0) > 0 || (save.altarRuns ?? 0) > 0) box.append(el('span', 'coin-pill yj', `🔮<b>${fmt(save.yeongju ?? 0)}</b>`));
-  if ((save.crystals ?? 0) > 0 || Object.keys(save.gyeolgi ?? {}).length) box.append(el('span', 'coin-pill gem', `💎<b>${fmt(save.crystals ?? 0)}</b>`));
-  if ((save.attrStones ?? 0) > 0) box.append(el('span', 'coin-pill attr', `${ATTR_ICON}<b>${fmt(save.attrStones)}</b>`));
-  return box;
+/** 123,456 → "12.3만", 234,567,890 → "2.35억": short enough for four in a row. */
+function shortNum(n) {
+  n = Math.floor(n ?? 0);
+  const trim = (v, d) => String(Number(v.toFixed(d)));
+  if (n < 10000) return n.toLocaleString();
+  if (n < 1e8) return `${trim(n / 1e4, n < 1e5 ? 1 : 0)}만`;
+  return `${trim(n / 1e8, n < 1e9 ? 2 : 1)}억`;
+}
+
+/**
+ * The purse bar: 냥 · 영주 · 결기수정 · 속성결정, always in one row at the top
+ * right of every menu screen (shown and hidden with the bottom menu, see
+ * ui/screens.js showScreen). Exact amounts on long press / hover.
+ */
+export function renderPurseBar(save) {
+  let bar = document.getElementById('purseBar');
+  if (!bar) {
+    bar = el('div', 'purse-bar');
+    bar.id = 'purseBar';
+    bar.setAttribute('aria-label', '가진 재화');
+    document.getElementById('app').append(bar);
+  }
+  const items = [
+    ['', COIN(), save.money, '냥'],
+    ['yj', '🔮', save.yeongju, '영주 — 사신의 제단'],
+    ['gem', '💎', save.crystals, '결기수정 — 무한 전장'],
+    ['attr', ATTR_ICON, save.attrStones, '속성결정 — 일일 던전'],
+  ];
+  bar.innerHTML = items.map(([cls, icon, v, name]) => `<span class="pb-pill ${cls}" title="${name} ${fmt(v ?? 0)}">${icon}<b>${shortNum(v)}</b></span>`).join('');
 }
 
 // ------------------------------------------------------------ 메뉴 묶음
