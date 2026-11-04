@@ -1,8 +1,12 @@
-import { GROUNDS } from './ground.js';
+import { GROUNDS, drawGroundTile } from './ground.js';
 import { drawBogs, drawRocks } from './terrain.js';
+import { drawObjectPicture, drawPicture } from './pixelUnit.js';
 import { drawUnit, drawCart, drawCoin, drawRice, drawProjectile } from './sprites.js';
 import { clamp, TAU } from '../core/math.js';
 import { drawUltFx, drawScreenFlash } from './ultFx.js';
+import { preloadPixelFx, drawPixelFx, drawProjectileFx, drawSheet, hasPixelFx } from './pixelFx.js';
+import { PIXEL_FX_SHEETS } from '../data/pixelFxSheets.js';
+import { drawLightning, drawChain, drawCurseLink } from './livePixel.js';
 import { drawSpirit, drawSpiritsUnder, drawSpiritShield, drawSpiritZone, drawSpiritFx } from './spiritFx.js';
 
 const ALLY_LOOKS = {
@@ -14,6 +18,8 @@ const ALLY_LOOKS = {
 
 /** 마구니: a little horned violet wisp with a flame tail; dim while recharging. */
 function drawMaguni(ctx, a) {
+  // Pixel 마구니 (tools/pixelfx/fx/marks.js), bobbing in its own phase; dim while recharging.
+  if (drawSheet(ctx, 'maguni', Math.floor(performance.now() / 1000 * 24 + (a.born ?? 0) * 37), a.x, a.y + 10, 1, 0, a.rest <= 0 ? 1 : 0.45)) return;
   const ready = a.rest <= 0;
   const t = performance.now() / 1000;
   ctx.save();
@@ -83,6 +89,7 @@ export class Renderer {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.cam = { x: 0, y: 0, zoom: 1 };
+    preloadPixelFx();
     this.resize();
     window.addEventListener('resize', () => this.resize());
   }
@@ -125,7 +132,7 @@ export class Renderer {
     ctx.scale(z, z);
     ctx.translate(-cam.x, -cam.y);
 
-    GROUNDS[g.stage.ground](ctx, v, g.time);
+    if (!drawGroundTile(ctx, g.stage.ground, v)) GROUNDS[g.stage.ground](ctx, v, g.time);
     drawBogs(ctx, g, v);
     // Soft dusk tint: keeps the field calm so units and pickups stand out.
     ctx.fillStyle = 'rgba(24, 20, 36, 0.18)';
@@ -162,6 +169,7 @@ export class Renderer {
         ctx.beginPath();
         ctx.arc(k.x, k.y, 22, 0, TAU);
         ctx.fill();
+        if (drawPicture(ctx, 'pickup_crystal', k.x, k.y + bob, 15)) continue;
         ctx.fillStyle = '#9b8cff';
         ctx.strokeStyle = '#2b2060';
         ctx.lineWidth = 1.5;
@@ -203,7 +211,7 @@ export class Renderer {
       else this.drawEnemy(ctx, g, u);
     }
 
-    for (const pr of g.projectiles) drawProjectile(ctx, pr);
+    for (const pr of g.projectiles) if (!drawProjectileFx(ctx, pr, g.time)) drawProjectile(ctx, pr);
     this.drawFx(ctx, g);
     if (g.arena) this.drawArenaBanners(ctx, g);
     this.drawNight(ctx, g, v);
@@ -347,6 +355,7 @@ export class Renderer {
       ctx.setLineDash([]);
     }
     const look = ALLY_LOOKS[a.kind];
+    if (look) look.sprite ??= `ally_${a.kind === 'decoy' ? 'shin' : a.kind}`;
     drawUnit(ctx, look, a.x, a.y, a.r, a.facing, { alpha: fade, flash: a.hurtFlash > 0 });
     if (a.kind === 'shin') {
       const w = 38, ratio = clamp(a.hp / a.maxHp, 0, 1);
@@ -387,6 +396,18 @@ export class Renderer {
     ctx.lineWidth = 2;
     ctx.strokeStyle = '#1d1a17';
     let icon;
+    // A drawn picture, when there is one; the hint icon still bobs above it.
+    if (drawObjectPicture(ctx, e.def.id, x, y, r, r * 3.2, flash)) {
+      icon = { oil: '🔥', drum: '🥁' }[e.def.object] ?? '✨';
+      const bob = Math.sin(g.time * 3 + x * 0.01) * 3;
+      ctx.font = '16px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.globalAlpha = 0.9;
+      ctx.fillText(icon, x, y - r * 2.4 - 10 + bob);
+      ctx.restore();
+      return;
+    }
     if (e.def.object === 'oil') {
       icon = '🔥';
       // Round-bellied jar with a dark, glistening mouth.
@@ -521,6 +542,17 @@ export class Renderer {
           ctx.closePath();
           ctx.fill();
         }
+        continue;
+      }
+      // Pixel zones: 갈라진 땅 plays once over the zone's life; 말발굽 불길 flickers, fading with it.
+      if (z.kind === 'crack' && hasPixelFx('crackZone')) {
+        const S = PIXEL_FX_SHEETS.crackZone;
+        drawSheet(ctx, 'crackZone', Math.floor(z.t * S.fps), z.x, z.y, z.r / S.r, z.angle ?? 0);
+        continue;
+      }
+      if (z.kind === 'hoof' && hasPixelFx('hoofFire')) {
+        const S = PIXEL_FX_SHEETS.hoofFire;
+        drawSheet(ctx, 'hoofFire', Math.floor((g.time + z.x * 0.013) * S.fps), z.x, z.y, z.r / S.r, 0, a);
         continue;
       }
       if (z.kind === 'crack') {
@@ -685,7 +717,7 @@ export class Renderer {
   drawEnemy(ctx, g, e) {
     if (e.def.object) return this.drawFieldObject(ctx, g, e);
     if (e.def.behavior === 'static') {
-      drawCart(ctx, e.x, e.y, e.r, e.flash > 0);
+      if (!drawObjectPicture(ctx, 'cart', e.x, e.y, e.r, e.r * 2.6, e.flash > 0)) drawCart(ctx, e.x, e.y, e.r, e.flash > 0);
       return;
     }
     if (e.hidden) {
@@ -713,29 +745,21 @@ export class Renderer {
     if (e.pull) {
       // 철쇄: the iron chain from 견훤's hand to the hooked soldier.
       const p = g.player;
-      ctx.strokeStyle = 'rgba(29, 26, 23, 0.9)';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y);
-      ctx.lineTo(e.x, e.y);
-      ctx.stroke();
-      ctx.strokeStyle = '#a7aab0';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([5, 4]);
-      ctx.stroke();
-      ctx.setLineDash([]);
+      drawChain(ctx, p.x, p.y - 8, e.x, e.y - 8, g.time);
     }
     if (charmed) {
       // Small violet eye over swayed soldiers, fading as the spell runs out.
       const left = Math.min(1, (e.charmUntil - g.time) / 2);
-      ctx.fillStyle = `rgba(150, 100, 210, ${0.4 + 0.5 * left})`;
-      ctx.beginPath();
-      ctx.ellipse(e.x, e.y - e.r * 2.5 - 6, 6, 3.5, 0, 0, TAU);
-      ctx.fill();
-      ctx.fillStyle = '#1d1a17';
-      ctx.beginPath();
-      ctx.arc(e.x, e.y - e.r * 2.5 - 6, 1.8, 0, TAU);
-      ctx.fill();
+      if (!drawSheet(ctx, 'eye', 11, e.x, e.y - e.r * 2.5 - 8, 0.8, 0, 0.4 + 0.6 * left)) {
+        ctx.fillStyle = `rgba(150, 100, 210, ${0.4 + 0.5 * left})`;
+        ctx.beginPath();
+        ctx.ellipse(e.x, e.y - e.r * 2.5 - 6, 6, 3.5, 0, 0, TAU);
+        ctx.fill();
+        ctx.fillStyle = '#1d1a17';
+        ctx.beginPath();
+        ctx.arc(e.x, e.y - e.r * 2.5 - 6, 1.8, 0, TAU);
+        ctx.fill();
+      }
     }
     if (e.stun > 0) {
       ctx.strokeStyle = 'rgba(240, 200, 110, 0.85)';
@@ -824,6 +848,8 @@ export class Renderer {
     ctx.beginPath();
     ctx.arc(k.x, k.y, 34, 0, TAU);
     ctx.fill();
+    const PIC = { trap: ['item_trap', 40], venison: ['item_venison', 40], kerosene: ['item_kerosene', 32] }[k.item];
+    if (PIC && drawPicture(ctx, PIC[0], k.x, k.y - 6 + bob, PIC[1])) return;
     ctx.fillStyle = 'rgba(28, 24, 40, 0.85)';
     ctx.strokeStyle = `rgba(${COL[k.item]}, 0.95)`;
     ctx.lineWidth = 3;
@@ -939,6 +965,13 @@ export class Renderer {
   /** 까마귀: a chubby black bird with flapping wings. */
   drawCrow(ctx, c) {
     const f = Math.sin(c.flap) * 0.9;
+    if (drawPicture(ctx, 'crow', c.x, c.y + f * 3, 46, c.facing < 0 ? Math.PI : 0)) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
+      ctx.beginPath();
+      ctx.ellipse(c.x, c.y + 48, 14, 5, 0, 0, TAU);
+      ctx.fill();
+      return;
+    }
     ctx.save();
     ctx.translate(c.x, c.y);
     ctx.scale(c.facing * 1.4, 1.4);
@@ -1019,6 +1052,14 @@ export class Renderer {
   drawGroundFx(ctx, g) {
     for (const f of g.fx) {
       const p = f.t / f.life;
+      if (f.type === 'crack') {
+        // 땅이 갈라진 자국: shows at once, fades over its last half.
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, Math.min(1, (1 - p) * 2));
+        drawPicture(ctx, 'crack', f.x, f.y, f.size, f.flip ? Math.PI : 0);
+        ctx.restore();
+        continue;
+      }
       if (f.type === 'dashLine') {
         const pulse = 0.18 + 0.2 * p;
         ctx.save();
@@ -1211,6 +1252,8 @@ export class Renderer {
           ctx.beginPath();
           ctx.ellipse(f.x + (f.x1 - f.x) * k, f.y + (f.y1 - f.y) * k, 6, 3, 0, 0, TAU);
           ctx.fill();
+          // The drawn stone, its speed lines trailing the way it came.
+          if (drawPicture(ctx, 'projectile_stone', x, y, 22, f.x1 < f.x ? Math.PI : 0)) break;
           ctx.fillStyle = '#7a7268';
           ctx.strokeStyle = '#26231f';
           ctx.lineWidth = 1.5;
@@ -1315,29 +1358,10 @@ export class Renderer {
           ctx.fill();
           break;
         }
-        case 'bolt': {
-          // Lightning: a jagged white-blue line through every struck point.
-          const a = 1 - p;
-          ctx.lineCap = 'round';
-          for (const [w, col] of [[7, `rgba(140, 180, 255, ${0.35 * a})`], [2.5, `rgba(240, 248, 255, ${a})`]]) {
-            let seed = Math.floor(f.seed * 233280);
-            const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280 - 0.5;
-            ctx.strokeStyle = col;
-            ctx.lineWidth = w;
-            ctx.beginPath();
-            ctx.moveTo(f.points[0].x, f.points[0].y);
-            for (let i = 1; i < f.points.length; i++) {
-              const A = f.points[i - 1], B = f.points[i];
-              for (let k = 1; k <= 4; k++) {
-                const t = k / 4;
-                const j = k === 4 ? 0 : 14;
-                ctx.lineTo(A.x + (B.x - A.x) * t + rnd() * j, A.y + (B.y - A.y) * t + rnd() * j);
-              }
-            }
-            ctx.stroke();
-          }
+        case 'bolt':
+          // Lightning: a live pixel bolt through every struck point (render/livePixel.js).
+          drawLightning(ctx, f, p);
           break;
-        }
         case 'eye': {
           // 관심법: an opened eye drawn in violet and gold.
           const a = p < 0.2 ? p / 0.2 : 1 - (p - 0.2) / 0.8;
@@ -1424,6 +1448,12 @@ export class Renderer {
           ctx.fill();
           break;
         }
+        case 'curseLink':
+          drawCurseLink(ctx, f, p);
+          break;
+        case 'pfx':
+          drawPixelFx(ctx, f); // 픽셀 이펙트 (render/pixelFx.js)
+          break;
         default:
           if (!drawSpiritFx(ctx, f, p)) drawUltFx(ctx, f, p, g); // 영물 (render/spiritFx.js), 궁극기 연출 (render/ultFx.js)
       }

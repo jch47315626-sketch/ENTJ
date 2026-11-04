@@ -23,3 +23,6 @@ export const HP_REGEN = 0.001;
 
 /** Enemy armour by stage stars: share of every hit that is shrugged off. */
 export const ENEMY_ARMOR = { 1: 0.05, 2: 0.1, 3: 0.15, 4: 0.2, 5: 0.25, 6: 0.3 };
+
+/** Reward multiplier by difficulty stars (1–5, 6 for 지옥). */
+export const REWARD_BY_STARS = { 1: 1, 2: 1.8, 3: 3, 4: 4.5, 5: 6.5, 6: 10 };

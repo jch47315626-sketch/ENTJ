@@ -1,5 +1,5 @@
 import { HEROES } from '../data/heroes.js';
-import { STAGES, STAGE_ORDER, CHAPTERS, chapterOf } from '../data/stages.js';
+import { STAGES, STAGE_ORDER, CHAPTERS, chapterOf, mapOf, levelsOf, LEVELS } from '../data/stages.js';
 import { BOSSES } from '../data/bosses.js';
 import { ENEMIES } from '../data/enemies.js';
 import { WEAPONS } from '../data/weapons.js';
@@ -26,6 +26,7 @@ import { untilTomorrow } from '../data/daily.js';
 import { SPECIALS } from '../systems/specials.js';
 import { drawUnit } from '../render/sprites.js';
 import { iconCanvas } from '../render/icons.js';
+import { spiritIcon } from '../render/spiritIcon.js';
 import { starText, gradeTag } from './screens.js';
 
 /**
@@ -138,7 +139,7 @@ const holdHint = () => el('p', 'hold-hint', '💡 카드를 꾹 누르고 있으
 
 const STAGE_ART = (id) => `url(${UI}/stage/${id}.webp)`;
 /** Bigger scene for the stage panel: the painted map around the node (삼한), or the field's own card art. */
-const STAGE_SCENE = (id) => (chapterOf(STAGES[id]) === 'samhan' ? `url(${UI}/scene/${id}.webp)` : STAGE_ART(id));
+const STAGE_SCENE = (id) => (chapterOf(STAGES[id]) === 'samhan' ? `url(${UI}/scene/${mapOf(STAGES[id])}.webp)` : STAGE_ART(id));
 
 function tabStrip(tabs, current, onPick) {
   const nav = el('div', 'sub-tabs');
@@ -285,7 +286,7 @@ export function renderHome(save, sel, act) {
     tDone ? `✅ 오늘 도전함 · ${untilTomorrow()} 뒤 새 던전` : `하루 1번 · ${ATTR_ICON} ${ATTR_NAME} +${fmt(tr.reward)}`, !tDone, () => openSheet('trial', save, sel, act)));
   const a = refreshAltar(save);
   const g = GUARDIANS[guardianOf()];
-  list.append(dungeonRow('🏯', '사신의 제단', `${g ? `${g.icon} ${g.name}` : '✨ 사신의 날'} · ${Math.max(1, save.altarTier ?? 1)}단계`,
+  list.append(dungeonRow('🏯', '사신의 제단', `${g ? `${spiritIcon(g.id, g.icon)} ${g.name}` : '✨ 사신의 날'} · ${Math.max(1, save.altarTier ?? 1)}단계`,
     `🎟️ 입장권 ${a.tickets}/${ALTAR_TICKETS.cap}${save.spiritGift ? '' : ` · 🐾 ${Math.max(1, FIRST_SPIRIT_RUNS - altarRunsDone(save))}판 더 돌면 첫 영물`}`, a.tickets > 0, () => openSheet('altar', save, sel, act)));
   const em = ENDLESS_MAPS[endlessMapOf(save)];
   const best = save.endless?.[em.id];
@@ -376,7 +377,7 @@ function altarCard(save, sel, act) {
   const card = el('div', 'altar-card');
   card.append(el('div', 'dc-head', `<b>🏯 사신의 제단</b><span>입장권 <b>${a.tickets}</b> / ${ALTAR_TICKETS.cap} · 하루 ${ALTAR_TICKETS.perDay}장</span>`));
   card.append(el('p', 'ac-guard', g
-    ? `오늘의 수호 영수 <b style="color:${g.color}">${g.icon} ${g.name}</b> <small>(${g.dir}녘 · ${g.trait})</small>`
+    ? `오늘의 수호 영수 <b style="color:${g.color}">${spiritIcon(g.id, g.icon)} ${g.name}</b> <small>(${g.dir}녘 · ${g.trait})</small>`
     : `<b>✨ 사신의 날</b> — 수호 영수를 골라 도전해요. 오늘 첫 평정에 <b>사신 정수</b>!`));
   card.append(el('div', 'ac-purse', `<span>🔮 영주 <b>${fmt(save.yeongju ?? 0)}</b></span><span>✨ 사신 정수 <b>${fmt(save.essence ?? 0)}</b> / ${ESSENCE_PER_SASIN}</span>`));
   // 단계: ◀ n단계 ▶, with what it borrows and pays.
@@ -395,11 +396,11 @@ function altarCard(save, sel, act) {
   card.append(button(`🐾 영물 뽑기·동행 <small>영물 ${Object.keys(save.spirits ?? {}).length}/${SPIRIT_LIST.length}</small>`, 'plain-btn small ac-spirit', () => goPower(act, 'spirit')));
   card.append(el('p', 'ec-rule', `${josa(HEROES[sel.hero].name, '으로')} 출전 · 떠도는 <b>영기</b>를 모으면 판이 끝날 때 <b>영주</b>가 돼요. 2분 30초 뒤 수호 영수를 쓰러뜨리면 보너스!`));
   const none = a.tickets <= 0;
-  if (g) card.append(button(none ? '🎟️ 오늘의 입장권을 다 썼어요' : `${g.icon} ${g.name}의 제단 입장`, 'altar-btn go', () => act.startAltar(gid, tier), none));
+  if (g) card.append(button(none ? '🎟️ 오늘의 입장권을 다 썼어요' : `${spiritIcon(g.id, g.icon)} ${g.name}의 제단 입장`, 'altar-btn go', () => act.startAltar(gid, tier), none));
   else {
     const pick = el('div', 'ac-pick');
     for (const G of Object.values(GUARDIANS)) {
-      const b = button(`${G.icon}<b>${G.name}</b><small>${G.trait}</small>`, 'ac-guardian', () => act.startAltar(G.id, tier), none);
+      const b = button(`${spiritIcon(G.id, G.icon, 'big')}<b>${G.name}</b><small>${G.trait}</small>`, 'ac-guardian', () => act.startAltar(G.id, tier), none);
       b.style.setProperty('--gc', G.color);
       pick.append(b);
     }
@@ -866,7 +867,8 @@ export function renderMap(save, sel, act) {
   });
   tabs.classList.add('chapter-tabs');
   body.append(tabs);
-  const ids = STAGE_ORDER.filter((id) => chapterOf(STAGES[id]) === chap);
+  // One node per field: a 삼한 field's node stands for its five 단계 (its id is 5단계's).
+  const ids = STAGE_ORDER.filter((id) => chapterOf(STAGES[id]) === chap && (STAGES[id].level ?? LEVELS) === LEVELS);
   const info = CHAPTERS.find((c) => c.id === chap);
   if (chap !== 'samhan') body.append(el('p', 'chapter-sub', `${info.icon} ${info.name} — ${info.sub}. 일곱 전장을 차례로 평정하고 북원성의 양길을 정복하라!`));
 
@@ -875,12 +877,18 @@ export function renderMap(save, sel, act) {
   map.innerHTML = routeSvg(ids, save);
   for (const id of ids) {
     const st = STAGES[id];
-    const { gate, cleared } = stageInfo(save, sel, st);
+    const lv = levelsOf(id), steps = lv.length ? lv : [st];
+    const done = steps.filter((s) => save.best?.[s.id]).length;
+    const { gate } = stageInfo(save, sel, steps[0]);
     const [x, y] = MAP_POS[id];
-    const n = button(`<span class="mn-no">${st.numeral}</span><span class="mn-name">${st.name}</span><span class="mn-stars">${starRow(st)}</span>`,
-      `map-node${id === cur ? ' on' : ''}${cleared ? ' cleared' : ''}${gate.ok ? '' : ' locked'}`, () => {
-        ui.mapStage = id;
-        act.selectStage(id);
+    // Progress pips: one per 단계.
+    const pips = steps.length > 1 ? `<span class="mn-pips">${steps.map((s) => `<i class="${save.best?.[s.id] ? 'on' : ''}"></i>`).join('')}</span>` : '';
+    const n = button(`<span class="mn-no">${st.numeral}</span><span class="mn-name">${st.mapName ?? st.name}</span><span class="mn-stars">${starRow(st)}</span>${pips}`,
+      `map-node${mapOf(STAGES[cur]) === id ? ' on' : ''}${done === steps.length ? ' cleared' : ''}${gate.ok ? '' : ' locked'}`, () => {
+        // Open on the first 단계 not yet pacified (or the last, when all are).
+        const pick = steps.find((s) => !save.best?.[s.id] && stageInfo(save, sel, s).gate.ok) ?? steps.filter((s) => stageInfo(save, sel, s).gate.ok).at(-1) ?? steps[0];
+        ui.mapStage = pick.id;
+        act.selectStage(pick.id);
       });
     n.style.left = `${x}%`;
     n.style.top = `${y}%`;
@@ -889,7 +897,7 @@ export function renderMap(save, sel, act) {
   }
   body.append(map);
 
-  const st = STAGES[ids.includes(cur) ? cur : ids[0]];
+  const st = STAGES[ids.includes(mapOf(STAGES[cur])) ? cur : ids[0]];
   const { boss, cleared } = stageInfo(save, sel, st);
   const card = el('div', 'stage-detail');
   card.style.setProperty('--art', STAGE_SCENE(st.id));
@@ -901,6 +909,23 @@ export function renderMap(save, sel, act) {
       <li>${img('icon/sd-gear', 'sd-ic')}<span>권장 장비</span><b>${st.difficulty.stars > 1 ? `${GRADES[REC_GRADE[st.difficulty.stars]].name}${st.difficulty.stars > 5 ? ' +제련' : ' 이상'}` : '없어도 OK'}</b></li>
       <li>${img('icon/sd-record', 'sd-ic')}<span>기록</span><b>${cleared ? '평정함' : '아직'}</b></li>
     </ul>`;
+  // 단계 picker: 1–5, pacified ones sealed, locked ones greyed.
+  if (st.map) {
+    const row = el('div', 'lv-pick');
+    for (const s of levelsOf(st.map)) {
+      const g = stageInfo(save, sel, s).gate;
+      const b = button(`<b>${s.level}</b><small>${save.best?.[s.id] ? '평정' : g.ok ? `${Math.round(s.bossAt / 60 * 10) / 10}분` : '🔒'}</small>`,
+        `lv-btn${s.id === st.id ? ' on' : ''}${save.best?.[s.id] ? ' cleared' : ''}${g.ok ? '' : ' locked'}`, () => {
+          ui.mapStage = s.id;
+          act.selectStage(s.id);
+        });
+      holdTip(b, stageTip(save, sel, s));
+      row.append(b);
+    }
+    card.insertBefore(row, card.querySelector('.sd-rows'));
+  }
+  const gate = stageInfo(save, sel, st).gate;
+  if (!gate.ok) card.append(el('p', 'gate-msg', `🔒 ${gate.text}`));
   card.append(button('출진 준비 ▶', 'seal-btn', () => {
     if (sel.stage !== st.id) act.selectStage(st.id);
     act.go('prep');
@@ -1047,7 +1072,7 @@ export function renderCodex(save, sel, act) {
     if (all) body.append(all);
     for (const s of SPIRIT_LIST) {
       const own = spiritOf(save, s.id);
-      const ic = el('span', 'row-icon codex-emoji', s.icon);
+      const ic = el('span', 'row-icon codex-emoji', spiritIcon(s.id, s.icon, 'fill'));
       ic.style.setProperty('--gc', SPIRIT_GRADES[s.grade].color);
       grid.append(cell(ic, s.name, `${SPIRIT_GRADES[s.grade].name} · ${s.role}${own ? ` · ★${own.stars}${own.branch ? ` · ${s.branches[own.branch].name}` : ''}` : ''}`, !own,
         [s.base, `갈래 A ${s.branches.a.name} — ${s.branches.a.desc}`, `갈래 B ${s.branches.b.name} — ${s.branches.b.desc}`, `★5 각성 — ${s.awaken}`],
@@ -1147,7 +1172,10 @@ function recordPanel(save, act) {
     <li><span>🏆 승리</span><b>${fmt(c.wins ?? 0)}회</b></li>
     <li><span>💀 처치한 적</span><b>${fmt(totalKills)}</b></li>
     <li><span>🪙 모은 냥</span><b>${fmt(c.earned ?? 0)}</b></li>
-    ${STAGE_ORDER.map((id) => `<li><span>${STAGES[id].numeral} ${STAGES[id].name}</span><b>${save.best?.[id] ? '평정' : '—'}</b></li>`).join('')}`));
+    ${STAGE_ORDER.filter((id) => (STAGES[id].level ?? 5) === 5).map((id) => {
+      const st = STAGES[id], lv = st.map ? levelsOf(st.map) : [st], done = lv.filter((s) => save.best?.[s.id]).length;
+      return `<li><span>${st.numeral} ${st.mapName ?? st.name}</span><b>${done === lv.length ? '평정' : lv.length > 1 && done ? `${done}/${lv.length}단계` : '—'}</b></li>`;
+    }).join('')}`));
 
   const rec = el('div', 'record');
   rec.innerHTML = `
@@ -1249,7 +1277,7 @@ export function renderSpirit(save, sel, act) {
     const res = el('div', `sp-result${lastDraw.length > 1 ? ' ten' : ''}`);
     lastDraw.forEach((d, i) => {
       const s = SPIRITS[d.id];
-      const c = el('div', `sp-pull g${s.grade}${d.isNew ? ' new' : ''}`, `<span class="sp-ic">${s.icon}</span><b>${s.name}</b><small>${d.isNew ? 'NEW!' : d.refund ? `🔮+${d.refund}` : '중복 +1'}</small>`);
+      const c = el('div', `sp-pull g${s.grade}${d.isNew ? ' new' : ''}`, `<span class="sp-ic">${spiritIcon(s.id, s.icon)}</span><b>${s.name}</b><small>${d.isNew ? 'NEW!' : d.refund ? `🔮+${d.refund}` : '중복 +1'}</small>`);
       c.style.setProperty('--gc', SPIRIT_GRADES[s.grade].color);
       c.style.setProperty('--i', i);
       res.append(c);
@@ -1267,7 +1295,7 @@ export function renderSpirit(save, sel, act) {
     const id = save.companions?.[i];
     const s = id && SPIRITS[id];
     pr.append(el('div', `sp-slot${s ? '' : ' empty'}${i >= slots ? ' locked' : ''}`, s
-      ? `<span class="sp-ic">${s.icon}</span><b>${s.name}</b>${starPips(save.spirits[id].stars)}`
+      ? `<span class="sp-ic">${spiritIcon(s.id, s.icon)}</span><b>${s.name}</b>${starPips(save.spirits[id].stars)}`
       : i >= slots ? '🔒<small>사신과 함께 열려요</small>' : '<small>아래에서 영물을 눌러<br>동행으로 데려가요</small>'));
   }
   party.append(pr);
@@ -1301,7 +1329,7 @@ function comboCard(save) {
     const [a, b] = c.ids.map((id) => SPIRITS[id]);
     const have = c.ids.every(owned);
     const on = c.ids.every((id) => save.companions?.includes(id));
-    box.append(el('div', `sp-combo${have ? '' : ' off'}${on ? ' on' : ''}`, `<span class="sp-combo-pair">${owned(a.id) ? a.icon : '❔'}${owned(b.id) ? b.icon : '❔'}</span><div><b>${c.icon} ${c.name}${on ? ' <i>발동 중</i>' : ''}</b><small>${a.name} + ${b.name} — ${c.desc}</small></div>`));
+    box.append(el('div', `sp-combo${have ? '' : ' off'}${on ? ' on' : ''}`, `<span class="sp-combo-pair">${owned(a.id) ? spiritIcon(a.id, a.icon) : '❔'}${owned(b.id) ? spiritIcon(b.id, b.icon) : '❔'}</span><div><b>${c.icon} ${c.name}${on ? ' <i>발동 중</i>' : ''}</b><small>${a.name} + ${b.name} — ${c.desc}</small></div>`));
   }
   return box;
 }
@@ -1313,7 +1341,7 @@ function spiritCard(save, s, act) {
   const need = own ? (s.grade === 5 ? SASIN_STAR_ESSENCE[own.stars] : dupesForNext(own.stars)) : 0;
   const have = own ? (s.grade === 5 ? save.essence ?? 0 : own.dupes) : 0;
   const maxed = own && own.stars >= MAX_STARS;
-  c.append(el('div', 'sp-top', `<span class="sp-ic">${own ? s.icon : '❔'}</span><div><b>${s.name}</b><small>${s.role}</small>${own ? starPips(own.stars) : ''}</div>`));
+  c.append(el('div', 'sp-top', `<span class="sp-ic">${own ? spiritIcon(s.id, s.icon) : '❔'}</span><div><b>${s.name}</b><small>${s.role}</small>${own ? starPips(own.stars) : ''}</div>`));
   if (own) {
     const pct = maxed ? 100 : Math.min(100, (have / need) * 100);
     c.append(el('div', 'sp-bar', `<i style="width:${pct}%"></i><span>${maxed ? '★5 각성' : s.grade === 5 ? `정수 ${have}/${need}` : `중복 ${have}/${need}`}</span>`));
@@ -1330,7 +1358,7 @@ function spiritCard(save, s, act) {
   } else if (s.grade === 5) {
     c.append(button(`✨ 정수 ${ESSENCE_PER_SASIN}로 부르기`, 'sp-btn up', () => act.callSasin(s.id), (save.essence ?? 0) < ESSENCE_PER_SASIN));
   }
-  holdTip(c, () => tipHtml(`${s.icon} ${s.name} <small>${SPIRIT_GRADES[s.grade].name} · ${s.role}</small>`, [
+  holdTip(c, () => tipHtml(`${spiritIcon(s.id, s.icon)} ${s.name} <small>${SPIRIT_GRADES[s.grade].name} · ${s.role}</small>`, [
     s.base,
     `★마다 위력이 커져요${own ? ` — 지금 ★${own.stars}` : ''}`,
     `<b>★3 갈래</b> (언제든 바꿀 수 있어요)<br>A ${s.branches.a.name} — ${s.branches.a.desc}<br>B ${s.branches.b.name} — ${s.branches.b.desc}${own?.branch ? `<br>고른 갈래: <b>${s.branches[own.branch].name}</b>` : ''}`,

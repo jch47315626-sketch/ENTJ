@@ -1,5 +1,9 @@
 import { MODELS, drawModelBackHair, drawModelHead } from './heroModel.js';
+import { drawPixelFigure, drawPicture } from './pixelUnit.js';
 import { drawBeast } from './beasts.js';
+
+/** Draw people as pixel art (render/pixelUnit.js); false brings back the path drawings. */
+export const PIXEL_UNITS = true;
 
 const INK = '#1d1a17';
 const HANJI = '#f1e8d2';
@@ -58,11 +62,6 @@ export function drawUnit(ctx, look, x, y, r, facing, o = {}) {
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
-  if (look.mount) {
-    drawHorse(ctx, look.mount, r, o.flash, sx, phase);
-    ctx.translate(0, -r * 0.55);
-  }
-  ctx.translate(0, -hop);
 
   const bulk = look.bulk ?? 1;
   const weaponFirst = back;
@@ -97,6 +96,19 @@ export function drawUnit(ctx, look, x, y, r, facing, o = {}) {
     const sxh = sx * r * 0.55 * bulk, syh = r * 0.15;
     return { x: sxh + Math.cos(a) * r * reach, y: syh + Math.sin(a) * r * reach };
   };
+  // Pixel art (render/pixelUnit.js) for every person; beasts and carts keep their drawing.
+  if (PIXEL_UNITS && drawPixelFigure(ctx, look, r, facing, phase, o.flash, () => {
+    const h = handAt();
+    return { x: h.x, y: h.y, rot: facing + swingRot, scale: swingScale };
+  })) {
+    ctx.restore();
+    return;
+  }
+  if (look.mount) {
+    drawHorse(ctx, look.mount, r, o.flash, sx, phase);
+    ctx.translate(0, -r * 0.55);
+  }
+  ctx.translate(0, -hop);
   const weapon = () => {
     ctx.save();
     const h = handAt();
@@ -952,6 +964,8 @@ const COIN = { bronze: '#a8763e', silver: '#c9c6bb', gold: '#e2b84a' };
 export function drawCoin(ctx, x, y, tier, t) {
   const r = tier === 'bronze' ? 4.5 : 5.5;
   const bob = Math.sin(t * 5 + x) * 1;
+  const tint = { bronze: 'sepia(0.6) brightness(0.8)', silver: 'grayscale(1) brightness(1.35)' }[tier] ?? null;
+  if (drawPicture(ctx, 'pickup_coin', x, y + bob, r * 2.4, 0, tint)) return;
   ctx.fillStyle = COIN[tier];
   ctx.strokeStyle = 'rgba(29,26,23,0.8)';
   ctx.lineWidth = 1;
@@ -971,6 +985,10 @@ export function drawRice(ctx, x, y, t) {
   ctx.beginPath();
   ctx.arc(0, 0, 15, 0, Math.PI * 2);
   ctx.fill();
+  if (drawPicture(ctx, 'pickup_rice', 0, 0, 20)) {
+    ctx.restore();
+    return;
+  }
   ctx.fillStyle = '#f3efe2';
   ctx.strokeStyle = INK;
   ctx.lineWidth = 1.4;
@@ -1074,6 +1092,8 @@ export function drawProjectile(ctx, p) {
     ctx.strokeStyle = 'rgba(255, 248, 220, 0.95)';
     ctx.lineWidth = p.r * 0.7;
     ctx.stroke();
+  } else if (p.kind === 'quake' && drawPicture(ctx, 'crack', 0, 0, p.r * 4)) {
+    // 땅 갈라짐 (picture).
   } else if (p.kind === 'quake') {
     const a = Math.min(1, p.life * 3);
     ctx.fillStyle = `rgba(90, 60, 40, ${0.55 * a})`;

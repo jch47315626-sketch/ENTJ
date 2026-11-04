@@ -169,6 +169,7 @@ Object.assign(BOSS_PATTERNS, {
       const p = g.player;
       if ((p.x - b.x) ** 2 + (p.y - b.y) ** 2 < (P.radius + p.r * 0.5) ** 2) g.hurtPlayer(P.damage * b.damageMul, 'boss', b);
       g.fx.push({ type: 'smash', x: b.x, y: b.y, range: P.radius, t: 0, life: 0.9 });
+      g.fx.push({ type: 'crack', x: b.x, y: b.y, size: P.radius * 1.6, flip: Math.random() < 0.5, t: 0, life: 4 });
       // The mountain cracks: a few boulders fall around the rim and stay.
       if (P.rocks) {
         g.tempRocks ??= [];

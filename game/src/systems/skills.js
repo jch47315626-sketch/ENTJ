@@ -3,6 +3,7 @@ import { hitArc, currentWeaponLevel } from './weapons.js';
 import { enemyHpScale } from '../data/balance.js';
 import { rand } from '../core/math.js';
 import { withOver } from './over.js';
+import { pixelFx } from '../render/pixelFx.js';
 
 /**
  * Cooldown skills gained from level-ups (separate from the momentum
@@ -21,7 +22,7 @@ export const ACTIVE_SKILLS = {
         hp, maxHp: hp, life: L.duration, maxLife: L.duration, lure: L.lure,
         damage: L.damage * (1 + (p.meta.allyMul ?? 0)), explode: L.explode, cd: 0.5, facing: a,
       });
-      g.fx.push({ type: 'puff', x: p.x + Math.cos(a) * 60, y: p.y + Math.sin(a) * 60, t: 0, life: 0.6, size: 26, tone: 'light' });
+      g.fx.push(pixelFx('shinArrive', p.x + Math.cos(a) * 60, p.y + Math.sin(a) * 60));
       g.banner('신숭겸 — 왕의 깃발 아래로 모여라!', 'small');
       g.sfx('shin');
     },
@@ -32,7 +33,7 @@ export const ACTIVE_SKILLS = {
     fire(g, L) {
       const p = g.player;
       p.mount = { until: g.time + L.duration, invulnUntil: g.time + L.invuln, L, drop: 0 };
-      g.fx.push({ type: 'puff', x: p.x, y: p.y, t: 0, life: 0.6, size: 30, tone: 'mud' });
+      g.fx.push(pixelFx('mountDust', p.x, p.y));
       g.banner(`${L.name} — 말에 오른다`, 'small');
       g.sfx('gallop');
     },
@@ -62,7 +63,7 @@ ACTIVE_SKILLS.tiger = {
     const p = g.player;
     p.tiger = { mul: L.mul, until: g.time + L.duration };
     p.recalc();
-    g.fx.push({ type: 'puff', x: p.x, y: p.y, t: 0, life: 0.6, size: 34, tone: 'light' });
+    g.fx.push(pixelFx('rage', p.x, p.y));
     g.sfx('paewang');
     if (!L.eight) {
       g.banner(`🐯 ${L.name} — ${L.duration}초 동안 피해 ${L.mul}배`, 'small');
@@ -75,6 +76,7 @@ ACTIVE_SKILLS.tiger = {
     g.banner('🐯 무자식이 상팔자!', 'big');
     g.ultFlash('255, 70, 30', 0.35, 0.4);
     g.fx.push({ type: 'rageBurst', x: p.x, y: p.y, t: 0, life: 0.8, seed: Math.random() });
+    g.fx.push(pixelFx('rage', p.x, p.y)); // the roar at the king; the swings ('eight') show the full reach
     g.fx.push({ type: 'eight', x: p.x, y: p.y, range: radius, angle: p.facing, t: 0, life: 1.2 });
     for (let i = 0; i < E.swings; i++) {
       g.later(i * E.gap, () => {
@@ -126,8 +128,11 @@ ACTIVE_SKILLS.archers = {
     for (const s of spots) {
       const r = R.radius * Math.sqrt(p.stats.area);
       // The arrows fall first; the ground catches fire as they land.
-      g.fx.push({ type: 'arrowRain', x: s.x, y: s.y, range: r, t: 0, life: 0.9, seed: Math.random() });
-      g.later(0.3, () => g.zones.push({ team: 'player', kind: 'fire', x: s.x, y: s.y, r, dps, life: R.life, t: 0 }));
+      g.fx.push(pixelFx('arrowVolley', s.x, s.y, r));
+      g.later(0.3, () => {
+        g.zones.push({ team: 'player', kind: 'fire', x: s.x, y: s.y, r, dps, life: R.life, t: 0 });
+        g.fx.push(pixelFx('fireRing', s.x, s.y, r));
+      });
     }
     g.sfx('volley');
   },
@@ -145,10 +150,12 @@ ACTIVE_SKILLS.edict = {
       foes = foes.slice(0, L.count);
     }
     const dmg = weaponDmg(p) * L.mul * p.stats.might;
-    // Shafts of light fall on each foe (drawn for the first few dozen; every one is struck).
+    // A bolt of light drops on each foe (pixel art for the nearest dozen, plain shafts for
+    // the next few; every one is struck).
     foes.forEach((e, i) => {
       g.damageEnemy(e, dmg, e.x, e.y - 40, 40, L.stun ? { stun: e.isBoss ? L.bossStun : L.stun } : undefined);
-      if (i < 28) g.fx.push({ type: 'pillar', x: e.x, y: e.y, t: 0, life: 0.55, big: !!L.evolution, seed: Math.random() });
+      if (i < 12) g.fx.push(pixelFx(L.evolution ? 'edictBig' : 'edict', e.x, e.y));
+      else if (i < 28) g.fx.push({ type: 'pillar', x: e.x, y: e.y, t: 0, life: 0.55, big: !!L.evolution, seed: Math.random() });
     });
     if (L.evolution) {
       g.banner('📜 훈요십조 — 어명이 전장을 내리친다!', 'small');
@@ -201,7 +208,7 @@ export function curseFoe(g, e, L) {
   // The curse burns too: `dot` × weapon damage every second, at the hero's might when cast.
   const dps = (L.dot ?? 0) * Math.max(currentWeaponLevel(p).damage, 30) * p.stats.might;
   e.curse = { until: g.time + L.duration, amp: L.amp, slow: L.slow ?? 0, spread: L.spread ?? 0, dps, tick: 0.5, L };
-  g.fx.push({ type: 'curseMark', x: e.x, y: e.y, t: 0, life: L.duration, follow: e, big: !!L.evolution, seed: Math.random() });
+  g.fx.push(pixelFx(L.evolution ? 'curseEyeBig' : 'curseEye', e.x, e.y, null, { follow: e, dy: -e.r * 2.5 - 14, life: L.duration, fadeOut: 0.4 }));
 }
 
 /** Counts down each owned skill and casts it when ready. */

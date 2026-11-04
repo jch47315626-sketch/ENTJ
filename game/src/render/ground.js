@@ -3,6 +3,34 @@ import { hash2 } from '../core/math.js';
 const TILE = 200;
 
 /**
+ * Drawn floor tiles (game/assets/ground/<ground>.png, seamless, one pixel =
+ * TILE_PX world units). A ground with a tile is painted from it; the others
+ * keep their procedural painter below.
+ */
+const GROUND_TILES = ['tidalFlat', 'autumnHills', 'winterRiver', 'palaceCourt', 'riverPlain', 'mountainPass', 'pineForest', 'snowPeak', 'bloodTide', 'ghostBarrow', 'frostHell', 'ashPalace'];
+const TILE_PX = 4;
+const tiles = {};
+for (const id of GROUND_TILES) {
+  const img = new Image();
+  img.src = `assets/ground/${id}.png`;
+  tiles[id] = { img, pattern: null };
+}
+
+/** Paints the visible rectangle from ground `id`'s tile; false when it has none (yet). */
+export function drawGroundTile(ctx, id, v) {
+  const t = tiles[id];
+  if (!t || !t.img.complete || !t.img.naturalWidth) return false;
+  t.pattern ??= ctx.createPattern(t.img, 'repeat');
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.scale(TILE_PX, TILE_PX);
+  ctx.fillStyle = t.pattern;
+  ctx.fillRect(v.x0 / TILE_PX - 1, v.y0 / TILE_PX - 1, (v.x1 - v.x0) / TILE_PX + 2, (v.y1 - v.y0) / TILE_PX + 2);
+  ctx.restore();
+  return true;
+}
+
+/**
  * Procedural terrain painters keyed by StageDef.ground. Each draws the
  * visible world rectangle; features are derived from a tile hash so the
  * field is stable as the camera moves.

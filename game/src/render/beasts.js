@@ -4,6 +4,8 @@
  * 백호 (a white tiger) and 현무 (a turtle with a snake). Called from
  * drawUnit when `look.beast` is set; (x, y) is the spot on the ground.
  */
+import { drawPixelBeast, bossKind } from './pixelBeast.js';
+
 const INK = '#1d1a17';
 const HANJI = '#f1e8d2';
 const TAU = Math.PI * 2;
@@ -33,8 +35,13 @@ export function drawBeast(ctx, look, x, y, r, facing, o = {}) {
   ctx.strokeStyle = INK;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  ctx.scale(sx, 1); // everything below faces right
   const phase = now + (x * 0.013 + y * 0.017);
+  // Pixel art (render/pixelBeast.js), recoloured by the look; the path drawings stay as a fallback.
+  if (drawPixelBeast(ctx, bossKind(look.beast), 0, 0, r * 0.9, sx < 0, phase, { pal: look, flash: o.flash })) {
+    ctx.restore();
+    return;
+  }
+  ctx.scale(sx, 1); // everything below faces right
   BEASTS[look.beast]?.(ctx, look, r, phase, fill);
   ctx.restore();
 }

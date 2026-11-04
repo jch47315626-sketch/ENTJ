@@ -26,6 +26,7 @@ import { updateSkills, curseFoe } from './systems/skills.js';
 import { withOver, overOf } from './systems/over.js';
 import { ELEMENTS } from './data/imprint.js';
 import { updateTerrain, inBog } from './systems/terrain.js';
+import { pixelFx } from './render/pixelFx.js';
 
 /** The 책략 that grows each hero's special (its 초월 boosts the special). */
 const SPECIAL_LINE = { paewang: 'fury', gwansim: 'gwansim' };
@@ -446,7 +447,9 @@ export class Game {
     if (blast && this.isCharmed(e)) {
       const r = blast.radius * Math.sqrt(p.stats.area);
       hitArc(this, e.x, e.y, 0, r, 360, Math.max(currentWeaponLevel(p).damage, 30) * blast.mul * p.stats.might, 80, 'none');
-      this.fx.push({ type: 'mindBurst', x: e.x, y: e.y, range: r, t: 0, life: 0.6, seed: Math.random() });
+      // A few pixel-art void bursts at once; past that, the plain ring.
+      if (this.fx.filter((f) => f.key === 'voidBurst').length < 4) this.fx.push(pixelFx('voidBurst', e.x, e.y, r));
+      else this.fx.push({ type: 'mindBurst', x: e.x, y: e.y, range: r, t: 0, life: 0.6, seed: Math.random() });
     }
     // 애꾸눈의 저주: the curse passes to the nearest foes.
     if (e.curse?.spread && e.curse.until > this.time) {
@@ -1134,7 +1137,10 @@ export class Game {
           if (pr.span ? hitsBlade(pr, e) : dist2(pr.x, pr.y, e.x, e.y) < (pr.r + e.r) ** 2) {
             pr.hit.add(e);
             this.damageEnemy(e, pr.damage, pr.x - pr.vx * 0.05, pr.y - pr.vy * 0.05, pr.knockback, pr.stun ? { stun: pr.stun } : undefined);
-            if (pr.burst) hitArc(this, e.x, e.y, 0, pr.burst.radius, 360, pr.burst.damage, 30, 'burst');
+            if (pr.burst) {
+              hitArc(this, e.x, e.y, 0, pr.burst.radius, 360, pr.burst.damage, 30, 'burst');
+              this.fx.push(pixelFx('lotus', e.x, e.y, pr.burst.radius));
+            }
             pr.pierce -= 1;
             if (pr.pierce <= 0) pr.life = 0;
           }
@@ -1146,6 +1152,7 @@ export class Game {
       if (pr.life > 0 || !pr.shatter) continue;
       hitArc(this, pr.x, pr.y, 0, pr.shatter.radius, 360, pr.shatter.damage, 120, 'none', { stun: pr.shatter.stun });
       this.fx.push({ type: 'shatter', x: pr.x, y: pr.y, range: pr.shatter.radius, t: 0, life: 0.8, seed: Math.random() });
+      this.fx.push(pixelFx('slam', pr.x, pr.y, pr.shatter.radius));
       this.shake(6);
     }
     this.projectiles = this.projectiles.filter((pr) => pr.life > 0);
@@ -1171,10 +1178,10 @@ export class Game {
     if (e.pull.slam) {
       // 패왕쇄: the slam hits as hard as his blade (`mul` × weapon damage); no knockback, so they stay at his feet.
       hitArc(this, e.x, e.y, 0, e.pull.slam.radius, 360, e.pull.slam.mul * Math.max(currentWeaponLevel(p).damage, 30) * p.stats.might, 0, 'chop');
-      this.fx.push({ type: 'shatter', x: e.x, y: e.y, range: e.pull.slam.radius * 0.8, t: 0, life: 0.6, seed: Math.random() });
+      this.fx.push(pixelFx('slam', e.x, e.y, e.pull.slam.radius));
       this.shake(4);
     }
-    this.fx.push({ type: 'puff', x: e.x, y: e.y, t: 0, life: 0.4, size: 18, tone: 'mud' });
+    this.fx.push(pixelFx('mountDust', e.x, e.y, 22));
     e.pull = null;
   }
 
@@ -1231,7 +1238,7 @@ export class Game {
     if (!m) return;
     if (this.time >= m.until) {
       p.mount = null;
-      this.fx.push({ type: 'puff', x: p.x, y: p.y, t: 0, life: 0.5, size: 24, tone: 'mud' });
+      this.fx.push(pixelFx('mountDust', p.x, p.y, 30));
       return;
     }
     m.drop -= dt;

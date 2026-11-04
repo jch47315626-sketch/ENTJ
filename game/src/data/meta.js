@@ -9,8 +9,8 @@ import { imprintBonus, imprintSets } from './imprint.js';
  * is plain data; core/save.js stores what the player owns.
  */
 
-/** Reward multiplier by difficulty stars (1–5). */
-export const REWARD_BY_STARS = { 1: 1, 2: 1.8, 3: 3, 4: 4.5, 5: 6.5, 6: 10 };
+// Reward multiplier by difficulty stars: kept in data/balance.js (data/stages.js needs it too).
+export { REWARD_BY_STARS } from './balance.js';
 
 /**
  * 빠른 시험 모드 (boss at 1:00) pays this share of the 냥: a quick run is
@@ -346,8 +346,8 @@ export function entryCheck(save, heroId, stage) {
   return { ok: have >= req.count, have, need: req.count, grade: GRADES[req.grade], text };
 }
 
-/** Highest difficulty the player has cleared (0 = none). */
-export const clearedStars = (save) => Math.max(0, ...Object.values(save.best ?? {}));
+/** Highest difficulty the player has cleared, whole fields only (0 = none). */
+export const clearedStars = (save) => Math.max(0, ...Object.entries(save.best ?? {}).map(([id, v]) => ((STAGES[id]?.level ?? 5) === 5 ? v : 0)));
 // Every grade is on sale from the start; higher grades are simply far more expensive.
 export const gradeOpen = () => true;
 
