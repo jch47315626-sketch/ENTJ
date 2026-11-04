@@ -16,16 +16,53 @@ import { PIXEL_FX_SHEETS } from '../data/pixelFxSheets.js';
 import { drawPicture } from './pixelUnit.js';
 
 const images = {};
+/**
+ * Sheets copied once onto their own canvas: { src, k (1 or 2), w, h (frame size in src) }.
+ * A decoded <img> can be thrown away by a phone and decoded again the next
+ * time it is drawn (a freeze of up to a second at the moment a big effect
+ * plays); a canvas stays ready. The biggest sheets keep every other pixel —
+ * they are always drawn enlarged, so it barely shows — at a quarter of the memory.
+ */
+const ready = {};
+const HALF_OVER = 3e6; // decoded bytes
+
+function bake(key, s, img) {
+  const rows = Math.ceil(s.frames / s.cols);
+  const k = img.naturalWidth * img.naturalHeight * 4 > HALF_OVER ? 2 : 1;
+  const w = Math.ceil(s.w / k), h = Math.ceil(s.h / k);
+  const c = document.createElement('canvas');
+  c.width = w * Math.min(s.cols, s.frames);
+  c.height = h * rows;
+  const cx = c.getContext('2d');
+  cx.imageSmoothingEnabled = false;
+  for (let i = 0; i < s.frames; i++) {
+    const col = i % s.cols, row = Math.floor(i / s.cols);
+    cx.drawImage(img, col * s.w, row * s.h, s.w, s.h, col * w, row * h, w, h);
+  }
+  ready[key] = { src: c, k, w, h };
+  images[key] = null; // the canvas is all we draw from now on
+}
 
 /** Starts loading every sheet (call once at boot; drawing skips sheets not loaded yet). */
 export function preloadPixelFx() {
+  const queue = [];
   for (const [key, s] of Object.entries(PIXEL_FX_SHEETS)) {
-    if (images[key]) continue;
+    if (images[key] || ready[key]) continue;
     const img = new Image();
     img.decoding = 'async';
     img.src = `assets/fx/${s.file}`;
     images[key] = img;
+    queue.push([key, s, img]);
   }
+  // Copy one sheet per idle moment, so the menus stay smooth meanwhile.
+  const idle = window.requestIdleCallback ?? ((f) => setTimeout(f, 30));
+  const next = () => {
+    const job = queue.shift();
+    if (!job) return;
+    const [key, s, img] = job;
+    img.decode().then(() => bake(key, s, img), () => {}).finally(() => idle(next));
+  };
+  idle(next);
 }
 
 /**
@@ -62,17 +99,19 @@ export const hasPixelFx = (key) => !!PIXEL_FX_SHEETS[key];
 /** Draws one frame of sheet `key` with its pivot at (x, y). */
 export function drawSheet(ctx, key, frame, x, y, scale = 1, angle = 0, alpha = 1) {
   const s = PIXEL_FX_SHEETS[key];
+  const b = ready[key];
   const img = images[key];
-  if (!s || !img || !img.complete || !img.naturalWidth) return false;
+  if (!s || (!b && (!img || !img.complete || !img.naturalWidth))) return false;
   const i = s.loop ? ((frame % s.frames) + s.frames) % s.frames : Math.max(0, Math.min(s.frames - 1, frame));
-  const sx = (i % s.cols) * s.w, sy = Math.floor(i / s.cols) * s.h;
+  const fw = b ? b.w : s.w, fh = b ? b.h : s.h;
+  const sx = (i % s.cols) * fw, sy = Math.floor(i / s.cols) * fh;
   ctx.save();
   ctx.imageSmoothingEnabled = false;
   if (alpha < 1) ctx.globalAlpha *= Math.max(0, alpha);
   ctx.translate(x, y);
   if (angle) ctx.rotate(angle);
   ctx.scale(scale, scale);
-  ctx.drawImage(img, sx, sy, s.w, s.h, -s.pivot[0], -s.pivot[1], s.w, s.h);
+  ctx.drawImage(b ? b.src : img, sx, sy, fw, fh, -s.pivot[0], -s.pivot[1], s.w, s.h);
   ctx.restore();
   return true;
 }
