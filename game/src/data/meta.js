@@ -328,19 +328,6 @@ export const clearedStars = (save) => Math.max(0, ...Object.entries(save.best ??
 // Every grade is on sale from the start; higher grades are simply far more expensive.
 export const gradeOpen = () => true;
 
-/**
- * Hero secrets (비전): start every run already knowing one of the hero's
- * level-up skills at Lv1. `grant` is an upgrade id from data/upgrades.js.
- */
-export const SECRETS = [
-  { id: 'secretShin', hero: 'wanggeon', name: '신숭겸 비전', price: 700, grant: 'shin', desc: '출진할 때부터 신숭겸을 부를 수 있다' },
-  { id: 'secretHorse', hero: 'wanggeon', name: '말타기 비전', price: 700, grant: 'horse', desc: '출진할 때부터 말타기를 쓴다' },
-  { id: 'secretFury', hero: 'gyeonhwon', name: '패기 비전', price: 600, grant: 'fury', desc: '출진할 때부터 패기 Lv1' },
-  { id: 'secretChain', hero: 'gyeonhwon', name: '철쇄 비전', price: 700, grant: 'chain', desc: '출진할 때부터 철쇄로 원거리 적을 끌어온다' },
-  { id: 'secretVajra', hero: 'gungye', name: '금강저 비전', price: 700, grant: 'vajra', desc: '출진할 때부터 금강저를 쥔다' },
-  { id: 'secretGwansim', hero: 'gungye', name: '관심법 비전', price: 700, grant: 'gwansim', desc: '출진할 때부터 관심법 Lv2' },
-];
-
 /** Option keys that belong to one hero (data/gearOptions.js GEAR_OPTIONS `hero`). */
 const heroOnlyKeys = Object.fromEntries(GEAR_OPTIONS.filter((o) => o.hero).map((o) => [o.key, o.hero]));
 
@@ -394,7 +381,6 @@ export function metaBonus(save, heroId) {
   const schools = schoolCounts(wornItems);
   if (Object.keys(schools).length) total.schools = schools;
   for (const [sc, n] of Object.entries(schools)) if (n >= SCHOOL_SETS[2]) add(SCHOOLS[sc].six);
-  const grants = SECRETS.filter((s) => s.hero === heroId && save.secrets.includes(s.id)).map((s) => s.grant);
-  // Copies stack: each one is a level at the start and an extra pick (초월, systems/over.js).
-  return { ...total, grants: [...grants, ...gearGrants] };
+  // 책략 전수 (gear 비기): copies stack — each one is a level at the start and an extra pick (초월, systems/over.js).
+  return { ...total, grants: gearGrants };
 }

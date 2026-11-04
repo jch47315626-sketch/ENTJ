@@ -45,7 +45,7 @@ const MAX_ENEMIES = 420;
 
 class Player {
   constructor(hero, meta = {}) {
-    this.meta = meta; // bonuses from gear, 결기 and 비전 (data/meta.js)
+    this.meta = meta; // bonuses from gear, 결기 and 영물 (data/meta.js)
     this.hero = hero;
     this.x = 0;
     this.y = 0;
@@ -963,7 +963,7 @@ export class Game {
   }
 
   /**
-   * Start-of-run perks: 책략 granted by 비전 and gear. Each copy is one level
+   * Start-of-run perks: 책략 granted by gear (책략 전수). Each copy is one level
    * (never the 궁극기 itself), and as many extra picks open after the last
    * level (초월).
    */

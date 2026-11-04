@@ -9,7 +9,7 @@ import { SLOTS, EQUIPMENT, gearId } from '../data/meta.js';
 const KEY = 'samhan-save-v1';
 
 // outfit: { [slotId]: itemId } — one outfit, worn by whichever hero goes out (gear is shared).
-const fresh = () => ({ money: 0, crystals: 0, gyeolgi: {}, owned: [], outfit: {}, secrets: [], best: {}, forge: {}, codex: { kills: {}, runs: 0, wins: 0, earned: 0 }, ach: {}, stats: {}, ...freshSpirit() });
+const fresh = () => ({ money: 0, crystals: 0, gyeolgi: {}, owned: [], outfit: {}, best: {}, forge: {}, codex: { kills: {}, runs: 0, wins: 0, earned: 0 }, ach: {}, stats: {}, ...freshSpirit() });
 // codex: lifetime record for the 도감 — kills by enemy/boss id, runs, wins, 냥 earned.
 // forge: { [itemId]: 0..5 } — 제련 level of each owned item.
 // 사신의 제단 and 영물 (data/altar.js): yeongju 영주, essence 사신 정수,
@@ -169,7 +169,7 @@ function migrate(save) {
   if (!Array.isArray(save.owned)) save.owned = [];
   if (!Number.isFinite(save.money)) save.money = 0;
   // Each step on its own: one that fails leaves the rest (and the save) intact.
-  for (const step of [migrateSpirit, splitFieldLevels, refundBuilds, refundTraining, mergeHeroGear]) {
+  for (const step of [migrateSpirit, splitFieldLevels, refundBuilds, refundTraining, mergeHeroGear, refundSecrets]) {
     try {
       step(save);
     } catch (e) {
@@ -209,6 +209,15 @@ function migrateSpirit(save) {
  * 수련 was taken out of the 성장 tab (its stats live on in 결기): the 냥 paid
  * for it comes back once. Prices as they were: each level cost base × level.
  */
+/** 비전 (hero secrets) were removed: what was paid for them comes back as 냥. */
+function refundSecrets(save) {
+  const PRICE = { secretShin: 700, secretHorse: 700, secretFury: 600, secretChain: 700, secretVajra: 700, secretGwansim: 700 };
+  let back = 0;
+  for (const id of Array.isArray(save.secrets) ? save.secrets : []) back += PRICE[id] ?? 0;
+  delete save.secrets;
+  if (back) save.money += back;
+}
+
 function refundTraining(save) {
   const BASE = { swordDrill: 150, body: 120, riding: 200, fortune: 180 };
   let back = 0;

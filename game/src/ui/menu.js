@@ -4,7 +4,7 @@ import { BOSSES } from '../data/bosses.js';
 import { ENEMIES } from '../data/enemies.js';
 import { WEAPONS } from '../data/weapons.js';
 import {
-  SLOTS, EQUIPMENT, SECRETS, REWARD_BY_STARS, GRADES, FORGE,
+  SLOTS, EQUIPMENT, REWARD_BY_STARS, GRADES, FORGE,
   forgeCost, gradeOpen, itemBonus, bonusText, metaBonus, entryCheck, armorCut,
   TIER, TOP_TIER, tierOf, tierCost, canBuy,
 } from '../data/meta.js';
@@ -51,7 +51,7 @@ const ownBonus = (save, item, lv = forgeLv(save, item)) => itemBonus(item, lv, t
 const SLOT_ICON = { head: '🪖', body: '🛡️', charm: '📿', wrist: '💠', belt: '🎗️', feet: '👢' };
 
 // Remembered between renders: which tab or card is open on each screen.
-const ui = { heroTab: 'gear', growTab: 'secret', slot: 'head', codexTab: 'hero', mapStage: null };
+const ui = { heroTab: 'gear', growTab: 'gyeolgi', slot: 'head', codexTab: 'hero', mapStage: null };
 
 function el(tag, cls, html) {
   const e = document.createElement(tag);
@@ -78,7 +78,7 @@ const GEM = () => img('icon/crystal', 'gem-img');
 const priceBtn = (price, money, onClick) => button(`${COIN()}${fmt(price)}`, 'buy-btn', onClick, money < price);
 /** 완료 stamp: a gold tick in a ring over a small plaque. */
 const doneSeal = (text = '완료') => el('span', 'done-seal', `<i>✓</i><em>${text}</em>`);
-/** Section title in brush strokes with a red seal, as on the 비전 board. */
+/** Section title in brush strokes with a red seal. */
 const sealOf = (hanja) => `<i class="title-seal">${[...hanja].join('<br>')}</i>`;
 const secHead = (title, seal, sub) => el('div', 'sec-head', `<b>${title}</b>${seal ? sealOf(seal) : ''}${sub ? `<small>${sub}</small>` : ''}`);
 /** Centered heading between gold rules (도감 groups). */
@@ -199,8 +199,8 @@ export function renderPurseBar(save) {
 // ------------------------------------------------------------ 메뉴 묶음
 
 
-/** 💪 강화: 장비 · 제련 · 비전 · 결기 · 영물 (영물 once the altar has been tried). */
-const POWER_TABS = [['gear', '🛡️ 장비', 'heroes'], ['forge', '🔨 제련', 'heroes'], ['secret', '📜 비전', 'grow'], ['gyeolgi', '💎 결기', 'grow'], ['spirit', '🐾 영물', 'spirit']];
+/** 💪 강화: 장비 · 제련 · 결기 · 영물 (영물 once the altar has been tried). */
+const POWER_TABS = [['gear', '🛡️ 장비', 'heroes'], ['forge', '🔨 제련', 'heroes'], ['gyeolgi', '💎 결기', 'grow'], ['spirit', '🐾 영물', 'spirit']];
 export const spiritOpen = (save) => (save.altarRuns ?? 0) > 0 || Object.keys(save.spirits ?? {}).length > 0;
 function powerTabs(save, act, current) {
   const tabs = POWER_TABS.filter(([id]) => id !== 'spirit' || spiritOpen(save));
@@ -216,7 +216,7 @@ export function goPower(act, id) {
   act.go(t[2]);
 }
 
-/** The three heroes to choose between (장비 · 제련 · 비전 are per hero). */
+/** The three heroes to choose between. */
 function heroPicker(save, sel, act) {
   const pick = el('div', 'hero-pick');
   for (const h of Object.values(HEROES)) {
@@ -805,9 +805,8 @@ export function renderGrow(save, sel, act) {
   const body = $('growBody');
   body.innerHTML = '';
   body.append(header('강화', save, act, '強化'));
-  if (ui.growTab !== 'gyeolgi') ui.growTab = 'secret';
+  ui.growTab = 'gyeolgi';
   body.append(powerTabs(save, act, ui.growTab));
-  if (ui.growTab === 'secret') body.append(heroPicker(save, sel, act));
   const grid = el('div', 'grow-grid');
 
   // 결기 상점: 무한 전장's 결기수정 buy permanent stacks.
@@ -840,28 +839,8 @@ export function renderGrow(save, sel, act) {
   if (!(save.crystals ?? 0) && !Object.keys(save.gyeolgi ?? {}).length) gy.append(el('p', 'hint', '♾️ 무한 전장에서는 냥 대신 결기수정이 떨어져요. 오래 버틸수록, 어려운 전장일수록 많이 모여요.'));
   if (ui.growTab === 'gyeolgi') grid.append(gy);
 
-  const sec = el('div', 'grow-card secret-card');
-  sec.append(secHead('비전', '秘傳', '영웅별 · 출진할 때 이 스킬을 들고 시작'));
-  const mine = SECRETS.filter((s) => s.hero === sel.hero);
-  const others = SECRETS.filter((s) => s.hero !== sel.hero);
-  for (const sc of [...mine, ...others]) {
-    const has = save.secrets.includes(sc.id);
-    const row = el('div', `grow-row scroll-row${has ? ' on' : ''}${sc.hero !== sel.hero ? ' other' : ''}`);
-    row.innerHTML = `${img(`row/scroll-${SECRET_SCROLL[sc.id] ?? 'swords'}`, 'gr-scroll')}<div class="gr-text"><b>${sc.name} <i>${HEROES[sc.hero].name}</i></b><span>${sc.desc}</span></div>`;
-    row.append(has ? tag('습득', 'got-tag') : priceBtn(sc.price, save.money, () => act.learn(sc)));
-    holdTip(row, tipHtml(`📜 ${sc.name}`, [
-      `${HEROES[sc.hero].name} 전용 · ${sc.desc}`,
-      '배워 두면 출진할 때마다 이 책략을 Lv1로 들고 시작해요 (레벨업 카드 한 장을 아끼는 셈).',
-      has ? '✅ 이미 배웠어요' : `값: ${fmt(sc.price)}냥 (가진 냥 ${fmt(save.money)})`,
-    ]));
-    sec.append(row);
-  }
-  if (ui.growTab === 'secret') grid.append(sec);
   body.append(grid);
 }
-
-/** Which painted scroll stands for each 비전. */
-const SECRET_SCROLL = { secretVajra: 'dragon', secretGwansim: 'eye', secretShin: 'swords', secretHorse: 'horse', secretFury: 'swords', secretChain: 'dragon' };
 
 // =================================================================== 전장
 
@@ -1050,8 +1029,6 @@ export function renderPrep(save, sel, act) {
     ui.heroTab = 'gear';
     act.go('heroes');
   });
-  const secrets = SECRETS.filter((s) => s.hero === h.id && save.secrets.includes(s.id)).map((s) => s.name);
-  sec('비전', secrets.length ? `📜 ${secrets.join(', ')}` : '없음', () => goPower(act, 'secret'));
   sec('전장', `${starText(st.difficulty.stars)} ${st.name} · 적장 ${boss.name}`, () => act.go('map'));
   sec('전투력', `❤️ ${Math.round(h.stats.maxHp + (m.maxHp ?? 0))} · ⚔️ ×${(h.stats.might * (1 + (m.might ?? 0))).toFixed(2)} · 🛡️ ${+(h.stats.armor + (m.armor ?? 0)).toFixed(1)} (피해 −${Math.round(armorCut(h.stats.armor + (m.armor ?? 0)) * 100)}%)`);
   body.append(card);

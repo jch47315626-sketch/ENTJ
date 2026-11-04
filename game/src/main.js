@@ -619,11 +619,6 @@ const act = {
     sound.sfx('forgeOk');
     done();
   },
-  learn(sc) {
-    if (!spend(sc.price)) return;
-    save.secrets.push(sc.id);
-    done();
-  },
   /** 각인: reroll one option line of an owned piece for 냥. */
   /**
    * 🔷 속성 각인: give an owned piece a 속성 (Lv1), or change it (Lv kept).
