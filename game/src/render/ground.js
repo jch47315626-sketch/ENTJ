@@ -7,7 +7,7 @@ const TILE = 200;
  * TILE_PX world units). A ground with a tile is painted from it; the others
  * keep their procedural painter below.
  */
-const GROUND_TILES = ['tidalFlat', 'autumnHills', 'winterRiver', 'palaceCourt', 'riverPlain', 'mountainPass', 'pineForest', 'snowPeak', 'bloodTide', 'ghostBarrow', 'frostHell'];
+const GROUND_TILES = ['tidalFlat', 'autumnHills', 'winterRiver', 'palaceCourt', 'riverPlain', 'mountainPass', 'pineForest', 'snowPeak', 'bloodTide', 'ghostBarrow', 'frostHell', 'ashPalace'];
 const TILE_PX = 4;
 const tiles = {};
 for (const id of GROUND_TILES) {
