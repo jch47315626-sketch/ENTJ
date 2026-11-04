@@ -91,3 +91,15 @@ python3 tools/spirits/import.py bat 박쥐.png bear 산곰.png
 흰 배경을 지우고, 그림의 픽셀 한 칸 크기를 재서(재지 못하면 64칸 격자로) 진짜 작은 픽셀 그림으로 줄인 뒤
 `game/assets/spirits/<id>.png`와 `game/src/data/spiritSprites.js`에 넣습니다. 그림이 있는 영물은 전장과 메뉴에서
 그 그림을 쓰고, 없는 영물은 `pixelBeast.js`의 틀 그림을 그대로 씁니다. 그림은 오른쪽을 보게 그려 주세요.
+
+## 그린 영웅·적·아군 그림 넣기
+
+```bash
+python3 tools/spirits/import.py hero:wanggeon_front 앞.png hero:wanggeon_back 뒤.png hero:wanggeon_weapon 검.png
+python3 tools/spirits/import.py unit:kimak 김악.png unit:singeom_2 신검2.png unit:ally_soldier 아군창병.png
+```
+
+- `hero:` 영웅 앞·뒤·무기(무기는 손에 붙여 휘두름) → `game/assets/heroes/`
+- `unit:` 적·적장(2단계는 `<id>_2`)·아군(`ally_soldier`, `ally_archer`, `ally_shin`) 한 장 → `game/assets/units/`
+- 흰 배경과 그림에 박힌 가짜 투명 체크무늬(활 안쪽처럼 막힌 곳 포함)를 지우고, 64칸 픽셀 그림으로 줄입니다.
+- 그림이 없는 인물은 `pixelUnit.js`가 만든 픽셀 그림 그대로 나옵니다.

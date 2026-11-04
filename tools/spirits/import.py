@@ -46,10 +46,43 @@ def clear_white(im):
         seen.add((x, y))
         r, g, b, a = px[x, y]
         # White, or the light neutral grey of a fake 'transparent' checkerboard baked into the picture.
-        if a < 20 or (r > 232 and g > 232 and b > 232) or (min(r, g, b) > 180 and max(r, g, b) - min(r, g, b) < 14):
+        if a < 20 or (r > 232 and g > 232 and b > 232) or (min(r, g, b) > 165 and max(r, g, b) - min(r, g, b) < 16):
             px[x, y] = (0, 0, 0, 0)
             q.extend(((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)))
+    clear_enclosed_checker(im, seen)
     return im
+
+
+def clear_enclosed_checker(im, done):
+    """
+    A fake checkerboard also shows through closed gaps (inside a bow and its string). On pictures whose
+    background was one, clear enclosed patches that are themselves checkerboard: both the light and
+    the grey squares in good measure. (White fur or a grey beard is one shade with shading, not two.)
+    """
+    w, h = im.size
+    px = im.load()
+    neutral = lambda c: c[3] > 20 and min(c[:3]) > 165 and max(c[:3]) - min(c[:3]) < 16
+    light = lambda c: min(c[:3]) > 222
+    seen = set()
+    for sy in range(0, h, 4):
+        for sx in range(0, w, 4):
+            if (sx, sy) in seen or (sx, sy) in done or not neutral(px[sx, sy]):
+                continue
+            comp, q = [], deque([(sx, sy)])
+            seen.add((sx, sy))
+            while q:
+                x, y = q.popleft()
+                comp.append((x, y))
+                for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                    if 0 <= nx < w and 0 <= ny < h and (nx, ny) not in seen and neutral(px[nx, ny]):
+                        seen.add((nx, ny))
+                        q.append((nx, ny))
+            if len(comp) < 600:
+                continue
+            nl = sum(1 for x, y in comp if light(px[x, y]))
+            if 0.25 < nl / len(comp) < 0.75:
+                for x, y in comp:
+                    px[x, y] = (0, 0, 0, 0)
 
 
 def block_size(im):

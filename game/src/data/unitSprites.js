@@ -109,15 +109,27 @@ export const UNIT_SPRITES = {
     "h": 64
   },
   "yanggil_2": {
-    "w": 60,
-    "h": 51
+    "w": 64,
+    "h": 54
   },
   "yanggil": {
     "w": 64,
-    "h": 55
+    "h": 56
   },
   "heukpung": {
-    "w": 62,
-    "h": 57
+    "w": 64,
+    "h": 58
+  },
+  "ally_shin": {
+    "w": 54,
+    "h": 53
+  },
+  "ally_archer": {
+    "w": 55,
+    "h": 64
+  },
+  "ally_soldier": {
+    "w": 64,
+    "h": 60
   }
 };
