@@ -99,5 +99,13 @@ export const UNIT_SPRITES = {
   "trapper": {
     "w": 62,
     "h": 64
+  },
+  "wonhoe": {
+    "w": 63,
+    "h": 64
+  },
+  "yugeumpil": {
+    "w": 64,
+    "h": 64
   }
 };
