@@ -107,5 +107,17 @@ export const UNIT_SPRITES = {
   "yugeumpil": {
     "w": 64,
     "h": 64
+  },
+  "yanggil_2": {
+    "w": 60,
+    "h": 51
+  },
+  "yanggil": {
+    "w": 64,
+    "h": 55
+  },
+  "heukpung": {
+    "w": 62,
+    "h": 57
   }
 };

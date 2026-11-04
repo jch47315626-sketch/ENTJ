@@ -45,7 +45,8 @@ def clear_white(im):
             continue
         seen.add((x, y))
         r, g, b, a = px[x, y]
-        if a < 20 or (r > 232 and g > 232 and b > 232):
+        # White, or the light neutral grey of a fake 'transparent' checkerboard baked into the picture.
+        if a < 20 or (r > 232 and g > 232 and b > 232) or (min(r, g, b) > 180 and max(r, g, b) - min(r, g, b) < 14):
             px[x, y] = (0, 0, 0, 0)
             q.extend(((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)))
     return im
@@ -125,6 +126,9 @@ def to_pixels(path, cells=64, colours=48):
     im = im.crop(im.getbbox())
     bs = block_size(im)
     smooth = bs is None or bs > 30
+    # A grid finer than the set's (a model drawing tiny "pixels") is treated like a drawing too.
+    if not smooth and max(im.size) / bs > cells * 1.15:
+        smooth = True
     if smooth:
         bs = max(im.size) / cells
     small = downsample(im, bs)
