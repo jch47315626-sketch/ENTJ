@@ -25,6 +25,7 @@ import { Spawner } from './systems/spawner.js';
 import { updateSkills, curseFoe } from './systems/skills.js';
 import { withOver, overOf } from './systems/over.js';
 import { ELEMENTS } from './data/imprint.js';
+import { SCHOOL_SETS } from './data/schools.js';
 import { updateTerrain, inBog } from './systems/terrain.js';
 import { pixelFx } from './render/pixelFx.js';
 
@@ -642,6 +643,16 @@ export class Game {
         p.invuln = INVULN_TIME;
         return false;
       }
+    } else if (p.shield > 0) {
+      // 🍃 선단's shield (with 영물 along, spiritAbsorb soaks it).
+      const soak = Math.min(p.shield, dmg);
+      p.shield -= soak;
+      dmg -= soak;
+      if (p.shield <= 0) p.shieldMax = 0;
+      if (dmg <= 0) {
+        p.invuln = INVULN_TIME;
+        return false;
+      }
     }
     // 천리마: on horseback, blows glance off.
     if (p.mount?.L.guard) dmg = Math.max(1, dmg * (1 - p.mount.L.guard));
@@ -712,7 +723,9 @@ export class Game {
     const lvl = (u) => p.upgrades[u.id] ?? 0;
     // 한계 돌파 (gear 비기): some 책략 may go one level higher.
     const cap = (u) => u.maxLevel + (p.meta.caps?.[u.id] ?? 0) + (p.bonusPicks[u.id] ?? 0);
-    const pool = UPGRADES.filter((u) => (!u.heroes || u.heroes.includes(p.hero.id)) && (u.available ? u.available(this) : lvl(u) < cap(u)));
+    // 장비 계열 책략 come up once two pieces of that school are worn (data/schools.js).
+    const schoolOpen = (u) => !u.school || (p.meta.schools?.[u.school] ?? 0) >= SCHOOL_SETS[0];
+    const pool = UPGRADES.filter((u) => (!u.heroes || u.heroes.includes(p.hero.id)) && schoolOpen(u) && (u.available ? u.available(this) : lvl(u) < cap(u)));
     const choices = [];
     // 궁핍 (난세 패): fewer cards to choose from.
     const count = (this.stage.difficulty.choiceCount ?? 3) + (this.spiritCards ?? 0);

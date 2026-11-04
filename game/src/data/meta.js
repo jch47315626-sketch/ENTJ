@@ -3,6 +3,7 @@ import { josa } from '../core/korean.js';
 import { gyeolgiBonus } from './gyeolgi.js';
 import { imprintBonus, imprintSets } from './imprint.js';
 import { GEAR_OPTIONS } from './gearOptions.js';
+import { SCHOOLS, SCHOOL_ORDER, SCHOOL_SETS, schoolCounts } from './schools.js';
 
 /**
  * Progression between runs: money (냥) earned per run, equipment bought
@@ -205,10 +206,17 @@ export const gearId = (heroId, baseId) => `${heroId}.${baseId}`;
 
 /**
  * Every piece of gear. Gear is shared: one armoury for all three heroes,
- * whoever goes out wears the same outfit (save.outfit). `base` is the
- * template id (its drawing is reused for the icon).
+ * whoever goes out wears the same outfit (save.outfit). Each template piece
+ * comes in the five 계열 (data/schools.js): same stats, a different school.
+ * The 무(武) piece keeps the template id (older saves); the others are
+ * "lamellar@jin" and so on. `base` is the template id (its drawing is
+ * reused for the icon).
  */
-export const EQUIPMENT = GEAR_BASE.map((b) => ({ ...b, base: b.id, name: GEAR_NAMES[b.slot][b.grade - 1], icon: b.icon ?? b.id }));
+export const schoolId = (baseId, school) => (school === SCHOOL_ORDER[0] ? baseId : `${baseId}@${school}`);
+export const EQUIPMENT = GEAR_BASE.flatMap((b) => SCHOOL_ORDER.map((sc) => ({
+  ...b, id: schoolId(b.id, sc), base: b.id, school: sc,
+  name: `${SCHOOLS[sc].prefix} ${GEAR_NAMES[b.slot][b.grade - 1]}`, icon: b.icon ?? b.id,
+})));
 export const GEAR_BASE_IDS = GEAR_BASE.map((b) => b.id);
 
 /**
@@ -345,9 +353,11 @@ export function metaBonus(save, heroId) {
     for (const k in b) total[k] = (total[k] ?? 0) + b[k];
   };
   const outfit = save.outfit ?? {};
+  const wornItems = [];
   for (const slot of SLOTS) {
     const item = EQUIPMENT.find((e) => e.id === outfit[slot.id]);
     if (item) {
+      wornItems.push(item);
       add(itemBonus(item, save.forge?.[item.id] ?? 0, tierOf(save, item)));
       // 🔷 속성 각인 (data/imprint.js): the piece's own 속성 stats; sets are counted below.
       const rec = save.imprint?.[item.id];
@@ -372,6 +382,10 @@ export function metaBonus(save, heroId) {
   add(gyeolgiBonus(save));
   const sets = imprintSets(worn);
   if (Object.keys(sets).length) total.imprintSets = sets;
+  // 장비 계열: pieces worn per school (책략 at 2, 궁극기 at 4), and the 6-piece bonus.
+  const schools = schoolCounts(wornItems);
+  if (Object.keys(schools).length) total.schools = schools;
+  for (const [sc, n] of Object.entries(schools)) if (n >= SCHOOL_SETS[2]) add(SCHOOLS[sc].six);
   const grants = SECRETS.filter((s) => s.hero === heroId && save.secrets.includes(s.id)).map((s) => s.grant);
   // Copies stack: each one is a level at the start and an extra pick (초월, systems/over.js).
   return { ...total, grants: [...grants, ...gearGrants] };

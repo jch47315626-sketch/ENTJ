@@ -1166,6 +1166,15 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 .ic-opt.special .io-text { color: #e2d2ff; font-family: "Jua", sans-serif; font-size: 13px; line-height: 1.35; }
 .ic-opt.special .io-text::before { content: '비기 '; color: var(--candy-lilac); font-size: 11px; }
 
+/* 🧭 장비 계열 */
+.school-sets { display: flex; flex-direction: column; gap: 5px; margin: 10px 0 4px; padding: 10px 12px; border-radius: 14px; background: rgba(200, 120, 60, 0.1); border: 1px solid rgba(230, 170, 90, 0.35); }
+.school-sets .is-title { font: 400 15px "Jua", sans-serif; color: #ffd9a8; }
+.school-sets .is-title small { font: 400 11.5px sans-serif; color: rgba(255, 255, 255, 0.6); margin-left: 4px; }
+.school-sets .is-hint { color: rgba(255, 255, 255, 0.7); line-height: 1.4; }
+.school-tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin: 6px 0 4px; }
+.school-tab { padding: 6px 2px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--sc) 60%, transparent); background: rgba(0, 0, 0, 0.25); color: var(--hanji); font: 400 12.5px "Jua", sans-serif; cursor: pointer; }
+.school-tab.on { background: color-mix(in srgb, var(--sc) 45%, rgba(0, 0, 0, 0.2)); color: #fff; box-shadow: 0 0 8px color-mix(in srgb, var(--sc) 50%, transparent); }
+.school-blurb { display: block; margin: 0 2px 6px; color: rgba(255, 255, 255, 0.72); font-size: 12px; line-height: 1.4; }
 /* 하·중·상 */
 .ic-tier { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 4px; padding: 4px 8px; border-radius: 10px; background: rgba(120, 80, 30, 0.08); border: 1px solid rgba(140, 100, 50, 0.25); color: #3a2a18; font-size: 12px; }
 .it-pips { display: inline-flex; gap: 3px; flex: none; }

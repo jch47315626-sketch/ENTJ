@@ -40,6 +40,8 @@ export function updateAllies(g, dt) {
       if (a.life <= 0) {
         a.dead = true;
         g.fx.push({ type: 'puff', x: a.x, y: a.y, t: 0, life: 0.5, size: 16, tone: 'light' });
+        // 🚩 팔진도: a flag soldier's last cry strikes those around.
+        if (a.banner) hitArc(g, a.x, a.y, 0, 90, 360, SOLDIER.damage * 4 * a.banner * p.stats.might * (1 + (p.meta.allyMul ?? 0)), 160, 'burst');
       }
     } else if (a.kind === 'maguni') {
       updateMaguni(g, a, maguniIndex++, maguniCount, dt);

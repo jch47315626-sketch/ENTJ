@@ -18,6 +18,7 @@ import { staminaOf, staminaText, staminaWait, endlessLeft, ENDLESS_PER_DAY } fro
 import { josa } from '../core/korean.js';
 import { lineText, lineMax, engraveCost } from '../data/gearOptions.js';
 import { IMPRINT, ELEMENTS, ELEMENT_ORDER, imprintCost, imprintText, imprintSets } from '../data/imprint.js';
+import { SCHOOLS, SCHOOL_ORDER, SCHOOL_SETS, schoolCounts } from '../data/schools.js';
 import { HELP } from '../data/help.js';
 import { codexEntry, FOES, GENERALS } from '../data/codexTiers.js';
 import { NANSE_CARDS } from '../data/nanse.js';
@@ -512,21 +513,38 @@ function gearPanel(save, h, act) {
     const it = itemById(wear[sl.id]);
     const b = button('', `d2-slot${sl.id === ui.slot ? ' on' : ''}${it ? '' : ' empty'}`, () => {
       ui.slot = sl.id;
+      ui.school = null;
       act.refresh();
     });
     b.style.gridArea = sl.id;
     if (it) b.style.setProperty('--grade', GRADES[it.grade].color);
     b.append(iconCanvas(it ? it.id : `empty:${sl.id}`, 40, 'icon'));
-    b.append(el('span', 'd2-label', it ? itemName(save, it) : `${SLOT_ICON[sl.id]} ${sl.name}`));
+    b.append(el('span', 'd2-label', it ? `${it.school ? SCHOOLS[it.school].icon : '🌟'} ${itemName(save, it)}` : `${SLOT_ICON[sl.id]} ${sl.name}`));
     doll.append(b);
   }
   box.append(doll);
 
+  box.append(schoolCard(save));
   box.append(imprintSetCard(save, h));
   const slot = SLOTS.find((s) => s.id === ui.slot);
   box.append(el('h4', 'list-title', `${SLOT_ICON[slot.id]} ${slot.name} <small>장비는 세 영웅이 함께 써요 — 누가 출전해도 같은 차림이에요</small>`));
   const list = el('div', 'item-list');
-  for (const item of EQUIPMENT.filter((e) => e.slot === slot.id)) list.append(itemCard(save, h, item, act));
+  // 계열 tabs: the list shows one school at a time (the worn piece's, until another is picked).
+  const wornHere = EQUIPMENT.find((e) => e.id === wear[slot.id]);
+  const school = ui.school ?? wornHere?.school ?? SCHOOL_ORDER[0];
+  const tabs = el('div', 'school-tabs');
+  for (const sc of SCHOOL_ORDER) {
+    const S = SCHOOLS[sc];
+    const b = button(`${S.icon} ${S.name}`, `school-tab${sc === school ? ' on' : ''}`, () => {
+      ui.school = sc;
+      act.refresh();
+    });
+    b.style.setProperty('--sc', S.color);
+    tabs.append(b);
+  }
+  box.append(tabs);
+  box.append(el('small', 'school-blurb', `${SCHOOLS[school].icon} ${SCHOOLS[school].title} — ${SCHOOLS[school].blurb}. 2부위: 「${SCHOOLS[school].levels[0].name}」 책략 · 4부위: 궁극기 「${SCHOOLS[school].levels.at(-1).name}」 · 6부위: ${SCHOOLS[school].sixText}`));
+  for (const item of EQUIPMENT.filter((e) => e.slot === slot.id && (e.relic || e.school === school))) list.append(itemCard(save, h, item, act));
   box.append(list);
   return box;
 }
@@ -593,8 +611,7 @@ function itemCard(save, h, item, act) {
 
 /** The piece one grade below in the same slot (for the 🔒 hint). */
 function belowName(item) {
-  const b = EQUIPMENT.find((o) => o.slot === item.slot && o.grade === item.grade - 1 && !o.relic);
-  return b ? `${GRADES[b.grade].name} ${b.name}` : '아래 등급';
+  return item.grade > 1 ? `같은 부위 ${GRADES[item.grade - 1].name} 장비(계열 상관없이)` : '아래 등급';
 }
 
 /** 하·중·상 on one owned piece: pips, and the 승급 button with what it gives. */
@@ -609,8 +626,8 @@ function tierRow(save, item, act) {
     row.append(el('small', 'it-next', `${TIER.names[t + 1]}: ${bonusText(nb)}`));
     row.append(button(`⬆️ ${TIER.names[t + 1]} 승급 <small>${COIN()}${fmt(cost)}</small>`, 'io-btn it-up', () => act.promote(item), save.money < cost));
   } else {
-    const nxt = !item.relic && EQUIPMENT.find((o) => o.slot === item.slot && o.grade === item.grade + 1 && !o.relic);
-    row.append(el('small', 'it-next', nxt ? `✔ 상 — ${josa(`${GRADES[nxt.grade].name} ${nxt.name}`, '을')} 살 수 있어요` : '✔ 상 — 최고 단계'));
+    const nxt = !item.relic && EQUIPMENT.find((o) => o.slot === item.slot && o.grade === item.grade + 1 && o.school === item.school);
+    row.append(el('small', 'it-next', nxt ? `✔ 상 — ${GRADES[nxt.grade].name} 장비를 살 수 있어요 (계열은 자유)` : '✔ 상 — 최고 단계'));
   }
   return row;
 }
@@ -651,6 +668,32 @@ function imprintRow(save, item, act) {
     row.append(pick);
   }
   return row;
+}
+
+/** Worn pieces by 계열, and what they open (책략 at 2 · 궁극기 at 4 · bonus at 6). */
+function schoolCard(save) {
+  const items = SLOTS.map((sl) => EQUIPMENT.find((e) => e.id === outfit(save)[sl.id])).filter(Boolean);
+  const n = schoolCounts(items);
+  const card = el('div', 'school-sets');
+  card.append(el('b', 'is-title', `🧭 장비 계열 <small>같은 계열 2부위 책략 · 4부위 궁극기 · 6부위 강화 — 어느 영웅이든</small>`));
+  const shown = SCHOOL_ORDER.filter((sc) => n[sc]);
+  if (!shown.length) {
+    card.append(el('small', 'is-hint', '같은 계열 장비를 여러 부위 입으면 그 계열의 책략과 궁극기가 레벨업 카드에 나와요.'));
+    return card;
+  }
+  for (const sc of shown) {
+    const S = SCHOOLS[sc];
+    const c = n[sc];
+    const got = [c >= SCHOOL_SETS[0] && `✨ 책략 「${S.levels[0].name}」`, c >= SCHOOL_SETS[1] && `🌟 궁극기 「${S.levels.at(-1).name}」`, c >= SCHOOL_SETS[2] && `💪 ${S.sixText}`].filter(Boolean);
+    const next = SCHOOL_SETS.find((k) => c < k);
+    const nextText = next === SCHOOL_SETS[0] ? `책략 「${S.levels[0].name}」` : next === SCHOOL_SETS[1] ? `궁극기 「${S.levels.at(-1).name}」` : next ? S.sixText : '';
+    const row = el('div', `is-row${got.length ? ' on' : ''}`, `<span>${S.icon} ${S.name} <b>${c}부위</b></span>`
+      + (got.length ? `<small>${got.join(' · ')}</small>` : '')
+      + (next ? `<small class="is-next">${next}부위: ${nextText}</small>` : ''));
+    row.style.setProperty('--el', S.color);
+    card.append(row);
+  }
+  return card;
 }
 
 /** Worn 속성 각인 by 속성, with the set techniques they open (2 · 4 · 6 pieces). */
