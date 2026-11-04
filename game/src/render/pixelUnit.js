@@ -757,5 +757,21 @@ function drawHeroPicture(ctx, look, pics, R, sx, back, flash, hand) {
   return true;
 }
 
+/**
+ * A field object or cart from its drawn picture (game/assets/units/<id>.png): bottom on y + r*0.9,
+ * about `h` tall. Returns false when there is no picture (the path drawing stays).
+ */
+export function drawObjectPicture(ctx, id, x, y, r, h, flash) {
+  const pic = unitPics[id];
+  if (!pic || !pic.img.complete || !pic.img.naturalWidth) return false;
+  const img = pic.img, k = h / img.naturalHeight;
+  if (flash) pic.flash ??= silhouette(img, HANJI);
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(flash ? pic.flash : img, Math.round(x - (img.naturalWidth * k) / 2), Math.round(y + r * 0.9 - h), img.naturalWidth * k, h);
+  ctx.restore();
+  return true;
+}
+
 // Shared with render/pixelBeast.js.
 export { sheet, toCanvas, silhouette, C, lighten, darken, ball, INK, HANJI };

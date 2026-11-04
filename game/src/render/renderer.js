@@ -1,5 +1,6 @@
 import { GROUNDS } from './ground.js';
 import { drawBogs, drawRocks } from './terrain.js';
+import { drawObjectPicture } from './pixelUnit.js';
 import { drawUnit, drawCart, drawCoin, drawRice, drawProjectile } from './sprites.js';
 import { clamp, TAU } from '../core/math.js';
 import { drawUltFx, drawScreenFlash } from './ultFx.js';
@@ -394,6 +395,18 @@ export class Renderer {
     ctx.lineWidth = 2;
     ctx.strokeStyle = '#1d1a17';
     let icon;
+    // A drawn picture, when there is one; the hint icon still bobs above it.
+    if (drawObjectPicture(ctx, e.def.id, x, y, r, r * 3.2, flash)) {
+      icon = { oil: '🔥', drum: '🥁' }[e.def.object] ?? '✨';
+      const bob = Math.sin(g.time * 3 + x * 0.01) * 3;
+      ctx.font = '16px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.globalAlpha = 0.9;
+      ctx.fillText(icon, x, y - r * 2.4 - 10 + bob);
+      ctx.restore();
+      return;
+    }
     if (e.def.object === 'oil') {
       icon = '🔥';
       // Round-bellied jar with a dark, glistening mouth.
@@ -703,7 +716,7 @@ export class Renderer {
   drawEnemy(ctx, g, e) {
     if (e.def.object) return this.drawFieldObject(ctx, g, e);
     if (e.def.behavior === 'static') {
-      drawCart(ctx, e.x, e.y, e.r, e.flash > 0);
+      if (!drawObjectPicture(ctx, 'cart', e.x, e.y, e.r, e.r * 2.6, e.flash > 0)) drawCart(ctx, e.x, e.y, e.r, e.flash > 0);
       return;
     }
     if (e.hidden) {

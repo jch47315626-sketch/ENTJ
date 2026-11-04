@@ -30,6 +30,10 @@ UNIT_OUT = os.path.join(ROOT, 'game/assets/units')
 UNIT_MANIFEST = os.path.join(ROOT, 'game/src/data/unitSprites.js')
 HERO_OUT = os.path.join(ROOT, 'game/assets/heroes')
 HERO_MANIFEST = os.path.join(ROOT, 'game/src/data/heroSprites.js')
+# Pictures with stray leftovers (a cart that came with a floating helmet and boots): keep the main body only.
+KEEP_MAIN = {'cart'}
+# Areas to blank in the source (fractions x0, y0, x1, y1): the cart's leftover boots under it.
+ERASE = {'cart': [(0.2, 0.82, 0.42, 1.0), (0.55, 0.82, 0.8, 1.0)]}
 SASIN = {'cheongnyong', 'jujak', 'baekho', 'hyeonmu'}
 
 
@@ -38,6 +42,9 @@ def clear_white(im):
     w, h = im.size
     px = im.load()
     seen = set()
+    # A dark fake checkerboard (dark greys) shows as a dark border: clear dark neutral greys then too.
+    edge = [px[x, y] for x in range(0, w, 7) for y in (0, h - 1)] + [px[x, y] for y in range(0, h, 7) for x in (0, w - 1)]
+    dark_bg = sum(1 for c in edge if max(c[:3]) < 110 and max(c[:3]) - min(c[:3]) < 14) > len(edge) * 0.5
     q = deque([(x, y) for x in range(w) for y in (0, h - 1)] + [(x, y) for y in range(h) for x in (0, w - 1)])
     while q:
         x, y = q.popleft()
@@ -46,14 +53,24 @@ def clear_white(im):
         seen.add((x, y))
         r, g, b, a = px[x, y]
         # White, or the light neutral grey of a fake 'transparent' checkerboard baked into the picture.
-        if a < 20 or (r > 232 and g > 232 and b > 232) or (min(r, g, b) > 165 and max(r, g, b) - min(r, g, b) < 16):
+        if a < 20 or (r > 232 and g > 232 and b > 232) or (min(r, g, b) > 165 and max(r, g, b) - min(r, g, b) < 16) \
+                or (dark_bg and 25 < max(r, g, b) < 115 and max(r, g, b) - min(r, g, b) < 14):
             px[x, y] = (0, 0, 0, 0)
             q.extend(((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)))
-    clear_enclosed_checker(im, seen)
+    # A checkerboard background shows as many cleared pixels that were not pure white.
+    checker = dark_bg or sum(1 for p in seen if 0 <= p[0] < w and 0 <= p[1] < h and min(px[p][:3] if px[p][3] else (255, 255, 255)) < 232) > 0
+    if checker or dark_bg:
+        clear_enclosed_checker(im, seen, any_shade=True, dark=dark_bg)
+        # The image generator's sparkle watermark sits in the bottom-right corner.
+        for y in range(int(h * 0.9), h):
+            for x in range(int(w * 0.9), w):
+                px[x, y] = (0, 0, 0, 0)
+    else:
+        clear_enclosed_checker(im, seen)
     return im
 
 
-def clear_enclosed_checker(im, done):
+def clear_enclosed_checker(im, done, any_shade=False, dark=False):
     """
     A fake checkerboard also shows through closed gaps (inside a bow and its string). On pictures whose
     background was one, clear enclosed patches that are themselves checkerboard: both the light and
@@ -61,7 +78,8 @@ def clear_enclosed_checker(im, done):
     """
     w, h = im.size
     px = im.load()
-    neutral = lambda c: c[3] > 20 and min(c[:3]) > 165 and max(c[:3]) - min(c[:3]) < 16
+    neutral = (lambda c: c[3] > 20 and 25 < max(c[:3]) < 115 and max(c[:3]) - min(c[:3]) < 14) if dark else \
+        (lambda c: c[3] > 20 and min(c[:3]) > 165 and max(c[:3]) - min(c[:3]) < 16)
     light = lambda c: min(c[:3]) > 222
     seen = set()
     for sy in range(0, h, 4):
@@ -80,7 +98,8 @@ def clear_enclosed_checker(im, done):
             if len(comp) < 600:
                 continue
             nl = sum(1 for x, y in comp if light(px[x, y]))
-            if 0.25 < nl / len(comp) < 0.75:
+            # On a checkerboard picture any big light-grey patch is a hole; otherwise it must be two-tone.
+            if any_shade or 0.25 < nl / len(comp) < 0.75:
                 for x, y in comp:
                     px[x, y] = (0, 0, 0, 0)
 
@@ -153,8 +172,60 @@ def write_manifest(path, name, what, manifest):
         f.write(f'export const {name} = ' + json.dumps(manifest, indent=2, ensure_ascii=False) + ';\n')
 
 
-def to_pixels(path, cells=64, colours=48):
+def clean_edges(im):
+    """Drop leftover background on the rim (light neutral greys touching transparency) and lone pixels."""
+    w, h = im.size
+    px = im.load()
+    stray = lambda c: c[3] and min(c[:3]) > 160 and max(c[:3]) - min(c[:3]) < 20
+    for _ in range(2):
+        kill = []
+        for y in range(h):
+            for x in range(w):
+                c = px[x, y]
+                if not c[3]:
+                    continue
+                n = [px[nx, ny] for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)) if 0 <= nx < w and 0 <= ny < h]
+                open_sides = 4 - sum(1 for d in n if d[3])
+                if (stray(c) and open_sides) or open_sides >= 4:
+                    kill.append((x, y))
+        for p in kill:
+            px[p] = (0, 0, 0, 0)
+    return im
+
+
+def keep_main(im):
+    """Only the largest connected shape (and anything at least a fifth its size)."""
+    w, h = im.size
+    px = im.load()
+    seen, comps = set(), []
+    for y in range(h):
+        for x in range(w):
+            if (x, y) in seen or px[x, y][3] == 0:
+                continue
+            comp, q = [], deque([(x, y)])
+            seen.add((x, y))
+            while q:
+                cx, cy = q.popleft()
+                comp.append((cx, cy))
+                for nx in (cx - 1, cx, cx + 1):
+                    for ny in (cy - 1, cy, cy + 1):
+                        if 0 <= nx < w and 0 <= ny < h and (nx, ny) not in seen and px[nx, ny][3]:
+                            seen.add((nx, ny))
+                            q.append((nx, ny))
+            comps.append(comp)
+    big = max(len(c) for c in comps)
+    for c in comps:
+        if len(c) < big * 0.2:
+            for x, y in c:
+                px[x, y] = (0, 0, 0, 0)
+    return im.crop(im.getbbox())
+
+
+def to_pixels(path, cells=64, colours=48, erase=None):
     im = Image.open(path).convert('RGBA')
+    for x0, y0, x1, y1 in erase or []:
+        W, H = im.size
+        im.paste((0, 0, 0, 0), (int(x0 * W), int(y0 * H), int(x1 * W), int(y1 * H)))
     im = clear_white(im)
     im = im.crop(im.getbbox())
     bs = block_size(im)
@@ -170,6 +241,7 @@ def to_pixels(path, cells=64, colours=48):
         alpha = small.getchannel('A')
         small = small.convert('RGB').quantize(colours, method=Image.Quantize.FASTOCTREE).convert('RGBA')
         small.putalpha(alpha)
+    small = clean_edges(small)
     return im, small.crop(small.getbbox()), bs, smooth
 
 
@@ -182,7 +254,9 @@ def main(pairs):
         if sid.startswith('unit:'):
             # Soldiers and generals, enemy or ally: one front picture with its weapon.
             uid = sid[5:]
-            im, small, bs, smooth = to_pixels(path)
+            im, small, bs, smooth = to_pixels(path, erase=ERASE.get(uid))
+            if uid in KEEP_MAIN:
+                small = keep_main(small)
             small.save(os.path.join(UNIT_OUT, f'{uid}.png'))
             units[uid] = {'w': small.width, 'h': small.height}
             print(f'{sid:22s} {path}  ->  {small.width}x{small.height}')

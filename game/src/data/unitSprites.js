@@ -131,5 +131,25 @@ export const UNIT_SPRITES = {
   "ally_soldier": {
     "w": 64,
     "h": 60
+  },
+  "shrine": {
+    "w": 46,
+    "h": 62
+  },
+  "warDrum": {
+    "w": 50,
+    "h": 64
+  },
+  "oilJar": {
+    "w": 52,
+    "h": 64
+  },
+  "cart": {
+    "w": 64,
+    "h": 44
+  },
+  "gungyeClone": {
+    "w": 64,
+    "h": 63
   }
 };
