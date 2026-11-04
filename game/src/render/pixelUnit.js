@@ -29,10 +29,10 @@ for (const id of Object.keys(UNIT_SPRITES)) {
   unitPics[id] = { img, flash: null };
 }
 // Some share a picture: the tunnel soldier is a spearman.
-const SHARED = { mole: 'infantry' };
+const SHARED = { mole: 'infantry', shinGongsin: 'shinsunggyeom' };
 for (const [id, e] of Object.entries(ENEMIES)) if (e.look) e.look.sprite ??= UNIT_SPRITES[id] ? id : SHARED[id] ?? id;
 for (const [id, b] of Object.entries(BOSSES)) {
-  if (b.look) b.look.sprite ??= id;
+  if (b.look) b.look.sprite ??= UNIT_SPRITES[id] ? id : SHARED[id] ?? id;
   if (b.phase2?.look) b.phase2.look.sprite ??= `${id}_2`;
 }
 

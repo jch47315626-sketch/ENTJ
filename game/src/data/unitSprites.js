@@ -59,5 +59,25 @@ export const UNIT_SPRITES = {
   "maehwa": {
     "w": 61,
     "h": 64
+  },
+  "mole": {
+    "w": 64,
+    "h": 64
+  },
+  "neungchang": {
+    "w": 63,
+    "h": 64
+  },
+  "shaman": {
+    "w": 64,
+    "h": 64
+  },
+  "shield": {
+    "w": 49,
+    "h": 64
+  },
+  "shinsunggyeom": {
+    "w": 64,
+    "h": 64
   }
 };
