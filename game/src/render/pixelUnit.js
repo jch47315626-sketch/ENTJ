@@ -28,7 +28,9 @@ for (const id of Object.keys(UNIT_SPRITES)) {
   img.src = `assets/units/${id}.png`;
   unitPics[id] = { img, flash: null };
 }
-for (const [id, e] of Object.entries(ENEMIES)) if (e.look) e.look.sprite ??= id;
+// Some share a picture: the tunnel soldier is a spearman.
+const SHARED = { mole: 'infantry' };
+for (const [id, e] of Object.entries(ENEMIES)) if (e.look) e.look.sprite ??= UNIT_SPRITES[id] ? id : SHARED[id] ?? id;
 for (const [id, b] of Object.entries(BOSSES)) {
   if (b.look) b.look.sprite ??= id;
   if (b.phase2?.look) b.phase2.look.sprite ??= `${id}_2`;

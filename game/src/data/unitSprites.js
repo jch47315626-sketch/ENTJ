@@ -39,5 +39,25 @@ export const UNIT_SPRITES = {
   "gihwon": {
     "w": 64,
     "h": 64
+  },
+  "hongyu": {
+    "w": 64,
+    "h": 64
+  },
+  "infantry": {
+    "w": 62,
+    "h": 64
+  },
+  "ironclad": {
+    "w": 64,
+    "h": 61
+  },
+  "kimak": {
+    "w": 64,
+    "h": 64
+  },
+  "maehwa": {
+    "w": 61,
+    "h": 64
   }
 };
