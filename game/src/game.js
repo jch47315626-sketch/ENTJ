@@ -25,7 +25,7 @@ import { Spawner } from './systems/spawner.js';
 import { updateSkills, curseFoe } from './systems/skills.js';
 import { withOver, overOf } from './systems/over.js';
 import { ELEMENTS } from './data/imprint.js';
-import { SCHOOL_SETS } from './data/schools.js';
+import { SCHOOL_SETS, nodeCount } from './data/schools.js';
 import { updateTerrain, inBog } from './systems/terrain.js';
 import { pixelFx } from './render/pixelFx.js';
 
@@ -87,7 +87,7 @@ class Player {
       pickup: b.pickup * (1 + 0.35 * u('magnet') + (m.pickup ?? 0)),
       armor: b.armor + (m.armor ?? 0),
       // 단단한 갑옷: each stack takes 2% off what is left of every blow.
-      taken: 0.98 ** u('bArmor') * (this.imprintSet('earth')?.taken ?? 1) * (m.nodes?.['do.body'] ? 0.9 : 1),
+      taken: 0.98 ** u('bArmor') * (this.imprintSet('earth')?.taken ?? 1) * (1 - 0.1 * (m.nodes?.['do.body'] ?? 0)),
       leech: (m.leech ?? 0) + 0.0001 * u('bLeech') + (rageLv?.leech ?? 0),
       momentumMul: 1 + 0.25 * u('momentum') + (m.momentum ?? 0) + (GWANSIM[u('gwansim')]?.momentum ?? 0),
       xpMul: 1 + (m.xp ?? 0),
@@ -373,7 +373,8 @@ export class Game {
   afterSwing() {
     // 연환 (gear 비기): now and then the blade comes round again at once.
     const w = this.player.weapon;
-    if (this.player.meta.echo && !w.echoed && Math.random() < 0.2) {
+    // 연환 (비기) or ⚔️ 쾌검 (비결, × its power): 20% at full.
+    if (this.player.meta.echo && !w.echoed && Math.random() < 0.2 * Math.min(1, this.player.meta.echo)) {
       w.timer = Math.min(w.timer, 0.12);
       w.echoed = true;
     } else w.echoed = false;
@@ -421,9 +422,9 @@ export class Game {
     // 비결 (장비 계열): ⚔️ 참철 against elites and generals, ⚔️ 살기 after a run of kills.
     const N = this.player.meta.nodes;
     if (N && !opts?.byEnemy) {
-      if (N['mu.belt'] && (e.elite || e.isBoss)) amount *= 1.35;
+      if (N['mu.belt'] && (e.elite || e.isBoss)) amount *= 1 + 0.35 * N['mu.belt'];
       const R = this.player.killRush;
-      if (R && R.until > this.time) amount *= 1 + 0.02 * R.n;
+      if (R && R.until > this.time) amount *= 1 + 0.02 * (N['mu.head'] ?? 0) * R.n;
     }
     e.hp -= amount;
     // 결기 · 피 회복: a sliver of the damage dealt comes back as health.
@@ -585,14 +586,14 @@ export class Game {
     const p = this.player;
     const N = p.meta.nodes;
     if (!N) return;
-    if (N['do.head'] && p.hp < p.stats.maxHp) p.hp = Math.min(p.stats.maxHp, p.hp + p.stats.maxHp * 0.005 * dt);
+    if (N['do.head'] && p.hp < p.stats.maxHp) p.hp = Math.min(p.stats.maxHp, p.hp + p.stats.maxHp * 0.005 * N['do.head'] * dt);
     const T = (p.nodeT ??= {});
     if (N['jin.wrist'] && (T.scout = (T.scout ?? 8) - dt) <= 0) {
       T.scout = 30;
-      this.spawnAllies('archer', 2, 25);
+      this.spawnAllies('archer', nodeCount(2, N['jin.wrist']), Math.round(25 * N['jin.wrist']));
     }
     if (N['gung.belt'] && (T.quiver = (T.quiver ?? 10) - dt) <= 0) {
-      const foes = this.nearestEnemies(p.x, p.y, 460, 8).filter((e) => !this.isCharmed(e) && e.def.behavior !== 'static');
+      const foes = this.nearestEnemies(p.x, p.y, 460, nodeCount(8, N['gung.belt'], 3)).filter((e) => !this.isCharmed(e) && e.def.behavior !== 'static');
       T.quiver = foes.length ? 10 : 1;
       const dmg = Math.max(currentWeaponLevel(p).damage, 30) * 1.5 * p.stats.might;
       for (const e of foes) {
@@ -612,13 +613,13 @@ export class Game {
     const N = p.meta.nodes;
     if (!N) return;
     if (N['sul.body']) {
-      p.shield = Math.max(p.shield ?? 0, p.stats.maxHp * 0.15);
+      p.shield = Math.max(p.shield ?? 0, p.stats.maxHp * 0.15 * N['sul.body']);
       p.shieldMax = Math.max(p.shield, p.shieldMax ?? 0);
       p.shieldBy = null;
     }
     if (N['sul.wrist']) {
       const dmg = Math.max(currentWeaponLevel(p).damage, 30) * 3 * p.stats.might;
-      for (const e of this.nearestEnemies(p.x, p.y, 460, 6).filter((o) => !this.isCharmed(o))) {
+      for (const e of this.nearestEnemies(p.x, p.y, 460, nodeCount(6, N['sul.wrist'], 2)).filter((o) => !this.isCharmed(o))) {
         this.damageEnemy(e, dmg, e.x, e.y - 40, 40, { stun: 0.3 });
         this.fx.push({ type: 'pillar', x: e.x, y: e.y, t: 0, life: 0.5, seed: Math.random() });
       }
@@ -663,7 +664,7 @@ export class Game {
       R.n = R.until > this.time ? Math.min(15, R.n + 1) : 1;
       R.until = this.time + 3;
     }
-    if (m.nodes?.['sul.belt'] && Math.random() < 0.08) this.addMomentum(10);
+    if (m.nodes?.['sul.belt'] && Math.random() < 0.08 * m.nodes['sul.belt']) this.addMomentum(10);
     // 🔥 화(火) 각인 세트: the fallen burst into flame.
     const F = p.imprintSet('fire');
     if (F && Math.random() < F.chance) {
@@ -699,8 +700,8 @@ export class Game {
     dmg = Math.max(1, dmg * p.stats.taken);
     // 비결: ⚔️ 호신강기 when hurt badly, 🚩 충의 with troops at hand.
     const N = p.meta.nodes;
-    if (N?.['mu.body'] && p.hp < p.stats.maxHp * 0.5) dmg *= 0.75;
-    if (N?.['jin.body'] && this.allies.some((a) => !a.dead && a.kind !== 'maguni' && a.kind !== 'maguniBomb')) dmg *= 0.85;
+    if (N?.['mu.body'] && p.hp < p.stats.maxHp * 0.5) dmg *= 1 - 0.25 * N['mu.body'];
+    if (N?.['jin.body'] && this.allies.some((a) => !a.dead && a.kind !== 'maguni' && a.kind !== 'maguniBomb')) dmg *= 1 - 0.15 * N['jin.body'];
     if (this.spirits.length) {
       dmg = spiritAbsorb(this, dmg, attacker);
       if (dmg <= 0) {
@@ -746,7 +747,7 @@ export class Game {
     // 🍃 불사: once a run, the hero gets back up.
     if (p.hp <= 0 && p.meta.nodes?.['do.belt'] && !p.undying) {
       p.undying = true;
-      p.hp = p.stats.maxHp * 0.4;
+      p.hp = p.stats.maxHp * Math.max(0.15, 0.4 * p.meta.nodes['do.belt']);
       p.invuln = 2;
       this.fx.push({ type: 'awaken', x: p.x, y: p.y, t: 0, life: 1.2, seed: Math.random() });
       this.banner('🍃 불사 — 다시 일어선다!', 'big');

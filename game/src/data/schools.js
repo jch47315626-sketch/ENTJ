@@ -87,44 +87,64 @@ export const SCHOOLS = {
 };
 export const SCHOOL_ORDER = ['mu', 'jin', 'sul', 'gung', 'do'];
 
-/** 비결 by school and slot. Key in the meta bonus: "mu.head". */
+/**
+ * 비결 by school and slot. Key in the meta bonus: "mu.head"; its value is the
+ * piece's 비결 power k (see nodePower): every number below is the full one,
+ * scaled by k — a 범품 하 piece shows a fifth of it, a 국보 상 piece all of it.
+ * `stats` add to the meta bonus (× k); `desc(k)` says what the piece does.
+ */
+const pct = (v) => `${Math.round(v * 100)}%`;
+const pct1 = (v) => `${Math.round(v * 1000) / 10}%`;
+/** A count scaled by k, at least `min`. */
+export const nodeCount = (n, k, min = 1) => Math.max(min, Math.round(n * k));
+
 export const NODES = {
   mu: {
-    head: { name: '살기', desc: '적을 쓰러뜨릴 때마다 3초 동안 피해 +2% (최대 +30%까지 쌓임)' },
-    body: { name: '호신강기', desc: '체력이 절반 아래면 받는 피해 −25%' },
-    charm: { name: '검심', desc: '검풍 칼바람 +2줄기' },
-    wrist: { name: '쾌검', stats: { haste: 0.1, echo: 1 }, desc: '공격 재사용 −10%, 휘두를 때 20% 확률로 한 번 더' },
-    belt: { name: '참철', desc: '정예와 적장에게 주는 피해 +35%' },
+    head: { name: '살기', desc: (k) => `적을 쓰러뜨릴 때마다 3초 동안 피해 +${pct1(0.02 * k)} (15번까지 쌓임, 최대 +${pct(0.3 * k)})` },
+    body: { name: '호신강기', desc: (k) => `체력이 절반 아래면 받는 피해 −${pct(0.25 * k)}` },
+    charm: { name: '검심', desc: (k) => `검풍 칼바람 +${nodeCount(2, k)}줄기` },
+    wrist: { name: '쾌검', stats: { haste: 0.1, echo: 1 }, desc: (k) => `공격 재사용 −${pct(0.1 * k)}, 휘두를 때 ${pct(0.2 * k)} 확률로 한 번 더` },
+    belt: { name: '참철', desc: (k) => `정예와 적장에게 주는 피해 +${pct(0.35 * k)}` },
   },
   jin: {
-    head: { name: '군령', stats: { guardBonus: 2 }, desc: '통솔 창병 · 깃발 병사 +2명' },
-    body: { name: '충의', desc: '아군이 곁에 있으면 받는 피해 −15%' },
-    charm: { name: '사기', stats: { allyMul: 0.4 }, desc: '아군 피해 +40%' },
-    wrist: { name: '척후', desc: '30초마다 척후 궁수 둘이 25초 동안 합류' },
-    belt: { name: '군량', desc: '아군 병사가 쓰러질 때마다 체력 1.5% 회복' },
+    head: { name: '군령', desc: (k) => `통솔 창병 · 깃발 병사 +${nodeCount(2, k)}명` },
+    body: { name: '충의', desc: (k) => `아군이 곁에 있으면 받는 피해 −${pct(0.15 * k)}` },
+    charm: { name: '사기', stats: { allyMul: 0.4 }, desc: (k) => `아군 피해 +${pct(0.4 * k)}` },
+    wrist: { name: '척후', desc: (k) => `30초마다 척후 궁수 ${nodeCount(2, k)}명이 ${Math.round(25 * k)}초 동안 합류` },
+    belt: { name: '군량', desc: (k) => `아군 병사가 쓰러질 때마다 체력 ${pct1(0.015 * k)} 회복` },
   },
   sul: {
-    head: { name: '천기', stats: { momentum: 0.4 }, desc: '기세 충전 +40%' },
-    body: { name: '호부', desc: '고유기를 쓰면 최대 체력 15%의 보호막' },
-    charm: { name: '부적술', desc: '부적 폭탄 +2장, 폭발 반경 +20%' },
-    wrist: { name: '뇌부', desc: '고유기를 쓰면 가까운 적 여섯에게 벼락 (무기 피해 ×3)' },
-    belt: { name: '혼백', desc: '적을 쓰러뜨리면 8% 확률로 기세 +10' },
+    head: { name: '천기', stats: { momentum: 0.4 }, desc: (k) => `기세 충전 +${pct(0.4 * k)}` },
+    body: { name: '호부', desc: (k) => `고유기를 쓰면 최대 체력 ${pct(0.15 * k)}의 보호막` },
+    charm: { name: '부적술', desc: (k) => `부적 폭탄 +${nodeCount(2, k)}장, 폭발 반경 +${pct(0.2 * k)}` },
+    wrist: { name: '뇌부', desc: (k) => `고유기를 쓰면 가까운 적 ${nodeCount(6, k, 2)}명에게 벼락 (무기 피해 ×3)` },
+    belt: { name: '혼백', desc: (k) => `적을 쓰러뜨리면 ${pct1(0.08 * k)} 확률로 기세 +10` },
   },
   gung: {
-    head: { name: '백보천양', stats: { area: 0.15 }, desc: '공격 범위 +15%' },
-    body: { name: '경신', stats: { speed: 0.15 }, desc: '이동 +15%' },
-    charm: { name: '화전', desc: '연노 살 +2발, 하나 더 꿰뚫음' },
-    wrist: { name: '속사', stats: { haste: 0.12 }, desc: '공격 재사용 −12%' },
-    belt: { name: '전통', desc: '10초마다 가까운 적 여덟에게 화살비 (무기 피해 ×1.5)' },
+    head: { name: '백보천양', stats: { area: 0.15 }, desc: (k) => `공격 범위 +${pct(0.15 * k)}` },
+    body: { name: '경신', stats: { speed: 0.15 }, desc: (k) => `이동 +${pct(0.15 * k)}` },
+    charm: { name: '화전', desc: (k) => `연노 살 +${nodeCount(2, k)}발${k >= 0.5 ? ', 하나 더 꿰뚫음' : ''}` },
+    wrist: { name: '속사', stats: { haste: 0.12 }, desc: (k) => `공격 재사용 −${pct(0.12 * k)}` },
+    belt: { name: '전통', desc: (k) => `10초마다 가까운 적 ${nodeCount(8, k, 3)}명에게 화살비 (무기 피해 ×1.5)` },
   },
   do: {
-    head: { name: '청심', desc: '매초 체력 0.5% 회복' },
-    body: { name: '금강', stats: { armor: 3 }, desc: '갑주 +3, 받는 피해 −10%' },
-    charm: { name: '선단술', desc: '선단 재사용 −30%, 보호막 +50%' },
-    wrist: { name: '흡정', stats: { leech: 0.003 }, desc: '준 피해의 0.3%만큼 체력 회복' },
-    belt: { name: '불사', desc: '쓰러지면 한 판에 한 번, 체력 40%로 일어난다' },
+    head: { name: '청심', desc: (k) => `매초 체력 ${pct1(0.005 * k)} 회복` },
+    body: { name: '금강', stats: { armor: 3 }, desc: (k) => `갑주 +${Math.round(30 * k) / 10}, 받는 피해 −${pct(0.1 * k)}` },
+    charm: { name: '선단술', desc: (k) => `선단 재사용 −${pct(0.3 * k)}, 보호막 +${pct(0.5 * k)}` },
+    wrist: { name: '흡정', stats: { leech: 0.003 }, desc: (k) => `준 피해의 ${Math.round(3 * k) / 10}%만큼 체력 회복` },
+    belt: { name: '불사', desc: (k) => `쓰러지면 한 판에 한 번, 체력 ${pct(Math.max(0.15, 0.4 * k))}로 일어난다` },
   },
 };
+
+/**
+ * 비결 power of a piece: 0.2 for 범품 하, rising evenly with each grade and
+ * 하·중·상 step to 1 at 국보 상 (24 steps).
+ */
+export const NODE_POWER = { min: 0.2, steps: 23 };
+export function nodePower(grade, tier = 0) {
+  const step = Math.min(NODE_POWER.steps, (Math.min(grade, 8) - 1) * 3 + tier);
+  return Math.round((NODE_POWER.min + ((1 - NODE_POWER.min) * step) / NODE_POWER.steps) * 1000) / 1000;
+}
 
 /** The 비결 of one piece (null for 신발 and 신물). */
 export const nodeOf = (item) => (item?.school && NODES[item.school][item.slot]) || null;

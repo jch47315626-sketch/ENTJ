@@ -18,7 +18,7 @@ import { staminaOf, staminaText, staminaWait, endlessLeft, ENDLESS_PER_DAY } fro
 import { josa } from '../core/korean.js';
 import { lineText, lineMax, engraveCost } from '../data/gearOptions.js';
 import { IMPRINT, ELEMENTS, ELEMENT_ORDER, imprintCost, imprintText, imprintSets } from '../data/imprint.js';
-import { SCHOOLS, SCHOOL_ORDER, SCHOOL_SETS, NODES, schoolCounts, nodeOf } from '../data/schools.js';
+import { SCHOOLS, SCHOOL_ORDER, SCHOOL_SETS, NODES, schoolCounts, nodeOf, nodePower } from '../data/schools.js';
 import { HELP } from '../data/help.js';
 import { codexEntry, FOES, GENERALS } from '../data/codexTiers.js';
 import { NANSE_CARDS } from '../data/nanse.js';
@@ -544,7 +544,7 @@ function gearPanel(save, h, act) {
   }
   box.append(tabs);
   const slotNode = NODES[school][slot.id];
-  box.append(el('small', 'school-blurb', `${slotNode ? `🧩 ${slot.name} 비결 「${slotNode.name}」 — ${slotNode.desc}<br>` : `${slot.name}에는 비결이 없어요<br>`}${SCHOOLS[school].icon} ${SCHOOLS[school].title} — ${SCHOOLS[school].blurb}. 2부위: 「${SCHOOLS[school].levels[0].name}」 책략 · 4부위: 궁극기 「${SCHOOLS[school].levels.at(-1).name}」 · 6부위: ${SCHOOLS[school].sixText}`));
+  box.append(el('small', 'school-blurb', `${slotNode ? `🧩 ${slot.name} 비결 「${slotNode.name}」 — 국보 상에서 ${slotNode.desc(1)} (범품 하는 20%부터, 등급·하중상마다 강해져요)<br>` : `${slot.name}에는 비결이 없어요<br>`}${SCHOOLS[school].icon} ${SCHOOLS[school].title} — ${SCHOOLS[school].blurb}. 2부위: 「${SCHOOLS[school].levels[0].name}」 책략 · 4부위: 궁극기 「${SCHOOLS[school].levels.at(-1).name}」 · 6부위: ${SCHOOLS[school].sixText}`));
   for (const item of EQUIPMENT.filter((e) => e.slot === slot.id && (e.relic || e.school === school))) list.append(itemCard(save, h, item, act));
   box.append(list);
   return box;
@@ -560,8 +560,10 @@ function itemCard(save, h, item, act) {
   card.append(iconCanvas(open || owned ? item.id : `empty:${item.slot}`, 40, 'row-icon'));
   const txt = el('div', 'ic-text');
   const sub = item.relic && !owned ? `🔥 일일 던전에서 난세 ${TRIAL.relicFrom}단계 이상을 평정하면 얻을 수 있어요` : open || owned ? bonusText(ownBonus(save, item, lv)) : `★${GRADES[item.grade].needStars} 전장을 깨면 풀려요`;
+  // 비결: as strong as this piece is now (its grade, and 하·중·상 once owned).
   const node = nodeOf(item);
-  txt.innerHTML = `<b>${gradeTag(item.grade)} ${open || owned ? itemName(save, item) : '???'}</b><span>${sub}</span>${node ? `<span class="ic-node">🧩 비결 「${node.name}」 ${node.desc}</span>` : ''}`;
+  const k = nodePower(item.grade, owned ? tierOf(save, item) : 0);
+  txt.innerHTML = `<b>${gradeTag(item.grade)} ${open || owned ? itemName(save, item) : '???'}</b><span>${sub}</span>${node ? `<span class="ic-node">🧩 비결 「${node.name}」 ${node.desc(k)} <small>(${Math.round(k * 100)}%)</small></span>` : ''}`;
   card.append(txt);
   // 장비 옵션: random lines; each can be rerolled (각인) for 냥.
   const lines = owned ? save.gearOpts?.[item.id] ?? [] : [];
@@ -682,7 +684,7 @@ function schoolCard(save) {
   const tree = SLOTS.map((sl) => {
     const it = items.find((x) => x.slot === sl.id);
     const nd = nodeOf(it);
-    return nd ? `<i style="--el:${SCHOOLS[it.school].color}">${SCHOOLS[it.school].icon} ${nd.name}</i>` : '';
+    return nd ? `<i style="--el:${SCHOOLS[it.school].color}">${SCHOOLS[it.school].icon} ${nd.name} ${Math.round(nodePower(it.grade, tierOf(save, it)) * 100)}%</i>` : '';
   }).filter(Boolean);
   if (tree.length) card.append(el('div', 'node-tree', `<small>🧩 나의 비결</small>${tree.join('')}`));
   const shown = SCHOOL_ORDER.filter((sc) => n[sc]);

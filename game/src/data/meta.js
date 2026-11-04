@@ -3,7 +3,7 @@ import { josa } from '../core/korean.js';
 import { gyeolgiBonus } from './gyeolgi.js';
 import { imprintBonus, imprintSets } from './imprint.js';
 import { GEAR_OPTIONS } from './gearOptions.js';
-import { SCHOOLS, SCHOOL_ORDER, SCHOOL_SETS, schoolCounts, nodeOf } from './schools.js';
+import { SCHOOLS, SCHOOL_ORDER, SCHOOL_SETS, schoolCounts, nodeOf, nodePower } from './schools.js';
 
 /**
  * Progression between runs: money (냥) earned per run, equipment bought
@@ -361,8 +361,10 @@ export function metaBonus(save, heroId) {
       // 비결 (data/schools.js NODES): this piece's trick.
       const node = nodeOf(item);
       if (node) {
-        add(node.stats ?? {});
-        (total.nodes ??= {})[`${item.school}.${item.slot}`] = true;
+        // Its power grows with the piece's grade and 하·중·상 (data/schools.js nodePower).
+        const k = nodePower(item.grade, tierOf(save, item));
+        add(Object.fromEntries(Object.entries(node.stats ?? {}).map(([key, v]) => [key, v * k])));
+        (total.nodes ??= {})[`${item.school}.${item.slot}`] = k;
       }
       add(itemBonus(item, save.forge?.[item.id] ?? 0, tierOf(save, item)));
       // 🔷 속성 각인 (data/imprint.js): the piece's own 속성 stats; sets are counted below.

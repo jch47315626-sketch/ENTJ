@@ -41,7 +41,7 @@ export function updateAllies(g, dt) {
         a.dead = true;
         g.fx.push({ type: 'puff', x: a.x, y: a.y, t: 0, life: 0.5, size: 16, tone: 'light' });
         // 🚩 군량: each fallen soldier feeds the hero.
-        if (p.meta.nodes?.['jin.belt']) p.heal(p.stats.maxHp * 0.015);
+        if (p.meta.nodes?.['jin.belt']) p.heal(p.stats.maxHp * 0.015 * p.meta.nodes['jin.belt']);
         // 🚩 팔진도: a flag soldier's last cry strikes those around.
         if (a.banner) hitArc(g, a.x, a.y, 0, 90, 360, SOLDIER.damage * 4 * a.banner * p.stats.might * (1 + (p.meta.allyMul ?? 0)), 160, 'burst');
       }
