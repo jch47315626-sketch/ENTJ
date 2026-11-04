@@ -99,10 +99,10 @@ export class Renderer {
     // each canvas pixel becomes an exact 1×1, 2×2 or 3×3 block on screen. Any
     // other ratio (say 1.25× on a 3× phone) blows pixels up unevenly — some 2,
     // some 3 wide — and pixel art looks smeared. Start at the finest step not
-    // above 1.6×; adapt() goes one step coarser when frames run slow.
+    // above 2× (never below 1×); adapt() goes one step coarser when frames run slow.
     const dpr = window.devicePixelRatio || 1;
-    this.steps = [1, 2, 3, 4].map((n) => dpr / n).filter((q) => q >= 0.85 || q === dpr);
-    this.step = Math.max(0, this.steps.findIndex((q) => q <= 1.6));
+    this.steps = [1, 2, 3, 4].map((n) => dpr / n).filter((q) => q >= 1 || q === dpr);
+    this.step = Math.max(0, this.steps.findIndex((q) => q <= 2));
     this.quality = this.steps[this.step];
     this.slow = 0;
     preloadPixelFx();

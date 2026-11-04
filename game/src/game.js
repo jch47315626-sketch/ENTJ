@@ -47,6 +47,14 @@ const PLAYER_RADIUS = 14;
 const INVULN_TIME = 0.6;
 const MAX_ENEMIES = 420;
 
+/**
+ * 공격 재사용 줄이기 (r = every "−x%" added up) → cooldown multiplier. Up to
+ * −40% it is taken as written; past that it tails off toward 0.35 (at most
+ * ~3× as many swings). Added straight, gear · 결기 · 각인 · 비결 could pass
+ * −100% and the hero attacked every single frame.
+ */
+export const hasteMul = (r) => (r <= 0.4 ? 1 - r : 0.35 + 0.25 * Math.exp(-(r - 0.4) / 0.25));
+
 class Player {
   constructor(hero, meta = {}) {
     this.meta = meta; // bonuses from gear, 결기 and 영물 (data/meta.js)
@@ -88,7 +96,7 @@ class Player {
       // 전고 (war drum object): faster steps and swings while it beats.
       speed: b.speed * (1 + 0.08 * u('swift') + (m.speed ?? 0)) * (this.drumUntil ? 1.2 : 1) * (this.spiritSpeed ?? 1),
       might: b.might * (1 + 0.15 * u('might') + 0.02 * u('bMight') + (m.might ?? 0) + rage) * (this.tiger ? this.tiger.mul : 1),
-      haste: b.haste * (1 - 0.1 * u('haste') - (m.haste ?? 0) - (rageLv?.haste ?? 0)) * (this.drumUntil ? 0.75 : 1),
+      haste: b.haste * hasteMul(0.1 * u('haste') + (m.haste ?? 0) + (rageLv?.haste ?? 0)) * (this.drumUntil ? 0.75 : 1),
       area: b.area * (1 + 0.12 * u('area') + (m.area ?? 0)),
       pickup: b.pickup * (1 + 0.35 * u('magnet') + (m.pickup ?? 0)),
       armor: b.armor + (m.armor ?? 0),
