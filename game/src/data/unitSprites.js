@@ -187,5 +187,21 @@ export const UNIT_SPRITES = {
   "pheasant": {
     "w": 62,
     "h": 41
+  },
+  "crow": {
+    "w": 53,
+    "h": 64
+  },
+  "item_kerosene": {
+    "w": 64,
+    "h": 63
+  },
+  "item_venison": {
+    "w": 64,
+    "h": 34
+  },
+  "item_trap": {
+    "w": 64,
+    "h": 37
   }
 };

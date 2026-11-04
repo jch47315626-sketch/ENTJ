@@ -1,4 +1,4 @@
-import { GROUNDS } from './ground.js';
+import { GROUNDS, drawGroundTile } from './ground.js';
 import { drawBogs, drawRocks } from './terrain.js';
 import { drawObjectPicture, drawPicture } from './pixelUnit.js';
 import { drawUnit, drawCart, drawCoin, drawRice, drawProjectile } from './sprites.js';
@@ -132,7 +132,7 @@ export class Renderer {
     ctx.scale(z, z);
     ctx.translate(-cam.x, -cam.y);
 
-    GROUNDS[g.stage.ground](ctx, v, g.time);
+    if (!drawGroundTile(ctx, g.stage.ground, v)) GROUNDS[g.stage.ground](ctx, v, g.time);
     drawBogs(ctx, g, v);
     // Soft dusk tint: keeps the field calm so units and pickups stand out.
     ctx.fillStyle = 'rgba(24, 20, 36, 0.18)';
@@ -848,6 +848,8 @@ export class Renderer {
     ctx.beginPath();
     ctx.arc(k.x, k.y, 34, 0, TAU);
     ctx.fill();
+    const PIC = { trap: ['item_trap', 40], venison: ['item_venison', 40], kerosene: ['item_kerosene', 32] }[k.item];
+    if (PIC && drawPicture(ctx, PIC[0], k.x, k.y - 6 + bob, PIC[1])) return;
     ctx.fillStyle = 'rgba(28, 24, 40, 0.85)';
     ctx.strokeStyle = `rgba(${COL[k.item]}, 0.95)`;
     ctx.lineWidth = 3;
@@ -963,6 +965,13 @@ export class Renderer {
   /** 까마귀: a chubby black bird with flapping wings. */
   drawCrow(ctx, c) {
     const f = Math.sin(c.flap) * 0.9;
+    if (drawPicture(ctx, 'crow', c.x, c.y + f * 3, 46, c.facing < 0 ? Math.PI : 0)) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
+      ctx.beginPath();
+      ctx.ellipse(c.x, c.y + 48, 14, 5, 0, 0, TAU);
+      ctx.fill();
+      return;
+    }
     ctx.save();
     ctx.translate(c.x, c.y);
     ctx.scale(c.facing * 1.4, 1.4);
