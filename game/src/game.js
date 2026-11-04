@@ -31,6 +31,8 @@ import { pixelFx } from './render/pixelFx.js';
 
 /** The 책략 that grows each hero's special (its 초월 boosts the special). */
 const SPECIAL_LINE = { paewang: 'fury', gwansim: 'gwansim' };
+/** Our own fires burning at once (see Game.addZone). */
+const MAX_FIRES = 30;
 
 /** 공훈 needed for the next level: gentle at first, steeper and steeper later on. */
 export /** A card that moves a started 궁극기 forward is offered this many times as often. */
@@ -581,6 +583,34 @@ export class Game {
     return (1 + this.endlessBosses * ENDLESS.bossDamageStep) * endlessSurge(this.time);
   }
 
+  /**
+   * Adds a ground zone. Our own fire landing where one already burns feeds
+   * that fire (the stronger dps, the wider reach, the longer burn) instead of
+   * stacking another on top — dozens of overlapping fires cost a lot to draw
+   * and add nothing to see. At most MAX_FIRES burn at once; the oldest dies
+   * down first.
+   */
+  addZone(z) {
+    if (z.team === 'player' && !z.spirit && (z.kind === 'fire' || z.kind === 'kero')) {
+      for (const o of this.zones) {
+        if (o.team !== 'player' || o.spirit || o.kind !== z.kind) continue;
+        const reach = Math.max(o.r, z.r) * 0.6;
+        if ((o.x - z.x) ** 2 + (o.y - z.y) ** 2 > reach * reach) continue;
+        o.dps = Math.max(o.dps, z.dps);
+        o.r = Math.max(o.r, z.r);
+        o.life = o.t + Math.max(o.life - o.t, z.life);
+        return o;
+      }
+      const fires = this.zones.filter((o) => o.team === 'player' && !o.spirit && (o.kind === 'fire' || o.kind === 'kero') && o.t < o.life);
+      if (fires.length >= MAX_FIRES) {
+        const oldest = fires.reduce((a, b) => (a.life - a.t <= b.life - b.t ? a : b));
+        oldest.life = oldest.t;
+      }
+    }
+    this.zones.push(z);
+    return z;
+  }
+
   /** 비결 that run on their own: 🍃 청심, 🚩 척후, 🏹 전통. */
   nodeTick(dt) {
     const p = this.player;
@@ -671,7 +701,7 @@ export class Game {
       const r = F.radius * Math.sqrt(p.stats.area);
       const dmg = Math.max(currentWeaponLevel(p).damage, 30) * F.mul * p.stats.might;
       hitArc(this, e.x, e.y, 0, r, 360, dmg, 120, 'burst');
-      if (F.burn) this.zones.push({ team: 'player', kind: 'fire', x: e.x, y: e.y, r, dps: dmg * 0.4, life: F.burn, t: 0 });
+      if (F.burn) this.addZone({ team: 'player', kind: 'fire', x: e.x, y: e.y, r, dps: dmg * 0.4, life: F.burn, t: 0 });
     }
     if (m.thunder && !e.isBoss && Math.random() < 0.15) {
       hitArc(this, e.x, e.y, 0, 80, 360, 30 * p.stats.might, 60, 'burst');

@@ -131,7 +131,7 @@ ACTIVE_SKILLS.archers = {
       // The arrows fall first; the ground catches fire as they land.
       g.fx.push(pixelFx('arrowVolley', s.x, s.y, r));
       g.later(0.3, () => {
-        g.zones.push({ team: 'player', kind: 'fire', x: s.x, y: s.y, r, dps, life: R.life, t: 0 });
+        g.addZone({ team: 'player', kind: 'fire', x: s.x, y: s.y, r, dps, life: R.life, t: 0 });
         g.fx.push(pixelFx('fireRing', s.x, s.y, r));
       });
     }
@@ -301,7 +301,7 @@ ACTIVE_SKILLS.crossbow = {
         const dps = weaponDmg(p) * R.dps * p.stats.might;
         for (const s of crowdSpots(g, 520, R.spots, R.radius * 1.4)) {
           g.fx.push({ type: 'arrowRain', x: s.x, y: s.y, range: R.radius, t: 0, life: 0.9, seed: Math.random() });
-          g.later(0.3, () => g.zones.push({ team: 'player', kind: 'fire', x: s.x, y: s.y, r: R.radius, dps, life: R.life, t: 0 }));
+          g.later(0.3, () => g.addZone({ team: 'player', kind: 'fire', x: s.x, y: s.y, r: R.radius, dps, life: R.life, t: 0 }));
         }
       }
     }

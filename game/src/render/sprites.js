@@ -1,5 +1,5 @@
 import { MODELS, drawModelBackHair, drawModelHead } from './heroModel.js';
-import { drawPixelFigure, drawPicture } from './pixelUnit.js';
+import { drawPixelFigure, drawPicture, pictureImage } from './pixelUnit.js';
 import { drawBeast } from './beasts.js';
 
 /** Draw people as pixel art (render/pixelUnit.js); false brings back the path drawings. */
@@ -961,11 +961,69 @@ export function drawCart(ctx, x, y, r, flash) {
 const COIN = { bronze: '#a8763e', silver: '#c9c6bb', gold: '#e2b84a' };
 
 /** Yeopjeon coin: round with a square hole. */
+/**
+ * 엽전 sprites, baked once per tier at drawing size: recoloured bright (by
+ * hand, pixel by pixel — canvas filters are missing on older Safari), a
+ * warm halo, and a pale outline so they read on any ground. Drawing one is
+ * a single drawImage — no save/restore, no transform — since hundreds can
+ * lie on the field at once.
+ */
+const COIN_SIZE = { bronze: 15, silver: 17, gold: 18 };
+const COIN_RGB = { bronze: [255, 176, 92], silver: [232, 238, 250], gold: [255, 214, 70] };
+const coinSprites = {};
+function coinSprite(tier) {
+  if (coinSprites[tier]) return coinSprites[tier];
+  const img = pictureImage('pickup_coin');
+  if (!img) return null;
+  const S = COIN_SIZE[tier] ?? 16, pad = 6, scale = 3; // baked at 3× for sharp edges when zoomed
+  const W = (S + pad * 2) * scale;
+  const mk = () => {
+    const c = document.createElement('canvas');
+    c.width = c.height = W;
+    const x = c.getContext('2d');
+    x.imageSmoothingEnabled = false;
+    return [c, x];
+  };
+  const w = S * scale, h = (S * scale * img.naturalHeight) / img.naturalWidth, ox = (W - w) / 2, oy = (W - h) / 2;
+  // The coin, recoloured: its own shading kept, lifted into a bright metal.
+  const [coin, cx] = mk();
+  cx.drawImage(img, ox, oy, w, h);
+  const d = cx.getImageData(0, 0, W, W), px = d.data, [R, G, B] = COIN_RGB[tier] ?? COIN_RGB.gold;
+  for (let i = 0; i < px.length; i += 4) {
+    if (!px[i + 3]) continue;
+    const l = Math.min(1, ((px[i] * 0.3 + px[i + 1] * 0.59 + px[i + 2] * 0.11) / 255) * 1.7 + 0.15);
+    px[i] = R * l; px[i + 1] = G * l; px[i + 2] = B * l;
+  }
+  cx.putImageData(d, 0, 0);
+  // Its outline: the shape in a pale colour, nudged around it.
+  const [rim, rx] = mk();
+  rx.drawImage(coin, 0, 0);
+  rx.globalCompositeOperation = 'source-in';
+  rx.fillStyle = '#fff8d8';
+  rx.fillRect(0, 0, W, W);
+  const [c, x] = mk();
+  const halo = x.createRadialGradient(W / 2, W / 2, 0, W / 2, W / 2, W / 2);
+  halo.addColorStop(0, 'rgba(255, 225, 120, 0.55)');
+  halo.addColorStop(1, 'rgba(255, 225, 120, 0)');
+  x.fillStyle = halo;
+  x.fillRect(0, 0, W, W);
+  x.globalAlpha = 0.55;
+  x.drawImage(coin, 0, scale * 1.2); // a dark drop below
+  x.globalAlpha = 1;
+  for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) x.drawImage(rim, dx * scale, dy * scale);
+  x.drawImage(coin, 0, 0);
+  c.size = S + pad * 2;
+  return (coinSprites[tier] = c);
+}
+
 export function drawCoin(ctx, x, y, tier, t) {
   const r = tier === 'bronze' ? 4.5 : 5.5;
   const bob = Math.sin(t * 5 + x) * 1;
-  const tint = { bronze: 'sepia(0.6) brightness(0.8)', silver: 'grayscale(1) brightness(1.35)' }[tier] ?? null;
-  if (drawPicture(ctx, 'pickup_coin', x, y + bob, r * 2.4, 0, tint)) return;
+  const spr = coinSprite(tier);
+  if (spr) {
+    ctx.drawImage(spr, x - spr.size / 2, y + bob - spr.size / 2, spr.size, spr.size);
+    return;
+  }
   ctx.fillStyle = COIN[tier];
   ctx.strokeStyle = 'rgba(29,26,23,0.8)';
   ctx.lineWidth = 1;

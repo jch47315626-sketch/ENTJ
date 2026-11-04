@@ -139,12 +139,15 @@ export class Renderer {
     ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
     if (g.arena) this.drawArenaFloor(ctx, g, v);
     this.drawCaltrops(ctx, g);
-    this.drawZones(ctx, g);
+    this.drawZones(ctx, g, v);
     drawRocks(ctx, g, v);
     this.drawBigTraps(ctx, g);
     this.drawHalos(ctx, g);
 
+    // Only what is on screen (hundreds of 엽전 can lie about).
+    const px0 = v.x0 - 40, px1 = v.x1 + 40, py0 = v.y0 - 40, py1 = v.y1 + 40;
     for (const k of g.pickups) {
+      if (k.x < px0 || k.x > px1 || k.y < py0 || k.y > py1) continue;
       if (k.kind === 'coin') drawCoin(ctx, k.x, k.y, k.tier, k.t);
       else if (k.kind === 'gold') {
         // 적장 토벌 냥: big gold coins with a glint.
@@ -516,8 +519,10 @@ export class Renderer {
     ctx.restore();
   }
 
-  drawZones(ctx, g) {
+  drawZones(ctx, g, v) {
     for (const z of g.zones) {
+      // Off screen: nothing to draw.
+      if (v && (z.x + z.r < v.x0 - 30 || z.x - z.r > v.x1 + 30 || z.y + z.r < v.y0 - 30 || z.y - z.r > v.y1 + 30)) continue;
       const a = z.aura ? 1 : 1 - z.t / z.life;
       if (drawSpiritZone(ctx, g, z, a)) continue;
       if (z.kind === 'spikes') {
@@ -598,8 +603,9 @@ export class Renderer {
         ctx.beginPath();
         ctx.arc(z.x, z.y, z.r, 0, TAU);
         ctx.fill();
-        for (let k = 0; k < 7; k++) {
-          const ang = k * 0.9 + g.time * 2;
+        // Four tongues of flame (each one is a large translucent fill).
+        for (let k = 0; k < 4; k++) {
+          const ang = k * 1.6 + g.time * 2;
           const rr = z.r * (0.25 + 0.55 * ((k * 37) % 10) / 10);
           ctx.fillStyle = `rgba(250, ${150 + k * 12}, 60, ${0.55 * a})`;
           ctx.beginPath();
