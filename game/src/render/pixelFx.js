@@ -24,7 +24,7 @@ const images = {};
  * they are always drawn enlarged, so it barely shows — at a quarter of the memory.
  */
 const ready = {};
-const HALF_OVER = 3e6; // decoded bytes
+const HALF_OVER = 10e6; // decoded bytes: only the three biggest (순절 · 관심법 파동 · 포효)
 
 function bake(key, s, img) {
   const rows = Math.ceil(s.frames / s.cols);

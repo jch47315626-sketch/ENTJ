@@ -95,24 +95,27 @@ export class Renderer {
     this.shade.className = 'field-shade';
     canvas.after(this.shade);
     this.hurtShown = 0;
-    // Resolution: at most 1.5× the CSS size (pixel art does not need more), and
-    // down to 1× by itself when frames run slow (see adapt()).
-    this.quality = Math.min(window.devicePixelRatio || 1, 1.25);
+    // Resolution: the screen's pixels divided by a whole number (1, 2, 3 …), so
+    // each canvas pixel becomes an exact 1×1, 2×2 or 3×3 block on screen. Any
+    // other ratio (say 1.25× on a 3× phone) blows pixels up unevenly — some 2,
+    // some 3 wide — and pixel art looks smeared. Start at the finest step not
+    // above 1.6×; adapt() goes one step coarser when frames run slow.
+    const dpr = window.devicePixelRatio || 1;
+    this.steps = [1, 2, 3, 4].map((n) => dpr / n).filter((q) => q >= 0.85 || q === dpr);
+    this.step = Math.max(0, this.steps.findIndex((q) => q <= 1.6));
+    this.quality = this.steps[this.step];
     this.slow = 0;
     preloadPixelFx();
     this.resize();
     window.addEventListener('resize', () => this.resize());
   }
 
-  /**
-   * Frames slower than ~40fps for 1.5 seconds: draw one step coarser
-   * (1.5 → 1.25 → 1 → 0.8×). Pixel art barely shows it; the fill cost drops a lot.
-   */
+  /** Frames slower than ~40fps for 2 seconds: one whole-number step coarser (3× phone: 1.5 → 1). */
   adapt(dt) {
-    if (this.quality <= 0.8 || !dt) return;
+    if (this.step >= this.steps.length - 1 || !dt) return;
     this.slow = dt > 1 / 40 ? this.slow + dt : Math.max(0, this.slow - dt * 0.5);
-    if (this.slow > 1.5) {
-      this.quality = this.quality > 1.25 ? 1.25 : this.quality > 1 ? 1 : 0.8;
+    if (this.slow > 2) {
+      this.quality = this.steps[++this.step];
       this.slow = 0;
       this.resize();
     }
