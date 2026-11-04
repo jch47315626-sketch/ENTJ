@@ -1224,15 +1224,16 @@ export function drawProjectile(ctx, p) {
     ctx.beginPath();
     ctx.ellipse(-sp * 0.9, 0, sp * 0.9, sp * 0.55, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.shadowColor = '#ff2a1a';
-    ctx.shadowBlur = p.big ? 18 : 12;
+    ctx.fillStyle = 'rgba(255, 42, 26, 0.22)';
+    ctx.beginPath();
+    ctx.arc(-sp * 0.9, 0, sp * 1.45, -1, 1);
+    ctx.fill();
     ctx.fillStyle = p.big ? '#ff3a24' : '#e8321e';
     ctx.beginPath();
     ctx.arc(-sp * 0.9, 0, sp * 1.25, -0.9, 0.9);
     ctx.arc(-sp * 1.2, 0, sp * 1.25, 0.84, -0.84, true);
     ctx.closePath();
     ctx.fill();
-    ctx.shadowBlur = 0;
     ctx.strokeStyle = 'rgba(255, 214, 200, 0.95)';
     ctx.lineWidth = p.big ? 2.5 : 1.8;
     ctx.beginPath();
@@ -1242,8 +1243,10 @@ export function drawProjectile(ctx, p) {
   } else if (p.kind === 'wave') {
     // 왕건's 검기: a glowing blue-white crescent.
     const a = Math.min(1, p.life * 3);
-    ctx.shadowColor = 'rgba(120, 190, 255, 0.9)';
-    ctx.shadowBlur = 10;
+    ctx.fillStyle = `rgba(120, 190, 255, ${0.25 * a})`;
+    ctx.beginPath();
+    ctx.arc(-p.r * 0.7, 0, p.r * 1.45, -1.2, 1.2);
+    ctx.fill();
     ctx.fillStyle = `rgba(200, 230, 255, ${0.9 * a})`;
     ctx.strokeStyle = `rgba(70, 130, 220, ${0.8 * a})`;
     ctx.lineWidth = 1.5;
@@ -1253,7 +1256,6 @@ export function drawProjectile(ctx, p) {
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
-    ctx.shadowBlur = 0;
   }
   ctx.restore();
 }

@@ -97,19 +97,23 @@ export class Renderer {
     this.hurtShown = 0;
     // Resolution: at most 1.5× the CSS size (pixel art does not need more), and
     // down to 1× by itself when frames run slow (see adapt()).
-    this.quality = Math.min(window.devicePixelRatio || 1, 1.5);
+    this.quality = Math.min(window.devicePixelRatio || 1, 1.25);
     this.slow = 0;
     preloadPixelFx();
     this.resize();
     window.addEventListener('resize', () => this.resize());
   }
 
-  /** Frames slower than ~40fps for two seconds in a row: draw at 1× from then on. */
+  /**
+   * Frames slower than ~40fps for 1.5 seconds: draw one step coarser
+   * (1.5 → 1.25 → 1 → 0.8×). Pixel art barely shows it; the fill cost drops a lot.
+   */
   adapt(dt) {
-    if (this.quality <= 1 || !dt) return;
+    if (this.quality <= 0.8 || !dt) return;
     this.slow = dt > 1 / 40 ? this.slow + dt : Math.max(0, this.slow - dt * 0.5);
-    if (this.slow > 2) {
-      this.quality = 1;
+    if (this.slow > 1.5) {
+      this.quality = this.quality > 1.25 ? 1.25 : this.quality > 1 ? 1 : 0.8;
+      this.slow = 0;
       this.resize();
     }
   }
@@ -1162,8 +1166,12 @@ export class Renderer {
           const gold = f.type === 'royal';
           ctx.save();
           ctx.lineCap = 'round';
-          ctx.shadowColor = gold ? 'rgba(255, 210, 110, 0.9)' : 'rgba(120, 190, 255, 0.9)';
-          ctx.shadowBlur = 12;
+          // Glow: one wide faint stroke under the trails (shadowBlur is far too costly on phones).
+          ctx.strokeStyle = gold ? `rgba(255, 210, 110, ${0.25 * alpha})` : `rgba(120, 190, 255, ${0.25 * alpha})`;
+          ctx.lineWidth = 14;
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, f.range * 0.86, a0, a1);
+          ctx.stroke();
           [[1, 4, gold ? '255, 236, 170' : '220, 240, 255'], [0.86, 2.5, gold ? '255, 200, 90' : '130, 190, 255'], [0.72, 1.6, gold ? '250, 170, 60' : '80, 140, 230']].forEach(([k, w, c], i) => {
             ctx.strokeStyle = `rgba(${c}, ${alpha * (1 - i * 0.18)})`;
             ctx.lineWidth = w;
@@ -1171,7 +1179,6 @@ export class Renderer {
             ctx.arc(f.x, f.y, f.range * k, a0 + i * 0.05, a1);
             ctx.stroke();
           });
-          ctx.shadowBlur = 0;
           ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
           for (let i = 0; i < 3; i++) {
             const r = f.range * (0.78 + i * 0.1);
@@ -1366,12 +1373,14 @@ export class Renderer {
           ctx.fill();
           ctx.strokeStyle = `rgba(240, 200, 110, ${0.9 * a})`;
           ctx.lineWidth = 3;
+          ctx.beginPath(); // six petals, one stroke
           for (let i = 0; i < 6; i++) {
             const ang = (i / 6) * TAU;
-            ctx.beginPath();
-            ctx.ellipse(f.x + Math.cos(ang) * rr * 0.5, f.y + Math.sin(ang) * rr * 0.5, rr * 0.45, rr * 0.18, ang, 0, TAU);
-            ctx.stroke();
+            const ex = f.x + Math.cos(ang) * rr * 0.5, ey = f.y + Math.sin(ang) * rr * 0.5;
+            ctx.moveTo(ex + Math.cos(ang) * rr * 0.45, ey + Math.sin(ang) * rr * 0.45);
+            ctx.ellipse(ex, ey, rr * 0.45, rr * 0.18, ang, 0, TAU);
           }
+          ctx.stroke();
           break;
         }
         case 'blast': {
@@ -1461,16 +1470,16 @@ export class Renderer {
           // Ink splatter: a main blot plus seeded droplets.
           const a = (1 - p) * 0.75;
           ctx.fillStyle = `rgba(29, 26, 23, ${a})`;
-          ctx.beginPath();
+          ctx.beginPath(); // blot and droplets in one fill
           ctx.arc(f.x, f.y, f.size * (0.6 + p * 0.4), 0, TAU);
-          ctx.fill();
           for (let i = 0; i < 7; i++) {
             const ang = f.seed * 40 + i * 2.39;
             const dd = f.size * (0.9 + ((f.seed * 13 + i * 0.37) % 1) * 1.1) * (0.7 + p * 0.5);
-            ctx.beginPath();
-            ctx.arc(f.x + Math.cos(ang) * dd, f.y + Math.sin(ang) * dd, f.size * 0.18 * (1 - ((i * 0.13) % 0.5)), 0, TAU);
-            ctx.fill();
+            const r = f.size * 0.18 * (1 - ((i * 0.13) % 0.5)), x = f.x + Math.cos(ang) * dd, y = f.y + Math.sin(ang) * dd;
+            ctx.moveTo(x + r, y);
+            ctx.arc(x, y, r, 0, TAU);
           }
+          ctx.fill();
           break;
         }
         case 'puff': {

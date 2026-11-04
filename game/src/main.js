@@ -353,22 +353,11 @@ $('tipOk').addEventListener('click', () => {
   if (tipQueue.length) openTip();
 });
 
-/** Which systems a menu screen shows, once the player can actually use them. */
-function menuTips(name) {
-  if (!save.tutorialDone) return;
-  const mine = save.owned.filter((id) => save.gearOpts?.[id] && EQUIPMENT.some((e) => e.id === id));
-  const lines = mine.flatMap((id) => save.gearOpts[id]);
-  if (name === 'home' && save.codex.runs >= 1) showTip('modes');
-  if (name === 'home' && save.codex.runs >= 1) showTip('trial');
-  if (name === 'heroes' && save.codex.runs >= 1) showTip('gear');
-  if (name === 'reward' && readyCount(save)) showTip('ach');
-  if (name === 'heroes' && mine.length) {
-    showTip('gearOpts');
-    if (lines.some((l) => l.special)) showTip('bigi');
-    if (mine.some((id) => id.startsWith('relic_'))) showTip('relic');
-  }
-  if (name === 'grow') showTip('tree');
-}
+/**
+ * Menu screens no longer pop up explanations on their own: a new player just
+ * plays, and every system's help stays in 도감 · 도움말.
+ */
+function menuTips() {}
 
 /** Redraw the open menu in place (after buying or wearing something). */
 function refresh() {

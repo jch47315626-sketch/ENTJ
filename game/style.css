@@ -1864,3 +1864,42 @@ body { background: var(--night); }
 #home .home-top .purse { display: none; }
 #home .home-top { justify-content: flex-end; }
 @media (max-width: 360px) { .pb-pill { padding: 3px 7px 3px 4px; font-size: 12px; } .pb-pill b { font-size: 12px; } }
+
+/* 강화 · 장비: six slots in one row, the set line folded, pieces folded to one line */
+.doll-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.doll-row .d2-slot { position: static; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 2px 4px; min-width: 0; width: auto; height: auto; border-radius: 10px; }
+.doll-row .d2-slot .icon { width: 34px; height: 34px; }
+.doll-row .d2-label { position: static; display: block; max-width: 100%; font-size: 10px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transform: none; background: none; padding: 0; }
+.set-fold { margin: 6px 0 2px; }
+.set-fold > summary { list-style: none; cursor: pointer; padding: 6px 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.06); font-size: 13px; color: var(--hanji); }
+.set-fold > summary::-webkit-details-marker { display: none; }
+.set-fold > summary small { opacity: 0.6; margin-left: 4px; }
+.item-card.folded { cursor: pointer; }
+.item-card.folded .ic-text span { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.more-grades { align-self: center; margin-top: 2px; }
+
+.prep-who { padding: 2px 4px 6px; font-size: 18px; color: var(--hanji); }
+.prep-who small { font-size: 12px; opacity: 0.7; }
+.dg-next { margin: 6px 4px 0; font-size: 12px; opacity: 0.75; text-align: center; }
+/* 한 화면에 맞추기: 지도와 할 일 줄을 조금 낮춘다 */
+.stage-detail { padding: 10px 12px; gap: 6px; }
+.sd-rows li { padding: 4px 2px; }
+.todo-row { padding: 6px 6px; }
+.todo-row small { display: block; }
+/* 출진 지도: 아래 카드를 낮게 (한 화면에) */
+.stage-detail .sd-no { width: 38px; height: 38px; font-size: 24px; }
+.stage-detail .sd-head b { font-size: 24px; }
+.stage-detail .lv-btn { padding: 3px 0 2px; }
+.stage-detail .sd-rows li { padding: 3px 2px; font-size: 13.5px; }
+#map .war-map { width: 88%; margin: 4px auto; }
+/* 제련 · 결기: 한 줄씩 */
+.forge-panel .forge-card { padding: 6px 8px; }
+.forge-panel .row-icon { width: 34px; height: 34px; }
+.gyeolgi-card .gy-banner { padding: 6px 12px; }
+.gyeolgi-card .gy-banner h3 { font-size: 26px; }
+.gyeolgi-card .gy-big { width: 34px; height: 34px; }
+.gyeolgi-card .grow-row { min-height: 0; padding: 4px 8px; gap: 8px; grid-template-columns: 44px 1fr auto; }
+.gyeolgi-card { gap: 6px; }
+.gyeolgi-card .gr-img { width: 44px; height: 40px; }
+.gyeolgi-card .gr-text span { font-size: 12.5px; }
+.gyeolgi-card .gy-banner { margin-bottom: 0; } .gyeolgi-card .gr-text b { font-size: 15px; }
