@@ -79,5 +79,25 @@ export const UNIT_SPRITES = {
   "shinsunggyeom": {
     "w": 64,
     "h": 64
+  },
+  "singeom": {
+    "w": 63,
+    "h": 64
+  },
+  "singeom_2": {
+    "w": 64,
+    "h": 64
+  },
+  "sinhwon": {
+    "w": 61,
+    "h": 64
+  },
+  "slinger": {
+    "w": 57,
+    "h": 64
+  },
+  "trapper": {
+    "w": 62,
+    "h": 64
   }
 };
