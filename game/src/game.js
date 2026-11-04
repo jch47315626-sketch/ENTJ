@@ -33,6 +33,10 @@ import { pixelFx } from './render/pixelFx.js';
 const SPECIAL_LINE = { paewang: 'fury', gwansim: 'gwansim' };
 /** Our own fires burning at once (see Game.addZone). */
 const MAX_FIRES = 30;
+/** Limits that keep a crowded fight smooth on a phone: effects, floating numbers, 엽전 on the ground. */
+const MAX_FX = 70;
+const MAX_TEXTS = 24;
+const MAX_COINS = 90;
 
 /** 공훈 needed for the next level: gentle at first, steeper and steeper later on. */
 export /** A card that moves a started 궁극기 forward is offered this many times as often. */
@@ -716,8 +720,22 @@ export class Game {
   }
 
   dropCoin(x, y, value) {
-    const tier = value >= 5 ? 'gold' : value >= 3 ? 'silver' : 'bronze';
-    this.pickups.push({ kind: 'coin', tier, value, x: x + rand(-4, 4), y: y + rand(-4, 4), magnet: false, t: 0 });
+    const tierOf = (v) => (v >= 5 ? 'gold' : v >= 3 ? 'silver' : 'bronze');
+    // A crowded field: the new 엽전 joins the nearest one lying about (its worth adds up),
+    // so hundreds of coins never pile up to be drawn and checked every frame.
+    let coins = 0, near = null, nd = Infinity;
+    for (const k of this.pickups) {
+      if (k.kind !== 'coin' || k.magnet || k.taken) continue;
+      coins++;
+      const d = (k.x - x) ** 2 + (k.y - y) ** 2;
+      if (d < nd) { nd = d; near = k; }
+    }
+    if (near && coins >= MAX_COINS) {
+      near.value += value;
+      near.tier = tierOf(near.value);
+      return;
+    }
+    this.pickups.push({ kind: 'coin', tier: tierOf(value), value, x: x + rand(-4, 4), y: y + rand(-4, 4), magnet: false, t: 0 });
   }
 
   /** `attacker`: the enemy that dealt the blow, when there is one (for 반격). */
@@ -1504,11 +1522,14 @@ export class Game {
       }
     }
     this.fx = this.fx.filter((f) => f.t < f.life);
+    // Too many at once (a big fight): the oldest go first — nobody can follow hundreds anyway.
+    if (this.fx.length > MAX_FX) this.fx.splice(0, this.fx.length - MAX_FX);
     for (const t of this.texts) {
       t.t += dt;
       t.y -= 30 * dt;
     }
     this.texts = this.texts.filter((t) => t.t < t.life);
+    if (this.texts.length > MAX_TEXTS) this.texts.splice(0, this.texts.length - MAX_TEXTS);
   }
 
   /** Snapshot for the HUD. */

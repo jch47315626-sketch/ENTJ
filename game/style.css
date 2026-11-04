@@ -29,7 +29,10 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 #app { position: fixed; inset: 0; }
-#field { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+#field { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; image-rendering: pixelated; }
+/* Edge shade over the battlefield (render/renderer.js): dark rim, red when the hero is hit. */
+.field-shade { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 50%, rgba(20, 17, 14, 0) 45%, rgba(20, 17, 14, 0.55) 100%); }
+.field-shade.hurt { background: radial-gradient(ellipse at 50% 50%, rgba(20, 17, 14, 0) 45%, rgba(120, 20, 14, calc(0.35 + var(--hurt, 0))) 100%); }
 button { font-family: inherit; cursor: pointer; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 

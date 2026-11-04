@@ -89,13 +89,33 @@ export class Renderer {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.cam = { x: 0, y: 0, zoom: 1 };
+    // The edge shade (vignette, red when hurt) is a CSS layer over the canvas:
+    // a full-screen gradient painted every frame was one of the costliest fills.
+    this.shade = document.createElement('div');
+    this.shade.className = 'field-shade';
+    canvas.after(this.shade);
+    this.hurtShown = 0;
+    // Resolution: at most 1.5× the CSS size (pixel art does not need more), and
+    // down to 1× by itself when frames run slow (see adapt()).
+    this.quality = Math.min(window.devicePixelRatio || 1, 1.5);
+    this.slow = 0;
     preloadPixelFx();
     this.resize();
     window.addEventListener('resize', () => this.resize());
   }
 
+  /** Frames slower than ~40fps for two seconds in a row: draw at 1× from then on. */
+  adapt(dt) {
+    if (this.quality <= 1 || !dt) return;
+    this.slow = dt > 1 / 40 ? this.slow + dt : Math.max(0, this.slow - dt * 0.5);
+    if (this.slow > 2) {
+      this.quality = 1;
+      this.resize();
+    }
+  }
+
   resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = this.quality;
     const w = this.canvas.clientWidth || window.innerWidth;
     const h = this.canvas.clientHeight || window.innerHeight;
     this.canvas.width = Math.round(w * dpr);
@@ -108,6 +128,7 @@ export class Renderer {
   }
 
   render(g, input, dt) {
+    this.adapt(dt);
     const { ctx, cam } = this;
     const p = g.player;
     const k = 1 - Math.exp(-8 * dt);
@@ -233,7 +254,13 @@ export class Renderer {
     this.drawTexts(ctx, g);
     ctx.restore();
 
-    this.drawVignette(ctx, p.hurtFlash > 0 ? p.hurtFlash : 0);
+    // Edge shade: only its redness changes, and only when the hero is hurt.
+    const hurt = p.hurtFlash > 0 ? Math.round(p.hurtFlash * 20) / 20 : 0;
+    if (hurt !== this.hurtShown) {
+      this.hurtShown = hurt;
+      this.shade.style.setProperty('--hurt', String(hurt));
+      this.shade.classList.toggle('hurt', hurt > 0);
+    }
     drawScreenFlash(ctx, g, this.w, this.h);
     this.drawStick(ctx, input);
   }
@@ -1478,15 +1505,6 @@ export class Renderer {
       ctx.strokeText(t.v, t.x, t.y);
       ctx.fillText(t.v, t.x, t.y);
     }
-  }
-
-  drawVignette(ctx, hurt) {
-    const { w, h } = this;
-    const grad = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.35, w / 2, h / 2, Math.max(w, h) * 0.75);
-    grad.addColorStop(0, 'rgba(20, 17, 14, 0)');
-    grad.addColorStop(1, hurt > 0 ? `rgba(120, 20, 14, ${0.35 + hurt})` : 'rgba(20, 17, 14, 0.55)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, w, h);
   }
 
   drawStick(ctx, input) {

@@ -221,8 +221,16 @@ export class Sound {
   sfx(name) {
     if (!this.ctx || this.muted) return;
     const now = this.ctx.currentTime;
-    const th = THROTTLE[name];
-    if (th && now - (this.last[name] ?? -9) < th) return;
+    // Every sound has a short gap before it can play again, and at most a few
+    // start in any tenth of a second — a big fight would otherwise build
+    // hundreds of audio nodes a second.
+    const th = THROTTLE[name] ?? 0.06;
+    if (now - (this.last[name] ?? -9) < th) return;
+    if (now - (this.sfxWindowAt ?? -9) > 0.1) {
+      this.sfxWindowAt = now;
+      this.sfxInWindow = 0;
+    }
+    if (++this.sfxInWindow > 4) return;
     this.last[name] = now;
     const fx = EFFECTS[name];
     if (fx) fx(this);
