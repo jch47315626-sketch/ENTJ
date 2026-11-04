@@ -18,7 +18,7 @@ import { staminaOf, staminaText, staminaWait, endlessLeft, ENDLESS_PER_DAY } fro
 import { josa } from '../core/korean.js';
 import { lineText, lineMax, engraveCost } from '../data/gearOptions.js';
 import { IMPRINT, ELEMENTS, ELEMENT_ORDER, imprintCost, imprintText, imprintSets } from '../data/imprint.js';
-import { SCHOOLS, SCHOOL_ORDER, SCHOOL_SETS, schoolCounts } from '../data/schools.js';
+import { SCHOOLS, SCHOOL_ORDER, SCHOOL_SETS, NODES, schoolCounts, nodeOf } from '../data/schools.js';
 import { HELP } from '../data/help.js';
 import { codexEntry, FOES, GENERALS } from '../data/codexTiers.js';
 import { NANSE_CARDS } from '../data/nanse.js';
@@ -543,7 +543,8 @@ function gearPanel(save, h, act) {
     tabs.append(b);
   }
   box.append(tabs);
-  box.append(el('small', 'school-blurb', `${SCHOOLS[school].icon} ${SCHOOLS[school].title} — ${SCHOOLS[school].blurb}. 2부위: 「${SCHOOLS[school].levels[0].name}」 책략 · 4부위: 궁극기 「${SCHOOLS[school].levels.at(-1).name}」 · 6부위: ${SCHOOLS[school].sixText}`));
+  const slotNode = NODES[school][slot.id];
+  box.append(el('small', 'school-blurb', `${slotNode ? `🧩 ${slot.name} 비결 「${slotNode.name}」 — ${slotNode.desc}<br>` : `${slot.name}에는 비결이 없어요<br>`}${SCHOOLS[school].icon} ${SCHOOLS[school].title} — ${SCHOOLS[school].blurb}. 2부위: 「${SCHOOLS[school].levels[0].name}」 책략 · 4부위: 궁극기 「${SCHOOLS[school].levels.at(-1).name}」 · 6부위: ${SCHOOLS[school].sixText}`));
   for (const item of EQUIPMENT.filter((e) => e.slot === slot.id && (e.relic || e.school === school))) list.append(itemCard(save, h, item, act));
   box.append(list);
   return box;
@@ -559,7 +560,8 @@ function itemCard(save, h, item, act) {
   card.append(iconCanvas(open || owned ? item.id : `empty:${item.slot}`, 40, 'row-icon'));
   const txt = el('div', 'ic-text');
   const sub = item.relic && !owned ? `🔥 일일 던전에서 난세 ${TRIAL.relicFrom}단계 이상을 평정하면 얻을 수 있어요` : open || owned ? bonusText(ownBonus(save, item, lv)) : `★${GRADES[item.grade].needStars} 전장을 깨면 풀려요`;
-  txt.innerHTML = `<b>${gradeTag(item.grade)} ${open || owned ? itemName(save, item) : '???'}</b><span>${sub}</span>`;
+  const node = nodeOf(item);
+  txt.innerHTML = `<b>${gradeTag(item.grade)} ${open || owned ? itemName(save, item) : '???'}</b><span>${sub}</span>${node ? `<span class="ic-node">🧩 비결 「${node.name}」 ${node.desc}</span>` : ''}`;
   card.append(txt);
   // 장비 옵션: random lines; each can be rerolled (각인) for 냥.
   const lines = owned ? save.gearOpts?.[item.id] ?? [] : [];
@@ -676,6 +678,13 @@ function schoolCard(save) {
   const n = schoolCounts(items);
   const card = el('div', 'school-sets');
   card.append(el('b', 'is-title', `🧭 장비 계열 <small>같은 계열 2부위 책략 · 4부위 궁극기 · 6부위 강화 — 어느 영웅이든</small>`));
+  // 🧩 나의 비결: one trick per worn slot — the player's own tree.
+  const tree = SLOTS.map((sl) => {
+    const it = items.find((x) => x.slot === sl.id);
+    const nd = nodeOf(it);
+    return nd ? `<i style="--el:${SCHOOLS[it.school].color}">${SCHOOLS[it.school].icon} ${nd.name}</i>` : '';
+  }).filter(Boolean);
+  if (tree.length) card.append(el('div', 'node-tree', `<small>🧩 나의 비결</small>${tree.join('')}`));
   const shown = SCHOOL_ORDER.filter((sc) => n[sc]);
   if (!shown.length) {
     card.append(el('small', 'is-hint', '같은 계열 장비를 여러 부위 입으면 그 계열의 책략과 궁극기가 레벨업 카드에 나와요.'));

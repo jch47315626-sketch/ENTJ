@@ -7,6 +7,12 @@
  *   6 — a strong passive bonus.
  * Gear 신물 have no school.
  *
+ * 비결 (NODES): within a school, each of five slots (투구 · 갑옷 · 장신구 ·
+ * 팔찌 · 허리띠; 신발 has none) carries its own trick, whatever its grade.
+ * One slot holds one school, so choosing a school per slot builds the
+ * player's own tree. `stats` add to the meta bonus; `flag` is read by the
+ * game (game.js / systems/skills.js / systems/allies.js).
+ *
  * `levels` is a cooldown-skill line for systems/skills.js (the last one is
  * the 궁극기, `requires.school` asks for 4 pieces).
  */
@@ -80,6 +86,48 @@ export const SCHOOLS = {
   },
 };
 export const SCHOOL_ORDER = ['mu', 'jin', 'sul', 'gung', 'do'];
+
+/** 비결 by school and slot. Key in the meta bonus: "mu.head". */
+export const NODES = {
+  mu: {
+    head: { name: '살기', desc: '적을 쓰러뜨릴 때마다 3초 동안 피해 +2% (최대 +30%까지 쌓임)' },
+    body: { name: '호신강기', desc: '체력이 절반 아래면 받는 피해 −25%' },
+    charm: { name: '검심', desc: '검풍 칼바람 +2줄기' },
+    wrist: { name: '쾌검', stats: { haste: 0.1, echo: 1 }, desc: '공격 재사용 −10%, 휘두를 때 20% 확률로 한 번 더' },
+    belt: { name: '참철', desc: '정예와 적장에게 주는 피해 +35%' },
+  },
+  jin: {
+    head: { name: '군령', stats: { guardBonus: 2 }, desc: '통솔 창병 · 깃발 병사 +2명' },
+    body: { name: '충의', desc: '아군이 곁에 있으면 받는 피해 −15%' },
+    charm: { name: '사기', stats: { allyMul: 0.4 }, desc: '아군 피해 +40%' },
+    wrist: { name: '척후', desc: '30초마다 척후 궁수 둘이 25초 동안 합류' },
+    belt: { name: '군량', desc: '아군 병사가 쓰러질 때마다 체력 1.5% 회복' },
+  },
+  sul: {
+    head: { name: '천기', stats: { momentum: 0.4 }, desc: '기세 충전 +40%' },
+    body: { name: '호부', desc: '고유기를 쓰면 최대 체력 15%의 보호막' },
+    charm: { name: '부적술', desc: '부적 폭탄 +2장, 폭발 반경 +20%' },
+    wrist: { name: '뇌부', desc: '고유기를 쓰면 가까운 적 여섯에게 벼락 (무기 피해 ×3)' },
+    belt: { name: '혼백', desc: '적을 쓰러뜨리면 8% 확률로 기세 +10' },
+  },
+  gung: {
+    head: { name: '백보천양', stats: { area: 0.15 }, desc: '공격 범위 +15%' },
+    body: { name: '경신', stats: { speed: 0.15 }, desc: '이동 +15%' },
+    charm: { name: '화전', desc: '연노 살 +2발, 하나 더 꿰뚫음' },
+    wrist: { name: '속사', stats: { haste: 0.12 }, desc: '공격 재사용 −12%' },
+    belt: { name: '전통', desc: '10초마다 가까운 적 여덟에게 화살비 (무기 피해 ×1.5)' },
+  },
+  do: {
+    head: { name: '청심', desc: '매초 체력 0.5% 회복' },
+    body: { name: '금강', stats: { armor: 3 }, desc: '갑주 +3, 받는 피해 −10%' },
+    charm: { name: '선단술', desc: '선단 재사용 −30%, 보호막 +50%' },
+    wrist: { name: '흡정', stats: { leech: 0.003 }, desc: '준 피해의 0.3%만큼 체력 회복' },
+    belt: { name: '불사', desc: '쓰러지면 한 판에 한 번, 체력 40%로 일어난다' },
+  },
+};
+
+/** The 비결 of one piece (null for 신발 and 신물). */
+export const nodeOf = (item) => (item?.school && NODES[item.school][item.slot]) || null;
 
 /** Worn pieces by school: { mu: 2, … }. */
 export function schoolCounts(items) {

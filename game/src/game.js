@@ -87,7 +87,7 @@ class Player {
       pickup: b.pickup * (1 + 0.35 * u('magnet') + (m.pickup ?? 0)),
       armor: b.armor + (m.armor ?? 0),
       // 단단한 갑옷: each stack takes 2% off what is left of every blow.
-      taken: 0.98 ** u('bArmor') * (this.imprintSet('earth')?.taken ?? 1),
+      taken: 0.98 ** u('bArmor') * (this.imprintSet('earth')?.taken ?? 1) * (m.nodes?.['do.body'] ? 0.9 : 1),
       leech: (m.leech ?? 0) + 0.0001 * u('bLeech') + (rageLv?.leech ?? 0),
       momentumMul: 1 + 0.25 * u('momentum') + (m.momentum ?? 0) + (GWANSIM[u('gwansim')]?.momentum ?? 0),
       xpMul: 1 + (m.xp ?? 0),
@@ -418,6 +418,13 @@ export class Game {
     if (e.spiritAmp && e.spiritAmp.until > this.time) amount *= 1 + e.spiritAmp.amp;
     // 천안: a marked foe takes more from every blow.
     if (e.curse && e.curse.until > this.time) amount *= 1 + e.curse.amp;
+    // 비결 (장비 계열): ⚔️ 참철 against elites and generals, ⚔️ 살기 after a run of kills.
+    const N = this.player.meta.nodes;
+    if (N && !opts?.byEnemy) {
+      if (N['mu.belt'] && (e.elite || e.isBoss)) amount *= 1.35;
+      const R = this.player.killRush;
+      if (R && R.until > this.time) amount *= 1 + 0.02 * R.n;
+    }
     e.hp -= amount;
     // 결기 · 피 회복: a sliver of the damage dealt comes back as health.
     const leech = this.player.stats.leech;
@@ -573,6 +580,52 @@ export class Game {
     return (1 + this.endlessBosses * ENDLESS.bossDamageStep) * endlessSurge(this.time);
   }
 
+  /** 비결 that run on their own: 🍃 청심, 🚩 척후, 🏹 전통. */
+  nodeTick(dt) {
+    const p = this.player;
+    const N = p.meta.nodes;
+    if (!N) return;
+    if (N['do.head'] && p.hp < p.stats.maxHp) p.hp = Math.min(p.stats.maxHp, p.hp + p.stats.maxHp * 0.005 * dt);
+    const T = (p.nodeT ??= {});
+    if (N['jin.wrist'] && (T.scout = (T.scout ?? 8) - dt) <= 0) {
+      T.scout = 30;
+      this.spawnAllies('archer', 2, 25);
+    }
+    if (N['gung.belt'] && (T.quiver = (T.quiver ?? 10) - dt) <= 0) {
+      const foes = this.nearestEnemies(p.x, p.y, 460, 8).filter((e) => !this.isCharmed(e) && e.def.behavior !== 'static');
+      T.quiver = foes.length ? 10 : 1;
+      const dmg = Math.max(currentWeaponLevel(p).damage, 30) * 1.5 * p.stats.might;
+      for (const e of foes) {
+        this.damageEnemy(e, dmg, e.x, e.y - 30, 30);
+        this.fx.push({ type: 'spark', x: e.x, y: e.y, t: 0, life: 0.3 });
+      }
+      if (foes.length) {
+        this.fx.push({ type: 'arrowRain', x: foes[0].x, y: foes[0].y, range: 120, t: 0, life: 0.8, seed: Math.random() });
+        this.sfx('volley');
+      }
+    }
+  }
+
+  /** 비결 that answer the hero's special: 📜 호부 (shield), 📜 뇌부 (lightning). */
+  nodeOnSpecial() {
+    const p = this.player;
+    const N = p.meta.nodes;
+    if (!N) return;
+    if (N['sul.body']) {
+      p.shield = Math.max(p.shield ?? 0, p.stats.maxHp * 0.15);
+      p.shieldMax = Math.max(p.shield, p.shieldMax ?? 0);
+      p.shieldBy = null;
+    }
+    if (N['sul.wrist']) {
+      const dmg = Math.max(currentWeaponLevel(p).damage, 30) * 3 * p.stats.might;
+      for (const e of this.nearestEnemies(p.x, p.y, 460, 6).filter((o) => !this.isCharmed(o))) {
+        this.damageEnemy(e, dmg, e.x, e.y - 40, 40, { stun: 0.3 });
+        this.fx.push({ type: 'pillar', x: e.x, y: e.y, t: 0, life: 0.5, seed: Math.random() });
+      }
+      this.sfx('thunder');
+    }
+  }
+
   /** 🔷 속성 각인 세트 techniques that run on their own: 💧 회복, 🌪️ 회오리, ⚡ 벼락. */
   imprintTick(dt) {
     const p = this.player;
@@ -604,6 +657,13 @@ export class Game {
   killProcs(e) {
     const p = this.player;
     const m = p.meta;
+    // 비결: ⚔️ 살기 stacks up, 📜 혼백 now and then fills the 기세.
+    if (m.nodes?.['mu.head']) {
+      const R = (p.killRush ??= { n: 0, until: 0 });
+      R.n = R.until > this.time ? Math.min(15, R.n + 1) : 1;
+      R.until = this.time + 3;
+    }
+    if (m.nodes?.['sul.belt'] && Math.random() < 0.08) this.addMomentum(10);
     // 🔥 화(火) 각인 세트: the fallen burst into flame.
     const F = p.imprintSet('fire');
     if (F && Math.random() < F.chance) {
@@ -637,6 +697,10 @@ export class Game {
     // Armour cuts 7% per point (max 50%), so it helps against big hits and small ones alike.
     let dmg = Math.max(1, amount * (1 - armorCut(p.stats.armor)));
     dmg = Math.max(1, dmg * p.stats.taken);
+    // 비결: ⚔️ 호신강기 when hurt badly, 🚩 충의 with troops at hand.
+    const N = p.meta.nodes;
+    if (N?.['mu.body'] && p.hp < p.stats.maxHp * 0.5) dmg *= 0.75;
+    if (N?.['jin.body'] && this.allies.some((a) => !a.dead && a.kind !== 'maguni' && a.kind !== 'maguniBomb')) dmg *= 0.85;
     if (this.spirits.length) {
       dmg = spiritAbsorb(this, dmg, attacker);
       if (dmg <= 0) {
@@ -679,6 +743,16 @@ export class Game {
     const E = p.imprintSet('earth');
     if (E?.thorns && attacker && !attacker.dead) this.damageEnemy(attacker, Math.max(currentWeaponLevel(p).damage, 30) * E.thorns * p.stats.might, p.x, p.y, 120);
     if (p.hp <= 0 && this.spirits.length && spiritRevive(this)) return true;
+    // 🍃 불사: once a run, the hero gets back up.
+    if (p.hp <= 0 && p.meta.nodes?.['do.belt'] && !p.undying) {
+      p.undying = true;
+      p.hp = p.stats.maxHp * 0.4;
+      p.invuln = 2;
+      this.fx.push({ type: 'awaken', x: p.x, y: p.y, t: 0, life: 1.2, seed: Math.random() });
+      this.banner('🍃 불사 — 다시 일어선다!', 'big');
+      this.sfx('heal');
+      return true;
+    }
     if (p.hp <= 0) {
       p.hp = 0;
       this.state = 'dying';
@@ -702,6 +776,7 @@ export class Game {
     p.momentum = 0;
     p.momReadyAt = null;
     withOver(p, SPECIAL_LINE[p.hero.special], () => S.fire(this));
+    this.nodeOnSpecial();
     if (this.spirits.length) spiritOnSpecial(this, MOMENTUM.max);
   }
 
@@ -962,6 +1037,7 @@ export class Game {
 
     updateWeapon(this, dt);
     this.imprintTick(dt);
+    this.nodeTick(dt);
     updateSkills(this, dt);
     // 후백제의 패왕: the moment the rage takes hold (or deepens), it flares up.
     const rage = p.enraged ? (p.hp < p.stats.maxHp * 0.3 ? 2 : 1) : 0;

@@ -210,6 +210,9 @@ ACTIVE_SKILLS.swordGale = {
   levels: SCHOOLS.mu.levels,
   fire(g, L) {
     const p = g.player;
+    const N = p.meta.nodes ?? {};
+    // ⚔️ 검심: two more blades.
+    if (N['mu.charm']) L = { ...L, waves: L.waves + 2 };
     const dirs = [];
     if (L.ring) for (let i = 0; i < L.waves; i++) dirs.push(p.facing + (i / L.waves) * Math.PI * 2);
     else {
@@ -233,6 +236,8 @@ ACTIVE_SKILLS.banner = {
   levels: SCHOOLS.jin.levels,
   fire(g, L) {
     const p = g.player;
+    // 🚩 군령: two more soldiers.
+    if (p.meta.nodes?.['jin.head']) L = { ...L, count: L.count + 2 };
     for (let i = 0; i < L.count; i++) {
       const a = (i / L.count) * Math.PI * 2 + rand(-0.2, 0.2);
       const x = p.x + Math.cos(a) * 70, y = p.y + Math.sin(a) * 70;
@@ -249,6 +254,8 @@ ACTIVE_SKILLS.talisman = {
   levels: SCHOOLS.sul.levels,
   fire(g, L) {
     const p = g.player;
+    // 📜 부적술: two more talismans, wider bursts.
+    if (p.meta.nodes?.['sul.charm']) L = { ...L, count: L.count + 2, radius: L.radius * 1.2 };
     const foes = g.nearestEnemies(p.x, p.y, 480, 30).filter((e) => !g.isCharmed(e) && e.def.behavior !== 'static');
     if (!foes.length) return 0.6;
     const r = L.radius * Math.sqrt(p.stats.area);
@@ -272,6 +279,8 @@ ACTIVE_SKILLS.crossbow = {
   levels: SCHOOLS.gung.levels,
   fire(g, L) {
     const p = g.player;
+    // 🏹 화전: two more bolts that pierce one more.
+    if (p.meta.nodes?.['gung.charm']) L = { ...L, bolts: L.bolts + 2, pierce: L.pierce + 1 };
     const foes = g.nearestEnemies(p.x, p.y, 460, L.bolts).filter((e) => !g.isCharmed(e));
     if (!foes.length) return 0.4;
     for (let i = 0; i < L.bolts; i++) {
@@ -302,6 +311,9 @@ ACTIVE_SKILLS.elixir = {
   levels: SCHOOLS.do.levels,
   fire(g, L) {
     const p = g.player;
+    // 🍃 선단술: sooner, with a half again stronger shield.
+    const art = p.meta.nodes?.['do.charm'];
+    if (art) L = { ...L, shield: L.shield * 1.5 };
     const before = p.hp;
     p.heal(p.stats.maxHp * L.heal);
     if (p.hp > before) g.texts.push({ x: p.x, y: p.y - 30, v: `+${Math.round(p.hp - before)}`, t: 0, life: 0.7, heal: true });
@@ -312,6 +324,7 @@ ACTIVE_SKILLS.elixir = {
     if (L.pulse) hitArc(g, p.x, p.y, 0, 150 * Math.sqrt(p.stats.area), 360, weaponDmg(p) * L.pulse * p.stats.might, 200, 'royal');
     g.fx.push({ type: 'puff', x: p.x, y: p.y, t: 0, life: 0.6, size: 34, tone: 'light' });
     g.sfx('heal');
+    if (art) return L.cooldown * 0.7;
   },
 };
 

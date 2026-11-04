@@ -1175,6 +1175,10 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 .school-tab { padding: 6px 2px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--sc) 60%, transparent); background: rgba(0, 0, 0, 0.25); color: var(--hanji); font: 400 12.5px "Jua", sans-serif; cursor: pointer; }
 .school-tab.on { background: color-mix(in srgb, var(--sc) 45%, rgba(0, 0, 0, 0.2)); color: #fff; box-shadow: 0 0 8px color-mix(in srgb, var(--sc) 50%, transparent); }
 .school-blurb { display: block; margin: 0 2px 6px; color: rgba(255, 255, 255, 0.72); font-size: 12px; line-height: 1.4; }
+.ic-node { display: block; margin-top: 2px; color: #6a3a8a; font-size: 12px; line-height: 1.35; }
+.node-tree { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.node-tree small { color: rgba(255, 255, 255, 0.65); margin-right: 2px; }
+.node-tree i { font-style: normal; font: 400 12.5px "Jua", sans-serif; padding: 2px 8px; border-radius: 999px; color: #fff; background: color-mix(in srgb, var(--el) 40%, rgba(0, 0, 0, 0.3)); border: 1px solid var(--el); }
 /* 하·중·상 */
 .ic-tier { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 4px; padding: 4px 8px; border-radius: 10px; background: rgba(120, 80, 30, 0.08); border: 1px solid rgba(140, 100, 50, 0.25); color: #3a2a18; font-size: 12px; }
 .it-pips { display: inline-flex; gap: 3px; flex: none; }
