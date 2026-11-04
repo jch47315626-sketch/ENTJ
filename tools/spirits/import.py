@@ -33,7 +33,7 @@ HERO_MANIFEST = os.path.join(ROOT, 'game/src/data/heroSprites.js')
 # Pictures with stray leftovers (a cart that came with a floating helmet and boots): keep the main body only.
 KEEP_MAIN = {'cart'}
 # White subjects: never clear enclosed light-grey patches (that is their body, not a hole).
-NO_HOLES = {'horse'}
+NO_HOLES = {'horse', 'pickup_rice', 'pickup_coin', 'crack'}
 # Areas to blank in the source (fractions x0, y0, x1, y1): the cart's leftover boots under it.
 ERASE = {'cart': [(0.2, 0.82, 0.42, 1.0), (0.55, 0.82, 0.8, 1.0)]}
 SASIN = {'cheongnyong', 'jujak', 'baekho', 'hyeonmu'}
@@ -46,7 +46,7 @@ def clear_white(im, holes=True):
     seen = set()
     # A dark fake checkerboard (dark greys) shows as a dark border: clear dark neutral greys then too.
     edge = [px[x, y] for x in range(0, w, 7) for y in (0, h - 1)] + [px[x, y] for y in range(0, h, 7) for x in (0, w - 1)]
-    dark_bg = sum(1 for c in edge if max(c[:3]) < 110 and max(c[:3]) - min(c[:3]) < 14) > len(edge) * 0.5
+    dark_bg = sum(1 for c in edge if max(c[:3]) < 130 and max(c[:3]) - min(c[:3]) < 14) > len(edge) * 0.5
     q = deque([(x, y) for x in range(w) for y in (0, h - 1)] + [(x, y) for y in range(h) for x in (0, w - 1)])
     while q:
         x, y = q.popleft()
@@ -56,7 +56,7 @@ def clear_white(im, holes=True):
         r, g, b, a = px[x, y]
         # White, or the light neutral grey of a fake 'transparent' checkerboard baked into the picture.
         if a < 20 or (r > 232 and g > 232 and b > 232) or (min(r, g, b) > 165 and max(r, g, b) - min(r, g, b) < 16) \
-                or (dark_bg and 25 < max(r, g, b) < 115 and max(r, g, b) - min(r, g, b) < 14):
+                or (dark_bg and 25 < max(r, g, b) < 130 and max(r, g, b) - min(r, g, b) < 14):
             px[x, y] = (0, 0, 0, 0)
             q.extend(((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)))
     # A checkerboard background shows as many cleared pixels that were not pure white.

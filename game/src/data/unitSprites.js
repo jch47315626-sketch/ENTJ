@@ -167,5 +167,25 @@ export const UNIT_SPRITES = {
   "horse": {
     "w": 63,
     "h": 51
+  },
+  "pickup_crystal": {
+    "w": 38,
+    "h": 51
+  },
+  "pickup_rice": {
+    "w": 63,
+    "h": 64
+  },
+  "pickup_coin": {
+    "w": 34,
+    "h": 36
+  },
+  "crack": {
+    "w": 62,
+    "h": 49
+  },
+  "pheasant": {
+    "w": 62,
+    "h": 41
   }
 };

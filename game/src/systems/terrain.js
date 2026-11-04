@@ -92,6 +92,7 @@ export function rockfall(g, spots, { warn = 1.1, radius = 46, damage = 20, life 
       if ((p.x - s.x) ** 2 + (p.y - s.y) ** 2 < (radius + p.r * 0.5) ** 2) g.hurtPlayer(damage, 'rockfall');
       g.tempRocks.push({ x: s.x, y: s.y, r: radius * 0.75, seed: Math.random(), until: g.time + life, fallen: true });
       g.fx.push({ type: 'puff', x: s.x, y: s.y, t: 0, life: 0.6, size: 34, tone: 'mud' });
+      g.fx.push({ type: 'crack', x: s.x, y: s.y + radius * 0.3, size: radius * 2.4, flip: Math.random() < 0.5, t: 0, life: 3 });
     }
     g.shake(8);
     g.sfx('quake');

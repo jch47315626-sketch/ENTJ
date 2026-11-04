@@ -785,10 +785,26 @@ export function drawObjectPicture(ctx, id, x, y, r, h, flash) {
 }
 
 /** A drawn picture centred on (x, y), `len` long along its width, turned by `angle` (kept upright when pointing left). */
-export function drawPicture(ctx, id, x, y, len, angle = 0) {
+const tinted = {};
+/** A picture through a CSS filter, made once (e.g. a silver coin from the bronze one). */
+function tintedPicture(id, filter) {
+  const key = `${id}|${filter}`;
+  if (tinted[key]) return tinted[key];
+  const img = unitPics[id].img, c = document.createElement('canvas');
+  c.width = img.naturalWidth;
+  c.height = img.naturalHeight;
+  const cx = c.getContext('2d');
+  cx.filter = filter;
+  cx.drawImage(img, 0, 0);
+  c.naturalWidth = c.width;
+  c.naturalHeight = c.height;
+  return (tinted[key] = c);
+}
+
+export function drawPicture(ctx, id, x, y, len, angle = 0, filter = null) {
   const pic = unitPics[id];
   if (!pic || !pic.img.complete || !pic.img.naturalWidth) return false;
-  const img = pic.img, k = len / img.naturalWidth;
+  const img = filter ? tintedPicture(id, filter) : pic.img, k = len / img.naturalWidth;
   ctx.save();
   ctx.imageSmoothingEnabled = false;
   ctx.translate(Math.round(x), Math.round(y));

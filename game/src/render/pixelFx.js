@@ -106,6 +106,7 @@ const PROJECTILES = {
 const PICTURES = {
   arrow: (p) => (p.team !== 'player' ? ['projectile_arrow', 26] : null),
   hook: () => ['projectile_hook', 36],
+  pheasant: () => ['pheasant', 46],
 };
 
 export function drawProjectileFx(ctx, p, time) {

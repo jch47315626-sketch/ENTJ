@@ -169,6 +169,7 @@ export class Renderer {
         ctx.beginPath();
         ctx.arc(k.x, k.y, 22, 0, TAU);
         ctx.fill();
+        if (drawPicture(ctx, 'pickup_crystal', k.x, k.y + bob, 15)) continue;
         ctx.fillStyle = '#9b8cff';
         ctx.strokeStyle = '#2b2060';
         ctx.lineWidth = 1.5;
@@ -1042,6 +1043,14 @@ export class Renderer {
   drawGroundFx(ctx, g) {
     for (const f of g.fx) {
       const p = f.t / f.life;
+      if (f.type === 'crack') {
+        // 땅이 갈라진 자국: shows at once, fades over its last half.
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, Math.min(1, (1 - p) * 2));
+        drawPicture(ctx, 'crack', f.x, f.y, f.size, f.flip ? Math.PI : 0);
+        ctx.restore();
+        continue;
+      }
       if (f.type === 'dashLine') {
         const pulse = 0.18 + 0.2 * p;
         ctx.save();

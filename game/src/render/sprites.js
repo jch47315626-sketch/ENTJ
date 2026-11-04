@@ -1,5 +1,5 @@
 import { MODELS, drawModelBackHair, drawModelHead } from './heroModel.js';
-import { drawPixelFigure } from './pixelUnit.js';
+import { drawPixelFigure, drawPicture } from './pixelUnit.js';
 import { drawBeast } from './beasts.js';
 
 /** Draw people as pixel art (render/pixelUnit.js); false brings back the path drawings. */
@@ -964,6 +964,8 @@ const COIN = { bronze: '#a8763e', silver: '#c9c6bb', gold: '#e2b84a' };
 export function drawCoin(ctx, x, y, tier, t) {
   const r = tier === 'bronze' ? 4.5 : 5.5;
   const bob = Math.sin(t * 5 + x) * 1;
+  const tint = { bronze: 'sepia(0.6) brightness(0.8)', silver: 'grayscale(1) brightness(1.35)' }[tier] ?? null;
+  if (drawPicture(ctx, 'pickup_coin', x, y + bob, r * 2.4, 0, tint)) return;
   ctx.fillStyle = COIN[tier];
   ctx.strokeStyle = 'rgba(29,26,23,0.8)';
   ctx.lineWidth = 1;
@@ -983,6 +985,10 @@ export function drawRice(ctx, x, y, t) {
   ctx.beginPath();
   ctx.arc(0, 0, 15, 0, Math.PI * 2);
   ctx.fill();
+  if (drawPicture(ctx, 'pickup_rice', 0, 0, 20)) {
+    ctx.restore();
+    return;
+  }
   ctx.fillStyle = '#f3efe2';
   ctx.strokeStyle = INK;
   ctx.lineWidth = 1.4;
@@ -1086,6 +1092,8 @@ export function drawProjectile(ctx, p) {
     ctx.strokeStyle = 'rgba(255, 248, 220, 0.95)';
     ctx.lineWidth = p.r * 0.7;
     ctx.stroke();
+  } else if (p.kind === 'quake' && drawPicture(ctx, 'crack', 0, 0, p.r * 4)) {
+    // 땅 갈라짐 (picture).
   } else if (p.kind === 'quake') {
     const a = Math.min(1, p.life * 3);
     ctx.fillStyle = `rgba(90, 60, 40, ${0.55 * a})`;

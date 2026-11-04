@@ -215,6 +215,7 @@ const ACT = {
       area(g, ex, ey, 100, (o) => hit(g, worm, o, D(g, worm, 2), { from: { x: ex, y: ey }, stun: 1 }));
       ring(g, ex, ey, 100, '#a8784a', 0.5);
       g.fx.push({ type: 'puff', x: ex, y: ey, t: 0, life: 0.6, size: 50, tone: 'mud' });
+      g.fx.push({ type: 'crack', x: ex, y: ey, size: 170, flip: Math.random() < 0.5, t: 0, life: 2.5 });
     });
     return 4;
   },
