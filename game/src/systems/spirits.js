@@ -142,12 +142,12 @@ const ACT = {
     const bite = (e) => {
       if (!e) return;
       lungeTo(s, e.x, e.y);
-      hit(g, s, e, D(g, s, 1.5), { stun: s.br === 'a' ? 1.6 : 0.8 });
+      hit(g, s, e, D(g, s, 2.5), { stun: s.br === 'a' ? 1.6 : 0.8 });
       if (s.br === 'a') e.spiritAmp = { amp: 0.2, until: g.time + 1.6 };
     };
     const t = foes(g, g.player.x, g.player.y, 300, s.awake ? 2 : 1);
     t.forEach(bite);
-    return t.length ? 3 : 0.5;
+    return t.length ? 2 : 0.5;
   },
   crow(g, s) {
     const p = g.player;
@@ -180,7 +180,7 @@ const ACT = {
   },
   gull(g, s) {
     const dives = (s.awake ? 5 : s.br === 'a' ? 3 : 1) + (s.mod.dives ?? 0);
-    const r = s.br === 'b' ? 140 : 70;
+    const r = s.br === 'b' ? 115 : 70;
     const first = crowdSpot(g, g.player.x, g.player.y, 420);
     if (!first) return 0.5;
     for (let i = 0; i < dives; i++) {
@@ -223,13 +223,13 @@ const ACT = {
     const p = g.player;
     const t = foes(g, p.x, p.y, 220, s.br === 'b' ? 3 : 1);
     for (const e of t) {
-      const amt = D(g, s, 0.8);
+      const amt = D(g, s, 1.4);
       hit(g, s, e, amt);
       line(g, e.x, e.y, p.x, p.y, 'rgba(200, 40, 60, 0.6)', 2);
       p.heal(amt * (s.br === 'a' ? 0.5 : 0.25));
     }
     if (t[0]) lungeTo(s, t[0].x, t[0].y, 0.2);
-    return t.length ? 1.4 : 0.4;
+    return t.length ? 1.2 : 0.4;
   },
   falcon(g, s) {
     const p = g.player;
@@ -237,9 +237,11 @@ const ACT = {
     const e = near.find((o) => !o.isBoss && (o.elite || RANGED_BEHAVIORS.includes(o.def.behavior))) ?? (s.awake && g.boss && !g.boss.dead ? g.boss : null) ?? near.find((o) => !o.isBoss) ?? near[0];
     if (!e) return 0.5;
     lungeTo(s, e.x, e.y, 0.2);
-    hit(g, s, e, D(g, s, 3.6) * (e.isBoss && s.awake ? 1.3 : 1));
+    hit(g, s, e, D(g, s, 6) * (e.isBoss && s.awake ? 1.3 : 1));
+    // The stoop: talons rake whatever stands by the prey.
+    area(g, e.x, e.y, 60, (o) => o !== e && hit(g, s, o, D(g, s, 2.5), { from: e }));
     if (s.br === 'a' && !e.dead && !e.isBoss && e.hp < e.maxHp * 0.25) hit(g, s, e, e.hp + 1);
-    return s.br === 'b' ? 1.2 : 2.4;
+    return s.br === 'b' ? 1 : 2;
   },
   fox(g, s) {
     const n = s.br === 'a' ? 2 : 1;
@@ -308,7 +310,7 @@ const ACT = {
     return 5;
   },
   cub(g, s) {
-    const grow = (s.data.grow = s.awake ? 1 : Math.min(1, s.data.grow0 + (g.kills - (s.data.k0 ??= g.kills)) / 250));
+    const grow = (s.data.grow = s.awake ? 1 : Math.min(1, s.data.grow0 + (g.kills - (s.data.k0 ??= g.kills)) / 150));
     const stage = Math.floor(grow * 4);
     if (s.br === 'b' && stage > (s.data.roared ?? 0)) {
       s.data.roared = stage;
@@ -318,7 +320,7 @@ const ACT = {
     const e = nearestFoe(g, g.player.x, g.player.y, 200);
     if (!e) return 0.4;
     lungeTo(s, e.x, e.y);
-    hit(g, s, e, D(g, s, (0.6 + 1.8 * grow) * (s.br === 'a' && grow >= 1 ? 2 : 1)));
+    hit(g, s, e, D(g, s, (1.2 + 1.8 * grow) * (s.br === 'a' && grow >= 1 ? 2 : 1)));
     return 1.2;
   },
   turtle(g, s) {
@@ -362,18 +364,31 @@ const ACT = {
   },
   elephant(g, s) {
     const p = g.player;
-    s.data.until = g.time + 4;
+    s.data.until = g.time + 6;
     p.spiritSpeed = s.br === 'b' ? 1.55 : 1.3;
     p.recalc();
     p.invuln = Math.max(p.invuln, s.br === 'b' ? 2 : 1);
-    if (s.awake) {
-      area(g, p.x, p.y, 150, (e) => (e.stun = Math.max(e.stun ?? 0, e.isBoss ? 0.25 : 1)));
-      ring(g, p.x, p.y, 150, '#f1e8d2', 0.5);
-    }
+    // Mounting: the ground shakes and everything close is thrown back.
+    area(g, p.x, p.y, 150, (e) => hit(g, s, e, D(g, s, 3), { from: p, kb: 150 }));
+    ring(g, p.x, p.y, 150, '#f1e8d2', 0.5);
+    g.shake?.(5);
+    if (s.awake) area(g, p.x, p.y, 150, (e) => (e.stun = Math.max(e.stun ?? 0, e.isBoss ? 0.25 : 1)));
     g.texts.push({ x: p.x, y: p.y - 40, v: '🐘 백상!', t: 0, life: 1, order: true });
-    return 10;
+    return 8;
   },
-  haetae: () => 1, // every frame in tick()
+  haetae(g, s) {
+    // Every 3 s a cone of fire at the nearest foe (swallowing is in tick()).
+    const p = g.player, e = nearestFoe(g, p.x, p.y, 220);
+    if (!e) return 0.5;
+    const a = Math.atan2(e.y - p.y, e.x - p.x), R = 200;
+    area(g, p.x, p.y, R, (o) => {
+      const d = Math.atan2(o.y - p.y, o.x - p.x) - a;
+      if (Math.cos(d) > Math.cos(0.6)) hit(g, s, o, D(g, s, 2.5), { from: p, kb: 60 });
+    });
+    for (const k of [-0.45, 0, 0.45]) line(g, p.x, p.y, p.x + Math.cos(a + k) * R, p.y + Math.sin(a + k) * R, 'rgba(255, 140, 40, 0.85)', 10, 0.35);
+    lungeTo(s, p.x + Math.cos(a) * 30, p.y + Math.sin(a) * 30, 0.2);
+    return 3;
+  },
   cheongnyong(g, s) {
     const p = g.player;
     let from = p, e = nearestFoe(g, p.x, p.y, 320);
@@ -396,19 +411,22 @@ const ACT = {
   },
   baekho(g, s) {
     const p = g.player;
-    const line = (s.br === 'a' ? 0.6 : 0.3) + (s.mod.execute ?? 0);
+    const line = (s.br === 'a' ? 0.8 : 0.4) + (s.mod.execute ?? 0);
     const near = foes(g, p.x, p.y, 320, 20);
     const prey = near.find((e) => !e.isBoss && e.hp < e.maxHp * line) ?? (s.awake ? near.find((e) => e.isBoss && e.hp < e.maxHp * 0.1) : null);
     if (prey) {
       lungeTo(s, prey.x, prey.y, 0.2);
       hit(g, s, prey, prey.hp + 1);
       g.fx.push({ type: 'spLine', x: prey.x - 20, y: prey.y - 20, tx: prey.x + 20, ty: prey.y + 20, color: '#ffffff', width: 5, t: 0, life: 0.3 });
-      return 1.1;
+      return 0.6; // straight on to the next
     }
     const e = near[0];
     if (!e) return 0.5;
     lungeTo(s, e.x, e.y, 0.2);
-    hit(g, s, e, D(g, s, 2.6 * (s.br === 'b' ? 1.5 : 1)));
+    hit(g, s, e, D(g, s, 5 * (s.br === 'b' ? 1.5 : 1)));
+    // A sweep of the claws catches those beside it.
+    area(g, e.x, e.y, 80, (o) => o !== e && hit(g, s, o, D(g, s, 2.5 * (s.br === 'b' ? 1.5 : 1)), { from: e, kb: 80 }));
+    ring(g, e.x, e.y, 80, 'rgba(255, 255, 255, 0.7)', 0.25);
     return 1.1;
   },
   hyeonmu(g, s) {
@@ -430,7 +448,7 @@ function tick(g, s, dt) {
       s.data.trample = (s.data.trample ?? 0) - dt;
       if (s.data.trample <= 0) {
         s.data.trample = 0.3;
-        area(g, p.x, p.y, 70, (e) => hit(g, s, e, D(g, s, 1.5 * (s.br === 'a' ? 2.5 : 1)), { from: p, kb: 60 }));
+        area(g, p.x, p.y, 120, (e) => hit(g, s, e, D(g, s, 1.5 * (s.br === 'a' ? 2.5 : 1)), { from: p, kb: 60 }));
       }
     } else {
       s.data.until = 0;
@@ -495,7 +513,11 @@ export function updateSpirits(g, dt) {
 /** Hero is about to take `dmg` (after armour): 산곰 takes a share, shields soak the rest. */
 export function spiritAbsorb(g, dmg, attacker) {
   const p = g.player;
-  for (const s of g.spirits) if (s.id === 'bear') dmg *= 1 - 0.08 * s.pw * (s.br === 'a' ? 2 : 1);
+  for (const s of g.spirits) {
+    if (s.id === 'bear') dmg *= 1 - 0.08 * s.pw * (s.br === 'a' ? 2 : 1);
+    // 백상: riding, the hero takes 30% less.
+    if (s.id === 'elephant' && s.data.until > g.time) dmg *= 0.7;
+  }
   if (p.shield > 0) {
     const soak = Math.min(p.shield, dmg);
     p.shield -= soak;
