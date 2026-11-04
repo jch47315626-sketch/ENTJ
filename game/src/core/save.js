@@ -17,12 +17,105 @@ const fresh = () => ({ money: 0, crystals: 0, gyeolgi: {}, owned: [], outfit: {}
 // companions [spiritId…] taken into battle, pity draws since the last 신수.
 const freshSpirit = () => ({ yeongju: 0, essence: 0, altar: null, spirits: {}, companions: [], pity: 0 });
 
-export function loadSave() {
+/**
+ * Keeping the player's progress safe across updates:
+ *   - every time the game opens, the stored save is copied (as it was, before
+ *     any update touches it) into a ring of BACKUPS snapshots;
+ *   - a save that cannot be read is never replaced by an empty one: its text
+ *     is kept under BROKEN and can be restored from 도감 → 기록;
+ *   - each update step runs on its own, so one failing step cannot throw the
+ *     whole save away (loadState.errors lists what failed).
+ */
+const BAK = 'samhan-save-v1-bak';
+const BROKEN = 'samhan-save-v1-broken';
+const BACKUPS = 6;
+export const loadState = { failed: false, errors: [] };
+
+function readBackups() {
+  try {
+    const list = JSON.parse(localStorage.getItem(BAK) ?? '[]');
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Puts `raw` at the front of the backup ring (skipped when it equals the newest). */
+function pushBackup(raw, why = 'open') {
+  try {
+    const list = readBackups();
+    if (list[0]?.raw === raw) return;
+    let money = 0, runs = 0;
+    try {
+      const d = JSON.parse(raw);
+      money = d.money ?? 0;
+      runs = d.codex?.runs ?? 0;
+    } catch {
+      return; // unreadable text is kept under BROKEN instead
+    }
+    // A brand-new save is not worth a slot that a real one could keep.
+    if (!money && !runs) return;
+    list.unshift({ at: Date.now(), why, money, runs, raw });
+    localStorage.setItem(BAK, JSON.stringify(list.slice(0, BACKUPS)));
+  } catch {}
+}
+
+/** Saved snapshots, newest first: [{ at, why, money, runs }]. */
+export function listBackups() {
+  const list = readBackups().map(({ at, why, money, runs }) => ({ at, why, money, runs }));
+  try {
+    const b = localStorage.getItem(BROKEN);
+    if (b) list.unshift({ at: 0, why: 'broken', money: 0, runs: 0 });
+  } catch {}
+  return list;
+}
+
+/** The save held by backup `i` (in listBackups order), brought up to date. */
+export function backupSave(i) {
+  let raw = null;
+  const hasBroken = (() => {
+    try {
+      return !!localStorage.getItem(BROKEN);
+    } catch {
+      return false;
+    }
+  })();
+  if (hasBroken && i === 0) raw = localStorage.getItem(BROKEN);
+  else raw = readBackups()[hasBroken ? i - 1 : i]?.raw;
+  if (!raw) throw new Error('백업을 찾을 수 없어요.');
+  return migrate({ ...fresh(), ...JSON.parse(raw) });
+}
+
+/** Keeps the current save as a backup before something replaces it. */
+export function backupNow(why) {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return migrate({ ...fresh(), ...JSON.parse(raw) });
+    if (raw) pushBackup(raw, why);
   } catch {}
-  return fresh();
+}
+
+export function loadSave() {
+  let raw = null;
+  try {
+    raw = localStorage.getItem(KEY);
+  } catch {
+    return fresh();
+  }
+  if (!raw) return fresh();
+  let data;
+  try {
+    data = JSON.parse(raw);
+    if (!data || typeof data !== 'object') throw new Error('not a save');
+    pushBackup(raw);
+  } catch {
+    // Unreadable: keep its text aside (never lost), start a new save.
+    loadState.failed = true;
+    try {
+      localStorage.setItem(BROKEN, raw);
+    } catch {}
+    return fresh();
+  }
+  return migrate({ ...fresh(), ...data });
 }
 
 // ------------------------------------------------------------ save codes
@@ -73,11 +166,16 @@ function migrate(save) {
   // 업적: id → 'ready' | 'done'; stats: lifetime counts for them (core/achieve.js).
   save.ach ??= {};
   save.stats ??= {};
-  migrateSpirit(save);
-  splitFieldLevels(save);
-  refundBuilds(save);
-  refundTraining(save);
-  mergeHeroGear(save);
+  if (!Array.isArray(save.owned)) save.owned = [];
+  if (!Number.isFinite(save.money)) save.money = 0;
+  // Each step on its own: one that fails leaves the rest (and the save) intact.
+  for (const step of [migrateSpirit, splitFieldLevels, refundBuilds, refundTraining, mergeHeroGear]) {
+    try {
+      step(save);
+    } catch (e) {
+      loadState.errors.push(`${step.name}: ${e?.message ?? e}`);
+    }
+  }
   return save;
 }
 

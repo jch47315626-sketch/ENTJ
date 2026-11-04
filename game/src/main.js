@@ -9,7 +9,7 @@ import { showScreen, renderIntro, renderChoices, renderResult } from './ui/scree
 import { renderHome, renderHeroes, renderGrow, renderMap, renderPrep, renderCodex, setCodexTab, renderSpirit, setLastDraw, openCoupon, renderReward, setSheet } from './ui/menu.js';
 import { redeemCoupon } from './core/coupon.js';
 import { GACHA, SPIRITS, SPIRIT_GRADES, drawSpirits, starUp, setBranch, toggleCompanion, callSasin, countRunForGift } from './data/spirits.js';
-import { loadSave, writeSave, outfitOf, encodeSave, decodeSave } from './core/save.js';
+import { loadSave, writeSave, outfitOf, encodeSave, decodeSave, loadState, listBackups, backupSave, backupNow } from './core/save.js';
 import { runFacts, recordRun, checkAchievements, claimAchievement, readyCount } from './core/achieve.js';
 import { codexReadyCount, claimCodex, claimCodexAll } from './data/codexTiers.js';
 import { ACHIEVEMENTS } from './data/achievements.js';
@@ -702,17 +702,38 @@ const act = {
     if (!confirmed) {
       return { ok: false, needConfirm: true, message: `냥 ${next.money.toLocaleString()} · 장비 ${next.owned.length}개 · 깬 전장 ${won}곳 — 이 기록으로 덮어쓸까요? 지금 기록은 사라져요.` };
     }
-    // Replace the save in place: other code keeps a reference to `save`.
-    for (const k of Object.keys(save)) delete save[k];
-    Object.assign(save, next);
-    ensureGearOptions(save, EQUIPMENT);
-    checkAchievements(save);
-    updateBadge();
-    writeSave(save);
-    refresh();
+    replaceSave(next, 'import');
     return { ok: true, message: `불러왔어요! 냥 ${save.money.toLocaleString()}, 장비 ${save.owned.length}개.` };
   },
+  listBackups,
+  /** 💾 자동 백업 `i`: first call previews it; with confirmed=true it replaces the save (the current one is backed up first). */
+  restoreBackup(i, confirmed) {
+    let next;
+    try {
+      next = backupSave(i);
+    } catch (e) {
+      return { ok: false, message: e.message ?? '백업을 읽을 수 없어요.' };
+    }
+    if (!confirmed) {
+      return { ok: false, needConfirm: true, message: `냥 ${next.money.toLocaleString()} · 장비 ${next.owned.length}개 · 출진 ${next.codex?.runs ?? 0}회 — 이 기록으로 되돌릴까요? 지금 기록도 백업에 남아요.` };
+    }
+    replaceSave(next, 'restore');
+    return { ok: true, message: `되돌렸어요! 냥 ${save.money.toLocaleString()}, 장비 ${save.owned.length}개.` };
+  },
 };
+
+/** Swaps in another save (code or backup) in place — other code keeps a reference to `save` — keeping the current one as a backup. */
+function replaceSave(next, why) {
+  writeSave(save);
+  backupNow(why);
+  for (const k of Object.keys(save)) delete save[k];
+  Object.assign(save, next);
+  ensureGearOptions(save, EQUIPMENT);
+  checkAchievements(save);
+  updateBadge();
+  writeSave(save);
+  refresh();
+}
 
 function setMuted(m) {
   sound.setMuted(m);
@@ -752,6 +773,12 @@ document.addEventListener('click', (e) => {
   toast('🎮 다음 출진에서 튜토리얼이 나와요!');
 });
 $('homeCoupon').addEventListener('click', () => openCoupon(act));
+// The stored save could not be read: say so, and where it can be brought back.
+if (loadState.failed || loadState.errors.length) {
+  setTimeout(() => toast(loadState.failed
+    ? '⚠️ 저장된 기록을 읽지 못했어요. 기록은 지워지지 않았어요 — 💾 → 자동 백업에서 되돌릴 수 있어요.'
+    : '⚠️ 기록을 새 버전으로 옮기다 일부를 놓쳤을 수 있어요. 💾 → 자동 백업에서 이전 기록을 확인하세요.', false), 1500);
+}
 $('homeSave').addEventListener('click', () => {
   setCodexTab('record');
   go('codex');

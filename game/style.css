@@ -1837,3 +1837,11 @@ body { background: var(--night); }
 .px-ic.big { width: 1.8em; height: 1.8em; }
 .px-ic.fill { width: 100%; height: 100%; vertical-align: middle; padding: 3px; box-sizing: border-box; }
 .sp-ic .px-ic { width: 1.6em; height: 1.6em; }
+
+/* 🛟 자동 백업 */
+.bak-list { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.bak-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 10px; background: rgba(255, 255, 255, 0.06); font-size: 12.5px; }
+.bak-row span { flex: 1; min-width: 0; }
+.bak-row small { opacity: 0.7; }
+.bak-row b { font-weight: 400; opacity: 0.85; white-space: nowrap; }
+.bak-empty { opacity: 0.6; font-size: 12.5px; }

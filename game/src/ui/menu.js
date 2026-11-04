@@ -1244,8 +1244,43 @@ function recordPanel(save, act) {
       <textarea id="saveCodeIn" class="save-code" rows="3" placeholder="SAMHAN1-로 시작하는 코드"></textarea>
       <div class="record-btns"><button type="button" class="wear-btn" id="saveLoad">불러오기</button></div>
       <p id="saveMsg" class="record-msg" role="status"></p>
+    </div>
+    <div class="record-card">
+      <h4>🛟 자동 백업</h4>
+      <p>게임을 열 때마다 직전 기록을 자동으로 남겨 둬요 (최근 6개). 업데이트 뒤 기록이 이상하면 여기서 되돌리세요.</p>
+      <ul id="bakList" class="bak-list"></ul>
+      <p id="bakMsg" class="record-msg" role="status"></p>
     </div>`;
   box.append(rec);
+  // 🛟 자동 백업: two steps, like the code — preview, then restore.
+  const bakList = rec.querySelector('#bakList');
+  const bakMsg = rec.querySelector('#bakMsg');
+  const baks = act.listBackups();
+  const when = (t) => {
+    const d = new Date(t);
+    return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  };
+  if (!baks.length) bakList.append(el('li', 'bak-empty', '아직 백업이 없어요.'));
+  let armedBak = -1;
+  baks.forEach((b, i) => {
+    const li = el('li', 'bak-row', b.why === 'broken'
+      ? '<span>⚠️ 읽지 못한 기록 (원본 그대로 보관)</span>'
+      : `<span>${when(b.at)} <small>${{ open: '열 때', import: '코드 불러오기 전', restore: '되돌리기 전' }[b.why] ?? ''}</small></span><b>🪙 ${fmt(b.money)} · 출진 ${fmt(b.runs)}</b>`);
+    const btn = button('되돌리기', 'wear-btn small', () => {
+      const r = act.restoreBackup(i, armedBak === i);
+      if (r.ok) {
+        act.toast(r.message, true);
+        return;
+      }
+      armedBak = r.needConfirm ? i : -1;
+      for (const x of bakList.querySelectorAll('button')) x.textContent = '되돌리기';
+      if (r.needConfirm) btn.textContent = '정말 되돌리기';
+      bakMsg.textContent = r.message;
+      bakMsg.className = `record-msg ${r.needConfirm ? 'warn' : 'fail'}`;
+    });
+    li.append(btn);
+    bakList.append(li);
+  });
   const out = rec.querySelector('#saveCodeOut');
   out.value = act.exportCode();
   out.addEventListener('focus', () => out.select());
