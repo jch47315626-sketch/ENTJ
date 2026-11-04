@@ -38,7 +38,8 @@ import { starText, gradeTag } from './screens.js';
 
 const $ = (id) => document.getElementById(id);
 const fmt = (n) => n.toLocaleString();
-const outfit = (save, heroId) => save.equipped[heroId] ?? {};
+/** The one outfit every hero wears (gear is shared). */
+const outfit = (save) => save.outfit ?? {};
 const itemById = (id) => EQUIPMENT.find((e) => e.id === id);
 const forgeLv = (save, item) => save.forge?.[item.id] ?? 0;
 /** "고려 찰갑 · 중 +2": 하·중·상 for owned pieces, then the forge level. */
@@ -230,7 +231,7 @@ function portrait(hero, px) {
 /** Row of the six worn gear icons. */
 function gearRow(save, heroId, px = 26) {
   const row = el('div', 'gear-row');
-  const wear = outfit(save, heroId);
+  const wear = outfit(save);
   for (const sl of SLOTS) {
     const it = itemById(wear[sl.id]);
     const c = iconCanvas(it ? it.id : `empty:${sl.id}`, px, `mini-icon${it ? '' : ' empty'}`);
@@ -501,7 +502,7 @@ export function renderHeroes(save, sel, act) {
 /** Paper doll around the hero, then the chosen slot's grades. */
 function gearPanel(save, h, act) {
   const box = el('div', 'gear-panel');
-  const wear = outfit(save, h.id);
+  const wear = outfit(save);
   const doll = el('div', 'doll2');
   const center = el('div', 'd2-hero');
   center.append(portrait(h, 84));
@@ -523,16 +524,16 @@ function gearPanel(save, h, act) {
 
   box.append(imprintSetCard(save, h));
   const slot = SLOTS.find((s) => s.id === ui.slot);
-  box.append(el('h4', 'list-title', `${SLOT_ICON[slot.id]} ${h.name}의 ${slot.name} <small>영웅마다 장비가 따로예요 — ${h.name}만 찰 수 있어요</small>`));
+  box.append(el('h4', 'list-title', `${SLOT_ICON[slot.id]} ${slot.name} <small>장비는 세 영웅이 함께 써요 — 누가 출전해도 같은 차림이에요</small>`));
   const list = el('div', 'item-list');
-  for (const item of EQUIPMENT.filter((e) => e.slot === slot.id && e.hero === h.id)) list.append(itemCard(save, h, item, act));
+  for (const item of EQUIPMENT.filter((e) => e.slot === slot.id)) list.append(itemCard(save, h, item, act));
   box.append(list);
   return box;
 }
 
 function itemCard(save, h, item, act) {
   const owned = save.owned.includes(item.id);
-  const worn = outfit(save, h.id)[item.slot] === item.id;
+  const worn = outfit(save)[item.slot] === item.id;
   const open = gradeOpen(save, item);
   const lv = forgeLv(save, item);
   const card = el('div', `item-card${worn ? ' worn' : ''}${!owned && !open ? ' sealed' : ''}`);
@@ -578,7 +579,7 @@ function itemCard(save, h, item, act) {
   if (imp) card.append(imp);
   const G = GRADES[item.grade];
   holdTip(card, () => tipHtml(`${gradeTag(item.grade)} ${open || owned ? itemName(save, item) : '???'}`, [
-    `${h.name} 전용 · ${SLOTS.find((s) => s.id === item.slot).name}`,
+    `세 영웅 공용 · ${SLOTS.find((s) => s.id === item.slot).name}`,
     open || owned ? `기본 능력: ${bonusText(ownBonus(save, item, lv))}${lv ? ` (제련 +${lv} 포함)` : ''}` : '',
     owned && tierOf(save, item) < TOP_TIER ? `⬆️ ${TIER.names[tierOf(save, item) + 1]}(으)로 승급하면: ${bonusText(itemBonus(item, lv, tierOf(save, item) + 1))}` : '',
     !owned && !item.relic && !canBuy(save, item) ? `🔒 ${josa(belowName(item), '을')} 「상」까지 올려야 살 수 있어요.` : '',
@@ -592,7 +593,7 @@ function itemCard(save, h, item, act) {
 
 /** The piece one grade below in the same slot (for the 🔒 hint). */
 function belowName(item) {
-  const b = EQUIPMENT.find((o) => o.hero === item.hero && o.slot === item.slot && o.grade === item.grade - 1 && !o.relic);
+  const b = EQUIPMENT.find((o) => o.slot === item.slot && o.grade === item.grade - 1 && !o.relic);
   return b ? `${GRADES[b.grade].name} ${b.name}` : '아래 등급';
 }
 
@@ -608,7 +609,7 @@ function tierRow(save, item, act) {
     row.append(el('small', 'it-next', `${TIER.names[t + 1]}: ${bonusText(nb)}`));
     row.append(button(`⬆️ ${TIER.names[t + 1]} 승급 <small>${COIN()}${fmt(cost)}</small>`, 'io-btn it-up', () => act.promote(item), save.money < cost));
   } else {
-    const nxt = !item.relic && EQUIPMENT.find((o) => o.hero === item.hero && o.slot === item.slot && o.grade === item.grade + 1 && !o.relic);
+    const nxt = !item.relic && EQUIPMENT.find((o) => o.slot === item.slot && o.grade === item.grade + 1 && !o.relic);
     row.append(el('small', 'it-next', nxt ? `✔ 상 — ${josa(`${GRADES[nxt.grade].name} ${nxt.name}`, '을')} 살 수 있어요` : '✔ 상 — 최고 단계'));
   }
   return row;
@@ -654,7 +655,7 @@ function imprintRow(save, item, act) {
 
 /** Worn 속성 각인 by 속성, with the set techniques they open (2 · 4 · 6 pieces). */
 function imprintSetCard(save, h) {
-  const recs = SLOTS.map((sl) => save.imprint?.[outfit(save, h.id)[sl.id]]).filter(Boolean);
+  const recs = SLOTS.map((sl) => save.imprint?.[outfit(save)[sl.id]]).filter(Boolean);
   const card = el('div', 'imprint-sets');
   card.append(el('b', 'is-title', `${ATTR_ICON} 속성 각인 세트 <small>${ATTR_NAME} ${fmt(save.attrStones ?? 0)} · 같은 속성 2 · 4 · 6부위</small>`));
   const count = {};
@@ -686,9 +687,9 @@ function imprintSetCard(save, h) {
 function forgePanel(save, h, act) {
   const box = el('div', 'forge-panel');
   box.append(el('p', 'hint', `냥을 써서 장비를 +1~+${FORGE.max}까지 강화해요. 한 단계마다 기본 능력치 +${Math.round(FORGE.step * 100)}%. 실패해도 장비는 그대로예요.`));
-  const wear = outfit(save, h.id);
+  const wear = outfit(save);
   const worn = new Set(Object.values(wear));
-  const mine = EQUIPMENT.filter((e) => e.hero === h.id && save.owned.includes(e.id))
+  const mine = EQUIPMENT.filter((e) => save.owned.includes(e.id))
     .sort((a, b) => worn.has(b.id) - worn.has(a.id) || b.grade - a.grade);
   if (!mine.length) {
     box.append(el('p', 'empty-note', '아직 가진 장비가 없어요. 🛡️ 장비 탭에서 먼저 사 주세요.'));
@@ -1062,7 +1063,7 @@ export function renderCodex(save, sel, act) {
   } else if (ui.codexTab === 'gear') {
     for (const it of EQUIPMENT) {
       const has = save.owned.includes(it.id);
-      const c = cell(iconCanvas(has ? it.id : `empty:${it.slot}`, 48, 'row-icon'), it.name, `${HEROES[it.hero].name} · ${GRADES[it.grade].name} ${SLOTS.find((s) => s.id === it.slot).name}`, !has);
+      const c = cell(iconCanvas(has ? it.id : `empty:${it.slot}`, 48, 'row-icon'), it.name, `${GRADES[it.grade].name} ${SLOTS.find((s) => s.id === it.slot).name}`, !has);
       c.style.setProperty('--grade', GRADES[it.grade].color);
       grid.append(c);
     }

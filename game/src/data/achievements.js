@@ -82,8 +82,8 @@ export const ACHIEVEMENTS = [
   { id: 'relic1', group: 'camp', icon: '🌟', name: '신물의 주인', desc: '일일 던전에서 난세 10단계 이상을 평정해 신물을 처음 얻는다', reward: 3000, check: (s) => (s.stats.relics ?? 0) >= 1 },
 
   // 군영
-  { id: 'fullSet', group: 'camp', icon: '🧥', name: '완전 무장', desc: '한 영웅이 장비 6부위를 모두 찬다', reward: 500,
-    check: (s) => Object.values(s.equipped ?? {}).some((o) => SLOTS.every((sl) => o?.[sl.id])) },
+  { id: 'fullSet', group: 'camp', icon: '🧥', name: '완전 무장', desc: '장비 6부위를 모두 찬다', reward: 500,
+    check: (s) => SLOTS.every((sl) => s.outfit?.[sl.id]) },
   { id: 'kukbo', group: 'camp', icon: '🏺', name: '국보를 품다', desc: '국보 등급 장비를 처음 손에 넣는다', reward: 2000, check: (s) => s.owned.some((id) => grade(id) === 8) },
   { id: 'forge5', group: 'camp', icon: '🔨', name: '명장의 손', desc: '장비 하나를 +5까지 제련한다', reward: 2500, check: (s) => Object.values(s.forge ?? {}).some((lv) => lv >= 5) },
   // ---------------------------------------------------------------- 연속 업적

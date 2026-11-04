@@ -2,6 +2,7 @@ import { STAGES } from './stages.js';
 import { josa } from '../core/korean.js';
 import { gyeolgiBonus } from './gyeolgi.js';
 import { imprintBonus, imprintSets } from './imprint.js';
+import { GEAR_OPTIONS } from './gearOptions.js';
 
 /**
  * Progression between runs: money (냥) earned per run, equipment bought
@@ -125,9 +126,8 @@ function gradeBonus(slot, grade) {
 }
 
 /**
- * Gear template, eight grades per slot (ids kept from older saves). Every
- * hero gets their own copy of each piece (see EQUIPMENT below), so gear is
- * never shared between heroes. `icon` reuses another item's drawing,
+ * Gear template, eight grades per slot (ids kept from older saves). All
+ * heroes share it (see EQUIPMENT below). `icon` reuses another item's drawing,
  * tinted by `tint`. Bonuses and prices come from the tables above.
  */
 const GEAR_BASE = [
@@ -190,73 +190,42 @@ for (const b of GEAR_BASE) {
   b.price = Math.round((GRADE_PRICE[b.grade] * SLOT_SPECIAL[b.slot].price) / 10) * 10;
 }
 
-/** Each hero's name for every piece, in GEAR_BASE order (slot by slot, grade 1→8). */
+/** Name of every piece, by slot, grade 1→8. */
 const GEAR_NAMES = {
-  wanggeon: {
-    body: ['송악 누비옷', '해상 가죽갑옷', '고려 찰갑', '수군 쇄자갑', '태조 명광개', '개경 어린갑', '청해 용비늘갑', '금장 용린갑'],
-    head: ['뱃사람 두건', '송악 철투구', '청깃 투구', '수군 첨주', '고려 금동관', '해룡 투구', '청옥 봉황관', '태조 금관'],
-    charm: ['바다 곡옥', '해신 호부', '청유리 목걸이', '진주 노리개', '해동 천마 장식', '용왕 비취패', '청해 구슬 목걸이', '왕씨 금귀걸이'],
-    wrist: ['닻줄 팔찌', '송악 은팔찌', '벽옥 팔찌', '수군 쇠토시', '고려 금팔찌', '파도무늬 토시', '해동 비취 팔찌', '청룡 금팔찌'],
-    belt: ['뱃사람 띠', '개경 은 띠고리', '고려 금동띠', '수군 혁대', '개경 금제띠', '청옥 띠드리개', '해동 옥대', '태조 과대'],
-    feet: ['갯벌 짚신', '바닷가죽 목화', '징 박은 수군화', '수군 장화', '고려 금동신', '파도무늬 목화', '청학 신', '청봉황 식리'],
-  },
-  gyeonhwon: {
-    body: ['완산 누비옷', '백제 가죽갑옷', '흑철 찰갑', '무진 쇄자갑', '패왕 명광개', '혈철 어린갑', '흑룡 비늘갑', '흑금 찰갑'],
-    head: ['무진 두건', '흑철 투구', '붉은깃 투구', '범가죽 첨주', '백제 금동관', '혈철 투구', '흑룡 투구', '패왕 금관'],
-    charm: ['범 이빨 목걸이', '무장 호부', '붉은 유리구슬', '홍옥 노리개', '백제 천마 장식', '범발톱 비취패', '핏빛 곡옥', '견씨 금귀걸이'],
-    wrist: ['무쇠 팔찌', '완산 은팔찌', '홍옥 팔찌', '흑철 토시', '백제 금팔찌', '혈철 토시', '범무늬 금토시', '흑룡 금팔찌'],
-    belt: ['무쇠 띠', '백제 은 띠고리', '완산 금동띠', '범가죽 혁대', '패왕 금제띠', '혈옥 띠드리개', '후백제 옥대', '패왕 과대'],
-    feet: ['행군 짚신', '백제 목화', '쇠징 군화', '범가죽 장화', '백제 금동신', '혈철 군화', '흑범 목화', '범무늬 식리'],
-  },
-  gungye: {
-    body: ['승복 누비옷', '태봉 가죽갑옷', '철원 찰갑', '법의 쇄자갑', '미륵 명광개', '자금 가사갑', '보라 연화갑', '금란 가사갑'],
-    head: ['승려 두건', '철원 철투구', '보라깃 투구', '법사 첨주', '미륵 금동관', '자수정 보관', '연화 보관', '미륵 보관'],
-    charm: ['백팔 염주', '법력 호부', '자수정 구슬', '수정 노리개', '태봉 천마 장식', '혜안 비취패', '법륜 목걸이', '미륵 금귀걸이'],
-    wrist: ['단주 팔찌', '철원 은팔찌', '자옥 팔찌', '법사 토시', '태봉 금팔찌', '자수정 단주', '법륜 금팔찌', '금강 금팔찌'],
-    belt: ['승려 띠', '태봉 은 띠고리', '철원 금동띠', '법사 혁대', '미륵 금제띠', '자옥 띠드리개', '태봉 옥대', '미륵 과대'],
-    feet: ['탁발 짚신', '태봉 목화', '쇠징 신', '법사 장화', '철원 금동신', '자색 목화', '구름 신', '연꽃 식리'],
-  },
+  body: ['누비옷', '가죽갑옷', '찰갑', '쇄자갑', '명광개', '어린갑', '용비늘갑', '금장 용린갑'],
+  head: ['두건', '철투구', '깃 투구', '첨주', '금동관', '해룡 투구', '봉황관', '금관'],
+  charm: ['곡옥', '호부', '유리구슬 목걸이', '진주 노리개', '천마 장식', '비취패', '영롱 구슬 목걸이', '금귀걸이'],
+  wrist: ['무쇠 팔찌', '은팔찌', '벽옥 팔찌', '쇠토시', '금팔찌', '무늬 토시', '비취 팔찌', '용 금팔찌'],
+  belt: ['가죽 띠', '은 띠고리', '금동띠', '혁대', '금제띠', '띠드리개', '옥대', '금 과대'],
+  feet: ['짚신', '목화', '징 박은 신', '장화', '금동신', '무늬 목화', '구름 신', '봉황 식리'],
 };
 
-/** Id of one hero's copy of a template piece. */
+/** Id a piece had when each hero kept their own copy (for older saves). */
 export const gearId = (heroId, baseId) => `${heroId}.${baseId}`;
 
 /**
- * Every hero's own gear: same slots, grades, prices and bonuses as the
- * template, different names, and only that hero can wear it. `base` is the
+ * Every piece of gear. Gear is shared: one armoury for all three heroes,
+ * whoever goes out wears the same outfit (save.outfit). `base` is the
  * template id (its drawing is reused for the icon).
  */
-export const EQUIPMENT = [];
-for (const heroId of Object.keys(GEAR_NAMES)) {
-  for (const b of GEAR_BASE) {
-    const name = GEAR_NAMES[heroId][b.slot][b.grade - 1];
-    EQUIPMENT.push({ ...b, id: gearId(heroId, b.id), base: b.id, hero: heroId, name, icon: b.icon ?? b.id });
-  }
-}
+export const EQUIPMENT = GEAR_BASE.map((b) => ({ ...b, base: b.id, name: GEAR_NAMES[b.slot][b.grade - 1], icon: b.icon ?? b.id }));
 export const GEAR_BASE_IDS = GEAR_BASE.map((b) => b.id);
 
 /**
- * 신물 (grade 9): one per slot for each hero, never in the shop. Found only
- * by clearing 난세 10단계+; the fixed bonus is the 국보 piece's ×1.35, and
- * it rolls four option lines (data/gearOptions.js).
+ * 신물 (grade 9): one per slot, never in the shop. Found only by clearing
+ * 난세 10단계+; the fixed bonus is the 국보 piece's ×1.35, and it rolls
+ * four option lines (data/gearOptions.js).
  */
-const RELIC_NAMES = {
-  wanggeon: { body: '해동청룡갑', head: '태조 일월관', charm: '여의보주', wrist: '사해 팔찌', belt: '천하일통대', feet: '파도 가르는 신' },
-  gyeonhwon: { body: '패왕 흑룡갑', head: '후백제 패왕관', charm: '범의 혼 목걸이', wrist: '피의 맹세 팔찌', belt: '완산 금룡대', feet: '천리 질주화' },
-  gungye: { body: '미륵 금란가사', head: '미륵의 금관', charm: '천안 구슬', wrist: '금강 염주', belt: '법왕의 띠', feet: '연화 보행화' },
-};
-const RELIC_TINT = { wanggeon: '#5aa8ff', gyeonhwon: '#ff5a4a', gungye: '#b48aff' };
-for (const heroId of Object.keys(RELIC_NAMES)) {
-  for (const slot of ['head', 'body', 'charm', 'wrist', 'belt', 'feet']) {
-    const top = GEAR_BASE.find((b) => b.slot === slot && b.grade === TOP_GRADE);
-    const bonus = {};
-    for (const [k, v] of Object.entries(top.bonus)) bonus[k] = k === 'maxHp' ? Math.round(v * 1.35) : k === 'armor' ? Math.ceil(v * 1.35) : Math.round(v * 1.35 * 100) / 100;
-    EQUIPMENT.push({
-      id: `${heroId}.relic_${slot}`, slot, grade: 9, hero: heroId, relic: true, price: 100000,
-      name: RELIC_NAMES[heroId][slot], bonus, icon: top.icon ?? top.id, tint: RELIC_TINT[heroId],
-      note: '🔥 일일 던전에서 난세 10단계 이상을 평정하면 얻는 신물.',
-    });
-  }
+const RELIC_NAMES = { body: '삼한 통일갑', head: '일월 금관', charm: '여의보주', wrist: '사해 팔찌', belt: '천하일통대', feet: '천리 질주화' };
+for (const slot of ['head', 'body', 'charm', 'wrist', 'belt', 'feet']) {
+  const top = GEAR_BASE.find((b) => b.slot === slot && b.grade === TOP_GRADE);
+  const bonus = {};
+  for (const [k, v] of Object.entries(top.bonus)) bonus[k] = k === 'maxHp' ? Math.round(v * 1.35) : k === 'armor' ? Math.ceil(v * 1.35) : Math.round(v * 1.35 * 100) / 100;
+  EQUIPMENT.push({
+    id: `relic_${slot}`, slot, grade: 9, relic: true, price: 100000,
+    name: RELIC_NAMES[slot], bonus, icon: top.icon ?? top.id, tint: '#ff6b8a',
+    note: '🔥 일일 던전에서 난세 10단계 이상을 평정하면 얻는 신물.',
+  });
 }
 export const RELICS = EQUIPMENT.filter((e) => e.relic);
 
@@ -280,13 +249,13 @@ export const tierOf = (save, item) => save.gearTier?.[item.id] ?? 0;
 export const tierCost = (item, tier) => Math.round((item.price * TIER.cost[tier]) / 10) * 10;
 
 /**
- * Whether a piece may be bought: 범품 always; above that, the hero must hold
+ * Whether a piece may be bought: 범품 always; above that, the armoury must hold
  * the grade below in the same slot at 상 (or already own something higher).
  */
 export function canBuy(save, item) {
   if (item.relic) return false;
   if (item.grade <= 1) return true;
-  return EQUIPMENT.some((o) => o.hero === item.hero && o.slot === item.slot && !o.relic && save.owned.includes(o.id)
+  return EQUIPMENT.some((o) => o.slot === item.slot && !o.relic && save.owned.includes(o.id)
     && (o.grade > item.grade || (o.grade === item.grade - 1 && tierOf(save, o) >= TOP_TIER)));
 }
 
@@ -340,7 +309,7 @@ export function entryCheck(save, heroId, stage) {
   }
   const req = stage.require;
   if (!req) return { ok: true };
-  const outfit = save.equipped[heroId] ?? {};
+  const outfit = save.outfit ?? {};
   const have = SLOTS.filter((sl) => (EQUIPMENT.find((e) => e.id === outfit[sl.id])?.grade ?? 0) >= req.grade).length;
   const text = `${GRADES[req.grade].name} 이상 장비 ${req.count}부위 착용 필요 (지금 ${have})`;
   return { ok: have >= req.count, have, need: req.count, grade: GRADES[req.grade], text };
@@ -364,6 +333,9 @@ export const SECRETS = [
   { id: 'secretGwansim', hero: 'gungye', name: '관심법 비전', price: 700, grant: 'gwansim', desc: '출진할 때부터 관심법 Lv2' },
 ];
 
+/** Option keys that belong to one hero (data/gearOptions.js GEAR_OPTIONS `hero`). */
+const heroOnlyKeys = Object.fromEntries(GEAR_OPTIONS.filter((o) => o.hero).map((o) => [o.key, o.hero]));
+
 /** Sums every owned bonus for one hero into a single object. */
 export function metaBonus(save, heroId) {
   const gearGrants = [];
@@ -372,10 +344,10 @@ export function metaBonus(save, heroId) {
   const add = (b) => {
     for (const k in b) total[k] = (total[k] ?? 0) + b[k];
   };
-  const outfit = save.equipped[heroId] ?? {};
+  const outfit = save.outfit ?? {};
   for (const slot of SLOTS) {
     const item = EQUIPMENT.find((e) => e.id === outfit[slot.id]);
-    if (item && item.hero === heroId) {
+    if (item) {
       add(itemBonus(item, save.forge?.[item.id] ?? 0, tierOf(save, item)));
       // 🔷 속성 각인 (data/imprint.js): the piece's own 속성 stats; sets are counted below.
       const rec = save.imprint?.[item.id];
@@ -385,7 +357,10 @@ export function metaBonus(save, heroId) {
       }
       // 장비 옵션 (data/gearOptions.js): random lines rolled when the piece was obtained.
       for (const l of save.gearOpts?.[item.id] ?? []) {
-        if (!l.special) add({ [l.k]: l.v });
+        // A hero's own line (e.g. 신숭겸 체력) works only for that hero.
+        if (!l.special) {
+          if (!heroOnlyKeys[l.k] || heroOnlyKeys[l.k] === heroId) add({ [l.k]: l.v });
+        }
         // 비기 lines (data/gearOptions.js SPECIAL).
         else if (l.k === 'grant') gearGrants.push(l.v);
         else if (l.k === 'cap') total.caps = { ...(total.caps ?? {}), [l.v]: (total.caps?.[l.v] ?? 0) + 1 };

@@ -856,6 +856,7 @@ export class Game {
     for (const [id, n] of Object.entries(count)) {
       const up = UPGRADES.find((u) => u.id === id);
       if (!up) continue; // a 책략 that no longer exists
+      if (up.heroes && !up.heroes.includes(p.hero.id)) continue; // shared gear: another hero's 책략
       const evo = up.levels?.findIndex((l) => l?.evolution) ?? -1;
       const top = evo >= 0 ? evo : up.levels?.length ?? up.maxLevel;
       p.upgrades[id] = Math.max(p.upgrades[id] ?? 0, Math.min(n, top));

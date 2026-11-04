@@ -3,14 +3,13 @@
  * Storage can be missing or blocked, so every access is guarded and the
  * game keeps working with an in-memory save.
  */
-import { HEROES } from '../data/heroes.js';
 import { STAGES, levelsOf } from '../data/stages.js';
-import { SLOTS, GEAR_BASE_IDS, gearId } from '../data/meta.js';
+import { SLOTS, EQUIPMENT, gearId } from '../data/meta.js';
 
 const KEY = 'samhan-save-v1';
 
-// equipped: { [heroId]: { [slotId]: itemId } } — each hero wears their own gear.
-const fresh = () => ({ money: 0, crystals: 0, gyeolgi: {}, owned: [], equipped: {}, secrets: [], best: {}, forge: {}, codex: { kills: {}, runs: 0, wins: 0, earned: 0 }, ach: {}, stats: {}, ...freshSpirit() });
+// outfit: { [slotId]: itemId } — one outfit, worn by whichever hero goes out (gear is shared).
+const fresh = () => ({ money: 0, crystals: 0, gyeolgi: {}, owned: [], outfit: {}, secrets: [], best: {}, forge: {}, codex: { kills: {}, runs: 0, wins: 0, earned: 0 }, ach: {}, stats: {}, ...freshSpirit() });
 // codex: lifetime record for the 도감 — kills by enemy/boss id, runs, wins, 냥 earned.
 // forge: { [itemId]: 0..5 } — 제련 level of each owned item.
 // 사신의 제단 and 영물 (data/altar.js): yeongju 영주, essence 사신 정수,
@@ -68,24 +67,17 @@ export function decodeSave(code) {
   return migrate({ ...fresh(), ...data });
 }
 
-/** Older saves had one shared outfit; give it to every hero. */
+/** Brings an older save up to date. */
 function migrate(save) {
   save.codex = { kills: {}, runs: 0, wins: 0, earned: 0, ...(save.codex ?? {}) };
   // 업적: id → 'ready' | 'done'; stats: lifetime counts for them (core/achieve.js).
   save.ach ??= {};
   save.stats ??= {};
   migrateSpirit(save);
-  const shared = SLOTS.some((s) => typeof save.equipped[s.id] === 'string');
-  if (shared) {
-    const outfit = {};
-    for (const s of SLOTS) if (save.equipped[s.id]) outfit[s.id] = save.equipped[s.id];
-    save.equipped = {};
-    for (const id in HEROES) save.equipped[id] = { ...outfit };
-  }
-  splitSharedGear(save);
   splitFieldLevels(save);
   refundBuilds(save);
   refundTraining(save);
+  mergeHeroGear(save);
   return save;
 }
 
@@ -152,32 +144,63 @@ function refundBuilds(save) {
 }
 
 /**
- * Gear used to be shared by all heroes; now each hero has their own copy.
- * A piece bought before the split becomes one copy per hero (with its forge
- * level), so nothing already paid for is lost.
+ * Gear is shared by all heroes again (one armoury, one outfit). Saves from
+ * when each hero had a copy ("wanggeon.lamellar") fold into one piece
+ * ("lamellar"), keeping the most of each: the highest 승급 and 제련, the
+ * best 각인, and the options of the most raised copy — nothing paid for is
+ * lost. The outfit worn is the
+ * one of the hero picked last. Older still: a plain outfit of slot → id.
  */
-function splitSharedGear(save) {
-  const old = new Set(GEAR_BASE_IDS);
-  if (!save.owned.some((id) => old.has(id))) return;
-  const owned = [];
+function mergeHeroGear(save) {
+  const ids = new Set(EQUIPMENT.map((e) => e.id));
+  const legacy = (id) => {
+    const m = /^(wanggeon|gyeonhwon|gungye)\.(.+)$/.exec(id ?? '');
+    return m ? m[2] : null;
+  };
+  const eq = save.equipped ?? {};
+  if (save.equipped && !Object.keys(save.outfit ?? {}).length) {
+    const flat = SLOTS.some((s) => typeof eq[s.id] === 'string');
+    const from = flat ? eq : eq[save.sel?.hero] ?? Object.values(eq).find((o) => o && Object.keys(o).length) ?? {};
+    save.outfit = {};
+    for (const s of SLOTS) {
+      const id = from?.[s.id];
+      const base = legacy(id) ?? id;
+      if (base && ids.has(base)) save.outfit[s.id] = base;
+    }
+  }
+  delete save.equipped;
+  if (!save.owned.some((id) => legacy(id))) return;
+  const rank = (id) => (save.gearTier?.[id] ?? 0) * 100 + (save.forge?.[id] ?? 0) * 10 + (save.imprint?.[id]?.lv ?? 0);
+  const best = {};
   for (const id of save.owned) {
-    if (!old.has(id)) owned.push(id);
-    else for (const h in HEROES) owned.push(gearId(h, id));
+    const base = legacy(id) ?? id;
+    if (!ids.has(base)) continue;
+    if (!best[base] || rank(id) > rank(best[base])) best[base] = id;
   }
-  save.owned = [...new Set(owned)];
-  for (const id of Object.keys(save.forge ?? {})) {
-    if (!old.has(id)) continue;
-    for (const h in HEROES) save.forge[gearId(h, id)] = Math.max(save.forge[gearId(h, id)] ?? 0, save.forge[id]);
-    delete save.forge[id];
+  // Options come with the most raised copy.
+  for (const [base, id] of Object.entries(best)) {
+    if (id !== base && save.gearOpts?.[id]) save.gearOpts[base] = save.gearOpts[id];
   }
-  for (const [h, outfit] of Object.entries(save.equipped ?? {})) {
-    for (const s of SLOTS) if (old.has(outfit?.[s.id])) outfit[s.id] = gearId(h, outfit[s.id]);
+  // 제련 · 승급 · 각인: the highest of any copy.
+  for (const id of save.owned) {
+    const base = legacy(id);
+    if (!base || !best[base]) continue;
+    for (const key of ['forge', 'gearTier']) {
+      const v = save[key]?.[id];
+      if (v > (save[key][base] ?? 0)) save[key][base] = v;
+    }
+    const rec = save.imprint?.[id];
+    if (rec && (!save.imprint[base] || rec.lv > save.imprint[base].lv)) save.imprint[base] = rec;
   }
+  for (const key of ['forge', 'gearTier', 'gearOpts', 'imprint']) {
+    for (const id of Object.keys(save[key] ?? {})) if (legacy(id)) delete save[key][id];
+  }
+  save.owned = Object.keys(best);
 }
 
-/** The outfit one hero is wearing ({ slotId: itemId }). */
-export function outfitOf(save, heroId) {
-  return (save.equipped[heroId] ??= {});
+/** The outfit every hero wears ({ slotId: itemId }); gear is shared. */
+export function outfitOf(save) {
+  return (save.outfit ??= {});
 }
 
 export function writeSave(save) {

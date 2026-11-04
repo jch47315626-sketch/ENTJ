@@ -44,7 +44,10 @@ const save = loadSave();
 refreshAltar(save);
 writeSave(save);
 // Display names for gear 비기 lines (data/gearOptions.js).
-for (const u of UPGRADES) NAMES.upgrade[u.id] = u.title ?? (typeof u.name === 'string' ? u.name : u.id);
+for (const u of UPGRADES) {
+  NAMES.upgrade[u.id] = u.title ?? (typeof u.name === 'string' ? u.name : u.id);
+  if (u.heroes) NAMES.upgradeHeroes[u.id] = u.heroes;
+}
 ensureGearOptions(save, EQUIPMENT); // older saves: every owned piece gets its option lines
 writeSave(save); // persist any format migration right away
 let introTimer = 0;
@@ -246,7 +249,7 @@ function onState(state, g) {
         if (won) {
           save.stats.nanseBest = Math.max(save.stats.nanseBest ?? 0, lv);
           save.stats.trialWins = (save.stats.trialWins ?? 0) + 1;
-          const missing = RELICS.filter((r) => r.hero === g.player.hero.id && !save.owned.includes(r.id));
+          const missing = RELICS.filter((r) => !save.owned.includes(r.id));
           if (lv >= TRIAL.relicFrom && missing.length && Math.random() < Math.min(0.9, 0.3 + 0.03 * (lv - TRIAL.relicFrom))) {
             relic = missing[Math.floor(Math.random() * missing.length)];
             save.owned.push(relic.id);
@@ -361,7 +364,7 @@ function menuTips(name) {
   if (name === 'heroes' && mine.length) {
     showTip('gearOpts');
     if (lines.some((l) => l.special)) showTip('bigi');
-    if (mine.some((id) => id.includes('.relic_'))) showTip('relic');
+    if (mine.some((id) => id.startsWith('relic_'))) showTip('relic');
   }
   if (name === 'grow') showTip('tree');
 }
@@ -566,14 +569,14 @@ const act = {
     sel.stage = id;
     refresh();
   },
-  // Gear belongs to one hero only.
+  // Gear is shared: one armoury and one outfit for every hero.
   buy(item) {
-    if (item.hero !== sel.hero || item.relic || save.owned.includes(item.id)) return;
+    if (item.relic || save.owned.includes(item.id)) return;
     if (!gradeOpen(save, item) || !canBuy(save, item) || !spend(item.price)) return;
     save.owned.push(item.id);
     save.gearOpts ??= {};
     save.gearOpts[item.id] = rollOptions(item);
-    outfitOf(save, sel.hero)[item.slot] = item.id;
+    outfitOf(save)[item.slot] = item.id;
     done();
   },
   /** 하 → 중 → 상: raise an owned piece one step (냥, always succeeds). */
@@ -589,8 +592,8 @@ const act = {
     toast(`⬆️ 승급 — ${item.name} · ${TIER.names[t + 1]}${t + 1 === TOP_TIER && !item.relic && item.grade < 8 ? ' · 다음 등급을 살 수 있어요!' : ''}`);
   },
   wear(item) {
-    if (item.hero !== sel.hero) return;
-    outfitOf(save, sel.hero)[item.slot] = item.id;
+    if (!save.owned.includes(item.id)) return;
+    outfitOf(save)[item.slot] = item.id;
     done('click');
   },
   forge(item) {
@@ -656,13 +659,14 @@ const act = {
   engrave(item, index) {
     const lines = save.gearOpts?.[item.id];
     if (!lines?.[index] || !spend(engraveCost(item))) return;
-    const before = lineText(lines[index]);
+    const plain = (l) => lineText(l).replace(/<[^>]+>/g, '');
+    const before = plain(lines[index]);
     save.gearOpts[item.id] = rerollLine(item, lines, index);
     writeSave(save);
     sound.unlock();
     sound.sfx('forgeOk');
     refresh();
-    toast(`🔁 각인 — ${before} → ${lineText(save.gearOpts[item.id][index])}`);
+    toast(`🔁 각인 — ${before} → ${plain(save.gearOpts[item.id][index])}`);
   },
   claimAch(id) {
     paidToast('🏆 보상', claimAchievement(save, id));
