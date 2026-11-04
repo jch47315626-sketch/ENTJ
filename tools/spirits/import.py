@@ -7,7 +7,8 @@ white) into real small pixel sprites for the game.
   python3 tools/spirits/import.py <id> <image> [<id> <image> ...]
   python3 tools/spirits/import.py hero:wanggeon_front 앞.png hero:wanggeon_back 뒤.png hero:wanggeon_weapon 검.png
 
-Ids starting with "hero:" are hero pictures (<hero>_front, _back, _weapon) and go to
+Ids starting with "unit:" are soldiers and generals (enemy, boss or ally id; a boss's second form is <id>_2)
+and go to game/assets/units/ and game/src/data/unitSprites.js. Ids starting with "hero:" are hero pictures (<hero>_front, _back, _weapon) and go to
 game/assets/heroes/ and game/src/data/heroSprites.js instead.
 
 For each: the white background (if any) touching the edge is removed, the
@@ -25,6 +26,8 @@ from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT = os.path.join(ROOT, 'game/assets/spirits')
 MANIFEST = os.path.join(ROOT, 'game/src/data/spiritSprites.js')
+UNIT_OUT = os.path.join(ROOT, 'game/assets/units')
+UNIT_MANIFEST = os.path.join(ROOT, 'game/src/data/unitSprites.js')
 HERO_OUT = os.path.join(ROOT, 'game/assets/heroes')
 HERO_MANIFEST = os.path.join(ROOT, 'game/src/data/heroSprites.js')
 SASIN = {'cheongnyong', 'jujak', 'baekho', 'hyeonmu'}
@@ -136,8 +139,17 @@ def to_pixels(path, cells=64, colours=48):
 def main(pairs):
     os.makedirs(OUT, exist_ok=True)
     os.makedirs(HERO_OUT, exist_ok=True)
-    manifest, heroes = load_manifest(MANIFEST), load_manifest(HERO_MANIFEST)
+    manifest, heroes, units = load_manifest(MANIFEST), load_manifest(HERO_MANIFEST), load_manifest(UNIT_MANIFEST)
+    os.makedirs(UNIT_OUT, exist_ok=True)
     for sid, path in pairs:
+        if sid.startswith('unit:'):
+            # Soldiers and generals, enemy or ally: one front picture with its weapon.
+            uid = sid[5:]
+            im, small, bs, smooth = to_pixels(path)
+            small.save(os.path.join(UNIT_OUT, f'{uid}.png'))
+            units[uid] = {'w': small.width, 'h': small.height}
+            print(f'{sid:22s} {path}  ->  {small.width}x{small.height}')
+            continue
         if sid.startswith('hero:'):
             # Hero pictures: <hero>_front / _back / _weapon. Weapons are long and thin: keep 64 cells along them.
             hid, part = sid[5:].rsplit('_', 1)
@@ -160,6 +172,7 @@ def main(pairs):
             manifest[sid]['big'] = {'w': big.width, 'h': big.height}
         print(f'{sid:12s} {path}  block {bs:.1f}px  ->  {small.width}x{small.height}{"  (smooth drawing, pixelated)" if smooth else ""}')
     write_manifest(MANIFEST, 'SPIRIT_SPRITES', '영물 sprites in game/assets/spirits/ (id → size in pixels).', manifest)
+    write_manifest(UNIT_MANIFEST, 'UNIT_SPRITES', 'soldier and general sprites in game/assets/units/ (enemy/boss/ally id → size).', units)
     write_manifest(HERO_MANIFEST, 'HERO_SPRITES', 'hero sprites in game/assets/heroes/ (hero → front/back/weapon sizes).', heroes)
 
 

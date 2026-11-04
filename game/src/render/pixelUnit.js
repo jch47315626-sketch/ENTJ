@@ -15,6 +15,24 @@
 import { createFrame, composite, painterFor } from '../vendor/pixelfx/fx.js';
 import { mix } from '../vendor/pixelfx/color.js';
 import { HERO_SPRITES } from '../data/heroSprites.js';
+import { UNIT_SPRITES } from '../data/unitSprites.js';
+import { ENEMIES } from '../data/enemies.js';
+import { BOSSES } from '../data/bosses.js';
+
+// Drawn soldiers and generals (game/assets/units/<id>.png): each enemy's and boss's look is tagged
+// with its id so the figure can find its picture (a boss's second form is <id>_2). Allies are tagged
+// in render/renderer.js (ally_<kind>), so an enemy archer's picture never dresses an allied one.
+const unitPics = {};
+for (const id of Object.keys(UNIT_SPRITES)) {
+  const img = new Image();
+  img.src = `assets/units/${id}.png`;
+  unitPics[id] = { img, flash: null };
+}
+for (const [id, e] of Object.entries(ENEMIES)) if (e.look) e.look.sprite ??= id;
+for (const [id, b] of Object.entries(BOSSES)) {
+  if (b.look) b.look.sprite ??= id;
+  if (b.phase2?.look) b.phase2.look.sprite ??= `${id}_2`;
+}
 
 // Drawn hero pictures (game/assets/heroes/<hero>_front|back|weapon.png, from tools/spirits/import.py).
 // A hero with them is drawn from them; the generated figure stays for the rest.
@@ -654,6 +672,9 @@ export function drawPixelFigure(ctx, look, R, facing, phase, flash, hand) {
   const f = ((Math.floor(phase / (Math.PI / 2)) % 4) + 4) % 4;
   const set = setFor(look, R);
   ctx.imageSmoothingEnabled = false;
+  // A drawn soldier or general: one picture, weapon in hand (and horse, when it rides).
+  const unit = look.sprite && unitPics[look.sprite];
+  if (unit && unit.img.complete && unit.img.naturalWidth) return drawUnitPicture(ctx, look, unit, R, sx, phase, flash);
   if (look.mount) {
     if (!set.horse || set.horseColor !== look.mount) {
       set.horse = [0, 1, 2, 3].map((i) => horseFrame(look.mount, R, i));
@@ -690,6 +711,18 @@ export function drawPixelFigure(ctx, look, R, facing, phase, flash, hand) {
   ctx.drawImage(flash ? flashOf(set, side, f) : set.frames[side][f], -set.ox, -set.oy);
   ctx.restore();
   if (!back) drawWeapon();
+  return true;
+}
+
+/** A soldier or general from one picture: about 2.7R tall, feet at 0.82R, hopping with the step; flipped to face left. */
+function drawUnitPicture(ctx, look, unit, R, sx, phase, flash) {
+  const img = unit.img, k = (R * 2.75) / img.naturalHeight;
+  ctx.translate(0, -Math.round(Math.abs(Math.sin(phase)) * R * 0.1));
+  ctx.save();
+  ctx.scale(sx * k, k);
+  if (flash) unit.flash ??= silhouette(img, HANJI);
+  ctx.drawImage(flash ? unit.flash : img, -img.naturalWidth / 2, (R * 0.82) / k - img.naturalHeight);
+  ctx.restore();
   return true;
 }
 

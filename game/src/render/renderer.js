@@ -353,6 +353,7 @@ export class Renderer {
       ctx.setLineDash([]);
     }
     const look = ALLY_LOOKS[a.kind];
+    if (look) look.sprite ??= `ally_${a.kind === 'decoy' ? 'shin' : a.kind}`;
     drawUnit(ctx, look, a.x, a.y, a.r, a.facing, { alpha: fade, flash: a.hurtFlash > 0 });
     if (a.kind === 'shin') {
       const w = 38, ratio = clamp(a.hp / a.maxHp, 0, 1);
