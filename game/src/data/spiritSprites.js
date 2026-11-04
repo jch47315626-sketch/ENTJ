@@ -111,5 +111,9 @@ export const SPIRIT_SPRITES = {
   "worm": {
     "w": 61,
     "h": 63
+  },
+  "tiger": {
+    "w": 64,
+    "h": 60
   }
 };

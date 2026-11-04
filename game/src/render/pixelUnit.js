@@ -677,7 +677,18 @@ export function drawPixelFigure(ctx, look, R, facing, phase, flash, hand) {
   // A drawn soldier or general: one picture, weapon in hand (and horse, when it rides).
   const unit = look.sprite && unitPics[look.sprite];
   if (unit && unit.img.complete && unit.img.naturalWidth) return drawUnitPicture(ctx, look, unit, R, sx, phase, flash);
-  if (look.mount) {
+  const horsePic = unitPics.horse;
+  if (look.mount && horsePic?.img.complete && horsePic.img.naturalWidth) {
+    // The drawn white horse, galloping with the step; the rider sits on its saddle.
+    const img = horsePic.img, k = (R * 3.6) / img.naturalWidth;
+    if (flash) horsePic.flash ??= silhouette(img, HANJI);
+    ctx.save();
+    ctx.translate(0, -Math.round(Math.abs(Math.sin(phase)) * R * 0.08));
+    ctx.scale(sx * k, k);
+    ctx.drawImage(flash ? horsePic.flash : img, -img.naturalWidth * 0.5, (R * 0.95) / k - img.naturalHeight);
+    ctx.restore();
+    ctx.translate(-sx * Math.round(R * 0.15), -Math.round(R * 0.95));
+  } else if (look.mount) {
     if (!set.horse || set.horseColor !== look.mount) {
       set.horse = [0, 1, 2, 3].map((i) => horseFrame(look.mount, R, i));
       set.horseColor = look.mount;
@@ -769,6 +780,21 @@ export function drawObjectPicture(ctx, id, x, y, r, h, flash) {
   ctx.save();
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(flash ? pic.flash : img, Math.round(x - (img.naturalWidth * k) / 2), Math.round(y + r * 0.9 - h), img.naturalWidth * k, h);
+  ctx.restore();
+  return true;
+}
+
+/** A drawn picture centred on (x, y), `len` long along its width, turned by `angle` (kept upright when pointing left). */
+export function drawPicture(ctx, id, x, y, len, angle = 0) {
+  const pic = unitPics[id];
+  if (!pic || !pic.img.complete || !pic.img.naturalWidth) return false;
+  const img = pic.img, k = len / img.naturalWidth;
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.translate(Math.round(x), Math.round(y));
+  ctx.rotate(angle);
+  ctx.scale(k, k * (Math.cos(angle) < 0 ? -1 : 1));
+  ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
   ctx.restore();
   return true;
 }

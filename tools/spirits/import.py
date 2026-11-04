@@ -32,12 +32,14 @@ HERO_OUT = os.path.join(ROOT, 'game/assets/heroes')
 HERO_MANIFEST = os.path.join(ROOT, 'game/src/data/heroSprites.js')
 # Pictures with stray leftovers (a cart that came with a floating helmet and boots): keep the main body only.
 KEEP_MAIN = {'cart'}
+# White subjects: never clear enclosed light-grey patches (that is their body, not a hole).
+NO_HOLES = {'horse'}
 # Areas to blank in the source (fractions x0, y0, x1, y1): the cart's leftover boots under it.
 ERASE = {'cart': [(0.2, 0.82, 0.42, 1.0), (0.55, 0.82, 0.8, 1.0)]}
 SASIN = {'cheongnyong', 'jujak', 'baekho', 'hyeonmu'}
 
 
-def clear_white(im):
+def clear_white(im, holes=True):
     """Make near-white pixels connected to the border transparent."""
     w, h = im.size
     px = im.load()
@@ -59,14 +61,20 @@ def clear_white(im):
             q.extend(((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)))
     # A checkerboard background shows as many cleared pixels that were not pure white.
     checker = dark_bg or sum(1 for p in seen if 0 <= p[0] < w and 0 <= p[1] < h and min(px[p][:3] if px[p][3] else (255, 255, 255)) < 232) > 0
-    if checker or dark_bg:
+    if not holes:
+        pass
+    elif checker or dark_bg:
         clear_enclosed_checker(im, seen, any_shade=True, dark=dark_bg)
         # The image generator's sparkle watermark sits in the bottom-right corner.
         for y in range(int(h * 0.9), h):
             for x in range(int(w * 0.9), w):
                 px[x, y] = (0, 0, 0, 0)
-    else:
+    elif holes:
         clear_enclosed_checker(im, seen)
+    if checker or dark_bg:
+        for y in range(int(h * 0.9), h):
+            for x in range(int(w * 0.9), w):
+                px[x, y] = (0, 0, 0, 0)
     return im
 
 
@@ -221,12 +229,12 @@ def keep_main(im):
     return im.crop(im.getbbox())
 
 
-def to_pixels(path, cells=64, colours=48, erase=None):
+def to_pixels(path, cells=64, colours=48, erase=None, holes=True):
     im = Image.open(path).convert('RGBA')
     for x0, y0, x1, y1 in erase or []:
         W, H = im.size
         im.paste((0, 0, 0, 0), (int(x0 * W), int(y0 * H), int(x1 * W), int(y1 * H)))
-    im = clear_white(im)
+    im = clear_white(im, holes)
     im = im.crop(im.getbbox())
     bs = block_size(im)
     smooth = bs is None or bs > 30
@@ -254,7 +262,7 @@ def main(pairs):
         if sid.startswith('unit:'):
             # Soldiers and generals, enemy or ally: one front picture with its weapon.
             uid = sid[5:]
-            im, small, bs, smooth = to_pixels(path, erase=ERASE.get(uid))
+            im, small, bs, smooth = to_pixels(path, erase=ERASE.get(uid), holes=uid not in NO_HOLES)
             if uid in KEEP_MAIN:
                 small = keep_main(small)
             small.save(os.path.join(UNIT_OUT, f'{uid}.png'))

@@ -26,7 +26,7 @@ for (const id of Object.keys(SPIRIT_SPRITES)) {
 /** The 영물 id whose sprite stands for a kind (a 사신 boss's kind maps to its 영물). */
 // Boss beasts arrive already mapped by bossKind (tiger → baekho, turtle → hyeonmu), so 'turtle' here is the
 // 바다거북 영물 and 'tiger' the grown 범새끼.
-const spriteId = (kind) => ({ dragon: 'cheongnyong', phoenix: 'jujak', tiger: 'cub' }[kind] ?? kind);
+const spriteId = (kind) => (kind === 'tiger' && SPIRIT_SPRITES.tiger ? 'tiger' : { dragon: 'cheongnyong', phoenix: 'jujak', tiger: 'cub' }[kind] ?? kind);
 
 const TAU = Math.PI * 2;
 const W = C('#ffffff');

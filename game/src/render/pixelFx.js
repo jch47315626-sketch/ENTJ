@@ -13,6 +13,7 @@
  *   (render/livePixel.js).
  */
 import { PIXEL_FX_SHEETS } from '../data/pixelFxSheets.js';
+import { drawPicture } from './pixelUnit.js';
 
 const images = {};
 
@@ -101,7 +102,15 @@ const PROJECTILES = {
   arrow: (p) => (p.team === 'player' ? ['arrow', 10] : null),
 };
 
+/** Enemy projectiles drawn from pictures (game/assets/units/projectile_*.png): kind → [picture, length]. */
+const PICTURES = {
+  arrow: (p) => (p.team !== 'player' ? ['projectile_arrow', 26] : null),
+  hook: () => ['projectile_hook', 36],
+};
+
 export function drawProjectileFx(ctx, p, time) {
+  const pic = PICTURES[p.kind]?.(p);
+  if (pic && drawPicture(ctx, pic[0], p.x, p.y, pic[1], p.angle ?? Math.atan2(p.vy, p.vx))) return true;
   const pick = PROJECTILES[p.kind]?.(p);
   if (!pick) return false;
   const [key, radius] = pick;

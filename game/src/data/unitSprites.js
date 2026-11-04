@@ -151,5 +151,21 @@ export const UNIT_SPRITES = {
   "gungyeClone": {
     "w": 64,
     "h": 63
+  },
+  "projectile_stone": {
+    "w": 57,
+    "h": 38
+  },
+  "projectile_hook": {
+    "w": 64,
+    "h": 26
+  },
+  "projectile_arrow": {
+    "w": 62,
+    "h": 9
+  },
+  "horse": {
+    "w": 63,
+    "h": 51
   }
 };

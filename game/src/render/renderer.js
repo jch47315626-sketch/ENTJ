@@ -1,6 +1,6 @@
 import { GROUNDS } from './ground.js';
 import { drawBogs, drawRocks } from './terrain.js';
-import { drawObjectPicture } from './pixelUnit.js';
+import { drawObjectPicture, drawPicture } from './pixelUnit.js';
 import { drawUnit, drawCart, drawCoin, drawRice, drawProjectile } from './sprites.js';
 import { clamp, TAU } from '../core/math.js';
 import { drawUltFx, drawScreenFlash } from './ultFx.js';
@@ -1234,6 +1234,8 @@ export class Renderer {
           ctx.beginPath();
           ctx.ellipse(f.x + (f.x1 - f.x) * k, f.y + (f.y1 - f.y) * k, 6, 3, 0, 0, TAU);
           ctx.fill();
+          // The drawn stone, its speed lines trailing the way it came.
+          if (drawPicture(ctx, 'projectile_stone', x, y, 22, f.x1 < f.x ? Math.PI : 0)) break;
           ctx.fillStyle = '#7a7268';
           ctx.strokeStyle = '#26231f';
           ctx.lineWidth = 1.5;
