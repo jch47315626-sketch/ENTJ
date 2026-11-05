@@ -35,6 +35,9 @@ export function renderIntro(stage, daily = null, endless = false) {
     : stage.nanse ? NANSE_CARDS.filter((c) => stage.nanse.cards[c.id]).map((c) => `${c.icon} ${c.name} — ${c.desc(stage.nanse.cards[c.id])}`).join('\n') : stage.intro;
 }
 
+/** The painted 엽전 used across the menus (assets/ui/icon/coin). */
+const COIN_HTML = '<img class="coin-img" src="assets/ui/icon/coin.webp" alt="" decoding="async">';
+
 /** Icon and colour per 책략 category. */
 const CAT = Object.fromEntries(Object.entries({ 무예: ['martial', '⚔️'], 병법: ['strategy', '📜'], 지세: ['terrain', '🌿'], 보급: ['supply', '🍙'] }).map(([k, [id, e]]) => [k, pxIcon(`cat_${id}`, e)]));
 
@@ -61,7 +64,7 @@ export function renderChoices(choices, onPick, onReroll = null, rerolls = 0) {
     b.innerHTML = `
       <span class="pc-sticker">${CAT[c.category] ?? '✨'} ${c.category}</span>
       <span class="pc-key">${i + 1}</span>
-      <span class="pc-icon">${c.evolution ? pxIcon('card_evolution', '🌟') : pxIcon(`card_${c.id}`, CAT[c.category] ?? '✨')}</span>
+      <span class="pc-icon">${c.evolution ? pxIcon('card_evolution', '🌟') : (c.id === 'weapon' && c.hero ? `<img class="px-icon pc-weapon" src="assets/heroes/${c.hero}_weapon.png" alt="" draggable="false">` : pxIcon(`card_${c.id}`, CAT[c.category] ?? '✨'))}</span>
       <b class="pc-name">${c.name}</b>
       <span class="pc-lvl">${lvl}</span>
       <span class="pc-desc">${c.desc}</span>${c.evoFor ? c.evoFor.map((e) => `
@@ -133,7 +136,7 @@ export function renderResult(g, won, extra = {}) {
     if (al.newTier) rows.push(['🏯', `제단 ${al.tier}단계 첫 평정`, `${al.tier + 1 <= al.maxTier ? `${al.tier + 1}단계 열림!` : '최고 단계!'}`]);
     rows.push(['🎟️', '남은 입장권', `${al.tickets}장`]);
   } else if (r && en) rows.push([pxIcon('ui_gyeolgi', '💎'), `결기수정${en.mul && en.mul !== 1 ? ` (${pxIcon('ui_roulette', '🎰')} ×${en.mul})` : ''}`, `<span class="count-up" data-to="${r.crystals ?? 0}">+0</span>`]);
-  else if (r) rows.push(['🪙', '냥', `<span class="count-up" data-to="${r.total}">+0</span>`]);
+  else if (r) rows.push([COIN_HTML, '냥', `<span class="count-up" data-to="${r.total}">+0</span>`]);
   if (r && g.opts.quick) rows.push(['⚡', '빠른 시험 모드', '냥 35%']);
   if (r?.bossBonus) rows.push([pxIcon('ui_crown', '👑'), `적장 토벌 보상${g.bossMul && g.bossMul !== 1 ? ` (${pxIcon('ui_roulette', '🎰')} ×${g.bossMul})` : ''}`, `+${r.bossBonus.toLocaleString()}`]);
   if (extra.dailyBonus) rows.push([pxIcon('ui_daily', '📅'), '오늘의 전장 보상', `+${extra.dailyBonus.toLocaleString()}`]);

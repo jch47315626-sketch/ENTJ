@@ -900,6 +900,7 @@ export class Game {
       evolution: !!u.isEvolution?.(this),
       evoFor: u.isEvolution?.(this) ? null : evoNeed[u.id] ?? null,
       sub: !!u.subWeapon,
+      hero: p.hero.id,
     }));
   }
 
