@@ -231,5 +231,17 @@ export const ICON_SPRITES = {
   "ui_gift": {
     "w": 63,
     "h": 64
+  },
+  "ui_gyeolgi": {
+    "w": 60,
+    "h": 61
+  },
+  "ui_crown": {
+    "w": 64,
+    "h": 49
+  },
+  "cat_supply": {
+    "w": 64,
+    "h": 42
   }
 };

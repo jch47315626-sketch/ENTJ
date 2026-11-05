@@ -129,10 +129,10 @@ export function renderResult(g, won, extra = {}) {
     if (al.essence) rows.push([pxIcon('ui_essence', '🌟'), '사신 정수', `+${al.essence}`]);
     if (al.newTier) rows.push(['🏯', `제단 ${al.tier}단계 첫 평정`, `${al.tier + 1 <= al.maxTier ? `${al.tier + 1}단계 열림!` : '최고 단계!'}`]);
     rows.push(['🎟️', '남은 입장권', `${al.tickets}장`]);
-  } else if (r && en) rows.push(['💎', `결기수정${en.mul && en.mul !== 1 ? ` (${pxIcon('ui_roulette', '🎰')} ×${en.mul})` : ''}`, `<span class="count-up" data-to="${r.crystals ?? 0}">+0</span>`]);
+  } else if (r && en) rows.push([pxIcon('ui_gyeolgi', '💎'), `결기수정${en.mul && en.mul !== 1 ? ` (${pxIcon('ui_roulette', '🎰')} ×${en.mul})` : ''}`, `<span class="count-up" data-to="${r.crystals ?? 0}">+0</span>`]);
   else if (r) rows.push(['🪙', '냥', `<span class="count-up" data-to="${r.total}">+0</span>`]);
   if (r && g.opts.quick) rows.push(['⚡', '빠른 시험 모드', '냥 35%']);
-  if (r?.bossBonus) rows.push(['👑', `적장 토벌 보상${g.bossMul && g.bossMul !== 1 ? ` (${pxIcon('ui_roulette', '🎰')} ×${g.bossMul})` : ''}`, `+${r.bossBonus.toLocaleString()}`]);
+  if (r?.bossBonus) rows.push([pxIcon('ui_crown', '👑'), `적장 토벌 보상${g.bossMul && g.bossMul !== 1 ? ` (${pxIcon('ui_roulette', '🎰')} ×${g.bossMul})` : ''}`, `+${r.bossBonus.toLocaleString()}`]);
   if (extra.dailyBonus) rows.push([pxIcon('ui_daily', '📅'), '오늘의 전장 보상', `+${extra.dailyBonus.toLocaleString()}`]);
   const tr = extra.trial;
   if (tr) {

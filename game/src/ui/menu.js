@@ -63,6 +63,7 @@ const TICKET = pxIcon('ui_ticket', '🎟️');
 const GIFT = pxIcon('ui_gift', '🎁');
 const TROPHY = pxIcon('ui_trophy', '🏆');
 const ROULETTE = pxIcon('ui_roulette', '🎰');
+const GEM_IC = pxIcon('ui_gyeolgi', '💎');
 const FORGE_IC = pxIcon('ui_forge', '🔨');
 const ATTR = pxIcon('ui_attr', ATTR_ICON);
 const SCROLL = pxIcon('ui_secret', '📜');
@@ -188,7 +189,7 @@ function purse(save) {
   const box = el('span', 'purse');
   box.append(el('span', 'coin-pill', `${COIN()}<b>${fmt(save.money)}</b>`));
   if ((save.yeongju ?? 0) > 0 || (save.altarRuns ?? 0) > 0) box.append(el('span', 'coin-pill yj', `${YJ}<b>${fmt(save.yeongju ?? 0)}</b>`));
-  if ((save.crystals ?? 0) > 0 || Object.keys(save.gyeolgi ?? {}).length) box.append(el('span', 'coin-pill gem', `💎<b>${fmt(save.crystals ?? 0)}</b>`));
+  if ((save.crystals ?? 0) > 0 || Object.keys(save.gyeolgi ?? {}).length) box.append(el('span', 'coin-pill gem', `${GEM_IC}<b>${fmt(save.crystals ?? 0)}</b>`));
   if ((save.attrStones ?? 0) > 0) box.append(el('span', 'coin-pill attr', `${ATTR}<b>${fmt(save.attrStones)}</b>`));
   return box;
 }
@@ -312,7 +313,7 @@ export function renderHome(save, sel, act) {
   const mmss = (t) => `${Math.floor(t / 60)}분 ${String(Math.floor(t % 60)).padStart(2, '0')}초`;
   const eLeft = endlessLeft(save);
   list.append(dungeonRow(ENDLESS_IC, '무한 전장', `${h.name} · ${em.icon} ${em.name}`,
-    `${ENDLESS_IC} 오늘 ${eLeft}/${ENDLESS_PER_DAY}번${best?.cleared ? ` · ${TROPHY} 최단 ${mmss(best.time)}` : ''} · 💎 토벌 ${fmt(endlessCrystals(em.layer, { won: true }))}+`, eLeft > 0, () => openSheet('endless', save, sel, act)));
+    `${ENDLESS_IC} 오늘 ${eLeft}/${ENDLESS_PER_DAY}번${best?.cleared ? ` · ${TROPHY} 최단 ${mmss(best.time)}` : ''} · ${GEM_IC} 토벌 ${fmt(endlessCrystals(em.layer, { won: true }))}+`, eLeft > 0, () => openSheet('endless', save, sel, act)));
   body.append(list);
   if (ui.sheet === 'altar' || ui.sheet === 'endless' || ui.sheet === 'trial') openSheet(ui.sheet, save, sel, act);
   else ui.sheet = null;
@@ -454,7 +455,7 @@ function endlessCard(save, sel, act) {
   const row = el('div', 'ac-tier ec-map');
   row.append(button('◀', 'ac-step', () => view(order[i - 1]), i <= 0));
   const last = id === endlessMapOf(save) && save.endlessMap ? ' · 마지막 도전' : '';
-  row.append(el('div', 'ac-tier-mid', `<b>${m.icon} ${m.name}</b><small>${m.place} · 적 강함 ×${LAYER.hard ** (m.layer - 1)} · 💎 토벌 ${fmt(endlessCrystals(m.layer, { won: true }))}+${last}</small>`));
+  row.append(el('div', 'ac-tier-mid', `<b>${m.icon} ${m.name}</b><small>${m.place} · 적 강함 ×${LAYER.hard ** (m.layer - 1)} · ${GEM_IC} 토벌 ${fmt(endlessCrystals(m.layer, { won: true }))}+${last}</small>`));
   row.append(button('▶', 'ac-step', () => view(order[i + 1]), i >= order.length - 1));
   card.append(row);
   const dots = el('div', 'ec-dots');
@@ -469,7 +470,7 @@ function endlessCard(save, sel, act) {
   who.append(portrait(h, 48));
   who.append(el('div', 'dc-where', `<b>${josa(h.name, '으로')} 출전</b><span>적장 ${m.bosses.map((b) => BOSSES[b].name).join(' · ')} 중 하나</span>`));
   card.append(who);
-  card.append(el('p', 'ec-rule', '적이 더 빠르고 많아요. <b>3분</b>을 버티면 적장이 나타나고, 쓰러뜨리면 <b>토벌</b> — 🎰 황금 룰렛을 돌려 <b>💎 결기수정</b>을 받아요. 한 층 내려갈 때마다 적은 2배 강해지고 결기수정은 5배. 적장을 못 잡으면 최대 10%만. <b>⚡ 한 자리에 20초 머물면 신의 분노!</b>'));
+  card.append(el('p', 'ec-rule', `적이 더 빠르고 많아요. <b>3분</b>을 버티면 적장이 나타나고, 쓰러뜨리면 <b>토벌</b> — 🎰 황금 룰렛을 돌려 <b>${GEM_IC} 결기수정</b>을 받아요. 한 층 내려갈 때마다 적은 2배 강해지고 결기수정은 5배. 적장을 못 잡으면 최대 10%만. <b>⚡ 한 자리에 20초 머물면 신의 분노!</b>`));
   card.append(el('p', 'ec-best', best?.cleared
     ? `${TROPHY} 최단 토벌 <b>${mmss(best.time)}</b> · ${HEROES[best.hero]?.name ?? ''}`
     : '아직 토벌하지 못했어요 — 첫 토벌에 도전해 보세요!'));
@@ -1445,7 +1446,7 @@ export function renderReward(save, sel, act) {
   };
   todo(trialDone(save), TRIAL_IC, '일일 던전', trialDone(save) ? '오늘 도전했어요' : `난세 ${trT.level}단계 · ${ATTR} ${ATTR_NAME} +${fmt(trT.reward)}`, '도전', () => act.openSheet('trial'));
   const eLeft = endlessLeft(save);
-  todo(eLeft <= 0, ENDLESS_IC, '무한 전장', eLeft > 0 ? `오늘 ${eLeft}/${ENDLESS_PER_DAY}번 남음 · 💎 결기수정` : '오늘 도전을 다 했어요', '도전', () => act.openSheet('endless'));
+  todo(eLeft <= 0, ENDLESS_IC, '무한 전장', eLeft > 0 ? `오늘 ${eLeft}/${ENDLESS_PER_DAY}번 남음 · ${GEM_IC} 결기수정` : '오늘 도전을 다 했어요', '도전', () => act.openSheet('endless'));
   todo(a.tickets <= 0, ALTAR_IC, '사신의 제단', a.tickets > 0 ? `입장권 ${a.tickets}장 남음 · 영기를 모아 영주로` : '오늘 입장권을 다 썼어요', '입장', () => act.openSheet('altar'));
   if (!guardianOf()) {
     const got = (save.altar?.essenceDay ?? -1) >= dayNumber();
