@@ -51,6 +51,8 @@ const SLOT_EMOJI = { head: '🪖', body: '🛡️', charm: '📿', wrist: '💠'
 /** Slot icons: the drawn one where there is one (gear_<slot>), else the emoji. */
 const SLOT_ICON = Object.fromEntries(Object.entries(SLOT_EMOJI).map(([k, v]) => [k, pxIcon(`gear_${k}`, v)]));
 const LOCK = pxIcon('ui_lock', '🔒');
+const PAW = pxIcon('ui_spirit', '🐾');
+const SCROLL = pxIcon('ui_secret', '📜');
 
 // Remembered between renders: which tab or card is open on each screen.
 const ui = { heroTab: 'gear', growTab: 'secret', slot: 'head', codexTab: 'hero', mapStage: null };
@@ -182,7 +184,7 @@ function purse(save) {
 
 
 /** 💪 강화: 장비 · 제련 · 비전 · 결기 · 영물 (영물 once the altar has been tried). */
-const POWER_TABS = [['gear', '🛡️ 장비', 'heroes'], ['forge', '🔨 제련', 'heroes'], ['secret', '📜 비전', 'grow'], ['gyeolgi', '💎 결기', 'grow'], ['spirit', '🐾 영물', 'spirit']];
+const POWER_TABS = [['gear', `${pxIcon('gear_body', '🛡️')} 장비`, 'heroes'], ['forge', `${pxIcon('ui_forge', '🔨')} 제련`, 'heroes'], ['secret', `${pxIcon('ui_secret', '📜')} 비전`, 'grow'], ['gyeolgi', `${pxIcon('ui_gyeolgi', '💎')} 결기`, 'grow'], ['spirit', `${PAW} 영물`, 'spirit']];
 export const spiritOpen = (save) => (save.altarRuns ?? 0) > 0 || Object.keys(save.spirits ?? {}).length > 0;
 function powerTabs(save, act, current) {
   const tabs = POWER_TABS.filter(([id]) => id !== 'spirit' || spiritOpen(save));
@@ -291,7 +293,7 @@ export function renderHome(save, sel, act) {
   const a = refreshAltar(save);
   const g = GUARDIANS[guardianOf()];
   list.append(dungeonRow('🏯', '사신의 제단', `${g ? `${spiritIcon(g.id, g.icon)} ${g.name}` : '✨ 사신의 날'} · ${Math.max(1, save.altarTier ?? 1)}단계`,
-    `🎟️ 입장권 ${a.tickets}/${ALTAR_TICKETS.cap}${save.spiritGift ? '' : ` · 🐾 ${Math.max(1, FIRST_SPIRIT_RUNS - altarRunsDone(save))}판 더 돌면 첫 영물`}`, a.tickets > 0, () => openSheet('altar', save, sel, act)));
+    `🎟️ 입장권 ${a.tickets}/${ALTAR_TICKETS.cap}${save.spiritGift ? '' : ` · ${PAW} ${Math.max(1, FIRST_SPIRIT_RUNS - altarRunsDone(save))}판 더 돌면 첫 영물`}`, a.tickets > 0, () => openSheet('altar', save, sel, act)));
   const em = ENDLESS_MAPS[endlessMapOf(save)];
   const best = save.endless?.[em.id];
   const mmss = (t) => `${Math.floor(t / 60)}분 ${String(Math.floor(t % 60)).padStart(2, '0')}초`;
@@ -396,8 +398,8 @@ function altarCard(save, sel, act) {
     const nb = ALTAR_TIERS[tier + 1].base;
     card.append(el('p', 'ac-lock', (save.altarBest ?? 0) < tier ? `${LOCK} ${tier}단계를 평정하면 ${tier + 1}단계가 열려요` : `${LOCK} ${tier + 1}단계: 전장 「${STAGES[nb].name}」을 먼저 평정하세요`));
   }
-  if (!save.spiritGift) card.append(el('p', 'ac-lock', `🐾 제단을 <b>${Math.max(1, FIRST_SPIRIT_RUNS - altarRunsDone(save))}판</b> 더 돌면 첫 영물이 찾아와요`));
-  card.append(button(`🐾 영물 뽑기·동행 <small>영물 ${Object.keys(save.spirits ?? {}).length}/${SPIRIT_LIST.length}</small>`, 'plain-btn small ac-spirit', () => goPower(act, 'spirit')));
+  if (!save.spiritGift) card.append(el('p', 'ac-lock', `${PAW} 제단을 <b>${Math.max(1, FIRST_SPIRIT_RUNS - altarRunsDone(save))}판</b> 더 돌면 첫 영물이 찾아와요`));
+  card.append(button(`${PAW} 영물 뽑기·동행 <small>영물 ${Object.keys(save.spirits ?? {}).length}/${SPIRIT_LIST.length}</small>`, 'plain-btn small ac-spirit', () => goPower(act, 'spirit')));
   card.append(el('p', 'ec-rule', `${josa(HEROES[sel.hero].name, '으로')} 출전 · 떠도는 <b>영기</b>를 모으면 판이 끝날 때 <b>영주</b>가 돼요. 2분 30초 뒤 수호 영수를 쓰러뜨리면 보너스!`));
   const none = a.tickets <= 0;
   if (g) card.append(button(none ? '🎟️ 오늘의 입장권을 다 썼어요' : `${spiritIcon(g.id, g.icon)} ${g.name}의 제단 입장`, 'altar-btn go', () => act.startAltar(gid, tier), none));
@@ -778,7 +780,7 @@ export function renderGrow(save, sel, act) {
     const row = el('div', `grow-row scroll-row${has ? ' on' : ''}${sc.hero !== sel.hero ? ' other' : ''}`);
     row.innerHTML = `${img(`row/scroll-${SECRET_SCROLL[sc.id] ?? 'swords'}`, 'gr-scroll')}<div class="gr-text"><b>${sc.name} <i>${HEROES[sc.hero].name}</i></b><span>${sc.desc}</span></div>`;
     row.append(has ? tag('습득', 'got-tag') : priceBtn(sc.price, save.money, () => act.learn(sc)));
-    holdTip(row, tipHtml(`📜 ${sc.name}`, [
+    holdTip(row, tipHtml(`${SCROLL} ${sc.name}`, [
       `${HEROES[sc.hero].name} 전용 · ${sc.desc}`,
       '배워 두면 출진할 때마다 이 책략을 Lv1로 들고 시작해요 (레벨업 카드 한 장을 아끼는 셈).',
       has ? '✅ 이미 배웠어요' : `값: ${fmt(sc.price)}냥 (가진 냥 ${fmt(save.money)})`,
@@ -980,7 +982,7 @@ export function renderPrep(save, sel, act) {
     act.go('heroes');
   });
   const secrets = SECRETS.filter((s) => s.hero === h.id && save.secrets.includes(s.id)).map((s) => s.name);
-  sec('비전', secrets.length ? `📜 ${secrets.join(', ')}` : '없음', () => goPower(act, 'secret'));
+  sec('비전', secrets.length ? `${SCROLL} ${secrets.join(', ')}` : '없음', () => goPower(act, 'secret'));
   sec('전장', `${starText(st.difficulty.stars)} ${st.name} · 적장 ${boss.name}`, () => act.go('map'));
   sec('전투력', `❤️ ${Math.round(h.stats.maxHp + (m.maxHp ?? 0))} · ⚔️ ×${(h.stats.might * (1 + (m.might ?? 0))).toFixed(2)} · 🛡️ ${+(h.stats.armor + (m.armor ?? 0)).toFixed(1)} (피해 −${Math.round(armorCut(h.stats.armor + (m.armor ?? 0)) * 100)}%)`);
   body.append(card);
@@ -1005,7 +1007,7 @@ export function renderCodex(save, sel, act) {
   body.innerHTML = '';
   body.append(header('도감', save, act, '圖鑑'));
   const tabs = [['hero', '영웅'], ['weapon', '무기'], ['gear', '장비'], ['spirit', '영물'], ['foe', '적'], ['record', '기록'], ['help', '도움말']];
-  const strip = tabStrip(tabs.map(([id, name]) => [id, `${id === 'spirit' ? '<span class="tab-img tab-emoji">🐾</span>' : img(`icon/tab-${id}`, 'tab-img')}<b>${name}</b>`]), ui.codexTab, (id) => {
+  const strip = tabStrip(tabs.map(([id, name]) => [id, `${id === 'spirit' ? `<span class="tab-img tab-emoji">${PAW}</span>` : img(`icon/tab-${id}`, 'tab-img')}<b>${name}</b>`]), ui.codexTab, (id) => {
     ui.codexTab = id;
     renderCodex(save, sel, act);
   });
@@ -1276,7 +1278,7 @@ export function renderSpirit(save, sel, act) {
   row.append(button(`10회 뽑기<br><small>🔮 ${GACHA.ten} (10% 할인)</small>`, 'seal-btn sp-draw ten', () => act.drawSpirit(10), (save.yeongju ?? 0) < GACHA.ten));
   gc.append(row);
   if ((save.yeongju ?? 0) < GACHA.one) gc.append(el('p', 'hint', '🏯 사신의 제단에서 영기를 모으면 영주가 돼요.'));
-  if (!save.spiritGift) gc.append(el('p', 'hint', `🐾 사신의 제단을 ${Math.max(1, FIRST_SPIRIT_RUNS - altarRunsDone(save))}판 더 돌면 범수 한 마리가 선물로 찾아와요.`));
+  if (!save.spiritGift) gc.append(el('p', 'hint', `${PAW} 사신의 제단을 ${Math.max(1, FIRST_SPIRIT_RUNS - altarRunsDone(save))}판 더 돌면 범수 한 마리가 선물로 찾아와요.`));
   if (lastDraw?.length) {
     const res = el('div', `sp-result${lastDraw.length > 1 ? ' ten' : ''}`);
     lastDraw.forEach((d, i) => {
@@ -1293,7 +1295,7 @@ export function renderSpirit(save, sel, act) {
   // 동행
   const slots = companionSlots(save);
   const party = el('div', 'grow-card sp-party');
-  party.append(el('div', 'sp-gacha-head', `<b>🐾 동행</b><span>${slots}칸${slots < 2 ? ' · 사신을 얻으면 2칸' : ''}</span>`));
+  party.append(el('div', 'sp-gacha-head', `<b>${PAW} 동행</b><span>${slots}칸${slots < 2 ? ' · 사신을 얻으면 2칸' : ''}</span>`));
   const pr = el('div', 'sp-slots');
   for (let i = 0; i < 2; i++) {
     const id = save.companions?.[i];
@@ -1452,7 +1454,7 @@ export function renderReward(save, sel, act) {
   };
   line('🏆', '업적', achReady, () => act.claimAllAch(), null);
   line('⚔️', '도감 · 적과 적장', foeReady, () => act.claimCodexAll(['foe', 'boss']), () => act.openCodex('foe'));
-  if (spiritOpen(save)) line('🐾', '도감 · 영물', spReady, () => act.claimCodexAll(['spirit']), () => act.openCodex('spirit'));
+  if (spiritOpen(save)) line(PAW, '도감 · 영물', spReady, () => act.claimCodexAll(['spirit']), () => act.openCodex('spirit'));
   const cp = el('div', 'todo-row', '<span class="todo-check">🎟️</span><div><b>쿠폰</b><small>코드를 넣으면 선물을 받아요</small></div>');
   cp.append(button('입력', 'plain-btn small', () => openCoupon(act)));
   box.append(cp);

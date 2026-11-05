@@ -39,5 +39,25 @@ export const ICON_SPRITES = {
   "gear_body": {
     "w": 62,
     "h": 64
+  },
+  "card_magnet": {
+    "w": 62,
+    "h": 64
+  },
+  "card_guard": {
+    "w": 60,
+    "h": 64
+  },
+  "card_chain": {
+    "w": 63,
+    "h": 64
+  },
+  "ui_spirit": {
+    "w": 64,
+    "h": 60
+  },
+  "ui_secret": {
+    "w": 64,
+    "h": 57
   }
 };
