@@ -58,7 +58,7 @@ export function updateFieldItems(g, dt) {
       p.keroDrop = KEROSENE.every;
       const K = KEROSENE;
       const dps = Math.max(currentWeaponLevel(p).damage, 20) * p.stats.might * K.mul;
-      g.zones.push({ team: 'player', kind: 'kero', x: p.x, y: p.y, r: K.radius * p.stats.area, dps, life: K.fireLife, t: 0 });
+      g.addZone({ team: 'player', kind: 'kero', x: p.x, y: p.y, r: K.radius * p.stats.area, dps, life: K.fireLife, t: 0 });
     }
   }
   // 함정: count down, then blow up the ring.

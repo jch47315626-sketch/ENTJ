@@ -29,7 +29,10 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 #app { position: fixed; inset: 0; }
-#field { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+#field { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; image-rendering: pixelated; }
+/* Edge shade over the battlefield (render/renderer.js): dark rim, red when the hero is hit. */
+.field-shade { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 50%, rgba(20, 17, 14, 0) 45%, rgba(20, 17, 14, 0.55) 100%); }
+.field-shade.hurt { background: radial-gradient(ellipse at 50% 50%, rgba(20, 17, 14, 0) 45%, rgba(120, 20, 14, calc(0.35 + var(--hurt, 0))) 100%); }
 button { font-family: inherit; cursor: pointer; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 
@@ -1166,6 +1169,19 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 6p
 .ic-opt.special .io-text { color: #e2d2ff; font-family: "Jua", sans-serif; font-size: 13px; line-height: 1.35; }
 .ic-opt.special .io-text::before { content: '비기 '; color: var(--candy-lilac); font-size: 11px; }
 
+/* 🧭 장비 계열 */
+.school-sets { display: flex; flex-direction: column; gap: 5px; margin: 10px 0 4px; padding: 10px 12px; border-radius: 14px; background: rgba(200, 120, 60, 0.1); border: 1px solid rgba(230, 170, 90, 0.35); }
+.school-sets .is-title { font: 400 15px "Jua", sans-serif; color: #ffd9a8; }
+.school-sets .is-title small { font: 400 11.5px sans-serif; color: rgba(255, 255, 255, 0.6); margin-left: 4px; }
+.school-sets .is-hint { color: rgba(255, 255, 255, 0.7); line-height: 1.4; }
+.school-tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin: 6px 0 4px; }
+.school-tab { padding: 6px 2px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--sc) 60%, transparent); background: rgba(0, 0, 0, 0.25); color: var(--hanji); font: 400 12.5px "Jua", sans-serif; cursor: pointer; }
+.school-tab.on { background: color-mix(in srgb, var(--sc) 45%, rgba(0, 0, 0, 0.2)); color: #fff; box-shadow: 0 0 8px color-mix(in srgb, var(--sc) 50%, transparent); }
+.school-blurb { display: block; margin: 0 2px 6px; color: rgba(255, 255, 255, 0.72); font-size: 12px; line-height: 1.4; }
+.ic-node { display: block; margin-top: 2px; color: #6a3a8a; font-size: 12px; line-height: 1.35; }
+.node-tree { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.node-tree small { color: rgba(255, 255, 255, 0.65); margin-right: 2px; }
+.node-tree i { font-style: normal; font: 400 12.5px "Jua", sans-serif; padding: 2px 8px; border-radius: 999px; color: #fff; background: color-mix(in srgb, var(--el) 40%, rgba(0, 0, 0, 0.3)); border: 1px solid var(--el); }
 /* 하·중·상 */
 .ic-tier { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 4px; padding: 4px 8px; border-radius: 10px; background: rgba(120, 80, 30, 0.08); border: 1px solid rgba(140, 100, 50, 0.25); color: #3a2a18; font-size: 12px; }
 .it-pips { display: inline-flex; gap: 3px; flex: none; }
@@ -1824,6 +1840,69 @@ body { background: var(--night); }
 .px-ic.big { width: 1.8em; height: 1.8em; }
 .px-ic.fill { width: 100%; height: 100%; vertical-align: middle; padding: 3px; box-sizing: border-box; }
 .sp-ic .px-ic { width: 1.6em; height: 1.6em; }
+
+/* 🛟 자동 백업 */
+.bak-list { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.bak-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 10px; background: rgba(255, 255, 255, 0.06); font-size: 12.5px; }
+.bak-row span { flex: 1; min-width: 0; }
+.bak-row small { opacity: 0.7; }
+.bak-row b { font-weight: 400; opacity: 0.85; white-space: nowrap; }
+.bak-empty { opacity: 0.6; font-size: 12.5px; }
+
+/* 💰 재화 줄: 메뉴 화면 오른쪽 위 고정, 넷이 한 줄 */
+.purse-bar { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 6px); right: 8px; z-index: 40; display: flex; gap: 4px; pointer-events: auto; }
+.purse-bar[hidden] { display: none; }
+.pb-pill { display: inline-flex; align-items: center; gap: 3px; padding: 3px 9px 3px 5px; border-radius: 999px; background: linear-gradient(180deg, #4a3a5c, #2f2540); border: 1.5px solid rgba(255, 224, 138, 0.5); color: #f8ead0; font-size: 13px; line-height: 1; white-space: nowrap; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); }
+.pb-pill .coin-img { width: 16px; height: 16px; }
+.pb-pill b { font: 700 13px "Gowun Batang", serif; color: var(--gold); font-variant-numeric: tabular-nums; }
+.pb-pill.yj b { color: #e2c6ff; }
+.pb-pill.gem b { color: #b8c4ff; }
+.pb-pill.attr b { color: #9fd8ff; }
+/* room for it above every menu screen's own header */
+.menu-screen { padding-top: calc(env(safe-area-inset-top, 0px) + 44px) !important; }
+/* the old purses are replaced by the bar */
+#home .home-top .purse { display: none; }
+#home .home-top { justify-content: flex-end; }
+@media (max-width: 360px) { .pb-pill { padding: 3px 7px 3px 4px; font-size: 12px; } .pb-pill b { font-size: 12px; } }
+
+/* 강화 · 장비: six slots in one row, the set line folded, pieces folded to one line */
+.doll-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.doll-row .d2-slot { position: static; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 2px 4px; min-width: 0; width: auto; height: auto; border-radius: 10px; }
+.doll-row .d2-slot .icon { width: 34px; height: 34px; }
+.doll-row .d2-label { position: static; display: block; max-width: 100%; font-size: 10px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transform: none; background: none; padding: 0; }
+.set-fold { margin: 6px 0 2px; }
+.set-fold > summary { list-style: none; cursor: pointer; padding: 6px 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.06); font-size: 13px; color: var(--hanji); }
+.set-fold > summary::-webkit-details-marker { display: none; }
+.set-fold > summary small { opacity: 0.6; margin-left: 4px; }
+.item-card.folded { cursor: pointer; }
+.item-card.folded .ic-text span { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.more-grades { align-self: center; margin-top: 2px; }
+
+.prep-who { padding: 2px 4px 6px; font-size: 18px; color: var(--hanji); }
+.prep-who small { font-size: 12px; opacity: 0.7; }
+.dg-next { margin: 6px 4px 0; font-size: 12px; opacity: 0.75; text-align: center; }
+/* 한 화면에 맞추기: 지도와 할 일 줄을 조금 낮춘다 */
+.stage-detail { padding: 10px 12px; gap: 6px; }
+.sd-rows li { padding: 4px 2px; }
+.todo-row { padding: 6px 6px; }
+.todo-row small { display: block; }
+/* 출진 지도: 아래 카드를 낮게 (한 화면에) */
+.stage-detail .sd-no { width: 38px; height: 38px; font-size: 24px; }
+.stage-detail .sd-head b { font-size: 24px; }
+.stage-detail .lv-btn { padding: 3px 0 2px; }
+.stage-detail .sd-rows li { padding: 3px 2px; font-size: 13.5px; }
+#map .war-map { width: 88%; margin: 4px auto; }
+/* 제련 · 결기: 한 줄씩 */
+.forge-panel .forge-card { padding: 6px 8px; }
+.forge-panel .row-icon { width: 34px; height: 34px; }
+.gyeolgi-card .gy-banner { padding: 6px 12px; }
+.gyeolgi-card .gy-banner h3 { font-size: 26px; }
+.gyeolgi-card .gy-big { width: 34px; height: 34px; }
+.gyeolgi-card .grow-row { min-height: 0; padding: 4px 8px; gap: 8px; grid-template-columns: 44px 1fr auto; }
+.gyeolgi-card { gap: 6px; }
+.gyeolgi-card .gr-img { width: 44px; height: 40px; }
+.gyeolgi-card .gr-text span { font-size: 12.5px; }
+.gyeolgi-card .gy-banner { margin-bottom: 0; } .gyeolgi-card .gr-text b { font-size: 15px; }
 
 /* Drawn pixel icons (src/ui/pxIcon.js): sit in text like an emoji. */
 .px-icon { display: inline-block; width: 1.25em; height: 1.25em; object-fit: contain; vertical-align: -0.28em; image-rendering: pixelated; }

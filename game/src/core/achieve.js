@@ -10,7 +10,7 @@ import { SLOTS } from '../data/meta.js';
 /** What one finished battle contributes (from the Game instance). */
 export function runFacts(g, won, save) {
   const p = g.player;
-  const outfit = save.equipped?.[p.hero.id] ?? {};
+  const outfit = save.outfit ?? {};
   return {
     won,
     hero: p.hero.id,

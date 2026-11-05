@@ -208,7 +208,7 @@ export function updateWeapon(g, dt) {
     pat.update?.(g, p, lv, s, dt);
     w.timer -= dt;
     if (w.timer > 0) continue;
-    w.timer = lv.cooldown * p.stats.haste * (1 - (m[`${w.id}Cd`] ?? 0));
+    w.timer = lv.cooldown * p.stats.haste * Math.max(0.5, 1 - (m[`${w.id}Cd`] ?? 0));
     // A pattern may return a shorter wait (e.g. nothing was in reach).
     // A second weapon's 초월 (systems/over.js) raises its damage and reach.
     const wait = main ? pat.fire(g, p, lv, s) : withOver(p, w.id, () => pat.fire(g, p, lv, s));

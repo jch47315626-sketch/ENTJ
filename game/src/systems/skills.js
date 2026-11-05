@@ -3,6 +3,7 @@ import { hitArc, currentWeaponLevel } from './weapons.js';
 import { enemyHpScale } from '../data/balance.js';
 import { rand } from '../core/math.js';
 import { withOver } from './over.js';
+import { SCHOOLS, nodeCount } from '../data/schools.js';
 import { pixelFx } from '../render/pixelFx.js';
 
 /**
@@ -130,7 +131,7 @@ ACTIVE_SKILLS.archers = {
       // The arrows fall first; the ground catches fire as they land.
       g.fx.push(pixelFx('arrowVolley', s.x, s.y, r));
       g.later(0.3, () => {
-        g.zones.push({ team: 'player', kind: 'fire', x: s.x, y: s.y, r, dps, life: R.life, t: 0 });
+        g.addZone({ team: 'player', kind: 'fire', x: s.x, y: s.y, r, dps, life: R.life, t: 0 });
         g.fx.push(pixelFx('fireRing', s.x, s.y, r));
       });
     }
@@ -199,6 +200,134 @@ ACTIVE_SKILLS.curse = {
     foes.sort((a, b) => b.maxHp - a.maxHp);
     for (const e of foes.slice(0, L.count)) curseFoe(g, e, L);
     g.sfx('beam');
+  },
+};
+
+// ------------------------------------------------- 장비 계열 책략 (data/schools.js)
+
+// ⚔️ 무 — 검풍: blade waves fly at the nearest foes; 만검귀종 sends them all round.
+ACTIVE_SKILLS.swordGale = {
+  levels: SCHOOLS.mu.levels,
+  fire(g, L) {
+    const p = g.player;
+    const N = p.meta.nodes ?? {};
+    // ⚔️ 검심: two more blades.
+    if (N['mu.charm']) L = { ...L, waves: L.waves + nodeCount(2, N['mu.charm']) };
+    const dirs = [];
+    if (L.ring) for (let i = 0; i < L.waves; i++) dirs.push(p.facing + (i / L.waves) * Math.PI * 2);
+    else {
+      for (const e of g.nearestEnemies(p.x, p.y, 520, L.waves)) dirs.push(Math.atan2(e.y - p.y, e.x - p.x));
+      if (!dirs.length) return 0.6;
+      while (dirs.length < L.waves) dirs.push(dirs[0] + (dirs.length % 2 ? 0.25 : -0.25) * dirs.length);
+    }
+    const size = (L.ring ? 26 : 18) * Math.sqrt(p.stats.area);
+    for (const a of dirs) {
+      g.projectiles.push({
+        team: 'player', kind: 'wave', x: p.x, y: p.y, vx: Math.cos(a) * 520, vy: Math.sin(a) * 520,
+        r: size, damage: weaponDmg(p) * L.mul * p.stats.might, knockback: 50, life: 0.8, pierce: Infinity, hit: new Set(), angle: a,
+      });
+    }
+    g.sfx('royal');
+  },
+};
+
+// 🚩 진 — 깃발 병사: a squad runs in; 팔진도 soldiers cry out as they fall.
+ACTIVE_SKILLS.banner = {
+  levels: SCHOOLS.jin.levels,
+  fire(g, L) {
+    const p = g.player;
+    // 🚩 군령: two more soldiers.
+    const J = p.meta.nodes?.['jin.head'];
+    if (J) L = { ...L, count: L.count + nodeCount(2, J) };
+    for (let i = 0; i < L.count; i++) {
+      const a = (i / L.count) * Math.PI * 2 + rand(-0.2, 0.2);
+      const x = p.x + Math.cos(a) * 70, y = p.y + Math.sin(a) * 70;
+      g.allies.push({ kind: 'soldier', x, y, r: 11, life: L.life, maxLife: L.life, cd: rand(0, 0.4), facing: a, banner: L.burst ?? 0 });
+      g.fx.push({ type: 'puff', x, y, t: 0, life: 0.5, size: 18, tone: 'light' });
+    }
+    if (L.evolution) g.banner('🚩 팔진도 — 진을 펼쳐라!', 'small');
+    g.sfx('horn');
+  },
+};
+
+// 📜 술 — 부적 폭탄: talismans stick to foes, then burst.
+ACTIVE_SKILLS.talisman = {
+  levels: SCHOOLS.sul.levels,
+  fire(g, L) {
+    const p = g.player;
+    // 📜 부적술: two more talismans, wider bursts.
+    const C = p.meta.nodes?.['sul.charm'];
+    if (C) L = { ...L, count: L.count + nodeCount(2, C), radius: L.radius * (1 + 0.2 * C) };
+    const foes = g.nearestEnemies(p.x, p.y, 480, 30).filter((e) => !g.isCharmed(e) && e.def.behavior !== 'static');
+    if (!foes.length) return 0.6;
+    const r = L.radius * Math.sqrt(p.stats.area);
+    const dmg = weaponDmg(p) * L.mul * p.stats.might;
+    for (let i = 0; i < L.count; i++) {
+      const e = foes[Math.floor(Math.random() * foes.length)];
+      const at = { x: e.x, y: e.y };
+      g.fx.push({ type: 'curseMark', x: e.x, y: e.y, t: 0, life: 0.6, follow: e, seed: Math.random() });
+      g.later(0.6 + i * 0.08, () => {
+        const x = e.dead ? at.x : e.x, y = e.dead ? at.y : e.y;
+        hitArc(g, x, y, 0, r, 360, dmg, 140, 'blast', L.stun ? { stun: L.stun } : undefined);
+        g.shake(3);
+      });
+    }
+    g.later(0.6, () => g.sfx('blast'));
+  },
+};
+
+// 🏹 궁 — 연노: bolts at the nearest foes; 신기전 sets the thickest knots ablaze now and then.
+ACTIVE_SKILLS.crossbow = {
+  levels: SCHOOLS.gung.levels,
+  fire(g, L) {
+    const p = g.player;
+    // 🏹 화전: two more bolts that pierce one more.
+    const F = p.meta.nodes?.['gung.charm'];
+    if (F) L = { ...L, bolts: L.bolts + nodeCount(2, F), pierce: L.pierce + (F >= 0.5 ? 1 : 0) };
+    const foes = g.nearestEnemies(p.x, p.y, 460, L.bolts).filter((e) => !g.isCharmed(e));
+    if (!foes.length) return 0.4;
+    for (let i = 0; i < L.bolts; i++) {
+      const e = foes[i % foes.length];
+      const a = Math.atan2(e.y - p.y, e.x - p.x) + (i >= foes.length ? rand(-0.15, 0.15) : 0);
+      g.projectiles.push({
+        team: 'player', kind: 'arrow', x: p.x, y: p.y, vx: Math.cos(a) * 640, vy: Math.sin(a) * 640,
+        r: 6, damage: weaponDmg(p) * L.mul * p.stats.might, knockback: 20, life: 0.75, pierce: L.pierce, hit: new Set(), angle: a,
+      });
+    }
+    const R = L.rocket;
+    if (R) {
+      p.rocketN = (p.rocketN ?? 0) + 1;
+      if (p.rocketN % R.every === 0) {
+        const dps = weaponDmg(p) * R.dps * p.stats.might;
+        for (const s of crowdSpots(g, 520, R.spots, R.radius * 1.4)) {
+          g.fx.push({ type: 'arrowRain', x: s.x, y: s.y, range: R.radius, t: 0, life: 0.9, seed: Math.random() });
+          g.later(0.3, () => g.addZone({ team: 'player', kind: 'fire', x: s.x, y: s.y, r: R.radius, dps, life: R.life, t: 0 }));
+        }
+      }
+    }
+    g.sfx('volley');
+  },
+};
+
+// 🍃 도 — 선단: heal and a shield; 금강불괴 also a moment untouchable and a pulse.
+ACTIVE_SKILLS.elixir = {
+  levels: SCHOOLS.do.levels,
+  fire(g, L) {
+    const p = g.player;
+    // 🍃 선단술: sooner, with a half again stronger shield.
+    const art = p.meta.nodes?.['do.charm'];
+    if (art) L = { ...L, shield: L.shield * (1 + 0.5 * art) };
+    const before = p.hp;
+    p.heal(p.stats.maxHp * L.heal);
+    if (p.hp > before) g.texts.push({ x: p.x, y: p.y - 30, v: `+${Math.round(p.hp - before)}`, t: 0, life: 0.7, heal: true });
+    p.shield = Math.max(p.shield ?? 0, p.stats.maxHp * L.shield);
+    p.shieldMax = Math.max(p.shield, p.shieldMax ?? 0);
+    p.shieldBy = null;
+    if (L.invuln) p.invuln = Math.max(p.invuln, L.invuln);
+    if (L.pulse) hitArc(g, p.x, p.y, 0, 150 * Math.sqrt(p.stats.area), 360, weaponDmg(p) * L.pulse * p.stats.might, 200, 'royal');
+    g.fx.push({ type: 'puff', x: p.x, y: p.y, t: 0, life: 0.6, size: 34, tone: 'light' });
+    g.sfx('heal');
+    if (art) return L.cooldown * (1 - 0.3 * art);
   },
 };
 

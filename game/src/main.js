@@ -7,10 +7,10 @@ import { Tutorial } from './ui/tutorial.js';
 import { Sound } from './audio/sound.js';
 import { themeFor } from './audio/music.js';
 import { showScreen, renderIntro, renderChoices, renderResult } from './ui/screens.js';
-import { renderHome, renderHeroes, renderGrow, renderMap, renderPrep, renderCodex, setCodexTab, renderSpirit, setLastDraw, openCoupon, renderReward, setSheet } from './ui/menu.js';
+import { renderHome, renderHeroes, renderGrow, renderMap, renderPrep, renderCodex, setCodexTab, renderSpirit, setLastDraw, openCoupon, renderReward, setSheet, renderPurseBar } from './ui/menu.js';
 import { redeemCoupon } from './core/coupon.js';
 import { GACHA, SPIRITS, SPIRIT_GRADES, drawSpirits, starUp, setBranch, toggleCompanion, callSasin, countRunForGift } from './data/spirits.js';
-import { loadSave, writeSave, outfitOf, encodeSave, decodeSave } from './core/save.js';
+import { loadSave, writeSave, outfitOf, encodeSave, decodeSave, loadState, listBackups, backupSave, backupNow } from './core/save.js';
 import { runFacts, recordRun, checkAchievements, claimAchievement, readyCount } from './core/achieve.js';
 import { codexReadyCount, claimCodex, claimCodexAll } from './data/codexTiers.js';
 import { ACHIEVEMENTS } from './data/achievements.js';
@@ -45,7 +45,10 @@ const save = loadSave();
 refreshAltar(save);
 writeSave(save);
 // Display names for gear 비기 lines (data/gearOptions.js).
-for (const u of UPGRADES) NAMES.upgrade[u.id] = u.title ?? (typeof u.name === 'string' ? u.name : u.id);
+for (const u of UPGRADES) {
+  NAMES.upgrade[u.id] = u.title ?? (typeof u.name === 'string' ? u.name : u.id);
+  if (u.heroes) NAMES.upgradeHeroes[u.id] = u.heroes;
+}
 ensureGearOptions(save, EQUIPMENT); // older saves: every owned piece gets its option lines
 writeSave(save); // persist any format migration right away
 let introTimer = 0;
@@ -247,7 +250,7 @@ function onState(state, g) {
         if (won) {
           save.stats.nanseBest = Math.max(save.stats.nanseBest ?? 0, lv);
           save.stats.trialWins = (save.stats.trialWins ?? 0) + 1;
-          const missing = RELICS.filter((r) => r.hero === g.player.hero.id && !save.owned.includes(r.id));
+          const missing = RELICS.filter((r) => !save.owned.includes(r.id));
           if (lv >= TRIAL.relicFrom && missing.length && Math.random() < Math.min(0.9, 0.3 + 0.03 * (lv - TRIAL.relicFrom))) {
             relic = missing[Math.floor(Math.random() * missing.length)];
             save.owned.push(relic.id);
@@ -318,6 +321,7 @@ function toMenu(name = 'home') {
 function go(name) {
   menu = name;
   RENDER[name](save, sel, act);
+  renderPurseBar(save);
   showScreen(name);
   $(name).scrollTop = 0;
   menuTips(name);
@@ -350,27 +354,17 @@ $('tipOk').addEventListener('click', () => {
   if (tipQueue.length) openTip();
 });
 
-/** Which systems a menu screen shows, once the player can actually use them. */
-function menuTips(name) {
-  if (!save.tutorialDone) return;
-  const mine = save.owned.filter((id) => save.gearOpts?.[id] && EQUIPMENT.some((e) => e.id === id));
-  const lines = mine.flatMap((id) => save.gearOpts[id]);
-  if (name === 'home' && save.codex.runs >= 1) showTip('modes');
-  if (name === 'home' && save.codex.runs >= 1) showTip('trial');
-  if (name === 'heroes' && save.codex.runs >= 1) showTip('gear');
-  if (name === 'reward' && readyCount(save)) showTip('ach');
-  if (name === 'heroes' && mine.length) {
-    showTip('gearOpts');
-    if (lines.some((l) => l.special)) showTip('bigi');
-    if (mine.some((id) => id.includes('.relic_'))) showTip('relic');
-  }
-  if (name === 'grow') showTip('tree');
-}
+/**
+ * Menu screens no longer pop up explanations on their own: a new player just
+ * plays, and every system's help stays in 도감 · 도움말.
+ */
+function menuTips() {}
 
 /** Redraw the open menu in place (after buying or wearing something). */
 function refresh() {
   const y = $(menu).scrollTop;
   RENDER[menu](save, sel, act);
+  renderPurseBar(save);
   $(menu).scrollTop = y;
 }
 
@@ -567,14 +561,14 @@ const act = {
     sel.stage = id;
     refresh();
   },
-  // Gear belongs to one hero only.
+  // Gear is shared: one armoury and one outfit for every hero.
   buy(item) {
-    if (item.hero !== sel.hero || item.relic || save.owned.includes(item.id)) return;
+    if (item.relic || save.owned.includes(item.id)) return;
     if (!gradeOpen(save, item) || !canBuy(save, item) || !spend(item.price)) return;
     save.owned.push(item.id);
     save.gearOpts ??= {};
     save.gearOpts[item.id] = rollOptions(item);
-    outfitOf(save, sel.hero)[item.slot] = item.id;
+    outfitOf(save)[item.slot] = item.id;
     done();
   },
   /** 하 → 중 → 상: raise an owned piece one step (냥, always succeeds). */
@@ -590,8 +584,8 @@ const act = {
     toast(`⬆️ 승급 — ${item.name} · ${TIER.names[t + 1]}${t + 1 === TOP_TIER && !item.relic && item.grade < 8 ? ' · 다음 등급을 살 수 있어요!' : ''}`);
   },
   wear(item) {
-    if (item.hero !== sel.hero) return;
-    outfitOf(save, sel.hero)[item.slot] = item.id;
+    if (!save.owned.includes(item.id)) return;
+    outfitOf(save)[item.slot] = item.id;
     done('click');
   },
   forge(item) {
@@ -613,11 +607,6 @@ const act = {
     save.crystals -= cost;
     (save.gyeolgi ??= {})[gy.id] = lv + 1;
     sound.sfx('forgeOk');
-    done();
-  },
-  learn(sc) {
-    if (!spend(sc.price)) return;
-    save.secrets.push(sc.id);
     done();
   },
   /** 각인: reroll one option line of an owned piece for 냥. */
@@ -657,13 +646,14 @@ const act = {
   engrave(item, index) {
     const lines = save.gearOpts?.[item.id];
     if (!lines?.[index] || !spend(engraveCost(item))) return;
-    const before = lineText(lines[index]);
+    const plain = (l) => lineText(l).replace(/<[^>]+>/g, '');
+    const before = plain(lines[index]);
     save.gearOpts[item.id] = rerollLine(item, lines, index);
     writeSave(save);
     sound.unlock();
     sound.sfx('forgeOk');
     refresh();
-    toast(`🔁 각인 — ${before} → ${lineText(save.gearOpts[item.id][index])}`);
+    toast(`🔁 각인 — ${before} → ${plain(save.gearOpts[item.id][index])}`);
   },
   claimAch(id) {
     paidToast('🏆 보상', claimAchievement(save, id));
@@ -699,18 +689,38 @@ const act = {
     if (!confirmed) {
       return { ok: false, needConfirm: true, message: `냥 ${next.money.toLocaleString()} · 장비 ${next.owned.length}개 · 깬 전장 ${won}곳 — 이 기록으로 덮어쓸까요? 지금 기록은 사라져요.` };
     }
-    // Replace the save in place: other code keeps a reference to `save`.
-    for (const k of Object.keys(save)) delete save[k];
-    Object.assign(save, next);
-    ensureGearOptions(save, EQUIPMENT);
-    checkAchievements(save);
-    updateBadge();
-    writeSave(save);
-    refresh();
+    replaceSave(next, 'import');
     return { ok: true, message: `불러왔어요! 냥 ${save.money.toLocaleString()}, 장비 ${save.owned.length}개.` };
+  },
+  listBackups,
+  /** 💾 자동 백업 `i`: first call previews it; with confirmed=true it replaces the save (the current one is backed up first). */
+  restoreBackup(i, confirmed) {
+    let next;
+    try {
+      next = backupSave(i);
+    } catch (e) {
+      return { ok: false, message: e.message ?? '백업을 읽을 수 없어요.' };
+    }
+    if (!confirmed) {
+      return { ok: false, needConfirm: true, message: `냥 ${next.money.toLocaleString()} · 장비 ${next.owned.length}개 · 출진 ${next.codex?.runs ?? 0}회 — 이 기록으로 되돌릴까요? 지금 기록도 백업에 남아요.` };
+    }
+    replaceSave(next, 'restore');
+    return { ok: true, message: `되돌렸어요! 냥 ${save.money.toLocaleString()}, 장비 ${save.owned.length}개.` };
   },
 };
 
+/** Swaps in another save (code or backup) in place — other code keeps a reference to `save` — keeping the current one as a backup. */
+function replaceSave(next, why) {
+  writeSave(save);
+  backupNow(why);
+  for (const k of Object.keys(save)) delete save[k];
+  Object.assign(save, next);
+  ensureGearOptions(save, EQUIPMENT);
+  checkAchievements(save);
+  updateBadge();
+  writeSave(save);
+  refresh();
+}
 // Drawn icons on the fixed buttons of index.html.
 $('homeSave').innerHTML = pxIcon('ui_save', '💾');
 $('homeCrystalPill').firstChild.replaceWith(document.createRange().createContextualFragment(`${pxIcon('ui_gyeolgi', '💎')} `));
@@ -759,6 +769,12 @@ document.addEventListener('click', (e) => {
   toast('🎮 다음 출진에서 튜토리얼이 나와요!');
 });
 $('homeCoupon').addEventListener('click', () => openCoupon(act));
+// The stored save could not be read: say so, and where it can be brought back.
+if (loadState.failed || loadState.errors.length) {
+  setTimeout(() => toast(loadState.failed
+    ? '⚠️ 저장된 기록을 읽지 못했어요. 기록은 지워지지 않았어요 — 💾 → 자동 백업에서 되돌릴 수 있어요.'
+    : '⚠️ 기록을 새 버전으로 옮기다 일부를 놓쳤을 수 있어요. 💾 → 자동 백업에서 이전 기록을 확인하세요.', false), 1500);
+}
 $('homeSave').addEventListener('click', () => {
   setCodexTab('record');
   go('codex');

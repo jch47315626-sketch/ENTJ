@@ -3,6 +3,7 @@ import { hitArc, currentWeaponLevel } from './weapons.js';
 import { GWANSIM, FURY_LV } from '../data/skills.js';
 import { MOMENTUM } from '../data/heroes.js';
 import { OVER, overOf } from './over.js';
+import { nodeCount } from '../data/schools.js';
 import { pixelFx } from '../render/pixelFx.js';
 
 /** Foes within `r` of the hero that `ok` accepts (charmed ones never count). */
@@ -35,7 +36,9 @@ export const SPECIALS = {
     worth: (g) => crowdOrBoss(g, 260),
     fire(g) {
       const p = g.player;
-      const count = 3 + p.stats.guard + (p.meta.guardBonus ?? 0);
+      // 🚩 군령 (비결): more spearmen, by the piece's power.
+      const J = p.meta.nodes?.['jin.head'];
+      const count = 3 + p.stats.guard + (p.meta.guardBonus ?? 0) + (J ? nodeCount(2, J) : 0);
       const life = 10 + 1.5 * p.stats.guard + (p.meta.tongsolLife ?? 0);
       for (let i = 0; i < count; i++) {
         const a = (i / count) * TAU + rand(-0.2, 0.2);

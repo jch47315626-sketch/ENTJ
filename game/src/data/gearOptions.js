@@ -55,20 +55,26 @@ export const PROCS = {
 };
 const SPECIAL_CHANCE = [0, 0, 0, 0, 0, 0.35, 0.4, 0.45, 0.5, 1];
 
-/** Names for 비기 text, filled in by the game at start-up (avoids an import cycle). */
-export const NAMES = { upgrade: {} };
+/**
+ * Names for 비기 text, filled in by the game at start-up (avoids an import
+ * cycle): 책략 names, and which heroes a 책략 belongs to (absent: everyone).
+ */
+export const NAMES = { upgrade: {}, upgradeHeroes: {} };
+const HERO_NAME = { wanggeon: '왕건', gyeonhwon: '견훤', gungye: '궁예' };
+/** " (왕건 전용)" for a line only some heroes can use. */
+const onlyFor = (heroes) => (heroes?.length ? ` <small class="only">(${heroes.map((h) => HERO_NAME[h]).join('·')} 전용)</small>` : '');
 
 function rollSpecial(item, takenKinds = []) {
   const kinds = ['grant', 'cap', 'proc'].filter((k) => !takenKinds.includes(k));
   const kind = kinds[Math.floor(Math.random() * kinds.length)];
   const S = SPECIAL[kind];
-  const pool = kind === 'proc' ? S : [...(S.any ?? []), ...(S[item.hero] ?? [])];
+  const pool = kind === 'proc' ? S : specialPool(S);
   return { k: kind, v: pool[Math.floor(Math.random() * pool.length)], special: true };
 }
 
 export const specialText = (l) => {
-  if (l.k === 'grant') return `📜 출진할 때 「${NAMES.upgrade[l.v] ?? l.v}」 +1단계 (겹쳐 쌓임)`;
-  if (l.k === 'cap') return `⬆️ 「${NAMES.upgrade[l.v] ?? l.v}」 최대 레벨 +1`;
+  if (l.k === 'grant') return `📜 출진할 때 「${NAMES.upgrade[l.v] ?? l.v}」 +1단계 (겹쳐 쌓임)${onlyFor(NAMES.upgradeHeroes[l.v])}`;
+  if (l.k === 'cap') return `⬆️ 「${NAMES.upgrade[l.v] ?? l.v}」 최대 레벨 +1${onlyFor(NAMES.upgradeHeroes[l.v])}`;
   const p = PROCS[l.v];
   return p ? `${p.icon} ${p.name} — ${p.desc}` : l.v;
 };
@@ -81,7 +87,10 @@ function pct(v) {
 const GRADE_FACTOR = [0, 0.5, 0.75, 1, 1.15, 1.3, 1.45, 1.55, 1.7, 2.2];
 const LINES = [0, 1, 1, 2, 2, 2, 3, 3, 3, 4];
 
-const optionPool = (item) => GEAR_OPTIONS.filter((o) => !o.hero || o.hero === item.hero);
+// Gear is shared by every hero: a piece may roll any hero's line (it works only for that hero).
+const optionPool = () => GEAR_OPTIONS;
+/** Every 책략 a 비기 kind can name: the common ones and each hero's. */
+const specialPool = (S) => [...new Set(Object.values(S).flat())];
 
 function rollValue(o, grade) {
   const raw = o.max * GRADE_FACTOR[grade] * (0.5 + 0.5 * Math.random());
@@ -134,16 +143,16 @@ export const lineMax = (key, grade) => {
 export const lineText = (l) => {
   if (l.special) return specialText(l);
   const o = GEAR_OPTIONS.find((x) => x.key === l.k);
-  return o ? `${o.icon} ${o.text(l.v)}` : l.k;
+  return o ? `${o.icon} ${o.text(l.v)}${onlyFor(o.hero && [o.hero])}` : l.k;
 };
 
 /** Whether a line still means something (options and 책략 get removed over time). */
 function lineValid(item, l) {
-  if (!l.special) return GEAR_OPTIONS.some((o) => o.key === l.k && (!o.hero || o.hero === item.hero));
+  if (!l.special) return GEAR_OPTIONS.some((o) => o.key === l.k);
   const S = SPECIAL[l.k];
   if (!S) return false;
   if (l.k === 'proc') return S.includes(l.v);
-  return [...(S.any ?? []), ...(S[item.hero] ?? [])].includes(l.v);
+  return specialPool(S).includes(l.v);
 }
 
 /** Every owned piece gets its lines (older saves: rolled once, for free); stale lines are rerolled. */

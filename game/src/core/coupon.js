@@ -25,15 +25,23 @@ export async function redeemCoupon(save, code) {
   const cp = COUPONS.find((x) => x.hash === hash);
   if (!cp) return { ok: false, reason: '없는 쿠폰 코드예요. 철자를 확인해 주세요.' };
   save.coupons ??= [];
-  if (save.coupons.includes(hash)) return { ok: false, reason: '이미 받은 쿠폰이에요.' };
+  if (!cp.repeat && save.coupons.includes(hash)) return { ok: false, reason: '이미 받은 쿠폰이에요.' };
   if (cp.until && todayKey() > cp.until) return { ok: false, reason: `기간이 끝난 쿠폰이에요 (${cp.until}까지).` };
-  save.coupons.push(hash);
+  if (!cp.repeat) save.coupons.push(hash);
   const g = cp.gift, lines = [];
   const n = (v) => v.toLocaleString();
   if (g.money) { save.money += g.money; lines.push(`🪙 ${n(g.money)}냥`); }
   if (g.yeongju) { save.yeongju = (save.yeongju ?? 0) + g.yeongju; lines.push(`🔮 영주 ${n(g.yeongju)}`); }
   if (g.crystals) { save.crystals = (save.crystals ?? 0) + g.crystals; lines.push(`💎 결기수정 ${n(g.crystals)}`); }
   if (g.essence) { save.essence = (save.essence ?? 0) + g.essence; lines.push(`✨ 사신 정수 ${n(g.essence)}`); }
+  if (g.attrStones) { save.attrStones = (save.attrStones ?? 0) + g.attrStones; lines.push(`🔷 속성결정 ${n(g.attrStones)}`); }
+  if (g.refill) {
+    // 출진 횟수 full, today's 무한 전장 runs and 일일 던전 open again.
+    save.stamina = null;
+    delete save.endlessDay;
+    if (save.trial) save.trial.done = false;
+    lines.push('⚔️ 출진 횟수 · ♾️ 무한 전장 · 🔥 일일 던전 다시 채움');
+  }
   if (g.tickets) {
     // Gift tickets may go past the daily cap.
     const a = refreshAltar(save);

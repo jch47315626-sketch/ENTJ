@@ -90,13 +90,40 @@ export class Renderer {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.cam = { x: 0, y: 0, zoom: 1 };
+    // The edge shade (vignette, red when hurt) is a CSS layer over the canvas:
+    // a full-screen gradient painted every frame was one of the costliest fills.
+    this.shade = document.createElement('div');
+    this.shade.className = 'field-shade';
+    canvas.after(this.shade);
+    this.hurtShown = 0;
+    // Resolution: the screen's pixels divided by a whole number (1, 2, 3 …), so
+    // each canvas pixel becomes an exact 1×1, 2×2 or 3×3 block on screen. Any
+    // other ratio (say 1.25× on a 3× phone) blows pixels up unevenly — some 2,
+    // some 3 wide — and pixel art looks smeared. Start at the finest step not
+    // above 2× (never below 1×); adapt() goes one step coarser when frames run slow.
+    const dpr = window.devicePixelRatio || 1;
+    this.steps = [1, 2, 3, 4].map((n) => dpr / n).filter((q) => q >= 1 || q === dpr);
+    this.step = Math.max(0, this.steps.findIndex((q) => q <= 2));
+    this.quality = this.steps[this.step];
+    this.slow = 0;
     preloadPixelFx();
     this.resize();
     window.addEventListener('resize', () => this.resize());
   }
 
+  /** Frames slower than ~40fps for 2 seconds: one whole-number step coarser (3× phone: 1.5 → 1). */
+  adapt(dt) {
+    if (this.step >= this.steps.length - 1 || !dt) return;
+    this.slow = dt > 1 / 40 ? this.slow + dt : Math.max(0, this.slow - dt * 0.5);
+    if (this.slow > 2) {
+      this.quality = this.steps[++this.step];
+      this.slow = 0;
+      this.resize();
+    }
+  }
+
   resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = this.quality;
     const w = this.canvas.clientWidth || window.innerWidth;
     const h = this.canvas.clientHeight || window.innerHeight;
     this.canvas.width = Math.round(w * dpr);
@@ -109,6 +136,7 @@ export class Renderer {
   }
 
   render(g, input, dt) {
+    this.adapt(dt);
     const { ctx, cam } = this;
     const p = g.player;
     const k = 1 - Math.exp(-8 * dt);
@@ -140,12 +168,15 @@ export class Renderer {
     ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
     if (g.arena) this.drawArenaFloor(ctx, g, v);
     this.drawCaltrops(ctx, g);
-    this.drawZones(ctx, g);
+    this.drawZones(ctx, g, v);
     drawRocks(ctx, g, v);
     this.drawBigTraps(ctx, g);
     this.drawHalos(ctx, g);
 
+    // Only what is on screen (hundreds of 엽전 can lie about).
+    const px0 = v.x0 - 40, px1 = v.x1 + 40, py0 = v.y0 - 40, py1 = v.y1 + 40;
     for (const k of g.pickups) {
+      if (k.x < px0 || k.x > px1 || k.y < py0 || k.y > py1) continue;
       if (k.kind === 'coin') drawCoin(ctx, k.x, k.y, k.tier, k.t);
       else if (k.kind === 'gold') {
         // 적장 토벌 냥: big gold coins with a glint.
@@ -231,7 +262,13 @@ export class Renderer {
     this.drawTexts(ctx, g);
     ctx.restore();
 
-    this.drawVignette(ctx, p.hurtFlash > 0 ? p.hurtFlash : 0);
+    // Edge shade: only its redness changes, and only when the hero is hurt.
+    const hurt = p.hurtFlash > 0 ? Math.round(p.hurtFlash * 20) / 20 : 0;
+    if (hurt !== this.hurtShown) {
+      this.hurtShown = hurt;
+      this.shade.style.setProperty('--hurt', String(hurt));
+      this.shade.classList.toggle('hurt', hurt > 0);
+    }
     drawScreenFlash(ctx, g, this.w, this.h);
     this.drawStick(ctx, input);
   }
@@ -517,8 +554,10 @@ export class Renderer {
     ctx.restore();
   }
 
-  drawZones(ctx, g) {
+  drawZones(ctx, g, v) {
     for (const z of g.zones) {
+      // Off screen: nothing to draw.
+      if (v && (z.x + z.r < v.x0 - 30 || z.x - z.r > v.x1 + 30 || z.y + z.r < v.y0 - 30 || z.y - z.r > v.y1 + 30)) continue;
       const a = z.aura ? 1 : 1 - z.t / z.life;
       if (drawSpiritZone(ctx, g, z, a)) continue;
       if (z.kind === 'spikes') {
@@ -599,8 +638,9 @@ export class Renderer {
         ctx.beginPath();
         ctx.arc(z.x, z.y, z.r, 0, TAU);
         ctx.fill();
-        for (let k = 0; k < 7; k++) {
-          const ang = k * 0.9 + g.time * 2;
+        // Four tongues of flame (each one is a large translucent fill).
+        for (let k = 0; k < 4; k++) {
+          const ang = k * 1.6 + g.time * 2;
           const rr = z.r * (0.25 + 0.55 * ((k * 37) % 10) / 10);
           ctx.fillStyle = `rgba(250, ${150 + k * 12}, 60, ${0.55 * a})`;
           ctx.beginPath();
@@ -1145,8 +1185,12 @@ export class Renderer {
           const gold = f.type === 'royal';
           ctx.save();
           ctx.lineCap = 'round';
-          ctx.shadowColor = gold ? 'rgba(255, 210, 110, 0.9)' : 'rgba(120, 190, 255, 0.9)';
-          ctx.shadowBlur = 12;
+          // Glow: one wide faint stroke under the trails (shadowBlur is far too costly on phones).
+          ctx.strokeStyle = gold ? `rgba(255, 210, 110, ${0.25 * alpha})` : `rgba(120, 190, 255, ${0.25 * alpha})`;
+          ctx.lineWidth = 14;
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, f.range * 0.86, a0, a1);
+          ctx.stroke();
           [[1, 4, gold ? '255, 236, 170' : '220, 240, 255'], [0.86, 2.5, gold ? '255, 200, 90' : '130, 190, 255'], [0.72, 1.6, gold ? '250, 170, 60' : '80, 140, 230']].forEach(([k, w, c], i) => {
             ctx.strokeStyle = `rgba(${c}, ${alpha * (1 - i * 0.18)})`;
             ctx.lineWidth = w;
@@ -1154,7 +1198,6 @@ export class Renderer {
             ctx.arc(f.x, f.y, f.range * k, a0 + i * 0.05, a1);
             ctx.stroke();
           });
-          ctx.shadowBlur = 0;
           ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
           for (let i = 0; i < 3; i++) {
             const r = f.range * (0.78 + i * 0.1);
@@ -1349,12 +1392,14 @@ export class Renderer {
           ctx.fill();
           ctx.strokeStyle = `rgba(240, 200, 110, ${0.9 * a})`;
           ctx.lineWidth = 3;
+          ctx.beginPath(); // six petals, one stroke
           for (let i = 0; i < 6; i++) {
             const ang = (i / 6) * TAU;
-            ctx.beginPath();
-            ctx.ellipse(f.x + Math.cos(ang) * rr * 0.5, f.y + Math.sin(ang) * rr * 0.5, rr * 0.45, rr * 0.18, ang, 0, TAU);
-            ctx.stroke();
+            const ex = f.x + Math.cos(ang) * rr * 0.5, ey = f.y + Math.sin(ang) * rr * 0.5;
+            ctx.moveTo(ex + Math.cos(ang) * rr * 0.45, ey + Math.sin(ang) * rr * 0.45);
+            ctx.ellipse(ex, ey, rr * 0.45, rr * 0.18, ang, 0, TAU);
           }
+          ctx.stroke();
           break;
         }
         case 'blast': {
@@ -1444,16 +1489,16 @@ export class Renderer {
           // Ink splatter: a main blot plus seeded droplets.
           const a = (1 - p) * 0.75;
           ctx.fillStyle = `rgba(29, 26, 23, ${a})`;
-          ctx.beginPath();
+          ctx.beginPath(); // blot and droplets in one fill
           ctx.arc(f.x, f.y, f.size * (0.6 + p * 0.4), 0, TAU);
-          ctx.fill();
           for (let i = 0; i < 7; i++) {
             const ang = f.seed * 40 + i * 2.39;
             const dd = f.size * (0.9 + ((f.seed * 13 + i * 0.37) % 1) * 1.1) * (0.7 + p * 0.5);
-            ctx.beginPath();
-            ctx.arc(f.x + Math.cos(ang) * dd, f.y + Math.sin(ang) * dd, f.size * 0.18 * (1 - ((i * 0.13) % 0.5)), 0, TAU);
-            ctx.fill();
+            const r = f.size * 0.18 * (1 - ((i * 0.13) % 0.5)), x = f.x + Math.cos(ang) * dd, y = f.y + Math.sin(ang) * dd;
+            ctx.moveTo(x + r, y);
+            ctx.arc(x, y, r, 0, TAU);
           }
+          ctx.fill();
           break;
         }
         case 'puff': {
@@ -1488,15 +1533,6 @@ export class Renderer {
       ctx.strokeText(t.v, t.x, t.y);
       ctx.fillText(t.v, t.x, t.y);
     }
-  }
-
-  drawVignette(ctx, hurt) {
-    const { w, h } = this;
-    const grad = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.35, w / 2, h / 2, Math.max(w, h) * 0.75);
-    grad.addColorStop(0, 'rgba(20, 17, 14, 0)');
-    grad.addColorStop(1, hurt > 0 ? `rgba(120, 20, 14, ${0.35 + hurt})` : 'rgba(20, 17, 14, 0.55)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, w, h);
   }
 
   drawStick(ctx, input) {

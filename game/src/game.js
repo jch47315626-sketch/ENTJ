@@ -25,11 +25,18 @@ import { Spawner } from './systems/spawner.js';
 import { updateSkills, curseFoe } from './systems/skills.js';
 import { withOver, overOf } from './systems/over.js';
 import { ELEMENTS } from './data/imprint.js';
+import { SCHOOL_SETS, nodeCount } from './data/schools.js';
 import { updateTerrain, inBog } from './systems/terrain.js';
 import { pixelFx } from './render/pixelFx.js';
 
 /** The 책략 that grows each hero's special (its 초월 boosts the special). */
 const SPECIAL_LINE = { paewang: 'fury', gwansim: 'gwansim' };
+/** Our own fires burning at once (see Game.addZone). */
+const MAX_FIRES = 30;
+/** Limits that keep a crowded fight smooth on a phone: effects, floating numbers, 엽전 on the ground. */
+const MAX_FX = 70;
+const MAX_TEXTS = 24;
+const MAX_COINS = 90;
 
 /** 공훈 needed for the next level: gentle at first, steeper and steeper later on. */
 export /** A card that moves a started 궁극기 forward is offered this many times as often. */
@@ -40,9 +47,17 @@ const PLAYER_RADIUS = 14;
 const INVULN_TIME = 0.6;
 const MAX_ENEMIES = 420;
 
+/**
+ * 공격 재사용 줄이기 (r = every "−x%" added up) → cooldown multiplier. Up to
+ * −40% it is taken as written; past that it tails off toward 0.35 (at most
+ * ~3× as many swings). Added straight, gear · 결기 · 각인 · 비결 could pass
+ * −100% and the hero attacked every single frame.
+ */
+export const hasteMul = (r) => (r <= 0.4 ? 1 - r : 0.35 + 0.25 * Math.exp(-(r - 0.4) / 0.25));
+
 class Player {
   constructor(hero, meta = {}) {
-    this.meta = meta; // bonuses from gear, 결기 and 비전 (data/meta.js)
+    this.meta = meta; // bonuses from gear, 결기 and 영물 (data/meta.js)
     this.hero = hero;
     this.x = 0;
     this.y = 0;
@@ -81,12 +96,12 @@ class Player {
       // 전고 (war drum object): faster steps and swings while it beats.
       speed: b.speed * (1 + 0.08 * u('swift') + (m.speed ?? 0)) * (this.drumUntil ? 1.2 : 1) * (this.spiritSpeed ?? 1),
       might: b.might * (1 + 0.15 * u('might') + 0.02 * u('bMight') + (m.might ?? 0) + rage) * (this.tiger ? this.tiger.mul : 1),
-      haste: b.haste * (1 - 0.1 * u('haste') - (m.haste ?? 0) - (rageLv?.haste ?? 0)) * (this.drumUntil ? 0.75 : 1),
+      haste: b.haste * hasteMul(0.1 * u('haste') + (m.haste ?? 0) + (rageLv?.haste ?? 0)) * (this.drumUntil ? 0.75 : 1),
       area: b.area * (1 + 0.12 * u('area') + (m.area ?? 0)),
       pickup: b.pickup * (1 + 0.35 * u('magnet') + (m.pickup ?? 0)),
       armor: b.armor + (m.armor ?? 0),
       // 단단한 갑옷: each stack takes 2% off what is left of every blow.
-      taken: 0.98 ** u('bArmor') * (this.imprintSet('earth')?.taken ?? 1),
+      taken: 0.98 ** u('bArmor') * (this.imprintSet('earth')?.taken ?? 1) * (1 - 0.1 * (m.nodes?.['do.body'] ?? 0)),
       leech: (m.leech ?? 0) + 0.0001 * u('bLeech') + (rageLv?.leech ?? 0),
       momentumMul: 1 + 0.25 * u('momentum') + (m.momentum ?? 0) + (GWANSIM[u('gwansim')]?.momentum ?? 0),
       xpMul: 1 + (m.xp ?? 0),
@@ -372,7 +387,8 @@ export class Game {
   afterSwing() {
     // 연환 (gear 비기): now and then the blade comes round again at once.
     const w = this.player.weapon;
-    if (this.player.meta.echo && !w.echoed && Math.random() < 0.2) {
+    // 연환 (비기) or ⚔️ 쾌검 (비결, × its power): 20% at full.
+    if (this.player.meta.echo && !w.echoed && Math.random() < 0.2 * Math.min(1, this.player.meta.echo)) {
       w.timer = Math.min(w.timer, 0.12);
       w.echoed = true;
     } else w.echoed = false;
@@ -417,6 +433,13 @@ export class Game {
     if (e.spiritAmp && e.spiritAmp.until > this.time) amount *= 1 + e.spiritAmp.amp;
     // 천안: a marked foe takes more from every blow.
     if (e.curse && e.curse.until > this.time) amount *= 1 + e.curse.amp;
+    // 비결 (장비 계열): ⚔️ 참철 against elites and generals, ⚔️ 살기 after a run of kills.
+    const N = this.player.meta.nodes;
+    if (N && !opts?.byEnemy) {
+      if (N['mu.belt'] && (e.elite || e.isBoss)) amount *= 1 + 0.35 * N['mu.belt'];
+      const R = this.player.killRush;
+      if (R && R.until > this.time) amount *= 1 + 0.02 * (N['mu.head'] ?? 0) * R.n;
+    }
     e.hp -= amount;
     // 결기 · 피 회복: a sliver of the damage dealt comes back as health.
     const leech = this.player.stats.leech;
@@ -572,6 +595,80 @@ export class Game {
     return (1 + this.endlessBosses * ENDLESS.bossDamageStep) * endlessSurge(this.time);
   }
 
+  /**
+   * Adds a ground zone. Our own fire landing where one already burns feeds
+   * that fire (the stronger dps, the wider reach, the longer burn) instead of
+   * stacking another on top — dozens of overlapping fires cost a lot to draw
+   * and add nothing to see. At most MAX_FIRES burn at once; the oldest dies
+   * down first.
+   */
+  addZone(z) {
+    if (z.team === 'player' && !z.spirit && (z.kind === 'fire' || z.kind === 'kero')) {
+      for (const o of this.zones) {
+        if (o.team !== 'player' || o.spirit || o.kind !== z.kind) continue;
+        const reach = Math.max(o.r, z.r) * 0.6;
+        if ((o.x - z.x) ** 2 + (o.y - z.y) ** 2 > reach * reach) continue;
+        o.dps = Math.max(o.dps, z.dps);
+        o.r = Math.max(o.r, z.r);
+        o.life = o.t + Math.max(o.life - o.t, z.life);
+        return o;
+      }
+      const fires = this.zones.filter((o) => o.team === 'player' && !o.spirit && (o.kind === 'fire' || o.kind === 'kero') && o.t < o.life);
+      if (fires.length >= MAX_FIRES) {
+        const oldest = fires.reduce((a, b) => (a.life - a.t <= b.life - b.t ? a : b));
+        oldest.life = oldest.t;
+      }
+    }
+    this.zones.push(z);
+    return z;
+  }
+
+  /** 비결 that run on their own: 🍃 청심, 🚩 척후, 🏹 전통. */
+  nodeTick(dt) {
+    const p = this.player;
+    const N = p.meta.nodes;
+    if (!N) return;
+    if (N['do.head'] && p.hp < p.stats.maxHp) p.hp = Math.min(p.stats.maxHp, p.hp + p.stats.maxHp * 0.005 * N['do.head'] * dt);
+    const T = (p.nodeT ??= {});
+    if (N['jin.wrist'] && (T.scout = (T.scout ?? 8) - dt) <= 0) {
+      T.scout = 30;
+      this.spawnAllies('archer', nodeCount(2, N['jin.wrist']), Math.round(25 * N['jin.wrist']));
+    }
+    if (N['gung.belt'] && (T.quiver = (T.quiver ?? 10) - dt) <= 0) {
+      const foes = this.nearestEnemies(p.x, p.y, 460, nodeCount(8, N['gung.belt'], 3)).filter((e) => !this.isCharmed(e) && e.def.behavior !== 'static');
+      T.quiver = foes.length ? 10 : 1;
+      const dmg = Math.max(currentWeaponLevel(p).damage, 30) * 1.5 * p.stats.might;
+      for (const e of foes) {
+        this.damageEnemy(e, dmg, e.x, e.y - 30, 30);
+        this.fx.push({ type: 'spark', x: e.x, y: e.y, t: 0, life: 0.3 });
+      }
+      if (foes.length) {
+        this.fx.push({ type: 'arrowRain', x: foes[0].x, y: foes[0].y, range: 120, t: 0, life: 0.8, seed: Math.random() });
+        this.sfx('volley');
+      }
+    }
+  }
+
+  /** 비결 that answer the hero's special: 📜 호부 (shield), 📜 뇌부 (lightning). */
+  nodeOnSpecial() {
+    const p = this.player;
+    const N = p.meta.nodes;
+    if (!N) return;
+    if (N['sul.body']) {
+      p.shield = Math.max(p.shield ?? 0, p.stats.maxHp * 0.15 * N['sul.body']);
+      p.shieldMax = Math.max(p.shield, p.shieldMax ?? 0);
+      p.shieldBy = null;
+    }
+    if (N['sul.wrist']) {
+      const dmg = Math.max(currentWeaponLevel(p).damage, 30) * 3 * p.stats.might;
+      for (const e of this.nearestEnemies(p.x, p.y, 460, nodeCount(6, N['sul.wrist'], 2)).filter((o) => !this.isCharmed(o))) {
+        this.damageEnemy(e, dmg, e.x, e.y - 40, 40, { stun: 0.3 });
+        this.fx.push({ type: 'pillar', x: e.x, y: e.y, t: 0, life: 0.5, seed: Math.random() });
+      }
+      this.sfx('thunder');
+    }
+  }
+
   /** 🔷 속성 각인 세트 techniques that run on their own: 💧 회복, 🌪️ 회오리, ⚡ 벼락. */
   imprintTick(dt) {
     const p = this.player;
@@ -603,13 +700,20 @@ export class Game {
   killProcs(e) {
     const p = this.player;
     const m = p.meta;
+    // 비결: ⚔️ 살기 stacks up, 📜 혼백 now and then fills the 기세.
+    if (m.nodes?.['mu.head']) {
+      const R = (p.killRush ??= { n: 0, until: 0 });
+      R.n = R.until > this.time ? Math.min(15, R.n + 1) : 1;
+      R.until = this.time + 3;
+    }
+    if (m.nodes?.['sul.belt'] && Math.random() < 0.08 * m.nodes['sul.belt']) this.addMomentum(10);
     // 🔥 화(火) 각인 세트: the fallen burst into flame.
     const F = p.imprintSet('fire');
     if (F && Math.random() < F.chance) {
       const r = F.radius * Math.sqrt(p.stats.area);
       const dmg = Math.max(currentWeaponLevel(p).damage, 30) * F.mul * p.stats.might;
       hitArc(this, e.x, e.y, 0, r, 360, dmg, 120, 'burst');
-      if (F.burn) this.zones.push({ team: 'player', kind: 'fire', x: e.x, y: e.y, r, dps: dmg * 0.4, life: F.burn, t: 0 });
+      if (F.burn) this.addZone({ team: 'player', kind: 'fire', x: e.x, y: e.y, r, dps: dmg * 0.4, life: F.burn, t: 0 });
     }
     if (m.thunder && !e.isBoss && Math.random() < 0.15) {
       hitArc(this, e.x, e.y, 0, 80, 360, 30 * p.stats.might, 60, 'burst');
@@ -624,8 +728,22 @@ export class Game {
   }
 
   dropCoin(x, y, value) {
-    const tier = value >= 5 ? 'gold' : value >= 3 ? 'silver' : 'bronze';
-    this.pickups.push({ kind: 'coin', tier, value, x: x + rand(-4, 4), y: y + rand(-4, 4), magnet: false, t: 0 });
+    const tierOf = (v) => (v >= 5 ? 'gold' : v >= 3 ? 'silver' : 'bronze');
+    // A crowded field: the new 엽전 joins the nearest one lying about (its worth adds up),
+    // so hundreds of coins never pile up to be drawn and checked every frame.
+    let coins = 0, near = null, nd = Infinity;
+    for (const k of this.pickups) {
+      if (k.kind !== 'coin' || k.magnet || k.taken) continue;
+      coins++;
+      const d = (k.x - x) ** 2 + (k.y - y) ** 2;
+      if (d < nd) { nd = d; near = k; }
+    }
+    if (near && coins >= MAX_COINS) {
+      near.value += value;
+      near.tier = tierOf(near.value);
+      return;
+    }
+    this.pickups.push({ kind: 'coin', tier: tierOf(value), value, x: x + rand(-4, 4), y: y + rand(-4, 4), magnet: false, t: 0 });
   }
 
   /** `attacker`: the enemy that dealt the blow, when there is one (for 반격). */
@@ -636,8 +754,22 @@ export class Game {
     // Armour cuts 7% per point (max 50%), so it helps against big hits and small ones alike.
     let dmg = Math.max(1, amount * (1 - armorCut(p.stats.armor)));
     dmg = Math.max(1, dmg * p.stats.taken);
+    // 비결: ⚔️ 호신강기 when hurt badly, 🚩 충의 with troops at hand.
+    const N = p.meta.nodes;
+    if (N?.['mu.body'] && p.hp < p.stats.maxHp * 0.5) dmg *= 1 - 0.25 * N['mu.body'];
+    if (N?.['jin.body'] && this.allies.some((a) => !a.dead && a.kind !== 'maguni' && a.kind !== 'maguniBomb')) dmg *= 1 - 0.15 * N['jin.body'];
     if (this.spirits.length) {
       dmg = spiritAbsorb(this, dmg, attacker);
+      if (dmg <= 0) {
+        p.invuln = INVULN_TIME;
+        return false;
+      }
+    } else if (p.shield > 0) {
+      // 🍃 선단's shield (with 영물 along, spiritAbsorb soaks it).
+      const soak = Math.min(p.shield, dmg);
+      p.shield -= soak;
+      dmg -= soak;
+      if (p.shield <= 0) p.shieldMax = 0;
       if (dmg <= 0) {
         p.invuln = INVULN_TIME;
         return false;
@@ -668,6 +800,16 @@ export class Game {
     const E = p.imprintSet('earth');
     if (E?.thorns && attacker && !attacker.dead) this.damageEnemy(attacker, Math.max(currentWeaponLevel(p).damage, 30) * E.thorns * p.stats.might, p.x, p.y, 120);
     if (p.hp <= 0 && this.spirits.length && spiritRevive(this)) return true;
+    // 🍃 불사: once a run, the hero gets back up.
+    if (p.hp <= 0 && p.meta.nodes?.['do.belt'] && !p.undying) {
+      p.undying = true;
+      p.hp = p.stats.maxHp * Math.max(0.15, 0.4 * p.meta.nodes['do.belt']);
+      p.invuln = 2;
+      this.fx.push({ type: 'awaken', x: p.x, y: p.y, t: 0, life: 1.2, seed: Math.random() });
+      this.banner('🍃 불사 — 다시 일어선다!', 'big');
+      this.sfx('heal');
+      return true;
+    }
     if (p.hp <= 0) {
       p.hp = 0;
       this.state = 'dying';
@@ -691,6 +833,7 @@ export class Game {
     p.momentum = 0;
     p.momReadyAt = null;
     withOver(p, SPECIAL_LINE[p.hero.special], () => S.fire(this));
+    this.nodeOnSpecial();
     if (this.spirits.length) spiritOnSpecial(this, MOMENTUM.max);
   }
 
@@ -712,7 +855,9 @@ export class Game {
     const lvl = (u) => p.upgrades[u.id] ?? 0;
     // 한계 돌파 (gear 비기): some 책략 may go one level higher.
     const cap = (u) => u.maxLevel + (p.meta.caps?.[u.id] ?? 0) + (p.bonusPicks[u.id] ?? 0);
-    const pool = UPGRADES.filter((u) => (!u.heroes || u.heroes.includes(p.hero.id)) && (u.available ? u.available(this) : lvl(u) < cap(u)));
+    // 장비 계열 책략 come up once two pieces of that school are worn (data/schools.js).
+    const schoolOpen = (u) => !u.school || (p.meta.schools?.[u.school] ?? 0) >= SCHOOL_SETS[0];
+    const pool = UPGRADES.filter((u) => (!u.heroes || u.heroes.includes(p.hero.id)) && schoolOpen(u) && (u.available ? u.available(this) : lvl(u) < cap(u)));
     const choices = [];
     // 궁핍 (난세 패): fewer cards to choose from.
     const count = (this.stage.difficulty.choiceCount ?? 3) + (this.spiritCards ?? 0);
@@ -844,7 +989,7 @@ export class Game {
   }
 
   /**
-   * Start-of-run perks: 책략 granted by 비전 and gear. Each copy is one level
+   * Start-of-run perks: 책략 granted by gear (책략 전수). Each copy is one level
    * (never the 궁극기 itself), and as many extra picks open after the last
    * level (초월).
    */
@@ -856,6 +1001,7 @@ export class Game {
     for (const [id, n] of Object.entries(count)) {
       const up = UPGRADES.find((u) => u.id === id);
       if (!up) continue; // a 책략 that no longer exists
+      if (up.heroes && !up.heroes.includes(p.hero.id)) continue; // shared gear: another hero's 책략
       const evo = up.levels?.findIndex((l) => l?.evolution) ?? -1;
       const top = evo >= 0 ? evo : up.levels?.length ?? up.maxLevel;
       p.upgrades[id] = Math.max(p.upgrades[id] ?? 0, Math.min(n, top));
@@ -948,6 +1094,7 @@ export class Game {
 
     updateWeapon(this, dt);
     this.imprintTick(dt);
+    this.nodeTick(dt);
     updateSkills(this, dt);
     // 후백제의 패왕: the moment the rage takes hold (or deepens), it flares up.
     const rage = p.enraged ? (p.hp < p.stats.maxHp * 0.3 ? 2 : 1) : 0;
@@ -1383,11 +1530,14 @@ export class Game {
       }
     }
     this.fx = this.fx.filter((f) => f.t < f.life);
+    // Too many at once (a big fight): the oldest go first — nobody can follow hundreds anyway.
+    if (this.fx.length > MAX_FX) this.fx.splice(0, this.fx.length - MAX_FX);
     for (const t of this.texts) {
       t.t += dt;
       t.y -= 30 * dt;
     }
     this.texts = this.texts.filter((t) => t.t < t.life);
+    if (this.texts.length > MAX_TEXTS) this.texts.splice(0, this.texts.length - MAX_TEXTS);
   }
 
   /** Snapshot for the HUD. */

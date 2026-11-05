@@ -1,5 +1,6 @@
 import { WEAPONS } from './weapons.js';
 import { OVER } from '../systems/over.js';
+import { SCHOOLS, SCHOOL_ORDER, SCHOOL_SETS } from './schools.js';
 import { GWANSIM, GWANSIM_LINE, TIER_NAMES, SHIN, HORSE, CHAIN, TIGER, MAGUNI_LV, ARCHERS_LV, EDICT, FURY_LV, BOULDER, CURSE } from './skills.js';
 
 const GWANSIM_UP = skillUpgrade('gwansim', GWANSIM_LINE, ['gungye'], '병법', 11, (g) => g.player.recalc());
@@ -64,6 +65,8 @@ export const UPGRADES = [
   skillUpgrade('archers', ARCHERS_LV, ['wanggeon'], '병법', 8, (g) => g.syncArcherAllies()),
   skillUpgrade('edict', EDICT, ['wanggeon'], '병법', 12),
   skillUpgrade('maguni', MAGUNI_LV, ['gungye'], '병법', 10),
+  // 장비 계열 책략: any hero, once 2 pieces of that school are worn (see game.js buildChoices).
+  ...SCHOOL_ORDER.map((sc) => ({ ...skillUpgrade(SCHOOLS[sc].skill, SCHOOLS[sc].levels, null, '무예', 13), school: sc })),
   {
     id: 'momentum', name: '기세', category: '병법', maxLevel: 3, weight: 7,
     describe: () => '기세 충전 속도 +25%',
@@ -113,7 +116,7 @@ function skillUpgrade(id, levels, heroes, category, weight, onApply) {
     available: (g) => {
       const n = next(g);
       if (!n) return false;
-      return !n.requires || (g.player.upgrades[n.requires.upgrade] ?? 0) >= n.requires.level;
+      return meets(g, n.requires);
     },
     apply: (g) => {
       // Comes into play soon after being chosen, then on its own cooldown.
@@ -161,10 +164,17 @@ function subWeapon(id, heroes) {
     available: (g) => {
       const n = next(g);
       if (!n) return false;
-      return !n.requires || (g.player.upgrades[n.requires.upgrade] ?? 0) >= n.requires.level;
+      return meets(g, n.requires);
     },
     apply: (g) => g.player.syncSubWeapons(),
   });
+}
+
+/** Whether a level's `requires` is met: a 책략 level, or worn pieces of a 장비 계열. */
+function meets(g, req) {
+  if (!req) return true;
+  if (req.school) return (g.player.meta.schools?.[req.school] ?? 0) >= req.count;
+  return (g.player.upgrades[req.upgrade] ?? 0) >= req.level;
 }
 
 function nextWeaponLevel(g) {
@@ -224,7 +234,11 @@ export function evolutionStatus(g) {
     if (E < 0 || have > E) return;
     const evo = levels[E];
     const checks = [{ id, label, now: Math.min(have, E), need: E, done: have >= E }];
-    if (evo.requires) {
+    if (evo.requires?.school) {
+      const S = SCHOOLS[evo.requires.school];
+      const now = p.meta.schools?.[S.id] ?? 0;
+      checks.push({ id: `school:${S.id}`, label: `${S.icon} ${S.name} 장비`, now: Math.min(now, evo.requires.count), need: evo.requires.count, done: now >= evo.requires.count });
+    } else if (evo.requires) {
       const now = p.upgrades[evo.requires.upgrade] ?? 0;
       checks.push({ id: evo.requires.upgrade, label: upName(evo.requires.upgrade), now: Math.min(now, evo.requires.level), need: evo.requires.level, done: now >= evo.requires.level });
     }
@@ -237,6 +251,11 @@ export function evolutionStatus(g) {
   for (const [id, L] of Object.entries(SKILL_LINES)) {
     if (!UPGRADES.find((u) => u.id === id)?.heroes?.includes(p.hero.id)) continue;
     add(id, L, p.upgrades[id] ?? 0, L[0].name);
+  }
+  // 장비 계열 책략, once taken.
+  for (const sc of SCHOOL_ORDER) {
+    const S = SCHOOLS[sc];
+    if (p.upgrades[S.skill]) add(S.skill, S.levels, p.upgrades[S.skill], S.levels[0].name);
   }
   return list;
 }

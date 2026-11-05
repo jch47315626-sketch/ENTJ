@@ -56,7 +56,7 @@ export function breakObject(g, e) {
   if (e.def.object === 'oil') {
     const m = p.stats.might;
     hitArc(g, e.x, e.y, 0, F.oil.radius, 360, F.oil.burst * m, 120, 'burst');
-    g.zones.push({ team: 'player', kind: 'fire', x: e.x, y: e.y, r: F.oil.radius, dps: F.oil.dps * m, life: F.oil.life, t: 0 });
+    g.addZone({ team: 'player', kind: 'fire', x: e.x, y: e.y, r: F.oil.radius, dps: F.oil.dps * m, life: F.oil.life, t: 0 });
     g.shake(6);
     g.sfx('firePot');
     g.texts.push({ x: e.x, y: e.y - 30, v: '🔥 불바다!', t: 0, life: 1.1, order: true });

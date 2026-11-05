@@ -19,6 +19,9 @@ export function showScreen(name) {
   // A home dungeon sheet never outlives the home screen.
   if (name !== 'home') document.querySelector('.sheet-back')?.remove();
   $('bottomNav').hidden = !MENUS.includes(name);
+  // The purse bar (ui/menu.js renderPurseBar) rides with the bottom menu: every menu screen, never in battle.
+  const purse = document.getElementById('purseBar');
+  if (purse) purse.hidden = !MENUS.includes(name);
   for (const b of $('bottomNav').querySelectorAll('button')) b.classList.toggle('on', b.dataset.go === NAV_OF[name]);
 }
 

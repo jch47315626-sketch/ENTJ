@@ -801,6 +801,12 @@ function tintedPicture(id, filter) {
   return (tinted[key] = c);
 }
 
+/** A loaded picture (or null while it is still loading). */
+export function pictureImage(id) {
+  const pic = unitPics[id];
+  return pic && pic.img.complete && pic.img.naturalWidth ? pic.img : null;
+}
+
 export function drawPicture(ctx, id, x, y, len, angle = 0, filter = null) {
   const pic = unitPics[id];
   if (!pic || !pic.img.complete || !pic.img.naturalWidth) return false;

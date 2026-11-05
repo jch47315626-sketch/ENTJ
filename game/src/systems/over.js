@@ -1,5 +1,5 @@
 /**
- * 초월: a 책략 handed out more than once at the start (비전 and gear 비기
+ * 초월: a 책략 handed out more than once at the start (gear 비기
  * stack) begins that many levels up, and the levels it skipped can still be
  * taken after its last level. Each such extra pick (p.over[id]) makes the
  * skill hit harder and reach wider while it acts.
