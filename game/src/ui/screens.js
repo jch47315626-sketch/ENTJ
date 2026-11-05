@@ -129,21 +129,21 @@ export function renderResult(g, won, extra = {}) {
     if (al.essence) rows.push([pxIcon('ui_essence', '🌟'), '사신 정수', `+${al.essence}`]);
     if (al.newTier) rows.push(['🏯', `제단 ${al.tier}단계 첫 평정`, `${al.tier + 1 <= al.maxTier ? `${al.tier + 1}단계 열림!` : '최고 단계!'}`]);
     rows.push(['🎟️', '남은 입장권', `${al.tickets}장`]);
-  } else if (r && en) rows.push(['💎', `결기수정${en.mul && en.mul !== 1 ? ` (🎰 ×${en.mul})` : ''}`, `<span class="count-up" data-to="${r.crystals ?? 0}">+0</span>`]);
+  } else if (r && en) rows.push(['💎', `결기수정${en.mul && en.mul !== 1 ? ` (${pxIcon('ui_roulette', '🎰')} ×${en.mul})` : ''}`, `<span class="count-up" data-to="${r.crystals ?? 0}">+0</span>`]);
   else if (r) rows.push(['🪙', '냥', `<span class="count-up" data-to="${r.total}">+0</span>`]);
   if (r && g.opts.quick) rows.push(['⚡', '빠른 시험 모드', '냥 35%']);
-  if (r?.bossBonus) rows.push(['👑', `적장 토벌 보상${g.bossMul && g.bossMul !== 1 ? ` (🎰 ×${g.bossMul})` : ''}`, `+${r.bossBonus.toLocaleString()}`]);
+  if (r?.bossBonus) rows.push(['👑', `적장 토벌 보상${g.bossMul && g.bossMul !== 1 ? ` (${pxIcon('ui_roulette', '🎰')} ×${g.bossMul})` : ''}`, `+${r.bossBonus.toLocaleString()}`]);
   if (extra.dailyBonus) rows.push([pxIcon('ui_daily', '📅'), '오늘의 전장 보상', `+${extra.dailyBonus.toLocaleString()}`]);
   const tr = extra.trial;
   if (tr) {
-    rows.push([pxIcon('ui_attr', ATTR_ICON), `${ATTR_NAME}${tr.mul && tr.mul !== 1 ? ` (🎰 ×${tr.mul})` : ''}`, `+${tr.attr.toLocaleString()}${tr.won ? '' : ' (패퇴 30%)'}`]);
+    rows.push([pxIcon('ui_attr', ATTR_ICON), `${ATTR_NAME}${tr.mul && tr.mul !== 1 ? ` (${pxIcon('ui_roulette', '🎰')} ×${tr.mul})` : ''}`, `+${tr.attr.toLocaleString()}${tr.won ? '' : ' (패퇴 30%)'}`]);
     rows.push(['🔥', `일일 던전 · 난세 ${tr.level}단계`, tr.won ? '평정!' : '패퇴']);
     if (tr.relic) rows.push(['🌟', `신물 획득 · ${tr.relic}`, '획득!']);
   }
   rows.push(['⭐', '공훈', `Lv ${g.player.level}`]);
   rows.push(['⚔️', '처치', `${g.kills}`]);
   rows.push(['⏱️', '버틴 시간', fmt(g.time)]);
-  for (const u of extra.unlocks ?? []) rows.push(['🏆', `업적 · ${u}`, '달성!']);
+  for (const u of extra.unlocks ?? []) rows.push([pxIcon('ui_trophy', '🏆'), `업적 · ${u}`, '달성!']);
   if (extra.newFoes) rows.push(['📖', '도감에 새 적', `+${extra.newFoes}`]);
   if (extra.spiritGift) rows.push([spiritIcon(extra.spiritGift, SPIRITS[extra.spiritGift].icon), `첫 영물 · ${josa(SPIRITS[extra.spiritGift].name, '이')} 따라왔다!`, '동행!']);
   $('resultRows').innerHTML = rows.map(([i, k, v], n) => `<li style="--i:${n}"><span>${i} ${k}</span><b>${v}</b></li>`).join('');

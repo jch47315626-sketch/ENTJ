@@ -75,6 +75,16 @@ export function drawBogs(ctx, g, v) {
       ctx.fill();
       continue;
     }
+    // The drawn bog (game/assets/units/bog.png), with a slow ripple on the water.
+    if (UNIT_SPRITES.bog && drawPicture(ctx, 'bog', b.x, b.y, b.rx * 2.5, (tx + ty) % 2 ? Math.PI : 0)) {
+      const k = (((g.time * 0.4 + b.x * 0.01) % 1) + 1) % 1;
+      ctx.strokeStyle = `rgba(190, 200, 140, ${0.3 * (1 - k)})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(b.x, b.y, b.rx * (0.2 + 0.5 * k), b.ry * (0.2 + 0.5 * k), 0, 0, TAU);
+      ctx.stroke();
+      continue;
+    }
     ctx.fillStyle = 'rgba(48, 58, 34, 0.85)';
     ctx.beginPath();
     ctx.ellipse(b.x, b.y, b.rx, b.ry, 0, 0, TAU);

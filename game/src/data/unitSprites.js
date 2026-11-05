@@ -227,5 +227,9 @@ export const UNIT_SPRITES = {
   "banner": {
     "w": 33,
     "h": 63
+  },
+  "bog": {
+    "w": 64,
+    "h": 51
   }
 };

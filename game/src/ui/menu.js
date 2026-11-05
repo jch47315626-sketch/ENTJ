@@ -60,6 +60,10 @@ const ENDLESS_IC = pxIcon('ui_endless', '♾️');
 const ALTAR_IC = pxIcon('ui_altar', '🏯');
 const HEART = pxIcon('ui_heart', '❤️');
 const TICKET = pxIcon('ui_ticket', '🎟️');
+const GIFT = pxIcon('ui_gift', '🎁');
+const TROPHY = pxIcon('ui_trophy', '🏆');
+const ROULETTE = pxIcon('ui_roulette', '🎰');
+const FORGE_IC = pxIcon('ui_forge', '🔨');
 const ATTR = pxIcon('ui_attr', ATTR_ICON);
 const SCROLL = pxIcon('ui_secret', '📜');
 
@@ -308,7 +312,7 @@ export function renderHome(save, sel, act) {
   const mmss = (t) => `${Math.floor(t / 60)}분 ${String(Math.floor(t % 60)).padStart(2, '0')}초`;
   const eLeft = endlessLeft(save);
   list.append(dungeonRow(ENDLESS_IC, '무한 전장', `${h.name} · ${em.icon} ${em.name}`,
-    `${ENDLESS_IC} 오늘 ${eLeft}/${ENDLESS_PER_DAY}번${best?.cleared ? ` · 🏆 최단 ${mmss(best.time)}` : ''} · 💎 토벌 ${fmt(endlessCrystals(em.layer, { won: true }))}+`, eLeft > 0, () => openSheet('endless', save, sel, act)));
+    `${ENDLESS_IC} 오늘 ${eLeft}/${ENDLESS_PER_DAY}번${best?.cleared ? ` · ${TROPHY} 최단 ${mmss(best.time)}` : ''} · 💎 토벌 ${fmt(endlessCrystals(em.layer, { won: true }))}+`, eLeft > 0, () => openSheet('endless', save, sel, act)));
   body.append(list);
   if (ui.sheet === 'altar' || ui.sheet === 'endless' || ui.sheet === 'trial') openSheet(ui.sheet, save, sel, act);
   else ui.sheet = null;
@@ -467,7 +471,7 @@ function endlessCard(save, sel, act) {
   card.append(who);
   card.append(el('p', 'ec-rule', '적이 더 빠르고 많아요. <b>3분</b>을 버티면 적장이 나타나고, 쓰러뜨리면 <b>토벌</b> — 🎰 황금 룰렛을 돌려 <b>💎 결기수정</b>을 받아요. 한 층 내려갈 때마다 적은 2배 강해지고 결기수정은 5배. 적장을 못 잡으면 최대 10%만. <b>⚡ 한 자리에 20초 머물면 신의 분노!</b>'));
   card.append(el('p', 'ec-best', best?.cleared
-    ? `🏆 최단 토벌 <b>${mmss(best.time)}</b> · ${HEROES[best.hero]?.name ?? ''}`
+    ? `${TROPHY} 최단 토벌 <b>${mmss(best.time)}</b> · ${HEROES[best.hero]?.name ?? ''}`
     : '아직 토벌하지 못했어요 — 첫 토벌에 도전해 보세요!'));
   const btns = el('div', 'ec-btns');
   btns.append(button('👑 영웅 바꾸기', 'plain-btn small', () => act.go('heroes')));
@@ -723,12 +727,12 @@ function forgePanel(save, h, act) {
     const ctrl = el('div', 'ic-ctrl');
     if (lv < FORGE.max) {
       const cost = forgeCost(item, lv);
-      const fb = button(`🔨 +${lv + 1} 제련`, 'forge-btn', () => act.forge(item), save.money < cost);
+      const fb = button(`${FORGE_IC} +${lv + 1} 제련`, 'forge-btn', () => act.forge(item), save.money < cost);
       ctrl.append(fb);
       ctrl.append(el('small', 'forge-cost', `🪙 ${fmt(cost)} · 성공 ${Math.round(FORGE.chance[lv] * 100)}%`));
     } else ctrl.append(tag(`+${FORGE.max} 완성`));
     card.append(ctrl);
-    holdTip(card, () => tipHtml(`🔨 ${itemName(save, item)}`, [
+    holdTip(card, () => tipHtml(`${FORGE_IC} ${itemName(save, item)}`, [
       `지금: ${bonusText(ownBonus(save, item, lv))}`,
       lv < FORGE.max ? `+${lv + 1} 성공 시: ${bonusText(ownBonus(save, item, lv + 1))}` : '최대 +5까지 제련했어요',
       lv < FORGE.max ? `비용 ${fmt(forgeCost(item, lv))}냥 · 성공 확률 ${Math.round(FORGE.chance[lv] * 100)}% — 실패해도 장비는 그대로예요` : '',
@@ -833,7 +837,7 @@ function stageTip(save, sel, st) {
     `${starRow(st)} ${st.difficulty.label} · 보상 ×${rewardOf(st)}`,
     `적장: ${boss.name}${boss.epithet ? ` (${boss.epithet})` : ''}`,
     `권장 장비: ${st.difficulty.stars > 1 ? `${GRADES[REC_GRADE[st.difficulty.stars]].name}${st.difficulty.stars > 5 ? ' +제련' : ' 이상'}` : '없어도 OK'}`,
-    cleared ? '🏆 평정함' : gate.ok ? '아직 평정하지 못했어요' : `${LOCK} ${gate.text}`,
+    cleared ? `${TROPHY} 평정함` : gate.ok ? '아직 평정하지 못했어요' : `${LOCK} ${gate.text}`,
   ]);
 }
 
@@ -1034,9 +1038,9 @@ export function renderCodex(save, sel, act) {
     if (tier) {
       c.append(el('span', 'cx-tiers', tier.tiers.map((t, i) => `<i class="${i < tier.claimed ? 'on' : i < tier.reached ? 'ready' : ''}"></i>`).join('')));
       const unit = tier.kind === 'spirit' ? '★' : tier.kind === 'boss' ? '번 격파' : '명 처치';
-      tierLines = tier.tiers.map((t, i) => `${i < tier.claimed ? '✅' : i < tier.reached ? '🎁' : '◻️'} ${tier.kind === 'spirit' ? `★${t.need}` : `${fmt(t.need)}${unit}`} — ${t.currency === 'yeongju' ? `영주 ${fmt(t.reward)}` : `${fmt(t.reward)}냥`}`);
+      tierLines = tier.tiers.map((t, i) => `${i < tier.claimed ? '✅' : i < tier.reached ? GIFT : '◻️'} ${tier.kind === 'spirit' ? `★${t.need}` : `${fmt(t.need)}${unit}`} — ${t.currency === 'yeongju' ? `영주 ${fmt(t.reward)}` : `${fmt(t.reward)}냥`}`);
       if (tier.ready > 0) {
-        c.append(el('span', 'cx-gift', '🎁'));
+        c.append(el('span', 'cx-gift', GIFT));
         c.addEventListener('click', () => act.claimCodex(tier.kind, tier.id));
       }
     }
@@ -1050,7 +1054,7 @@ export function renderCodex(save, sel, act) {
       for (let i = e.claimed; i < e.reached; i++) (e.tiers[i].currency === 'yeongju' ? (yj += e.tiers[i].reward) : (money += e.tiers[i].reward));
     }
     if (!money && !yj) return null;
-    return button(`🎁 도감 보상 모두 받기 ${[money && `+${fmt(money)}냥`, yj && `${YJ} +${fmt(yj)}`].filter(Boolean).join(' · ')}`, 'ach-claim-all', () => act.claimCodexAll(kinds.map(([k]) => k)));
+    return button(`${GIFT} 도감 보상 모두 받기 ${[money && `+${fmt(money)}냥`, yj && `${YJ} +${fmt(yj)}`].filter(Boolean).join(' · ')}`, 'ach-claim-all', () => act.claimCodexAll(kinds.map(([k]) => k)));
   };
   body.append(holdHint());
 
@@ -1141,7 +1145,7 @@ function achPanel(save, act) {
   top.append(el('div', 'ach-count', `<span class="ach-num"><b>${done}</b> / ${ACHIEVEMENTS.length} 달성</span>
     <span class="ach-meter"><i style="width:${(done / ACHIEVEMENTS.length) * 100}%"></i></span>`));
   box.append(top);
-  if (ready.length) box.append(button(`🎁 모두 받기 ${[waiting && `+${fmt(waiting)}냥`, waitingY && `${YJ} +${fmt(waitingY)}`].filter(Boolean).join(' · ')}`, 'ach-claim-all', () => act.claimAllAch()));
+  if (ready.length) box.append(button(`${GIFT} 모두 받기 ${[waiting && `+${fmt(waiting)}냥`, waitingY && `${YJ} +${fmt(waitingY)}`].filter(Boolean).join(' · ')}`, 'ach-claim-all', () => act.claimAllAch()));
   let n = 0;
   for (const [gid, gname] of ACH_GROUPS) {
     const [icon, ...words] = gname.split(' ');
@@ -1184,7 +1188,7 @@ function recordPanel(save, act) {
   const totalKills = Object.values(c.kills ?? {}).reduce((a, b) => a + b, 0);
   box.append(el('ul', 'sd-rows', `
     <li><span>⚔️ 출진</span><b>${fmt(c.runs ?? 0)}회</b></li>
-    <li><span>🏆 승리</span><b>${fmt(c.wins ?? 0)}회</b></li>
+    <li><span>${TROPHY} 승리</span><b>${fmt(c.wins ?? 0)}회</b></li>
     <li><span>💀 처치한 적</span><b>${fmt(totalKills)}</b></li>
     <li><span>🪙 모은 냥</span><b>${fmt(c.earned ?? 0)}</b></li>
     ${STAGE_ORDER.filter((id) => (STAGES[id].level ?? 5) === 5).map((id) => {
@@ -1395,7 +1399,7 @@ export function openCoupon(act) {
   const x = button('✕', 'sheet-x', close);
   x.setAttribute('aria-label', '닫기');
   sheet.append(x);
-  sheet.append(el('div', 'dc-head', '<b>🎁 쿠폰 입력</b><span>코드 하나당 한 번</span>'));
+  sheet.append(el('div', 'dc-head', `<b>${GIFT} 쿠폰 입력</b><span>코드 하나당 한 번</span>`));
   const input = el('input', 'coupon-input');
   Object.assign(input, { type: 'text', placeholder: '쿠폰 코드', autocomplete: 'off', spellcheck: false, maxLength: 40 });
   input.setAttribute('autocapitalize', 'characters');
@@ -1454,14 +1458,14 @@ export function renderReward(save, sel, act) {
   const foeReady = [...FOES(), ...GENERALS()].reduce((n, f) => n + Math.max(0, codexEntry(save, BOSSES[f.id] && !ENEMIES[f.id] ? 'boss' : 'foe', f.id).ready), 0);
   const spReady = SPIRIT_LIST.reduce((n, x) => n + Math.max(0, codexEntry(save, 'spirit', x.id).ready), 0);
   const box = el('div', 'grow-card todo-card');
-  box.append(el('div', 'sp-gacha-head', `<b>🎁 받을 보상</b><span>${achReady + foeReady + spReady ? `${achReady + foeReady + spReady}개` : '모두 받았어요'}</span>`));
+  box.append(el('div', 'sp-gacha-head', `<b>${GIFT} 받을 보상</b><span>${achReady + foeReady + spReady ? `${achReady + foeReady + spReady}개` : '모두 받았어요'}</span>`));
   const line = (icon, text, n, onGet, onSee) => {
     const row = el('div', `todo-row${n ? '' : ' done'}`, `<span class="todo-check">${icon}</span><div><b>${text}</b><small>${n ? `${n}개 받을 수 있어요` : '받을 게 없어요'}</small></div>`);
     if (n) row.append(button('모두 받기', 'seal-btn small', onGet));
     else if (onSee) row.append(button('보기', 'plain-btn small', onSee));
     box.append(row);
   };
-  line('🏆', '업적', achReady, () => act.claimAllAch(), null);
+  line(TROPHY, '업적', achReady, () => act.claimAllAch(), null);
   line('⚔️', '도감 · 적과 적장', foeReady, () => act.claimCodexAll(['foe', 'boss']), () => act.openCodex('foe'));
   if (spiritOpen(save)) line(PAW, '도감 · 영물', spReady, () => act.claimCodexAll(['spirit']), () => act.openCodex('spirit'));
   const cp = el('div', 'todo-row', '<span class="todo-check">🎟️</span><div><b>쿠폰</b><small>코드를 넣으면 선물을 받아요</small></div>');

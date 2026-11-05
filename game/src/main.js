@@ -713,6 +713,9 @@ const act = {
 
 // Drawn icons on the fixed buttons of index.html.
 $('homeSave').innerHTML = pxIcon('ui_save', '💾');
+$('homeCoupon').innerHTML = pxIcon('ui_gift', '🎁');
+$('pauseBtn').innerHTML = pxIcon('ui_pause', '⏸');
+for (const e of document.querySelectorAll('.nav-emoji')) if (e.textContent === '🎁') e.innerHTML = pxIcon('ui_gift', '🎁');
 $('homeYeongjuPill').firstChild.replaceWith(document.createRange().createContextualFragment(`${pxIcon('ui_yeongju', '🔮')} `));
 
 function setMuted(m) {

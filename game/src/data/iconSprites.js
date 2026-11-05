@@ -171,5 +171,65 @@ export const ICON_SPRITES = {
   "ui_attr": {
     "w": 58,
     "h": 65
+  },
+  "ui_roulette": {
+    "w": 55,
+    "h": 64
+  },
+  "card_edict": {
+    "w": 64,
+    "h": 63
+  },
+  "card_vajra": {
+    "w": 60,
+    "h": 61
+  },
+  "ui_forge": {
+    "w": 63,
+    "h": 64
+  },
+  "cat_martial": {
+    "w": 61,
+    "h": 64
+  },
+  "card_horse": {
+    "w": 64,
+    "h": 63
+  },
+  "card_archers": {
+    "w": 64,
+    "h": 63
+  },
+  "ui_sound": {
+    "w": 64,
+    "h": 48
+  },
+  "ui_trophy": {
+    "w": 54,
+    "h": 64
+  },
+  "card_gwansim": {
+    "w": 64,
+    "h": 58
+  },
+  "ui_pause": {
+    "w": 63,
+    "h": 64
+  },
+  "card_area": {
+    "w": 62,
+    "h": 54
+  },
+  "card_vitality": {
+    "w": 64,
+    "h": 62
+  },
+  "card_evolution": {
+    "w": 63,
+    "h": 64
+  },
+  "ui_gift": {
+    "w": 63,
+    "h": 64
   }
 };
