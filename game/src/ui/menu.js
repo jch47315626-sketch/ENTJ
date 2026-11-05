@@ -67,6 +67,7 @@ const GIFT = pxIcon('ui_gift', '🎁');
 const TROPHY = pxIcon('ui_trophy', '🏆');
 const ROULETTE = pxIcon('ui_roulette', '🎰');
 const GEM_IC = pxIcon('ui_gyeolgi', '💎');
+const ARMOR_IC = pxIcon('gear_body', '🛡️');
 const FORGE_IC = pxIcon('ui_forge', '🔨');
 const ATTR = pxIcon('ui_attr', ATTR_ICON);
 const SCROLL = pxIcon('ui_secret', '📜');
@@ -826,7 +827,7 @@ function forgePanel(save, h, act) {
   // 착용 중인 것만; 나머지는 버튼 하나 뒤에.
   const mine = ui.forgeAll ? all : all.filter((e) => worn.has(e.id));
   if (!mine.length) {
-    box.append(el('p', 'empty-note', '아직 가진 장비가 없어요. 🛡️ 장비 탭에서 먼저 사 주세요.'));
+    box.append(el('p', 'empty-note', `아직 가진 장비가 없어요. ${ARMOR_IC} 장비 탭에서 먼저 사 주세요.`));
     return box;
   }
   for (const item of mine) {
@@ -843,7 +844,7 @@ function forgePanel(save, h, act) {
       const cost = forgeCost(item, lv);
       const fb = button(`${FORGE_IC} +${lv + 1} 제련`, 'forge-btn', () => act.forge(item), save.money < cost);
       ctrl.append(fb);
-      ctrl.append(el('small', 'forge-cost', `🪙 ${fmt(cost)}`));
+      ctrl.append(el('small', 'forge-cost', `${COIN()} ${fmt(cost)}`));
     } else ctrl.append(tag(`+${FORGE.max} 완성`));
     card.append(ctrl);
     holdTip(card, () => tipHtml(`${FORGE_IC} ${itemName(save, item)}`, [
@@ -1079,12 +1080,12 @@ export function renderPrep(save, sel, act) {
     act.go('heroes');
   });
   sec('전장', `${starText(st.difficulty.stars)} ${st.name} · 적장 ${boss.name}`, () => act.go('map'));
-  sec('전투력', `${HEART} ${Math.round(h.stats.maxHp + (m.maxHp ?? 0))} · ⚔️ ×${(h.stats.might * (1 + (m.might ?? 0))).toFixed(2)} · 🛡️ ${+(h.stats.armor + (m.armor ?? 0)).toFixed(1)} (피해 −${Math.round(armorCut(h.stats.armor + (m.armor ?? 0)) * 100)}%)`);
+  sec('전투력', `${HEART} ${Math.round(h.stats.maxHp + (m.maxHp ?? 0))} · ⚔️ ×${(h.stats.might * (1 + (m.might ?? 0))).toFixed(2)} · ${ARMOR_IC} ${+(h.stats.armor + (m.armor ?? 0)).toFixed(1)} (피해 −${Math.round(armorCut(h.stats.armor + (m.armor ?? 0)) * 100)}%)`);
   body.append(card);
 
   if (!gate.ok) {
     body.append(el('p', 'gate-msg', `${LOCK} 출진 불가 — ${gate.text}`));
-    body.append(button('🛡️ 장비 갖추러 가기', 'plain-btn', () => {
+    body.append(button(`${ARMOR_IC} 장비 갖추러 가기`, 'plain-btn', () => {
       ui.heroTab = 'gear';
       act.go('heroes');
     }));
@@ -1294,7 +1295,7 @@ function recordPanel(save, act) {
     <li><span>⚔️ 출진</span><b>${fmt(c.runs ?? 0)}회</b></li>
     <li><span>${TROPHY} 승리</span><b>${fmt(c.wins ?? 0)}회</b></li>
     <li><span>💀 처치한 적</span><b>${fmt(totalKills)}</b></li>
-    <li><span>🪙 모은 냥</span><b>${fmt(c.earned ?? 0)}</b></li>
+    <li><span>${COIN()} 모은 냥</span><b>${fmt(c.earned ?? 0)}</b></li>
     ${STAGE_ORDER.filter((id) => (STAGES[id].level ?? 5) === 5).map((id) => {
       const st = STAGES[id], lv = st.map ? levelsOf(st.map) : [st], done = lv.filter((s) => save.best?.[s.id]).length;
       return `<li><span>${st.numeral} ${st.mapName ?? st.name}</span><b>${done === lv.length ? '평정' : lv.length > 1 && done ? `${done}/${lv.length}단계` : '—'}</b></li>`;
@@ -1335,7 +1336,7 @@ function recordPanel(save, act) {
   baks.forEach((b, i) => {
     const li = el('li', 'bak-row', b.why === 'broken'
       ? '<span>⚠️ 읽지 못한 기록 (원본 그대로 보관)</span>'
-      : `<span>${when(b.at)} <small>${{ open: '열 때', import: '코드 불러오기 전', restore: '되돌리기 전' }[b.why] ?? ''}</small></span><b>🪙 ${fmt(b.money)} · 출진 ${fmt(b.runs)}</b>`);
+      : `<span>${when(b.at)} <small>${{ open: '열 때', import: '코드 불러오기 전', restore: '되돌리기 전' }[b.why] ?? ''}</small></span><b>${COIN()} ${fmt(b.money)} · 출진 ${fmt(b.runs)}</b>`);
     const btn = button('되돌리기', 'wear-btn small', () => {
       const r = act.restoreBackup(i, armedBak === i);
       if (r.ok) {
