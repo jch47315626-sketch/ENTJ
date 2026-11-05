@@ -49,11 +49,11 @@ const MAX_ENEMIES = 420;
 
 /**
  * 공격 재사용 줄이기 (r = every "−x%" added up) → cooldown multiplier. Up to
- * −40% it is taken as written; past that it tails off toward 0.35 (at most
- * ~3× as many swings). Added straight, gear · 결기 · 각인 · 비결 could pass
+ * −30% it is taken as written; past that it tails off toward 0.5 (at most
+ * 2× as many swings). Added straight, gear · 결기 · 각인 · 비결 could pass
  * −100% and the hero attacked every single frame.
  */
-export const hasteMul = (r) => (r <= 0.4 ? 1 - r : 0.35 + 0.25 * Math.exp(-(r - 0.4) / 0.25));
+export const hasteMul = (r) => (r <= 0.3 ? 1 - r : 0.5 + 0.2 * Math.exp(-(r - 0.3) / 0.2));
 
 class Player {
   constructor(hero, meta = {}) {

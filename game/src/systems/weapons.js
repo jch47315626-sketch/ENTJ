@@ -1,6 +1,9 @@
 import { WEAPONS } from '../data/weapons.js';
 import { TAU, angleDiff } from '../core/math.js';
 import { withOver } from './over.js';
+
+/** The fastest any weapon may swing, as a share of its own cooldown (all haste counted): ~2.2× at most. */
+const MIN_COOLDOWN = 0.45;
 import { arcFx, pixelFx } from '../render/pixelFx.js';
 
 /**
@@ -208,7 +211,8 @@ export function updateWeapon(g, dt) {
     pat.update?.(g, p, lv, s, dt);
     w.timer -= dt;
     if (w.timer > 0) continue;
-    w.timer = lv.cooldown * p.stats.haste * Math.max(0.5, 1 - (m[`${w.id}Cd`] ?? 0));
+    // All haste together (책략, gear, 비결, a weapon's own −x%) never more than ~2.2× the swings.
+    w.timer = lv.cooldown * Math.max(MIN_COOLDOWN * p.hero.stats.haste, p.stats.haste * Math.max(0.5, 1 - (m[`${w.id}Cd`] ?? 0)));
     // A pattern may return a shorter wait (e.g. nothing was in reach).
     // A second weapon's 초월 (systems/over.js) raises its damage and reach.
     const wait = main ? pat.fire(g, p, lv, s) : withOver(p, w.id, () => pat.fire(g, p, lv, s));
