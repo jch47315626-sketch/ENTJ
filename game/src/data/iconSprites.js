@@ -59,5 +59,81 @@ export const ICON_SPRITES = {
   "ui_secret": {
     "w": 64,
     "h": 57
+  },
+  "card_swift": {
+    "w": 64,
+    "h": 62
+  },
+  "ui_heart": {
+    "w": 64,
+    "h": 57
+  },
+  "ui_reroll": {
+    "w": 64,
+    "h": 64
+  },
+  "card_curse": {
+    "w": 57,
+    "h": 63
+  },
+  "card_maguni": {
+    "w": 57,
+    "h": 64
+  },
+  "ui_yeongju": {
+    "w": 44,
+    "h": 63
+  },
+  "card_momentum": {
+    "w": 64,
+    "h": 64
+  },
+  "card_tiger": {
+    "w": 63,
+    "h": 62
+  },
+  "ui_trial": {
+    "w": 47,
+    "h": 64
+  },
+  "ui_endless": {
+    "w": 64,
+    "h": 35
+  },
+  "cat_strategy": {
+    "w": 64,
+    "h": 62
+  },
+  "gear_charm": {
+    "w": 36,
+    "h": 64
+  },
+  "card_fury": {
+    "w": 64,
+    "h": 62
+  },
+  "ui_daily": {
+    "w": 62,
+    "h": 64
+  },
+  "ui_save": {
+    "w": 64,
+    "h": 47
+  },
+  "ui_up": {
+    "w": 53,
+    "h": 64
+  },
+  "ui_help": {
+    "w": 64,
+    "h": 42
+  },
+  "ui_essence": {
+    "w": 60,
+    "h": 64
+  },
+  "cat_terrain": {
+    "w": 64,
+    "h": 52
   }
 };

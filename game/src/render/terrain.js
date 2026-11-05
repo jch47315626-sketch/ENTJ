@@ -1,4 +1,6 @@
 import { TILE, rocksNear, tileBog } from '../systems/terrain.js';
+import { drawPicture } from './pixelUnit.js';
+import { UNIT_SPRITES } from '../data/unitSprites.js';
 import { TAU } from '../core/math.js';
 
 /**
@@ -116,6 +118,20 @@ export function drawRocks(ctx, g, v) {
     const T = g.stage.terrain;
     const S = STYLES[T.style];
     const demon = T.demon || T.style === 'demon';
+    // Ordinary stone: the drawn boulder (game/assets/units/rock.png), mirrored by seed.
+    const pic = !S && !demon && UNIT_SPRITES.rock;
+    if (pic) {
+      const len = r.r * 2.5, h = (len * pic.h) / pic.w;
+      drawPicture(ctx, 'rock', r.x, r.y + r.r * 0.6 - h / 2, len, r.seed > 0.5 ? Math.PI : 0);
+      if (g.stage.terrain.snow) {
+        ctx.fillStyle = 'rgba(250, 252, 255, 0.95)';
+        ctx.beginPath();
+        ctx.ellipse(r.x - r.r * 0.05, r.y - r.r * 0.55, r.r * 0.75, r.r * 0.3, -0.15, 0, TAU);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      continue;
+    }
     ctx.fillStyle = S ? S.rock : demon ? '#1e1720' : r.fallen ? '#6e655a' : '#5d5a55';
     ctx.strokeStyle = '#26231f';
     ctx.lineWidth = 3;

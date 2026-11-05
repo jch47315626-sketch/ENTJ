@@ -38,6 +38,8 @@ KEEP_MAIN = {'cart'}
 NO_HOLES = {'horse', 'pickup_rice', 'pickup_coin', 'crack', 'card_haste', 'card_caltrops'}
 # Areas to blank in the source (fractions x0, y0, x1, y1): the cart's leftover boots under it.
 ERASE = {'cart': [(0.2, 0.82, 0.42, 1.0), (0.55, 0.82, 0.8, 1.0)]}
+# Icons whose enclosed white areas are background showing through (a padlock's shackle, a knot's loops).
+ICON_HOLES = {'ui_lock', 'ui_endless'}
 SASIN = {'cheongnyong', 'jujak', 'baekho', 'hyeonmu'}
 
 
@@ -266,7 +268,7 @@ def main(pairs):
         if sid.startswith('icon:'):
             # Menu and card icons: card_<upgrade>, gear_<slot>, ui_<name>.
             iid = sid[5:]
-            im, small, bs, smooth = to_pixels(path, holes=iid not in NO_HOLES)
+            im, small, bs, smooth = to_pixels(path, holes=iid in ICON_HOLES)
             small.save(os.path.join(ICON_OUT, f'{iid}.png'))
             icons[iid] = {'w': small.width, 'h': small.height}
             print(f'{sid:22s} {path}  ->  {small.width}x{small.height}')

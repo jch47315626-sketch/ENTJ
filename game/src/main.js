@@ -176,7 +176,7 @@ function onState(state, g) {
   } else if (state === 'paused') {
     sound.stopMusic();
     hud.fillPause(g);
-    $('quitBtn').textContent = { trial: '🔥 일일 던전으로', altar: '🏯 제단으로', daily: '📅 오늘의 전장으로', endless: '♾️ 무한 전장으로' }[dungeonOfRun()] ?? '처음으로';
+    $('quitBtn').innerHTML = { trial: `${pxIcon('ui_trial', '🔥')} 일일 던전으로`, altar: `${pxIcon('ui_altar', '🏯')} 제단으로`, daily: `${pxIcon('ui_daily', '📅')} 오늘의 전장으로`, endless: `${pxIcon('ui_endless', '♾️')} 무한 전장으로` }[dungeonOfRun()] ?? '처음으로';
     showScreen('pause');
   } else if (state === 'play') {
     sound.startMusic(); // resume this field's theme
@@ -385,7 +385,7 @@ function entryButtons(g) {
     $('retryBtn').disabled = true;
   } else if (g.stage.endless) {
     const left = endlessLeft(save);
-    $('retryBtn').textContent = `🔁 다시 도전 · ♾️ ${left}/${ENDLESS_PER_DAY}`;
+    $('retryBtn').innerHTML = `🔁 다시 도전 · ${pxIcon('ui_endless', '♾️')} ${left}/${ENDLESS_PER_DAY}`;
     $('retryBtn').disabled = left <= 0;
   } else if (!g.stage.daily && !g.stage.altar) {
     const st = staminaOf(save);
@@ -710,6 +710,10 @@ const act = {
     return { ok: true, message: `불러왔어요! 냥 ${save.money.toLocaleString()}, 장비 ${save.owned.length}개.` };
   },
 };
+
+// Drawn icons on the fixed buttons of index.html.
+$('homeSave').innerHTML = pxIcon('ui_save', '💾');
+$('homeYeongjuPill').firstChild.replaceWith(document.createRange().createContextualFragment(`${pxIcon('ui_yeongju', '🔮')} `));
 
 function setMuted(m) {
   sound.setMuted(m);

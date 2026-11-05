@@ -203,5 +203,9 @@ export const UNIT_SPRITES = {
   "item_trap": {
     "w": 64,
     "h": 37
+  },
+  "rock": {
+    "w": 64,
+    "h": 47
   }
 };

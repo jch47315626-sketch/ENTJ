@@ -33,7 +33,7 @@ export function renderIntro(stage, daily = null, endless = false) {
 }
 
 /** Icon and colour per 책략 category. */
-const CAT = { 무예: '⚔️', 병법: '📜', 지세: '🌿', 보급: '🍙' };
+const CAT = Object.fromEntries(Object.entries({ 무예: ['martial', '⚔️'], 병법: ['strategy', '📜'], 지세: ['terrain', '🌿'], 보급: ['supply', '🍙'] }).map(([k, [id, e]]) => [k, pxIcon(`cat_${id}`, e)]));
 
 /** Level-up: three sticker cards that flip in one after another. */
 export function renderChoices(choices, onPick, onReroll = null, rerolls = 0) {
@@ -70,7 +70,7 @@ export function renderChoices(choices, onPick, onReroll = null, rerolls = 0) {
     const r = document.createElement('button');
     r.type = 'button';
     r.className = 'reroll-btn';
-    r.textContent = `🦉 다시 뽑기 (${rerolls})`;
+    r.innerHTML = `${pxIcon('ui_reroll', '🦉')} 다시 뽑기 (${rerolls})`;
     r.addEventListener('click', onReroll);
     box.appendChild(r);
   }
@@ -124,16 +124,16 @@ export function renderResult(g, won, extra = {}) {
   const rows = [];
   const al = extra.altar;
   if (al) {
-    rows.push(['🔮', '영주', `<span class="count-up" data-to="${al.yeongju}">+0</span>`]);
+    rows.push([pxIcon('ui_yeongju', '🔮'), '영주', `<span class="count-up" data-to="${al.yeongju}">+0</span>`]);
     rows.push(['✨', '모은 영기', `${al.wisps}개 × ${al.tier}단계${won ? ' + 평정 보너스' : ''}`]);
-    if (al.essence) rows.push(['🌟', '사신 정수', `+${al.essence}`]);
+    if (al.essence) rows.push([pxIcon('ui_essence', '🌟'), '사신 정수', `+${al.essence}`]);
     if (al.newTier) rows.push(['🏯', `제단 ${al.tier}단계 첫 평정`, `${al.tier + 1 <= al.maxTier ? `${al.tier + 1}단계 열림!` : '최고 단계!'}`]);
     rows.push(['🎟️', '남은 입장권', `${al.tickets}장`]);
   } else if (r && en) rows.push(['💎', `결기수정${en.mul && en.mul !== 1 ? ` (🎰 ×${en.mul})` : ''}`, `<span class="count-up" data-to="${r.crystals ?? 0}">+0</span>`]);
   else if (r) rows.push(['🪙', '냥', `<span class="count-up" data-to="${r.total}">+0</span>`]);
   if (r && g.opts.quick) rows.push(['⚡', '빠른 시험 모드', '냥 35%']);
   if (r?.bossBonus) rows.push(['👑', `적장 토벌 보상${g.bossMul && g.bossMul !== 1 ? ` (🎰 ×${g.bossMul})` : ''}`, `+${r.bossBonus.toLocaleString()}`]);
-  if (extra.dailyBonus) rows.push(['📅', '오늘의 전장 보상', `+${extra.dailyBonus.toLocaleString()}`]);
+  if (extra.dailyBonus) rows.push([pxIcon('ui_daily', '📅'), '오늘의 전장 보상', `+${extra.dailyBonus.toLocaleString()}`]);
   const tr = extra.trial;
   if (tr) {
     rows.push([ATTR_ICON, `${ATTR_NAME}${tr.mul && tr.mul !== 1 ? ` (🎰 ×${tr.mul})` : ''}`, `+${tr.attr.toLocaleString()}${tr.won ? '' : ' (패퇴 30%)'}`]);
