@@ -219,5 +219,13 @@ export const UNIT_SPRITES = {
   "wisp": {
     "w": 49,
     "h": 64
+  },
+  "crow_feed": {
+    "w": 49,
+    "h": 42
+  },
+  "banner": {
+    "w": 33,
+    "h": 63
   }
 };

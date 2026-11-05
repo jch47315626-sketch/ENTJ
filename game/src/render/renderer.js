@@ -1,6 +1,7 @@
 import { GROUNDS, drawGroundTile } from './ground.js';
 import { drawBogs, drawRocks } from './terrain.js';
 import { drawObjectPicture, drawPicture } from './pixelUnit.js';
+import { UNIT_SPRITES } from '../data/unitSprites.js';
 import { drawUnit, drawCart, drawCoin, drawRice, drawProjectile } from './sprites.js';
 import { clamp, TAU } from '../core/math.js';
 import { drawUltFx, drawScreenFlash } from './ultFx.js';
@@ -813,6 +814,7 @@ export class Renderer {
     ctx.beginPath();
     ctx.arc(k.x, y, 24, 0, TAU);
     ctx.fill();
+    if (drawPicture(ctx, 'crow_feed', k.x, y, 30)) return;
     ctx.strokeStyle = '#5a3a22';
     ctx.lineWidth = 3;
     ctx.lineCap = 'round';
@@ -1038,6 +1040,13 @@ export class Renderer {
     for (let i = 0; i < n; i++) {
       const ang = (i / n) * TAU;
       const x = a.x + Math.cos(ang) * a.r, y = a.y + Math.sin(ang) * a.r;
+      // The drawn banner, its foot on the ring (mirrored on every other one).
+      const pic = UNIT_SPRITES.banner;
+      if (pic) {
+        const h = 44, len = (h * pic.w) / pic.h;
+        drawPicture(ctx, 'banner', x + len * 0.4 * (i % 2 ? -1 : 1), y - h / 2, len, i % 2 ? Math.PI : 0);
+        continue;
+      }
       ctx.strokeStyle = '#2a2018';
       ctx.lineWidth = 2;
       ctx.beginPath();

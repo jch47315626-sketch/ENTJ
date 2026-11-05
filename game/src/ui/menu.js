@@ -60,6 +60,7 @@ const ENDLESS_IC = pxIcon('ui_endless', '♾️');
 const ALTAR_IC = pxIcon('ui_altar', '🏯');
 const HEART = pxIcon('ui_heart', '❤️');
 const TICKET = pxIcon('ui_ticket', '🎟️');
+const ATTR = pxIcon('ui_attr', ATTR_ICON);
 const SCROLL = pxIcon('ui_secret', '📜');
 
 // Remembered between renders: which tab or card is open on each screen.
@@ -184,7 +185,7 @@ function purse(save) {
   box.append(el('span', 'coin-pill', `${COIN()}<b>${fmt(save.money)}</b>`));
   if ((save.yeongju ?? 0) > 0 || (save.altarRuns ?? 0) > 0) box.append(el('span', 'coin-pill yj', `${YJ}<b>${fmt(save.yeongju ?? 0)}</b>`));
   if ((save.crystals ?? 0) > 0 || Object.keys(save.gyeolgi ?? {}).length) box.append(el('span', 'coin-pill gem', `💎<b>${fmt(save.crystals ?? 0)}</b>`));
-  if ((save.attrStones ?? 0) > 0) box.append(el('span', 'coin-pill attr', `${ATTR_ICON}<b>${fmt(save.attrStones)}</b>`));
+  if ((save.attrStones ?? 0) > 0) box.append(el('span', 'coin-pill attr', `${ATTR}<b>${fmt(save.attrStones)}</b>`));
   return box;
 }
 
@@ -297,7 +298,7 @@ export function renderHome(save, sel, act) {
   const tr = trialFor(save);
   const tDone = trialDone(save);
   list.append(dungeonRow(TRIAL_IC, '일일 던전', `난세 ${tr.level}단계 · ${STAGES[tr.stageId].name}`,
-    tDone ? `✅ 오늘 도전함 · ${untilTomorrow()} 뒤 새 던전` : `하루 1번 · ${ATTR_ICON} ${ATTR_NAME} +${fmt(tr.reward)}`, !tDone, () => openSheet('trial', save, sel, act)));
+    tDone ? `✅ 오늘 도전함 · ${untilTomorrow()} 뒤 새 던전` : `하루 1번 · ${ATTR} ${ATTR_NAME} +${fmt(tr.reward)}`, !tDone, () => openSheet('trial', save, sel, act)));
   const a = refreshAltar(save);
   const g = GUARDIANS[guardianOf()];
   list.append(dungeonRow(ALTAR_IC, '사신의 제단', `${g ? `${spiritIcon(g.id, g.icon)} ${g.name}` : '✨ 사신의 날'} · ${Math.max(1, save.altarTier ?? 1)}단계`,
@@ -375,7 +376,7 @@ function trialCard(save, sel, act) {
     if (r) list.append(el('li', '', `<span>${c.icon}</span><b>${c.name}${c.ranks > 1 ? ` ${'Ⅰ Ⅱ Ⅲ'.split(' ')[r - 1]}` : ''}</b><small>${c.desc(r)}</small>`));
   }
   card.append(list);
-  card.append(el('p', 'ec-rule', `오늘의 난세 패는 날마다 무작위로 바뀌어요. 평정하면 <b>${ATTR_ICON} ${ATTR_NAME} ${fmt(tr.reward)}개</b>, 패퇴해도 30%를 받아요.${tr.level >= TRIAL.relicFrom ? ` <b>🌟 난세 ${TRIAL.relicFrom}단계 이상 — 평정하면 신물이 나올 수 있어요!</b>` : ''}`));
+  card.append(el('p', 'ec-rule', `오늘의 난세 패는 날마다 무작위로 바뀌어요. 평정하면 <b>${ATTR} ${ATTR_NAME} ${fmt(tr.reward)}개</b>, 패퇴해도 30%를 받아요.${tr.level >= TRIAL.relicFrom ? ` <b>🌟 난세 ${TRIAL.relicFrom}단계 이상 — 평정하면 신물이 나올 수 있어요!</b>` : ''}`));
   const btn = button(done ? (save.trial?.cleared ? '✅ 오늘 평정 완료' : '오늘 도전 끝 · 내일 다시') : '🔥 일일 던전 도전', 'trial-btn', () => act.startTrial(), done);
   card.append(btn);
   return card;
@@ -637,13 +638,13 @@ function imprintRow(save, item, act) {
   const have = save.attrStones ?? 0;
   const row = el('div', `ic-imprint${rec ? ' on' : ''}`);
   if (rec) row.style.setProperty('--el', ELEMENTS[rec.el].color);
-  row.append(el('span', 'im-text', rec ? imprintText(rec) : `${ATTR_ICON} 속성 각인 — 속성결정으로 오행의 힘을 새겨요`));
+  row.append(el('span', 'im-text', rec ? imprintText(rec) : `${ATTR} 속성 각인 — 속성결정으로 오행의 힘을 새겨요`));
   const btns = el('span', 'im-btns');
   if (rec && rec.lv < IMPRINT.max) {
     const cost = imprintCost(rec.lv);
-    btns.append(button(`${UP} Lv${rec.lv + 1} <small>${ATTR_ICON}${fmt(cost)}</small>`, 'io-btn im-up', () => act.imprintUp(item), have < cost));
+    btns.append(button(`${UP} Lv${rec.lv + 1} <small>${ATTR}${fmt(cost)}</small>`, 'io-btn im-up', () => act.imprintUp(item), have < cost));
   } else if (rec) btns.append(tag('최대'));
-  btns.append(button(rec ? '🔄' : `새기기 <small>${ATTR_ICON}${fmt(imprintCost(0))}</small>`, 'io-btn', () => {
+  btns.append(button(rec ? '🔄' : `새기기 <small>${ATTR}${fmt(imprintCost(0))}</small>`, 'io-btn', () => {
     ui.imprintPick = ui.imprintPick === item.id ? null : item.id;
     act.refresh();
   }));
@@ -651,7 +652,7 @@ function imprintRow(save, item, act) {
   if (ui.imprintPick === item.id) {
     const cost = rec ? IMPRINT.change : imprintCost(0);
     const pick = el('div', 'im-pick');
-    pick.append(el('small', '', rec ? `속성 바꾸기 (Lv${rec.lv} 그대로) · ${ATTR_ICON}${fmt(cost)}` : `처음 각인 (Lv1) · ${ATTR_ICON}${fmt(cost)}`));
+    pick.append(el('small', '', rec ? `속성 바꾸기 (Lv${rec.lv} 그대로) · ${ATTR}${fmt(cost)}` : `처음 각인 (Lv1) · ${ATTR}${fmt(cost)}`));
     for (const id of ELEMENT_ORDER) {
       const E = ELEMENTS[id];
       const b = button(`${E.icon} ${E.name}<small>${E.text(rec?.lv ?? 1)}</small>`, 'im-el', () => {
@@ -670,7 +671,7 @@ function imprintRow(save, item, act) {
 function imprintSetCard(save, h) {
   const recs = SLOTS.map((sl) => save.imprint?.[outfit(save, h.id)[sl.id]]).filter(Boolean);
   const card = el('div', 'imprint-sets');
-  card.append(el('b', 'is-title', `${ATTR_ICON} 속성 각인 세트 <small>${ATTR_NAME} ${fmt(save.attrStones ?? 0)} · 같은 속성 2 · 4 · 6부위</small>`));
+  card.append(el('b', 'is-title', `${ATTR} 속성 각인 세트 <small>${ATTR_NAME} ${fmt(save.attrStones ?? 0)} · 같은 속성 2 · 4 · 6부위</small>`));
   const count = {};
   for (const r of recs) count[r.el] = (count[r.el] ?? 0) + 1;
   const tiers = imprintSets(recs);
@@ -1438,7 +1439,7 @@ export function renderReward(save, sel, act) {
     if (!done && onGo) row.append(button(btnText, 'plain-btn small', onGo));
     today.append(row);
   };
-  todo(trialDone(save), TRIAL_IC, '일일 던전', trialDone(save) ? '오늘 도전했어요' : `난세 ${trT.level}단계 · ${ATTR_ICON} ${ATTR_NAME} +${fmt(trT.reward)}`, '도전', () => act.openSheet('trial'));
+  todo(trialDone(save), TRIAL_IC, '일일 던전', trialDone(save) ? '오늘 도전했어요' : `난세 ${trT.level}단계 · ${ATTR} ${ATTR_NAME} +${fmt(trT.reward)}`, '도전', () => act.openSheet('trial'));
   const eLeft = endlessLeft(save);
   todo(eLeft <= 0, ENDLESS_IC, '무한 전장', eLeft > 0 ? `오늘 ${eLeft}/${ENDLESS_PER_DAY}번 남음 · 💎 결기수정` : '오늘 도전을 다 했어요', '도전', () => act.openSheet('endless'));
   todo(a.tickets <= 0, ALTAR_IC, '사신의 제단', a.tickets > 0 ? `입장권 ${a.tickets}장 남음 · 영기를 모아 영주로` : '오늘 입장권을 다 썼어요', '입장', () => act.openSheet('altar'));

@@ -159,5 +159,17 @@ export const ICON_SPRITES = {
   "card_boulder": {
     "w": 64,
     "h": 53
+  },
+  "card_bArmor": {
+    "w": 59,
+    "h": 64
+  },
+  "ui_altar": {
+    "w": 64,
+    "h": 61
+  },
+  "ui_attr": {
+    "w": 58,
+    "h": 65
   }
 };
