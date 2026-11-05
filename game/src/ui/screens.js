@@ -4,6 +4,7 @@ import { ATTR_ICON, ATTR_NAME } from '../data/trial.js';
 import { SPIRITS } from '../data/spirits.js';
 import { spiritIcon } from '../render/spiritIcon.js';
 import { josa } from '../core/korean.js';
+import { pxIcon } from './pxIcon.js';
 
 const $ = (id) => document.getElementById(id);
 const MENUS = ['home', 'heroes', 'grow', 'map', 'prep', 'nanse', 'codex', 'spirit', 'reward'];
@@ -35,7 +36,7 @@ export function renderIntro(stage, daily = null, endless = false) {
 }
 
 /** Icon and colour per 책략 category. */
-const CAT = { 무예: '⚔️', 병법: '📜', 지세: '🌿', 보급: '🍙' };
+const CAT = Object.fromEntries(Object.entries({ 무예: ['martial', '⚔️'], 병법: ['strategy', '📜'], 지세: ['terrain', '🌿'], 보급: ['supply', '🍙'] }).map(([k, [id, e]]) => [k, pxIcon(`cat_${id}`, e)]));
 
 /** Level-up: three sticker cards that flip in one after another. */
 export function renderChoices(choices, onPick, onReroll = null, rerolls = 0) {
@@ -60,7 +61,7 @@ export function renderChoices(choices, onPick, onReroll = null, rerolls = 0) {
     b.innerHTML = `
       <span class="pc-sticker">${CAT[c.category] ?? '✨'} ${c.category}</span>
       <span class="pc-key">${i + 1}</span>
-      <span class="pc-icon">${c.evolution ? '🌟' : CAT[c.category] ?? '✨'}</span>
+      <span class="pc-icon">${c.evolution ? pxIcon('card_evolution', '🌟') : pxIcon(`card_${c.id}`, CAT[c.category] ?? '✨')}</span>
       <b class="pc-name">${c.name}</b>
       <span class="pc-lvl">${lvl}</span>
       <span class="pc-desc">${c.desc}</span>${c.evoFor ? c.evoFor.map((e) => `
@@ -72,7 +73,7 @@ export function renderChoices(choices, onPick, onReroll = null, rerolls = 0) {
     const r = document.createElement('button');
     r.type = 'button';
     r.className = 'reroll-btn';
-    r.textContent = `🦉 다시 뽑기 (${rerolls})`;
+    r.innerHTML = `${pxIcon('ui_reroll', '🦉')} 다시 뽑기 (${rerolls})`;
     r.addEventListener('click', onReroll);
     box.appendChild(r);
   }
@@ -118,7 +119,7 @@ export function renderResult(g, won, extra = {}) {
   $('nextBtn').hidden = !(won && g.stage.next) || !!g.stage.daily || !!g.stage.trial || !!en;
   // Dungeons: try again right away, or go back to that dungeon's own screen.
   const mode = g.stage.trial ? 'trial' : g.stage.altar ? 'altar' : g.stage.daily ? 'daily' : g.stage.endless ? 'endless' : null;
-  $('toMapBtn').textContent = { trial: '🔥 일일 던전으로', altar: '🏯 제단으로', daily: '📅 오늘의 전장으로', endless: '♾️ 무한 전장으로' }[mode] ?? '🗺️ 전장으로';
+  $('toMapBtn').innerHTML = { trial: `${pxIcon('ui_trial', '🔥')} 일일 던전으로`, altar: `${pxIcon('ui_altar', '🏯')} 제단으로`, daily: `${pxIcon('ui_daily', '📅')} 오늘의 전장으로`, endless: `${pxIcon('ui_endless', '♾️')} 무한 전장으로` }[mode] ?? `${pxIcon('ui_map', '🗺️')} 전장으로`;
   const tickets = extra.altar?.tickets;
   $('retryBtn').textContent = mode === 'altar' ? `🔁 다시 도전 · 🎟️ ${tickets ?? 0}` : mode ? '🔁 다시 도전' : '다시 출진';
   $('retryBtn').disabled = mode === 'altar' && !(tickets > 0);
@@ -126,26 +127,26 @@ export function renderResult(g, won, extra = {}) {
   const rows = [];
   const al = extra.altar;
   if (al) {
-    rows.push(['🔮', '영주', `<span class="count-up" data-to="${al.yeongju}">+0</span>`]);
+    rows.push([pxIcon('ui_yeongju', '🔮'), '영주', `<span class="count-up" data-to="${al.yeongju}">+0</span>`]);
     rows.push(['✨', '모은 영기', `${al.wisps}개 × ${al.tier}단계${won ? ' + 평정 보너스' : ''}`]);
-    if (al.essence) rows.push(['🌟', '사신 정수', `+${al.essence}`]);
+    if (al.essence) rows.push([pxIcon('ui_essence', '🌟'), '사신 정수', `+${al.essence}`]);
     if (al.newTier) rows.push(['🏯', `제단 ${al.tier}단계 첫 평정`, `${al.tier + 1 <= al.maxTier ? `${al.tier + 1}단계 열림!` : '최고 단계!'}`]);
     rows.push(['🎟️', '남은 입장권', `${al.tickets}장`]);
-  } else if (r && en) rows.push(['💎', `결기수정${en.mul && en.mul !== 1 ? ` (🎰 ×${en.mul})` : ''}`, `<span class="count-up" data-to="${r.crystals ?? 0}">+0</span>`]);
+  } else if (r && en) rows.push([pxIcon('ui_gyeolgi', '💎'), `결기수정${en.mul && en.mul !== 1 ? ` (${pxIcon('ui_roulette', '🎰')} ×${en.mul})` : ''}`, `<span class="count-up" data-to="${r.crystals ?? 0}">+0</span>`]);
   else if (r) rows.push(['🪙', '냥', `<span class="count-up" data-to="${r.total}">+0</span>`]);
   if (r && g.opts.quick) rows.push(['⚡', '빠른 시험 모드', '냥 35%']);
-  if (r?.bossBonus) rows.push(['👑', `적장 토벌 보상${g.bossMul && g.bossMul !== 1 ? ` (🎰 ×${g.bossMul})` : ''}`, `+${r.bossBonus.toLocaleString()}`]);
-  if (extra.dailyBonus) rows.push(['📅', '오늘의 전장 보상', `+${extra.dailyBonus.toLocaleString()}`]);
+  if (r?.bossBonus) rows.push([pxIcon('ui_crown', '👑'), `적장 토벌 보상${g.bossMul && g.bossMul !== 1 ? ` (${pxIcon('ui_roulette', '🎰')} ×${g.bossMul})` : ''}`, `+${r.bossBonus.toLocaleString()}`]);
+  if (extra.dailyBonus) rows.push([pxIcon('ui_daily', '📅'), '오늘의 전장 보상', `+${extra.dailyBonus.toLocaleString()}`]);
   const tr = extra.trial;
   if (tr) {
-    rows.push([ATTR_ICON, `${ATTR_NAME}${tr.mul && tr.mul !== 1 ? ` (🎰 ×${tr.mul})` : ''}`, `+${tr.attr.toLocaleString()}${tr.won ? '' : ' (패퇴 30%)'}`]);
+    rows.push([pxIcon('ui_attr', ATTR_ICON), `${ATTR_NAME}${tr.mul && tr.mul !== 1 ? ` (${pxIcon('ui_roulette', '🎰')} ×${tr.mul})` : ''}`, `+${tr.attr.toLocaleString()}${tr.won ? '' : ' (패퇴 30%)'}`]);
     rows.push(['🔥', `일일 던전 · 난세 ${tr.level}단계`, tr.won ? '평정!' : '패퇴']);
     if (tr.relic) rows.push(['🌟', `신물 획득 · ${tr.relic}`, '획득!']);
   }
   rows.push(['⭐', '공훈', `Lv ${g.player.level}`]);
   rows.push(['⚔️', '처치', `${g.kills}`]);
   rows.push(['⏱️', '버틴 시간', fmt(g.time)]);
-  for (const u of extra.unlocks ?? []) rows.push(['🏆', `업적 · ${u}`, '달성!']);
+  for (const u of extra.unlocks ?? []) rows.push([pxIcon('ui_trophy', '🏆'), `업적 · ${u}`, '달성!']);
   if (extra.newFoes) rows.push(['📖', '도감에 새 적', `+${extra.newFoes}`]);
   if (extra.spiritGift) rows.push([spiritIcon(extra.spiritGift, SPIRITS[extra.spiritGift].icon), `첫 영물 · ${josa(SPIRITS[extra.spiritGift].name, '이')} 따라왔다!`, '동행!']);
   $('resultRows').innerHTML = rows.map(([i, k, v], n) => `<li style="--i:${n}"><span>${i} ${k}</span><b>${v}</b></li>`).join('');

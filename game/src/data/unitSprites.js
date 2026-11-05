@@ -203,5 +203,33 @@ export const UNIT_SPRITES = {
   "item_trap": {
     "w": 64,
     "h": 37
+  },
+  "rock_fallen": {
+    "w": 64,
+    "h": 47
+  },
+  "rock": {
+    "w": 63,
+    "h": 52
+  },
+  "caltrop": {
+    "w": 49,
+    "h": 47
+  },
+  "wisp": {
+    "w": 49,
+    "h": 64
+  },
+  "crow_feed": {
+    "w": 49,
+    "h": 42
+  },
+  "banner": {
+    "w": 33,
+    "h": 63
+  },
+  "bog": {
+    "w": 64,
+    "h": 51
   }
 };

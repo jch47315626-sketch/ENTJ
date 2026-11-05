@@ -1,4 +1,5 @@
 import { Game } from './game.js';
+import { pxIcon } from './ui/pxIcon.js';
 import { Renderer } from './render/renderer.js';
 import { Input } from './core/input.js';
 import { Hud } from './ui/hud.js';
@@ -178,7 +179,7 @@ function onState(state, g) {
   } else if (state === 'paused') {
     sound.stopMusic();
     hud.fillPause(g);
-    $('quitBtn').textContent = { trial: '🔥 일일 던전으로', altar: '🏯 제단으로', daily: '📅 오늘의 전장으로', endless: '♾️ 무한 전장으로' }[dungeonOfRun()] ?? '처음으로';
+    $('quitBtn').innerHTML = { trial: `${pxIcon('ui_trial', '🔥')} 일일 던전으로`, altar: `${pxIcon('ui_altar', '🏯')} 제단으로`, daily: `${pxIcon('ui_daily', '📅')} 오늘의 전장으로`, endless: `${pxIcon('ui_endless', '♾️')} 무한 전장으로` }[dungeonOfRun()] ?? '처음으로';
     showScreen('pause');
   } else if (state === 'play') {
     sound.startMusic(); // resume this field's theme
@@ -378,7 +379,7 @@ function entryButtons(g) {
     $('retryBtn').disabled = true;
   } else if (g.stage.endless) {
     const left = endlessLeft(save);
-    $('retryBtn').textContent = `🔁 다시 도전 · ♾️ ${left}/${ENDLESS_PER_DAY}`;
+    $('retryBtn').innerHTML = `🔁 다시 도전 · ${pxIcon('ui_endless', '♾️')} ${left}/${ENDLESS_PER_DAY}`;
     $('retryBtn').disabled = left <= 0;
   } else if (!g.stage.daily && !g.stage.altar) {
     const st = staminaOf(save);
@@ -720,11 +721,20 @@ function replaceSave(next, why) {
   writeSave(save);
   refresh();
 }
+// Drawn icons on the fixed buttons of index.html.
+$('homeSave').innerHTML = pxIcon('ui_save', '💾');
+$('homeCrystalPill').firstChild.replaceWith(document.createRange().createContextualFragment(`${pxIcon('ui_gyeolgi', '💎')} `));
+$('homeCoupon').innerHTML = pxIcon('ui_gift', '🎁');
+$('pauseBtn').innerHTML = pxIcon('ui_pause', '⏸');
+for (const e of document.querySelectorAll('.nav-emoji')) if (e.textContent === '🎁') e.innerHTML = pxIcon('ui_gift', '🎁');
+$('homeYeongjuPill').firstChild.replaceWith(document.createRange().createContextualFragment(`${pxIcon('ui_yeongju', '🔮')} `));
 
 function setMuted(m) {
   sound.setMuted(m);
   $('soundOn').checked = !m;
-  $('muteBtn').textContent = m ? '🔇' : '🔊';
+  $('muteBtn').innerHTML = m ? pxIcon('ui_mute', '🔇') : pxIcon('ui_sound', '🔊');
+  for (const e of document.querySelectorAll('.snd-on')) e.innerHTML = pxIcon('ui_sound', '🔊');
+  for (const e of document.querySelectorAll('.snd-off')) e.innerHTML = pxIcon('ui_mute', '🔇');
   $('muteToggle').textContent = m ? '소리 켜기' : '소리 끄기';
 }
 

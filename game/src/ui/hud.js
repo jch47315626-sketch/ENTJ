@@ -1,4 +1,5 @@
 import { UPGRADES, FALLBACKS, evolutionStatus } from '../data/upgrades.js';
+import { pxIcon } from './pxIcon.js';
 import { currentWeaponLevel } from '../systems/weapons.js';
 import { WEAPONS } from '../data/weapons.js';
 
@@ -151,7 +152,7 @@ export class Hud {
     const box = document.createElement('div');
     box.id = 'roulette';
     box.className = 'roulette';
-    box.innerHTML = `<div class="rl-title">🎰 황금 룰렛</div><div class="rl-pointer">▼</div>
+    box.innerHTML = `<div class="rl-title">${pxIcon('ui_roulette', '🎰')} 황금 룰렛</div><div class="rl-pointer">▼</div>
       <div class="rl-wheel" style="background: conic-gradient(${stops})">${r.wheel
         .map((m, i) => `<span class="rl-slice${m >= 5 ? ' big' : ''}" style="transform: rotate(${i * seg + seg / 2}deg) translateY(-78px)">×${m}</span>`)
         .join('')}<i class="rl-lines" style="background: repeating-conic-gradient(rgba(60,30,0,0.55) 0deg 1deg, transparent 1deg ${seg}deg)"></i><b class="rl-hub">金</b></div>

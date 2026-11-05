@@ -1,4 +1,6 @@
 import { TILE, rocksNear, tileBog } from '../systems/terrain.js';
+import { drawPicture } from './pixelUnit.js';
+import { UNIT_SPRITES } from '../data/unitSprites.js';
 import { TAU } from '../core/math.js';
 
 /**
@@ -73,6 +75,16 @@ export function drawBogs(ctx, g, v) {
       ctx.fill();
       continue;
     }
+    // The drawn bog (game/assets/units/bog.png), with a slow ripple on the water.
+    if (UNIT_SPRITES.bog && drawPicture(ctx, 'bog', b.x, b.y, b.rx * 2.5, (tx + ty) % 2 ? Math.PI : 0)) {
+      const k = (((g.time * 0.4 + b.x * 0.01) % 1) + 1) % 1;
+      ctx.strokeStyle = `rgba(190, 200, 140, ${0.3 * (1 - k)})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(b.x, b.y, b.rx * (0.2 + 0.5 * k), b.ry * (0.2 + 0.5 * k), 0, 0, TAU);
+      ctx.stroke();
+      continue;
+    }
     ctx.fillStyle = 'rgba(48, 58, 34, 0.85)';
     ctx.beginPath();
     ctx.ellipse(b.x, b.y, b.rx, b.ry, 0, 0, TAU);
@@ -116,6 +128,20 @@ export function drawRocks(ctx, g, v) {
     const T = g.stage.terrain;
     const S = STYLES[T.style];
     const demon = T.demon || T.style === 'demon';
+    // Ordinary stone: the drawn boulder (game/assets/units/rock.png), mirrored by seed.
+    const id = r.fallen ? 'rock_fallen' : 'rock', pic = !S && !demon && UNIT_SPRITES[id];
+    if (pic) {
+      const len = r.r * 2.5, h = (len * pic.h) / pic.w;
+      drawPicture(ctx, id, r.x, r.y + r.r * 0.6 - h / 2, len, r.seed > 0.5 ? Math.PI : 0);
+      if (g.stage.terrain.snow) {
+        ctx.fillStyle = 'rgba(250, 252, 255, 0.95)';
+        ctx.beginPath();
+        ctx.ellipse(r.x - r.r * 0.05, r.y - r.r * 0.55, r.r * 0.75, r.r * 0.3, -0.15, 0, TAU);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      continue;
+    }
     ctx.fillStyle = S ? S.rock : demon ? '#1e1720' : r.fallen ? '#6e655a' : '#5d5a55';
     ctx.strokeStyle = '#26231f';
     ctx.lineWidth = 3;

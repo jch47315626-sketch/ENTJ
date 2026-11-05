@@ -1,6 +1,7 @@
 import { GROUNDS, drawGroundTile } from './ground.js';
 import { drawBogs, drawRocks } from './terrain.js';
 import { drawObjectPicture, drawPicture } from './pixelUnit.js';
+import { UNIT_SPRITES } from '../data/unitSprites.js';
 import { drawUnit, drawCart, drawCoin, drawRice, drawProjectile } from './sprites.js';
 import { clamp, TAU } from '../core/math.js';
 import { drawUltFx, drawScreenFlash } from './ultFx.js';
@@ -693,6 +694,7 @@ export class Renderer {
     ctx.quadraticCurveTo(k.x + Math.cos(a) * 14, k.y + Math.sin(a) * 14 + Math.sin(time * 8 + k.seed * 5) * 4, k.x + Math.cos(a) * 22, k.y + Math.sin(a) * 22);
     ctx.lineTo(k.x + Math.cos(a - 1.6) * 6, k.y + Math.sin(a - 1.6) * 6);
     ctx.fill();
+    if (drawPicture(ctx, 'wisp', k.x, k.y - 4, 18 * pulse)) return;
     ctx.fillStyle = '#e9fff8';
     ctx.strokeStyle = 'rgba(40, 140, 120, 0.9)';
     ctx.lineWidth = 1.5;
@@ -836,6 +838,12 @@ export class Renderer {
     ctx.arc(p.x, p.y, 120, 0, TAU);
     ctx.stroke();
     ctx.setLineDash([]);
+    // Iron caltrops strewn on the ring (the drawn one where there is a picture).
+    const n = 4 + lv * 2;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * TAU + i * 0.7, d = 120 * (0.55 + 0.4 * ((i * 0.618) % 1));
+      drawPicture(ctx, 'caltrop', p.x + Math.cos(a) * d, p.y + Math.sin(a) * d, 16, i % 2 ? Math.PI : 0);
+    }
   }
 
   /** 감나무 가지: a twig with two ripe persimmons, bobbing with a soft glow. */
@@ -846,6 +854,7 @@ export class Renderer {
     ctx.beginPath();
     ctx.arc(k.x, y, 24, 0, TAU);
     ctx.fill();
+    if (drawPicture(ctx, 'crow_feed', k.x, y, 30)) return;
     ctx.strokeStyle = '#5a3a22';
     ctx.lineWidth = 3;
     ctx.lineCap = 'round';
@@ -1071,6 +1080,13 @@ export class Renderer {
     for (let i = 0; i < n; i++) {
       const ang = (i / n) * TAU;
       const x = a.x + Math.cos(ang) * a.r, y = a.y + Math.sin(ang) * a.r;
+      // The drawn banner, its foot on the ring (mirrored on every other one).
+      const pic = UNIT_SPRITES.banner;
+      if (pic) {
+        const h = 44, len = (h * pic.w) / pic.h;
+        drawPicture(ctx, 'banner', x + len * 0.4 * (i % 2 ? -1 : 1), y - h / 2, len, i % 2 ? Math.PI : 0);
+        continue;
+      }
       ctx.strokeStyle = '#2a2018';
       ctx.lineWidth = 2;
       ctx.beginPath();
