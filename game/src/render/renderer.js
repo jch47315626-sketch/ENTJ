@@ -653,6 +653,7 @@ export class Renderer {
     ctx.quadraticCurveTo(k.x + Math.cos(a) * 14, k.y + Math.sin(a) * 14 + Math.sin(time * 8 + k.seed * 5) * 4, k.x + Math.cos(a) * 22, k.y + Math.sin(a) * 22);
     ctx.lineTo(k.x + Math.cos(a - 1.6) * 6, k.y + Math.sin(a - 1.6) * 6);
     ctx.fill();
+    if (drawPicture(ctx, 'wisp', k.x, k.y - 4, 18 * pulse)) return;
     ctx.fillStyle = '#e9fff8';
     ctx.strokeStyle = 'rgba(40, 140, 120, 0.9)';
     ctx.lineWidth = 1.5;
@@ -796,6 +797,12 @@ export class Renderer {
     ctx.arc(p.x, p.y, 120, 0, TAU);
     ctx.stroke();
     ctx.setLineDash([]);
+    // Iron caltrops strewn on the ring (the drawn one where there is a picture).
+    const n = 4 + lv * 2;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * TAU + i * 0.7, d = 120 * (0.55 + 0.4 * ((i * 0.618) % 1));
+      drawPicture(ctx, 'caltrop', p.x + Math.cos(a) * d, p.y + Math.sin(a) * d, 16, i % 2 ? Math.PI : 0);
+    }
   }
 
   /** 감나무 가지: a twig with two ripe persimmons, bobbing with a soft glow. */

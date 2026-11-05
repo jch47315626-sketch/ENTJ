@@ -204,8 +204,20 @@ export const UNIT_SPRITES = {
     "w": 64,
     "h": 37
   },
-  "rock": {
+  "rock_fallen": {
     "w": 64,
     "h": 47
+  },
+  "rock": {
+    "w": 63,
+    "h": 52
+  },
+  "caltrop": {
+    "w": 49,
+    "h": 47
+  },
+  "wisp": {
+    "w": 49,
+    "h": 64
   }
 };

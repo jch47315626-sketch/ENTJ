@@ -119,10 +119,10 @@ export function drawRocks(ctx, g, v) {
     const S = STYLES[T.style];
     const demon = T.demon || T.style === 'demon';
     // Ordinary stone: the drawn boulder (game/assets/units/rock.png), mirrored by seed.
-    const pic = !S && !demon && UNIT_SPRITES.rock;
+    const id = r.fallen ? 'rock_fallen' : 'rock', pic = !S && !demon && UNIT_SPRITES[id];
     if (pic) {
       const len = r.r * 2.5, h = (len * pic.h) / pic.w;
-      drawPicture(ctx, 'rock', r.x, r.y + r.r * 0.6 - h / 2, len, r.seed > 0.5 ? Math.PI : 0);
+      drawPicture(ctx, id, r.x, r.y + r.r * 0.6 - h / 2, len, r.seed > 0.5 ? Math.PI : 0);
       if (g.stage.terrain.snow) {
         ctx.fillStyle = 'rgba(250, 252, 255, 0.95)';
         ctx.beginPath();

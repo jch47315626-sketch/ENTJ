@@ -59,6 +59,7 @@ const TRIAL_IC = pxIcon('ui_trial', '🔥');
 const ENDLESS_IC = pxIcon('ui_endless', '♾️');
 const ALTAR_IC = pxIcon('ui_altar', '🏯');
 const HEART = pxIcon('ui_heart', '❤️');
+const TICKET = pxIcon('ui_ticket', '🎟️');
 const SCROLL = pxIcon('ui_secret', '📜');
 
 // Remembered between renders: which tab or card is open on each screen.
@@ -300,7 +301,7 @@ export function renderHome(save, sel, act) {
   const a = refreshAltar(save);
   const g = GUARDIANS[guardianOf()];
   list.append(dungeonRow(ALTAR_IC, '사신의 제단', `${g ? `${spiritIcon(g.id, g.icon)} ${g.name}` : '✨ 사신의 날'} · ${Math.max(1, save.altarTier ?? 1)}단계`,
-    `🎟️ 입장권 ${a.tickets}/${ALTAR_TICKETS.cap}${save.spiritGift ? '' : ` · ${PAW} ${Math.max(1, FIRST_SPIRIT_RUNS - altarRunsDone(save))}판 더 돌면 첫 영물`}`, a.tickets > 0, () => openSheet('altar', save, sel, act)));
+    `${TICKET} 입장권 ${a.tickets}/${ALTAR_TICKETS.cap}${save.spiritGift ? '' : ` · ${PAW} ${Math.max(1, FIRST_SPIRIT_RUNS - altarRunsDone(save))}판 더 돌면 첫 영물`}`, a.tickets > 0, () => openSheet('altar', save, sel, act)));
   const em = ENDLESS_MAPS[endlessMapOf(save)];
   const best = save.endless?.[em.id];
   const mmss = (t) => `${Math.floor(t / 60)}분 ${String(Math.floor(t % 60)).padStart(2, '0')}초`;
@@ -409,7 +410,7 @@ function altarCard(save, sel, act) {
   card.append(button(`${PAW} 영물 뽑기·동행 <small>영물 ${Object.keys(save.spirits ?? {}).length}/${SPIRIT_LIST.length}</small>`, 'plain-btn small ac-spirit', () => goPower(act, 'spirit')));
   card.append(el('p', 'ec-rule', `${josa(HEROES[sel.hero].name, '으로')} 출전 · 떠도는 <b>영기</b>를 모으면 판이 끝날 때 <b>영주</b>가 돼요. 2분 30초 뒤 수호 영수를 쓰러뜨리면 보너스!`));
   const none = a.tickets <= 0;
-  if (g) card.append(button(none ? '🎟️ 오늘의 입장권을 다 썼어요' : `${spiritIcon(g.id, g.icon)} ${g.name}의 제단 입장`, 'altar-btn go', () => act.startAltar(gid, tier), none));
+  if (g) card.append(button(none ? `${TICKET} 오늘의 입장권을 다 썼어요` : `${spiritIcon(g.id, g.icon)} ${g.name}의 제단 입장`, 'altar-btn go', () => act.startAltar(gid, tier), none));
   else {
     const pick = el('div', 'ac-pick');
     for (const G of Object.values(GUARDIANS)) {
@@ -418,7 +419,7 @@ function altarCard(save, sel, act) {
       pick.append(b);
     }
     card.append(pick);
-    if (none) card.append(el('p', 'ac-lock', '🎟️ 오늘의 입장권을 다 썼어요'));
+    if (none) card.append(el('p', 'ac-lock', `${TICKET} 오늘의 입장권을 다 썼어요`));
   }
   return card;
 }

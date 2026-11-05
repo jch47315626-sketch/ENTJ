@@ -135,5 +135,29 @@ export const ICON_SPRITES = {
   "cat_terrain": {
     "w": 64,
     "h": 52
+  },
+  "card_might": {
+    "w": 61,
+    "h": 64
+  },
+  "card_bMight": {
+    "w": 58,
+    "h": 64
+  },
+  "card_bLeech": {
+    "w": 45,
+    "h": 64
+  },
+  "ui_ticket": {
+    "w": 64,
+    "h": 43
+  },
+  "gear_feet": {
+    "w": 62,
+    "h": 64
+  },
+  "card_boulder": {
+    "w": 64,
+    "h": 53
   }
 };
