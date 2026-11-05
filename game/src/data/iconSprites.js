@@ -19,5 +19,25 @@ export const ICON_SPRITES = {
   "card_shin": {
     "w": 64,
     "h": 62
+  },
+  "ui_map": {
+    "w": 64,
+    "h": 41
+  },
+  "gear_head": {
+    "w": 49,
+    "h": 64
+  },
+  "gear_belt": {
+    "w": 64,
+    "h": 36
+  },
+  "ui_mute": {
+    "w": 64,
+    "h": 55
+  },
+  "gear_body": {
+    "w": 62,
+    "h": 64
   }
 };

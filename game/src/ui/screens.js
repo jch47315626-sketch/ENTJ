@@ -116,7 +116,7 @@ export function renderResult(g, won, extra = {}) {
   $('nextBtn').hidden = !(won && g.stage.next) || !!g.stage.daily || !!g.stage.trial || !!en;
   // Dungeons: try again right away, or go back to that dungeon's own screen.
   const mode = g.stage.trial ? 'trial' : g.stage.altar ? 'altar' : g.stage.daily ? 'daily' : g.stage.endless ? 'endless' : null;
-  $('toMapBtn').textContent = { trial: '🔥 일일 던전으로', altar: '🏯 제단으로', daily: '📅 오늘의 전장으로', endless: '♾️ 무한 전장으로' }[mode] ?? '🗺️ 전장으로';
+  $('toMapBtn').innerHTML = { trial: `${pxIcon('ui_trial', '🔥')} 일일 던전으로`, altar: `${pxIcon('ui_altar', '🏯')} 제단으로`, daily: `${pxIcon('ui_daily', '📅')} 오늘의 전장으로`, endless: `${pxIcon('ui_endless', '♾️')} 무한 전장으로` }[mode] ?? `${pxIcon('ui_map', '🗺️')} 전장으로`;
   const tickets = extra.altar?.tickets;
   $('retryBtn').textContent = mode === 'altar' ? `🔁 다시 도전 · 🎟️ ${tickets ?? 0}` : mode ? '🔁 다시 도전' : '다시 출진';
   $('retryBtn').disabled = mode === 'altar' && !(tickets > 0);

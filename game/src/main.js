@@ -1,4 +1,5 @@
 import { Game } from './game.js';
+import { pxIcon } from './ui/pxIcon.js';
 import { Renderer } from './render/renderer.js';
 import { Input } from './core/input.js';
 import { Hud } from './ui/hud.js';
@@ -713,7 +714,9 @@ const act = {
 function setMuted(m) {
   sound.setMuted(m);
   $('soundOn').checked = !m;
-  $('muteBtn').textContent = m ? '🔇' : '🔊';
+  $('muteBtn').innerHTML = m ? pxIcon('ui_mute', '🔇') : pxIcon('ui_sound', '🔊');
+  for (const e of document.querySelectorAll('.snd-on')) e.innerHTML = pxIcon('ui_sound', '🔊');
+  for (const e of document.querySelectorAll('.snd-off')) e.innerHTML = pxIcon('ui_mute', '🔇');
   $('muteToggle').textContent = m ? '소리 켜기' : '소리 끄기';
 }
 
