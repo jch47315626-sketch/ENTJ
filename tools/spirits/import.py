@@ -8,7 +8,7 @@ white) into real small pixel sprites for the game.
   python3 tools/spirits/import.py hero:wanggeon_front 앞.png hero:wanggeon_back 뒤.png hero:wanggeon_weapon 검.png
 
 Ids starting with "unit:" are soldiers and generals (enemy, boss or ally id; a boss's second form is <id>_2)
-and go to game/assets/units/ and game/src/data/unitSprites.js. Ids starting with "hero:" are hero pictures (<hero>_front, _back, _weapon) and go to
+and go to game/assets/units/ and game/src/data/unitSprites.js. Ids starting with "icon:" are menu/card icons (game/assets/icons/, game/src/data/iconSprites.js). Ids starting with "hero:" are hero pictures (<hero>_front, _back, _weapon) and go to
 game/assets/heroes/ and game/src/data/heroSprites.js instead.
 
 For each: the white background (if any) touching the edge is removed, the
@@ -30,10 +30,12 @@ UNIT_OUT = os.path.join(ROOT, 'game/assets/units')
 UNIT_MANIFEST = os.path.join(ROOT, 'game/src/data/unitSprites.js')
 HERO_OUT = os.path.join(ROOT, 'game/assets/heroes')
 HERO_MANIFEST = os.path.join(ROOT, 'game/src/data/heroSprites.js')
+ICON_OUT = os.path.join(ROOT, 'game/assets/icons')
+ICON_MANIFEST = os.path.join(ROOT, 'game/src/data/iconSprites.js')
 # Pictures with stray leftovers (a cart that came with a floating helmet and boots): keep the main body only.
 KEEP_MAIN = {'cart'}
 # White subjects: never clear enclosed light-grey patches (that is their body, not a hole).
-NO_HOLES = {'horse', 'pickup_rice', 'pickup_coin', 'crack'}
+NO_HOLES = {'horse', 'pickup_rice', 'pickup_coin', 'crack', 'card_haste', 'card_caltrops'}
 # Areas to blank in the source (fractions x0, y0, x1, y1): the cart's leftover boots under it.
 ERASE = {'cart': [(0.2, 0.82, 0.42, 1.0), (0.55, 0.82, 0.8, 1.0)]}
 SASIN = {'cheongnyong', 'jujak', 'baekho', 'hyeonmu'}
@@ -258,7 +260,17 @@ def main(pairs):
     os.makedirs(HERO_OUT, exist_ok=True)
     manifest, heroes, units = load_manifest(MANIFEST), load_manifest(HERO_MANIFEST), load_manifest(UNIT_MANIFEST)
     os.makedirs(UNIT_OUT, exist_ok=True)
+    os.makedirs(ICON_OUT, exist_ok=True)
+    icons = load_manifest(ICON_MANIFEST)
     for sid, path in pairs:
+        if sid.startswith('icon:'):
+            # Menu and card icons: card_<upgrade>, gear_<slot>, ui_<name>.
+            iid = sid[5:]
+            im, small, bs, smooth = to_pixels(path, holes=iid not in NO_HOLES)
+            small.save(os.path.join(ICON_OUT, f'{iid}.png'))
+            icons[iid] = {'w': small.width, 'h': small.height}
+            print(f'{sid:22s} {path}  ->  {small.width}x{small.height}')
+            continue
         if sid.startswith('unit:'):
             # Soldiers and generals, enemy or ally: one front picture with its weapon.
             uid = sid[5:]
@@ -292,6 +304,7 @@ def main(pairs):
         print(f'{sid:12s} {path}  block {bs:.1f}px  ->  {small.width}x{small.height}{"  (smooth drawing, pixelated)" if smooth else ""}')
     write_manifest(MANIFEST, 'SPIRIT_SPRITES', '영물 sprites in game/assets/spirits/ (id → size in pixels).', manifest)
     write_manifest(UNIT_MANIFEST, 'UNIT_SPRITES', 'soldier and general sprites in game/assets/units/ (enemy/boss/ally id → size).', units)
+    write_manifest(ICON_MANIFEST, 'ICON_SPRITES', 'menu and card icons in game/assets/icons/ (card_<upgrade>, gear_<slot>, ui_<name> → size).', icons)
     write_manifest(HERO_MANIFEST, 'HERO_SPRITES', 'hero sprites in game/assets/heroes/ (hero → front/back/weapon sizes).', heroes)
 
 

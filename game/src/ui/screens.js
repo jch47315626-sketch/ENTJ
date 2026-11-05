@@ -4,6 +4,7 @@ import { ATTR_ICON, ATTR_NAME } from '../data/trial.js';
 import { SPIRITS } from '../data/spirits.js';
 import { spiritIcon } from '../render/spiritIcon.js';
 import { josa } from '../core/korean.js';
+import { pxIcon } from './pxIcon.js';
 
 const $ = (id) => document.getElementById(id);
 const MENUS = ['home', 'heroes', 'grow', 'map', 'prep', 'nanse', 'codex', 'spirit', 'reward'];
@@ -57,7 +58,7 @@ export function renderChoices(choices, onPick, onReroll = null, rerolls = 0) {
     b.innerHTML = `
       <span class="pc-sticker">${CAT[c.category] ?? '✨'} ${c.category}</span>
       <span class="pc-key">${i + 1}</span>
-      <span class="pc-icon">${c.evolution ? '🌟' : CAT[c.category] ?? '✨'}</span>
+      <span class="pc-icon">${c.evolution ? pxIcon('card_evolution', '🌟') : pxIcon(`card_${c.id}`, CAT[c.category] ?? '✨')}</span>
       <b class="pc-name">${c.name}</b>
       <span class="pc-lvl">${lvl}</span>
       <span class="pc-desc">${c.desc}</span>${c.evoFor ? c.evoFor.map((e) => `

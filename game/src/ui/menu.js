@@ -21,6 +21,7 @@ import { IMPRINT, ELEMENTS, ELEMENT_ORDER, imprintCost, imprintText, imprintSets
 import { HELP } from '../data/help.js';
 import { codexEntry, FOES, GENERALS } from '../data/codexTiers.js';
 import { NANSE_CARDS } from '../data/nanse.js';
+import { pxIcon } from './pxIcon.js';
 import { TRIAL, trialFor, trialDone, ATTR_ICON, ATTR_NAME } from '../data/trial.js';
 import { untilTomorrow } from '../data/daily.js';
 import { SPECIALS } from '../systems/specials.js';
@@ -46,7 +47,10 @@ const itemName = (save, item) => `${item.name}${save.owned?.includes(item.id) ? 
 /** An owned piece's bonus at its forge level and 하·중·상. */
 const ownBonus = (save, item, lv = forgeLv(save, item)) => itemBonus(item, lv, tierOf(save, item));
 
-const SLOT_ICON = { head: '🪖', body: '🛡️', charm: '📿', wrist: '💠', belt: '🎗️', feet: '👢' };
+const SLOT_EMOJI = { head: '🪖', body: '🛡️', charm: '📿', wrist: '💠', belt: '🎗️', feet: '👢' };
+/** Slot icons: the drawn one where there is one (gear_<slot>), else the emoji. */
+const SLOT_ICON = Object.fromEntries(Object.entries(SLOT_EMOJI).map(([k, v]) => [k, pxIcon(`gear_${k}`, v)]));
+const LOCK = pxIcon('ui_lock', '🔒');
 
 // Remembered between renders: which tab or card is open on each screen.
 const ui = { heroTab: 'gear', growTab: 'secret', slot: 'head', codexTab: 'hero', mapStage: null };
@@ -273,7 +277,7 @@ export function renderHome(save, sel, act) {
   who.append(wt);
   card.append(who);
   card.append(button(`<span class="hs-stars">${starText(st.difficulty.stars)}</span><span class="hm-stage">${st.numeral} ${st.name}</span><small>보상 ×${rewardOf(st)} · 적장 ${boss.name} · 전장 바꾸기 ›</small>`, 'hm-field', () => act.go('map')));
-  if (!gate.ok) card.append(el('p', 'gate-msg', `🔒 ${gate.text}`));
+  if (!gate.ok) card.append(el('p', 'gate-msg', `${LOCK} ${gate.text}`));
   card.append(button('⚔️ 출진하기', 'seal-btn cta', () => act.go('prep')));
   card.append(staminaLine(save));
   body.append(card);
@@ -390,7 +394,7 @@ function altarCard(save, sel, act) {
   card.append(row);
   if (tier < ALTAR_MAX_TIER && !nextOpen) {
     const nb = ALTAR_TIERS[tier + 1].base;
-    card.append(el('p', 'ac-lock', (save.altarBest ?? 0) < tier ? `🔒 ${tier}단계를 평정하면 ${tier + 1}단계가 열려요` : `🔒 ${tier + 1}단계: 전장 「${STAGES[nb].name}」을 먼저 평정하세요`));
+    card.append(el('p', 'ac-lock', (save.altarBest ?? 0) < tier ? `${LOCK} ${tier}단계를 평정하면 ${tier + 1}단계가 열려요` : `${LOCK} ${tier + 1}단계: 전장 「${STAGES[nb].name}」을 먼저 평정하세요`));
   }
   if (!save.spiritGift) card.append(el('p', 'ac-lock', `🐾 제단을 <b>${Math.max(1, FIRST_SPIRIT_RUNS - altarRunsDone(save))}판</b> 더 돌면 첫 영물이 찾아와요`));
   card.append(button(`🐾 영물 뽑기·동행 <small>영물 ${Object.keys(save.spirits ?? {}).length}/${SPIRIT_LIST.length}</small>`, 'plain-btn small ac-spirit', () => goPower(act, 'spirit')));
@@ -445,7 +449,7 @@ function endlessCard(save, sel, act) {
   });
   card.append(dots);
   card.append(el('p', 'ec-rule', m.intro));
-  if (!open) card.append(el('p', 'ac-lock', `🔒 전장 「${STAGES[m.unlockAfter].name}」을 평정하면 열려요`));
+  if (!open) card.append(el('p', 'ac-lock', `${LOCK} 전장 「${STAGES[m.unlockAfter].name}」을 평정하면 열려요`));
   const who = el('div', 'dc-who');
   who.append(portrait(h, 48));
   who.append(el('div', 'dc-where', `<b>${josa(h.name, '으로')} 출전</b><span>적장 ${m.bosses.map((b) => BOSSES[b].name).join(' · ')} 중 하나</span>`));
@@ -456,7 +460,7 @@ function endlessCard(save, sel, act) {
     : '아직 토벌하지 못했어요 — 첫 토벌에 도전해 보세요!'));
   const btns = el('div', 'ec-btns');
   btns.append(button('👑 영웅 바꾸기', 'plain-btn small', () => act.go('heroes')));
-  btns.append(button(!open ? '🔒 잠긴 맵' : left > 0 ? `♾️ 도전하기 · ${left}/${ENDLESS_PER_DAY}` : '오늘 도전 끝 · 내일 다시', 'endless-btn', () => {
+  btns.append(button(!open ? `${LOCK} 잠긴 맵` : left > 0 ? `♾️ 도전하기 · ${left}/${ENDLESS_PER_DAY}` : '오늘 도전 끝 · 내일 다시', 'endless-btn', () => {
     ui.endlessView = null;
     act.startEndless(id);
   }, !open || left <= 0));
@@ -566,11 +570,11 @@ function itemCard(save, h, item, act) {
   } else if (item.relic) {
     ctrl.append(tag('🔥 일일 던전', 'locked'));
   } else if (open && !canBuy(save, item)) {
-    ctrl.append(tag(`🔒 ${GRADES[item.grade - 1].name} 상 필요`, 'locked'));
+    ctrl.append(tag(`${LOCK} ${GRADES[item.grade - 1].name} 상 필요`, 'locked'));
   } else if (open) {
     ctrl.append(priceBtn(item.price, save.money, () => act.buy(item)));
   } else {
-    ctrl.append(tag('🔒', 'locked'));
+    ctrl.append(tag(`${LOCK}`, 'locked'));
   }
   card.append(ctrl);
   if (opts) card.append(opts); // full-width row under the controls
@@ -581,7 +585,7 @@ function itemCard(save, h, item, act) {
     `${h.name} 전용 · ${SLOTS.find((s) => s.id === item.slot).name}`,
     open || owned ? `기본 능력: ${bonusText(ownBonus(save, item, lv))}${lv ? ` (제련 +${lv} 포함)` : ''}` : '',
     owned && tierOf(save, item) < TOP_TIER ? `⬆️ ${TIER.names[tierOf(save, item) + 1]}(으)로 승급하면: ${bonusText(itemBonus(item, lv, tierOf(save, item) + 1))}` : '',
-    !owned && !item.relic && !canBuy(save, item) ? `🔒 ${josa(belowName(item), '을')} 「상」까지 올려야 살 수 있어요.` : '',
+    !owned && !item.relic && !canBuy(save, item) ? `${LOCK} ${josa(belowName(item), '을')} 「상」까지 올려야 살 수 있어요.` : '',
     item.note ? item.note : '',
     lines.length ? `옵션: ${lines.map(lineText).join(' · ')}` : owned ? '' : '얻을 때 무작위 옵션이 1~4줄 붙어요 (진품 이상은 비기가 붙기도 해요).',
     owned ? (worn ? '지금 차고 있어요' : '가진 장비 — 눌러서 착용') : item.relic ? `일일 던전에서 난세 ${TRIAL.relicFrom}단계 이상을 평정하면 얻을 수 있어요.`
@@ -590,7 +594,7 @@ function itemCard(save, h, item, act) {
   return card;
 }
 
-/** The piece one grade below in the same slot (for the 🔒 hint). */
+/** The piece one grade below in the same slot (for the lock hint). */
 function belowName(item) {
   const b = EQUIPMENT.find((o) => o.hero === item.hero && o.slot === item.slot && o.grade === item.grade - 1 && !o.relic);
   return b ? `${GRADES[b.grade].name} ${b.name}` : '아래 등급';
@@ -818,7 +822,7 @@ function stageTip(save, sel, st) {
     `${starRow(st)} ${st.difficulty.label} · 보상 ×${rewardOf(st)}`,
     `적장: ${boss.name}${boss.epithet ? ` (${boss.epithet})` : ''}`,
     `권장 장비: ${st.difficulty.stars > 1 ? `${GRADES[REC_GRADE[st.difficulty.stars]].name}${st.difficulty.stars > 5 ? ' +제련' : ' 이상'}` : '없어도 OK'}`,
-    cleared ? '🏆 평정함' : gate.ok ? '아직 평정하지 못했어요' : `🔒 ${gate.text}`,
+    cleared ? '🏆 평정함' : gate.ok ? '아직 평정하지 못했어요' : `${LOCK} ${gate.text}`,
   ]);
 }
 
@@ -914,7 +918,7 @@ export function renderMap(save, sel, act) {
     const row = el('div', 'lv-pick');
     for (const s of levelsOf(st.map)) {
       const g = stageInfo(save, sel, s).gate;
-      const b = button(`<b>${s.level}</b><small>${save.best?.[s.id] ? '평정' : g.ok ? `${Math.round(s.bossAt / 60 * 10) / 10}분` : '🔒'}</small>`,
+      const b = button(`<b>${s.level}</b><small>${save.best?.[s.id] ? '평정' : g.ok ? `${Math.round(s.bossAt / 60 * 10) / 10}분` : `${LOCK}`}</small>`,
         `lv-btn${s.id === st.id ? ' on' : ''}${save.best?.[s.id] ? ' cleared' : ''}${g.ok ? '' : ' locked'}`, () => {
           ui.mapStage = s.id;
           act.selectStage(s.id);
@@ -925,7 +929,7 @@ export function renderMap(save, sel, act) {
     card.insertBefore(row, card.querySelector('.sd-rows'));
   }
   const gate = stageInfo(save, sel, st).gate;
-  if (!gate.ok) card.append(el('p', 'gate-msg', `🔒 ${gate.text}`));
+  if (!gate.ok) card.append(el('p', 'gate-msg', `${LOCK} ${gate.text}`));
   card.append(button('출진 준비 ▶', 'seal-btn', () => {
     if (sel.stage !== st.id) act.selectStage(st.id);
     act.go('prep');
@@ -982,7 +986,7 @@ export function renderPrep(save, sel, act) {
   body.append(card);
 
   if (!gate.ok) {
-    body.append(el('p', 'gate-msg', `🔒 출진 불가 — ${gate.text}`));
+    body.append(el('p', 'gate-msg', `${LOCK} 출진 불가 — ${gate.text}`));
     body.append(button('🛡️ 장비 갖추러 가기', 'plain-btn', () => {
       ui.heroTab = 'gear';
       act.go('heroes');
@@ -1296,7 +1300,7 @@ export function renderSpirit(save, sel, act) {
     const s = id && SPIRITS[id];
     pr.append(el('div', `sp-slot${s ? '' : ' empty'}${i >= slots ? ' locked' : ''}`, s
       ? `<span class="sp-ic">${spiritIcon(s.id, s.icon)}</span><b>${s.name}</b>${starPips(save.spirits[id].stars)}`
-      : i >= slots ? '🔒<small>사신과 함께 열려요</small>' : '<small>아래에서 영물을 눌러<br>동행으로 데려가요</small>'));
+      : i >= slots ? `${LOCK}<small>사신과 함께 열려요</small>` : '<small>아래에서 영물을 눌러<br>동행으로 데려가요</small>'));
   }
   party.append(pr);
   const active = combosOf(save.companions ?? []);
